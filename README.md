@@ -20,6 +20,11 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Painel de Relatórios Gerenciais com Menu Lateral Retrátil & Área de Dados Expandida [NEW]** — Otimização ergonômica completa do layout do módulo `Relatorios.ts` para máxima legibilidade de tabelas e gráficos:
+  - **Menu Lateral Retrátil (Mini-Barra de Ícones)**: Botão de colapso rápido `[ ❮ ]` / `[ ❯ ]` que alterna a barra lateral entre o modo expandido padrão (`w-64` com nomes e categorias) e o modo mini-barra (`w-16` ultra-compacto com ícones destacados, tooltips no hover e divisores sutis por categoria).
+  - **Expansão Horizontal Instantânea**: Liberação imediata de mais de 220px a 400px de largura horizontal para tabelas gerenciais e relatórios detalhados, com contêiner expandido (`w-full xl:px-8`) e área de dados flexível (`flex-1 min-w-0`), eliminando necessidade de scroll horizontal em resoluções Full HD e HD.
+  - **Relatório de Embarque e Trechos de Voo Otimizado**: Tabela simplificada em 6 colunas prioritárias (`Data`, `Passageiro`, `Destino & Trecho`, `Consultor com Foto/Avatar`, `Contato Pré-Embarque` e `Ações`), remoção da antiga coluna de validação do gestor, limpeza de redundâncias de texto nos trechos e preservação do código LOC para download em CSV.
+
 - **Relatório de Pesquisa de Satisfação (NPS) no Painel de Relatórios [NEW]** — Painel visual na aba `⭐ Pesquisa de Satisfação (NPS)` de `Relatorios.ts` para monitoramento de lealdade pós-viagem:
   - **Métricas Oficiais do Net Promoter Score**: Cálculo automático do Score NPS (`% Promotores - % Detratores`, variando de -100 a +100), Média Simples de Notas (0 a 10) e classificação em Zonas de Mercado (*Zona de Excelência 🌟*, *Qualidade 👍*, *Aperfeiçoamento ⚠️* e *Crítica 🚨*).
   - **Filtros e Segmentação Dinâmica**: Filtros rápidos por Categoria NPS (Promotores 9-10 🟢, Neutros 7-8 🟡, Detratores 0-6 🔴, ou apenas com depoimento em texto), período por datas e busca textual instantânea por nome do passageiro, destino ou comentário.

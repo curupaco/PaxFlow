@@ -92,7 +92,8 @@ export class RelatoriosPage {
   private campanhasPresets: PresetCampanha[] = [];
   private feedbacksNps: any[] = [];
 
-  // Controle de estado para grupos colapsáveis da barra lateral
+  // Controle de estado para grupos colapsáveis e recolhimento geral da barra lateral
+  private menuLateralRecolhido: boolean = false;
   private collapsedGroups: { [key: string]: boolean } = {
     comercial: false,
     financeiro: false,
@@ -536,7 +537,7 @@ export class RelatoriosPage {
     const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
 
     this.container.innerHTML = `
-      <div class="flex-grow flex flex-col overflow-y-auto custom-scrollbar p-6 max-w-7xl mx-auto w-full gap-6 print-full-width">
+      <div class="flex-grow flex flex-col overflow-y-auto custom-scrollbar p-6 max-w-full w-full xl:px-8 mx-auto gap-6 print-full-width">
         
         <!-- Header -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-5 no-print">
@@ -607,106 +608,193 @@ export class RelatoriosPage {
           </div>
         </div>
 
-        <!-- Dashboard Workspace Grid (Left Menu Tabs & Right View Panel) -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start print-full-width">
+        <!-- Dashboard Workspace (Collapsible Left Menu & Dynamic Data Pane) -->
+        <div class="flex flex-col lg:flex-row gap-6 items-start w-full print-full-width">
           
-          <!-- Navigation Sidebar inside panel (Tabs) -->
-          <div class="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4 report-tabs-bar no-print flex-shrink-0">
-
-            <!-- Grupo 1: Gestão Comercial -->
-            <div class="space-y-1">
-              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="comercial">
-                <span class="flex items-center gap-1.5">💼 Gestão Comercial</span>
-                <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.comercial ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
+          <!-- Navigation Sidebar (Full vs Mini-Bar mode) -->
+          ${this.menuLateralRecolhido ? `
+            <!-- Mini-Bar Recolhida (Economia máxima de espaço) -->
+            <div class="w-16 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl py-3 px-2 shadow-sm flex flex-col items-center gap-2 report-tabs-bar no-print flex-shrink-0 transition-all duration-200">
+              <button id="btn-toggle-menu-lateral-relatorios" title="Expandir menu de relatórios" class="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 flex items-center justify-center transition mb-1 text-sm font-black border border-slate-200/60 dark:border-slate-700/60 shadow-xs">
+                ❯
               </button>
-              <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.comercial ? 'hidden' : ''}">
-                <button data-tab="desempenho" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'}">
-                  🎯 Desempenho
+
+              <!-- Grupo Comercial (Mini) -->
+              <div class="flex flex-col items-center gap-1 w-full">
+                <button data-tab="desempenho" title="Gestão Comercial: Desempenho e Produtividade" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'desempenho' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  🎯
                 </button>
-                <button data-tab="segmentacao_campanhas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'segmentacao_campanhas' ? 'report-tab-active' : 'text-slate-500'}">
-                  🚀 Campanhas & Segmentação
+                <button data-tab="segmentacao_campanhas" title="Gestão Comercial: Campanhas & Segmentação" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'segmentacao_campanhas' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  🚀
                 </button>
-                <button data-tab="metas_campanhas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'metas_campanhas' ? 'report-tab-active' : 'text-slate-500'}">
-                  🏆 Metas & Campanhas
+                <button data-tab="metas_campanhas" title="Gestão Comercial: Metas & Campanhas" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'metas_campanhas' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  🏆
                 </button>
-                <button data-tab="origens" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'origens' ? 'report-tab-active' : 'text-slate-500'}">
-                  📢 Origem de Leads
+                <button data-tab="origens" title="Gestão Comercial: Origem de Leads" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'origens' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  📢
                 </button>
-                <button data-tab="previsoes" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'}">
-                  🔮 Previsões Preditivas
+                <button data-tab="previsoes" title="Gestão Comercial: Previsões Preditivas" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'previsoes' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  🔮
                 </button>
-                <button data-tab="riscopreditivo" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'riscopreditivo' ? 'report-tab-active' : 'text-slate-500'}">
-                  🚨 Previsão de Risco & Churn
+                <button data-tab="riscopreditivo" title="Gestão Comercial: Previsão de Risco & Churn" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'riscopreditivo' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  🚨
+                </button>
+              </div>
+
+              <!-- Linha divisória sutil -->
+              <div class="w-7 h-[1px] bg-slate-200 dark:bg-slate-800 my-1"></div>
+
+              <!-- Grupo Financeiro (Mini) -->
+              <div class="flex flex-col items-center gap-1 w-full">
+                <button data-tab="faturamento" title="Financeiro & Auditoria: Faturamento" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'faturamento' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  💰
+                </button>
+                <button data-tab="auditoria" title="Financeiro & Auditoria: Recebimentos & Auditoria" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'auditoria' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  🪙
+                </button>
+                <button data-tab="perdas" title="Financeiro & Auditoria: Desistências & Perdas" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'perdas' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  📉
+                </button>
+              </div>
+
+              <!-- Linha divisória sutil -->
+              <div class="w-7 h-[1px] bg-slate-200 dark:bg-slate-800 my-1"></div>
+
+              <!-- Grupo Operações (Mini) -->
+              <div class="flex flex-col items-center gap-1 w-full">
+                <button data-tab="prazos" title="Operações & SLAs: Controle de SLAs" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'prazos' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  ⏰
+                </button>
+                <button data-tab="posvenda" title="Operações & SLAs: Pós-Venda & SLAs" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'posvenda' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  ✈️
+                </button>
+                <button data-tab="satisfacao" title="Operações & SLAs: Pesquisa de Satisfação (NPS)" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'satisfacao' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  ⭐
+                </button>
+                <button data-tab="embarques" title="Operações & SLAs: Relatório de Embarque e Trechos de Voo" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'embarques' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  🛫
+                </button>
+              </div>
+
+              <!-- Linha divisória sutil -->
+              <div class="w-7 h-[1px] bg-slate-200 dark:bg-slate-800 my-1"></div>
+
+              <!-- Grupo Equipe (Mini) -->
+              <div class="flex flex-col items-center gap-1 w-full">
+                <button data-tab="gamificacao" title="Gestão de Equipe: Gamificação & Ranking" class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition ${this.activeTab === 'gamificacao' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-2 ring-indigo-500/20' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                  🏆
                 </button>
               </div>
             </div>
-
-            <!-- Grupo 2: Financeiro & Auditoria -->
-            <div class="space-y-1">
-              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="financeiro">
-                <span class="flex items-center gap-1.5">🪙 Financeiro & Auditoria</span>
-                <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.financeiro ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
-              </button>
-              <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.financeiro ? 'hidden' : ''}">
-                <button data-tab="faturamento" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'faturamento' ? 'report-tab-active' : 'text-slate-500'}">
-                  💰 Faturamento
-                </button>
-                <button data-tab="auditoria" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'auditoria' ? 'report-tab-active' : 'text-slate-500'}">
-                  🪙 Recebimentos & Auditoria
-                </button>
-                <button data-tab="perdas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'perdas' ? 'report-tab-active' : 'text-slate-500'}">
-                  📉 Desistências & Perdas
+          ` : `
+            <!-- Menu Lateral Completo Expandido -->
+            <div class="w-full lg:w-64 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4 report-tabs-bar no-print flex-shrink-0 transition-all duration-200">
+              
+              <!-- Cabeçalho do menu com botão de recolher -->
+              <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                <span class="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  📑 Relatórios
+                </span>
+                <button id="btn-toggle-menu-lateral-relatorios" title="Recolher menu para ganhar mais espaço de visualização" class="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition text-xs font-black">
+                  ❮
                 </button>
               </div>
-            </div>
 
-            <!-- Grupo 3: Operações & SLAs -->
-            <div class="space-y-1">
-              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="operacional">
-                <span class="flex items-center gap-1.5">⚙️ Operações & SLAs</span>
-                <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.operacional ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
-              </button>
-              <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.operacional ? 'hidden' : ''}">
-                <button data-tab="prazos" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'prazos' ? 'report-tab-active' : 'text-slate-500'}">
-                  ⏰ Controle de SLAs
+              <!-- Grupo 1: Gestão Comercial -->
+              <div class="space-y-1">
+                <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="comercial">
+                  <span class="flex items-center gap-1.5">💼 Gestão Comercial</span>
+                  <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.comercial ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
                 </button>
-                <button data-tab="posvenda" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'}">
-                  ✈️ Pós-Venda & SLAs
-                </button>
-                <button data-tab="satisfacao" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'satisfacao' ? 'report-tab-active' : 'text-slate-500'}">
-                  ⭐ Pesquisa de Satisfação (NPS)
-                </button>
-                <button data-tab="embarques" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'embarques' ? 'report-tab-active' : 'text-slate-500'}">
-                  ✈️ Relatório de Embarque
-                </button>
+                <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.comercial ? 'hidden' : ''}">
+                  <button data-tab="desempenho" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'}">
+                    🎯 Desempenho
+                  </button>
+                  <button data-tab="segmentacao_campanhas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'segmentacao_campanhas' ? 'report-tab-active' : 'text-slate-500'}">
+                    🚀 Campanhas & Segmentação
+                  </button>
+                  <button data-tab="metas_campanhas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'metas_campanhas' ? 'report-tab-active' : 'text-slate-500'}">
+                    🏆 Metas & Campanhas
+                  </button>
+                  <button data-tab="origens" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'origens' ? 'report-tab-active' : 'text-slate-500'}">
+                    📢 Origem de Leads
+                  </button>
+                  <button data-tab="previsoes" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'}">
+                    🔮 Previsões Preditivas
+                  </button>
+                  <button data-tab="riscopreditivo" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'riscopreditivo' ? 'report-tab-active' : 'text-slate-500'}">
+                    🚨 Previsão de Risco & Churn
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <!-- Grupo 4: Gestão de Equipe -->
-            <div class="space-y-1">
-              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="equipe">
-                <span class="flex items-center gap-1.5">👥 Gestão de Equipe</span>
-                <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.equipe ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
-              </button>
-              <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.equipe ? 'hidden' : ''}">
-                <button data-tab="gamificacao" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'gamificacao' ? 'report-tab-active' : 'text-slate-500'}">
-                  🏆 Gamificação & Ranking
+              <!-- Grupo 2: Financeiro & Auditoria -->
+              <div class="space-y-1">
+                <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="financeiro">
+                  <span class="flex items-center gap-1.5">🪙 Financeiro & Auditoria</span>
+                  <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.financeiro ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
                 </button>
+                <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.financeiro ? 'hidden' : ''}">
+                  <button data-tab="faturamento" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'faturamento' ? 'report-tab-active' : 'text-slate-500'}">
+                    💰 Faturamento
+                  </button>
+                  <button data-tab="auditoria" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'auditoria' ? 'report-tab-active' : 'text-slate-500'}">
+                    🪙 Recebimentos & Auditoria
+                  </button>
+                  <button data-tab="perdas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'perdas' ? 'report-tab-active' : 'text-slate-500'}">
+                    📉 Desistências & Perdas
+                  </button>
+                </div>
               </div>
+
+              <!-- Grupo 3: Operações & SLAs -->
+              <div class="space-y-1">
+                <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="operacional">
+                  <span class="flex items-center gap-1.5">⚙️ Operações & SLAs</span>
+                  <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.operacional ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </button>
+                <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.operacional ? 'hidden' : ''}">
+                  <button data-tab="prazos" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'prazos' ? 'report-tab-active' : 'text-slate-500'}">
+                    ⏰ Controle de SLAs
+                  </button>
+                  <button data-tab="posvenda" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'}">
+                    ✈️ Pós-Venda & SLAs
+                  </button>
+                  <button data-tab="satisfacao" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'satisfacao' ? 'report-tab-active' : 'text-slate-500'}">
+                    ⭐ Pesquisa de Satisfação (NPS)
+                  </button>
+                  <button data-tab="embarques" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'embarques' ? 'report-tab-active' : 'text-slate-500'}">
+                    🛫 Relatório de Embarque
+                  </button>
+                </div>
+              </div>
+
+              <!-- Grupo 4: Gestão de Equipe -->
+              <div class="space-y-1">
+                <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="equipe">
+                  <span class="flex items-center gap-1.5">👥 Gestão de Equipe</span>
+                  <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.equipe ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </button>
+                <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.equipe ? 'hidden' : ''}">
+                  <button data-tab="gamificacao" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'gamificacao' ? 'report-tab-active' : 'text-slate-500'}">
+                    🏆 Gamificação & Ranking
+                  </button>
+                </div>
+              </div>
+
             </div>
+          `}
 
-          </div>
-
-          <!-- Main View Pane (Detail content) -->
-          <div class="lg:col-span-3 space-y-6 print-full-width" id="report-view-container">
+          <!-- Main View Pane (Detail content com flex-1 min-w-0 para ocupar toda a largura liberada) -->
+          <div class="flex-1 min-w-0 w-full space-y-6 print-full-width" id="report-view-container">
             ${this.renderActiveTabContent(data)}
           </div>
 
@@ -3748,6 +3836,13 @@ export class RelatoriosPage {
     });
   }
   private setupEventListeners(): void {
+    // 0. Toggle de recolhimento do menu lateral
+    this.container.querySelector('#btn-toggle-menu-lateral-relatorios')?.addEventListener('click', () => {
+      this.menuLateralRecolhido = !this.menuLateralRecolhido;
+      this.render();
+      this.setupEventListeners();
+    });
+
     // 1. Collapsible category headers
     const groupHeaders = this.container.querySelectorAll('.report-group-header');
     groupHeaders.forEach(header => {

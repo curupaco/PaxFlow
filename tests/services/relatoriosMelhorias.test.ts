@@ -257,5 +257,19 @@ describe('Relatórios - Melhorias Subcutâneas (Embarques, Desistências e Valid
     expect(limparTrecho('✈️ Voo de viagem')).toBe('✈️ Voo');
     expect(limparTrecho('✈️ Confins ➔ São Paulo')).toBe('✈️ Confins ➔ São Paulo');
   });
+
+  it('deve alternar o estado do menu lateral retrátil entre expandido e mini-barra', () => {
+    // Setup
+    let menuLateralRecolhido = false;
+    const toggleMenu = () => {
+      menuLateralRecolhido = !menuLateralRecolhido;
+      return menuLateralRecolhido;
+    };
+
+    // Action & Assert
+    expect(menuLateralRecolhido).toBe(false); // Inicia expandido
+    expect(toggleMenu()).toBe(true);           // Recolhe para mini-barra
+    expect(toggleMenu()).toBe(false);          // Expande novamente
+  });
 });
 

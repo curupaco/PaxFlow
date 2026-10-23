@@ -933,6 +933,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Nos cards de desistência do Kanban, no Modal de Detalhes e na tabela de Relatórios:\n\n- **Exclusividade Admin**: Apenas usuários com perfil de Administrador podem marcar e desmarcar a confirmação *"Falamos c/ Cliente"*.\n- **Transparência Operacional**: Usuários consultores visualizam o status da verificação (`✅ Sim` ou `⏳ Pendente`) de forma transparente.\n- **Rastreabilidade**: Ao passar o cursor sobre a verificação, o sistema exibe quando e quem realizou a conferência do contato.'
   },
   {
+    id: 'relatorios-menu-lateral-retratil',
+    modulo: 'clientes',
+    label: '📊 Relatórios: Menu Lateral Retrátil & Área de Dados Expandida',
+    description: 'Como alternar entre a barra de relatórios completa e a mini-barra compacta de ícones para liberar espaço.',
+    details: 'Para garantir máxima legibilidade em tabelas de auditoria, embarques e gráficos gerenciais, o módulo de Relatórios conta com um menu lateral retrátil inteligente:\n\n- **Botão de Colapso `[ ❮ ]` / `[ ❯ ]`**: Localizado no topo da barra lateral de relatórios. Com um clique, recolhe a barra lateral para o modo mini-barra (`w-16`) ou expande de volta para o menu completo (`w-64`).\n- **Modo Mini-Barra com Ícones & Tooltips**: No modo recolhido, o menu exibe os ícones representativos de cada relatório com separadores sutis entre os 4 grupos (Gestão Comercial, Financeiro, Operações e Equipe). Ao passar o mouse sobre qualquer ícone, um balão (tooltip) exibe o nome do grupo e o relatório correspondente.\n- **Área de Dados com Expansão Automática**: Ao recolher a barra lateral, a área do relatório ativo ganha automaticamente mais de 220px a 400px de largura horizontal livre (`flex-1 min-w-0`), acomodando tabelas volumosas e dashboards sem exigir rolagem horizontal.'
+  },
+  {
     id: 'relatorio-embarques-ergonomia-acoes',
     modulo: 'clientes',
     label: '✈️ Embarques: Arquitetura Enxuta de 6 Colunas (Zero Scroll)',

@@ -59,6 +59,7 @@
    - 3.47 [Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial](#347-rateio-integral-de-parcerias-e-rav-no-módulo-de-relatórios-e-dashboard-comercial)
    - 3.48 [Módulo de Campanhas & Segmentação Comercial de Base](#348-módulo-de-campanhas--segmentação-comercial-de-base)
    - 3.49 [Painel Analítico de Pesquisa de Satisfação (NPS)](#349-painel-analítico-de-pesquisa-de-satisfação-nps)
+   - 3.50 [Ergonomia do Painel de Relatórios & Menu Lateral Retrátil](#350-ergonomia-do-painel-de-relatórios--menu-lateral-retrátil)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1338,6 +1339,19 @@ Módulo visual de governança de qualidade posicionado na aba `⭐ Pesquisa de S
 4. **Mural de Depoimentos e Ação Rápida no Digisac**:
    - Exibição de cards tabulares com o texto integral dos feedbacks e notas identificadas por emojis coloridos (`🟢`, `🟡`, `🔴`).
    - Botão direto `💬 Digisac` em cada linha da tabela para contato imediato e resolução ágil de pós-venda.
+
+### 3.50 Ergonomia do Painel de Relatórios & Menu Lateral Retrátil
+
+Otimização ergonômica e de layout desenvolvida no módulo `Relatorios.ts` para resolver a limitação de espaço horizontal em monitores e telas de notebooks (Full HD e HD):
+
+1. **Menu Lateral Retrátil & Mini-Barra de Ícones**:
+   - **Botão de Alternância `[ ❮ ]` / `[ ❯ ]`**: Presente no cabeçalho do menu de relatórios, permite ao usuário recolher a barra lateral para o modo compacto ou expandir de volta a qualquer momento.
+   - **Modo Expandido Padrão (`w-64`)**: Exibe as categorias completas com ícones e rótulos por extenso, organizado nos 4 grupos estratégicos (*Gestão Comercial*, *Financeiro & Auditoria*, *Operações & SLAs* e *Gestão de Equipe*).
+   - **Modo Mini-Barra Recolhida (`w-16`)**: Transforma a navegação lateral em uma barra vertical ultra-enxuta, contendo apenas os ícones destacados e linhas divisórias sutis entre os 4 grupos. Ao posicionar o cursor sobre qualquer botão, um tooltip exibe a categoria e o nome do relatório.
+
+2. **Área de Dados Expandida & Eliminação de Scroll Horizontal**:
+   - A área principal do relatório ativo utiliza dimensionamento flexível (`flex-1 min-w-0`), expandindo automaticamente e aproveitando os mais de 220px a 400px liberados pelo recolhimento do menu.
+   - O contêiner geral foi adaptado de largura fixa (`max-w-7xl`) para largura total fluida (`max-w-full w-full xl:px-8`), permitindo que tabelas com múltiplas colunas (como o Relatório de Embarque, Faturamento, Desistências e Pesquisa NPS) respirem confortavelmente sem exigir rolagem horizontal indesejada.
 
 ---
 
