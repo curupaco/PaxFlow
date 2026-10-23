@@ -1,206 +1,253 @@
-# Plano de Refatoração Modular v2.0 — Mitigação de "God Files" no PaxFlow
+# Plano Mestre de Refatoração Arquitetural e Desacoplamento Modular v3.0
 
-Este documento especifica o diagnóstico arquitetural, os princípios de design, a estrutura de camadas em Vanilla TypeScript e o cronograma de execução em fases para desmembrar arquivos monolíticos ("God Files" de 1000 a 2600+ linhas) no PaxFlow.
-
----
-
-## 1. Objetivo & Visão Geral
-
-Reduzir o acoplamento entre apresentação gráfica, estado reativo, regras de negócio e infraestrutura de banco de dados. O objetivo é transformar páginas monolíticas em módulos coesos e focados em responsabilidades únicas, **sem introduzir frameworks adicionais** (mantendo Vanilla TypeScript + Vite) e **preparando a base de código diretamente para a arquitetura Multi-Tenant** ([`MultiTenant_Plano.md`](file:///home/curupaco/Projetos/PaxFlow/docs/MultiTenant_Plano.md)).
+> **Status:** Documento Oficial de Planejamento Arquitetural (Atualizado em Outubro/2026)  
+> **Escopo:** Mitigação de "God Files", Desacoplamento de Camadas (UI, Controllers, Services) e Preparação Multi-Tenant  
+> **Safety Net Ativa:** 552 testes automatizados no Vitest (100% verde) + Build de Produção Vite
 
 ---
 
-## 2. Diagnóstico Arquitetural: Por que os arquivos são gigantes?
+## 1. Visão Geral & Contexto da Evolução
 
-A análise das páginas monolíticas do PaxFlow (ex: `Inbox.ts`, `Orcamentos.ts`, `Clientes.ts`, `main.ts`) identificou quatro sintomas superficiais e duas causas-raiz arquiteturais:
+O PaxFlow expandiu rapidamente de uma aplicação operacional básica para uma plataforma enterprise de gestão de agências de viagens, incorporando módulos avançados como **PaxFlow Studio (IA de Propostas)**, **Central de Relatórios Analíticos (17 visões)**, **PaxFlow Risk Score™ (Saúde Operacional)**, **Conciliação Bancária OFX/CSV**, **Esteira de Reembolsos Desacoplada** e **NextTrip Engine (Recompra Preditiva)**.
 
-### Sintomas Superficiais
+No entanto, o rápido crescimento gerou um fenômeno de concentração de código em **arquivos monolíticos ("God Files")** que ultrapassam 5.600 linhas em uma única página.
 
-1. **Estilos CSS Embutidos:** Centenas de linhas de CSS estático injetadas em blocos `<style>` contidos em template literals JS/TS.
-2. **Consultas diretas ao Banco:** Operações diretas ao Supabase (`insert`, `select`, `update`, `delete`) executadas dentro de métodos visuais.
-3. **HTML e Templating Acoplados:** Markup extenso e dinâmico concatenado dentro de métodos de renderização da classe da página.
-4. **Listeners Descentralizados:** Múltiplas chamadas `addEventListener` anexadas diretamente ao DOM sem controle de ciclo de vida ou delegação.
+### Panorama Atual da Camada de Páginas (`src/pages/`):
 
-### Causas-Raiz Arquiteturais
+| Página | Linhas Atuais | Severidade | Domínio Funcional Principal |
+| :--- | :---: | :---: | :--- |
+| [`Relatorios.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/Relatorios.ts) | **5.609** | 🚨 Crítica | 17 abas analíticas, métricas de equipe, faturamento, embarque e NPS |
+| [`Dashboard.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/Dashboard.ts) | **4.703** | 🚨 Crítica | Matriz operacional de viagens, kanban, filtros múltiplos, drawer de risco |
+| [`Orcamentos.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/Orcamentos.ts) | **3.701** | 🚨 Crítica | Funil comercial, atendimento balcão, integração de propostas |
+| [`Cadastros.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/Cadastros.ts) | **3.254** | 🚨 Crítica | CRUDs de clientes, fornecedores, tipos de produto e formas de pagamento |
+| [`Configuracoes.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/Configuracoes.ts) | **2.670** | ⚠️ Alta | Perfis de consultores, regras de SLA, pontuações de risco, automações |
+| [`LandingPageNova.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/LandingPageNova.ts) | **2.388** | ⚠️ Alta | Apresentação institucional, checkout e conversão pública |
+| [`StudioPage.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/StudioPage.ts) | **2.291** | ⚠️ Alta | Extrator de roteiros por IA, gerador de propostas PDF/Web e Unsplash |
+| [`Clientes.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/Clientes.ts) | **1.894** | ⚠️ Média | Ficha 360°, histórico de compras, validação de passaportes |
+| [`ComercialDashboard.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/ComercialDashboard.ts) | **1.758** | ⚠️ Média | Metas de consultores, campanhas, comissionamento e divisões de vendas |
+| [`LandingPage.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/LandingPage.ts) | **1.425** | ℹ️ Baixa | Landing page legada (candidata a arquivamento/substituição) |
+| [`Inbox.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/Inbox.ts) | **1.410** | ⚠️ Média | Central de alertas operacionais, calendário de tarefas, chat realtime e escala |
+| [`PublicViews.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/PublicViews.ts) | **1.313** | ⚠️ Média | Visualização pública de propostas comerciais e pesquisa de satisfação NPS |
+| [`Reembolsos.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/Reembolsos.ts) | **1.003** | ⚠️ Média | Central financeira de tratativas de devolução e estornos |
+| [`Conciliacao.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/Conciliacao.ts) | **729** | ✅ Controlada | Conciliação bancária, extratos OFX/CSV e fechamento de mês |
+| [`NextTripPage.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/NextTripPage.ts) | **487** | ✅ Controlada | Matriz preditiva de recompra de viagens pós-retorno |
+| [`Login.ts`](file:///home/curupaco/Projetos/PaxFlow/src/pages/Login.ts) | **302** | ✅ Otimizada | Autenticação e recuperação de credenciais |
+| **Total em Páginas** | **~35.000** | — | **16 páginas orquestradoras** |
 
-1. **Estado da Tela Centralizado na Renderização:** A classe da página (ex: `InboxPage`) é dona de todo o estado reativo da aplicação: dados carregados, filtros ativos, item selecionado, modais abertos, usuário atual, loading, paginação, calendário e SLAs.
-2. **Acoplamento Triplo (UI + Negócio + Infraestrutura):** Regras de negócio (ex: cálculo de SLA ou elegibilidade de reembolso), chamadas Supabase e atualizações visuais do DOM vivem dentro dos mesmos handlers de eventos.
+---
+
+## 2. Diagnóstico Arquitetural: O Que Mudou da v2.0 para a v3.0?
+
+A versão anterior deste plano (v2.0) sugeriu extrair blocos de estilo para dezenas de arquivos `.css` individuais (`inbox.css`, `orcamentos.css`, etc.). Na prática, o PaxFlow adotou com grande sucesso o **Tailwind CSS + Design Tokens PaxFlow** centralizados em `src/index.css`. Essa decisão eliminou a necessidade de arquivos CSS fragmentados, mantendo o estilo padronizado, seguro contra colisões e com suporte nativo a temas (Dark/Light).
+
+Contudo, os verdadeiros gargalos de manutenção e consumo de tokens persistem nos seguintes pontos:
+
+1. **Imports Diretos de `supabase` nas Páginas:** Embora já tenhamos criado 35 serviços e 8 controllers, 14 das 16 páginas ainda importam `supabase` diretamente, executando queries customizadas `supabase.from('...').select(...)` no meio do ciclo de renderização.
+2. **Template Literals Maciços (> 2.000 linhas de HTML inline):** Telas como `Relatorios.ts` e `Dashboard.ts` constroem toda a interface através de concatenações gigantestas de HTML em template strings, misturando estrutura, formatação de moeda e lógica de eventos.
+3. **Modais Embutidos no Corpo da Página:** Modais pesados (como `EditTravelModal`, `ViagemSplitEditor` ou diálogos de exportação) ainda possuem trechos de inicialização acoplados ao ciclo de vida da página receptora.
+4. **Estado e Regras de Negócio na Camada de Visão:** Cálculos de comissionamento, agregação de faturamento e regras de triagem de status ainda são recalculados dentro dos métodos `render()` em vez de delegados aos controllers de domínio.
 
 ---
 
 ## 3. Diretrizes e Princípios Arquiteturais Invioláveis
 
-1. **Isolamento de Infraestrutura em Páginas:** Nenhum arquivo em `src/pages/` deve importar o cliente Supabase diretamente (`import { supabase } from ...`). A comunicação com o banco ocorre estritamente via camada de Serviços.
-2. **Isolamento de Infraestrutura em Componentes:** Componentes de UI em `src/components/` não executam consultas nem comandos diretos ao banco. Eles recebem dados por propriedades/inputs e comunicam ações por callbacks/outputs.
-3. **Serviços Isentos de DOM:** Arquivos em `src/services/` realizam operações de dados sem qualquer dependência ou manipulação direta de elementos do DOM (HTML / document / window).
-4. **Alinhamento Multi-Tenant Nativo (`AgencyContext`):** Toda a camada de serviços nasce preparada para operar sob o contexto de agência (`agencia_id` / `AgencyContext`). Não serão criadas funções de serviço genéricas que precisem ser refatoradas no rollout do multi-tenant.
-5. **Gerenciamento Estrito de Ciclo de Vida (DOM Lifecycle):** Componentes interativos devem implementar métodos explícitos de inicialização (`mount()`) e limpeza (`unmount()`), ou utilizar delegação de eventos para evitar vazamento de memória e duplicação de `addEventListener`.
-6. **Contratos Estritos via TypeScript:** Proibido o uso de `any` nas entradas e saídas dos Serviços e Componentes. Todos os tipos e DTOs devem ser definidos em `src/types/`.
-7. **Desacoplamento do Tratamento de Erros:** A camada de serviço captura erros técnicos e os retorna como resultado tipado ou exceção de domínio. A camada de apresentação (Página/Controller) decide como notificar o usuário (alert, toast, modal).
+De acordo com o **`AGENTS.md`** e as premissas de governança do PaxFlow, qualquer refatoração deve respeitar rigorosamente:
+
+1. **Banco de Dados como Única Fonte da Verdade:** Proibição absoluta do uso de `localStorage` para estados de negócio, filtros persistidos ou mascaramento de dados. Conexão estável é mandatória.
+2. **Resiliência a Schema Drift (Protocolo Zero-Break):** Qualquer consulta ou mutação deve suportar graciosamente eventuais discrepâncias de colunas (ex: fallback nativo para o erro SQL `42703`).
+3. **Proteção Subcutânea Obrigatória (Safety Net):** Toda alteração de camada deve preservar a suíte de testes (Vitest) 100% verde (atualmente 552 testes em 69 arquivos).
+4. **Design Tokens PaxFlow:** Seguir à risca os padrões de usabilidade:
+   * Controles com altura padrão de **42px** (`h-[42px]`) com `items-end` em formulários.
+   * Cantos arredondados: `rounded-2xl` / `rounded-3xl` para cards e `rounded-xl` para botões e inputs.
+   * Cabeçalhos de tabelas: `sticky top-0 z-10/z-20 bg-slate-50 dark:bg-slate-950 shadow-xs` com rolagem vertical interna (`max-h-[600px]` ou `max-h-[650px]`).
+   * Colunas de ação com largura travada (`w-28` ou `w-32`) e botões centralizados.
+5. **Prontidão para Multi-Tenant (`AgencyContext`):** Serviços não devem assumir escopo global sem receber ou derivar o contexto de agência (`agencia_id`), conforme especificado em [`MultiTenant_Plano.md`](file:///home/curupaco/Projetos/PaxFlow/docs/MultiTenant_Plano.md).
 
 ---
 
-## 4. Arquitetura Modular em Vanilla TypeScript
+## 4. Arquitetura Modular em Camadas (Vanilla TypeScript + Tailwind + Vite)
 
-A solução adota uma arquitetura em camadas utilizando TypeScript nativo e compilação do Vite:
+A arquitetura desacoplada organiza as responsabilidades em 4 camadas bem delimitadas:
 
 ```mermaid
 graph TD
-    subgraph Presentation Layer
-        P[Pages: src/pages/Inbox.ts] --> C[Components: EmailReaderModal, CalendarGrid]
-        P --> Ctrl[Controllers / State: InboxController]
+    subgraph Presentation Layer [Camada de Apresentação]
+        Page[Page Orchestrator: src/pages/*.ts]
+        Comp[UI Components & Modals: src/components/*]
+        Tokens[Design Tokens & Tailwind: src/index.css]
     end
 
-    subgraph Business & Data Layer
-        Ctrl --> UC[Use Cases / Business Rules]
-        UC --> S[Services / Repositories: inboxService.ts]
-        C -->|Events / Callbacks| P
+    subgraph State & Orchestration Layer [Camada de Estado e Controladores]
+        Ctrl[Domain Controllers: src/controllers/*Controller.ts]
     end
 
-    subgraph Context & Infrastructure
-        S --> AC[AgencyContext: activeAgencyId]
-        AC --> DB[(Supabase Database + RLS)]
+    subgraph Business & Service Layer [Camada de Serviços e Regras de Negócio]
+        Svc[Domain Services: src/services/*Service.ts]
+        Engines[Preditivos: RiskScore, Upsell, NextTrip, Studio]
     end
 
-    subgraph Styles Hierarchy
-        G[src/styles/globals.css & variables.css]
-        P --> PC[src/pages/inbox/inbox.css]
-        C --> CC[src/components/inbox/email-reader.css]
+    subgraph Infrastructure & Multi-Tenant [Camada de Infraestrutura e Dados]
+        Ctx[AgencyContext: activeAgencyId]
+        DB[(Supabase Database + RLS)]
     end
+
+    Page --> Ctrl
+    Comp --> Ctrl
+    Ctrl --> Svc
+    Ctrl --> Engines
+    Svc --> Ctx
+    Engines --> Ctx
+    Ctx --> DB
+```
+
+### Regras de Interação entre Camadas:
+* **Páginas (`src/pages/`)**: Atuam estritamente como **Orquestradores de Layout** e roteamento. Conectam os componentes visuais, registram atalhos de teclado e acionam os Controllers. **Zero imports de `supabase`**.
+* **Componentes (`src/components/`)**: Recebem dados via propriedades/parâmetros e emitem eventos/callbacks. Cuidam do ciclo de vida de modais (`open()`, `close()`, `destroy()`).
+* **Controladores (`src/controllers/`)**: Gerenciam o estado reativo da tela (filtros ativos, paginação, itens selecionados, ordenação) e traduzem intenções do usuário em chamadas de serviços.
+* **Serviços (`src/services/`)**: Executam regras de negócio puras, transformações de DTOs, cálculos financeiros e chamadas de persistência no Supabase.
+
+---
+
+## 5. Cronograma Estratégico de Execução em 8 Fases
+
+Para garantir estabilidade, zero tempo de indisponibilidade e economia de tokens, o cronograma é dividido em pacotes cirúrgicos e independentes:
+
+### Fase 0: Baseline & Safety Net (Concluída ✅)
+- **Status:** **100% Concluída.**
+- **Entregáveis:** Suíte de 552 testes automatizados no Vitest executando em ~6s; pipeline de compilação de produção (`npm run build`) validado sem erros; design tokens auditados e documentados.
+
+---
+
+### Fase 1: Modularização da Central de Relatórios (`Relatorios.ts` — De 5.609 para < 500 linhas)
+- **Objetivo:** Fracionar o maior "God File" do sistema em 4 submódulos especialistas dentro de `src/components/relatorios/`.
+- **Estratégia de Execução Cirúrgica (4 Pacotes):**
+  - **Pacote 1.1: Operações & SLAs (`embarques`, `prazos`, `posvenda`, `satisfacao`)** ✅ **CONCLUÍDO**
+    - Extraído para `src/components/relatorios/operacoes/RelatoriosOperacoesView.ts` (1.189 linhas).
+    - Desacopladas tabelas densas, filtros de embarque, badges de validação de gestor, modal de notas e exportação CSV.
+    - `Relatorios.ts` enxugado de **5.609 para 4.453 linhas** (-1.156 linhas eliminadas no arquivo principal).
+    - Validação: 100% dos 552 testes vitest verdes e build TypeScript/Vite impecável.
+  - **Pacote 1.2: Financeiro & Auditoria (`faturamento`, `auditoria`, `perdas`)** ✅ **CONCLUÍDO**
+    - Extraído para `src/components/relatorios/financeiro/RelatoriosFinanceiroView.ts` (902 linhas).
+    - Desacoplados conciliação de faturamento/lucratividade, margens por produto, análise de perdas/desistências com SVG donut, auditoria de balcão e modal de extrato analítico de pagamentos.
+    - `Relatorios.ts` enxugado de **4.453 para 3.660 linhas** (-793 linhas eliminadas neste pacote, total de **-1.949 linhas** acumuladas!).
+    - Validação: 100% dos 552 testes vitest verdes e build TypeScript/Vite impecável.
+  - **Pacote 1.3: Vendas & Performance Comercial (`desempenho`, `metas_campanhas`, `segmentacao_campanhas`)** ✅ **CONCLUÍDO**
+    - Extraído para `src/components/relatorios/comercial/RelatoriosComercialView.ts` (1.257 linhas).
+    - Desacoplados volume de vendas/lucro bruto funil, gráficos SVG de ranking por consultor, apuração temporal de metas/campanhas com premiação por faixas, popup modal de auditoria detalhada de metas, matriz de filtros de segmentação (NPS, sazonalidade, ticket e destinos) e integração Digisac.
+    - `Relatorios.ts` enxugado de **3.660 para 2.463 linhas** (-1.197 linhas eliminadas neste pacote, total de **-3.146 linhas** acumuladas!).
+    - Validação: 100% dos 552 testes vitest verdes e build de produção Vite concluído com código 0.
+  - **Pacote 1.4: Orquestrador Enxuto & Finalização da Fase 1 (`previsoes`, `origens`, `gamificacao`, `riscopreditivo`, `shell`)** ✅ **CONCLUÍDO**
+    - Extraído para `src/components/relatorios/inteligencia/RelatoriosInteligenciaView.ts` (1.028 linhas): previsões comerciais e pipeline ponderado, performance por canais de aquisição (origens), gamificação (hall da fama, rankings, badges e níveis) e painel preditivo de risco/churn.
+    - Extraído para `src/components/relatorios/shell/RelatoriosShellView.ts` (260 linhas): header com exportação/impressão, barra de filtros globais e sidebar lateral com grupos colapsáveis e modo mini-bar.
+    - Orquestrador principal `Relatorios.ts` desidratado com redução total de **-4.415 linhas** acumuladas (de 5.609 para 1.194 linhas mantendo estritamente funções de orquestração de estado e modais).
+    - Validação: 100% dos 552 testes vitest verdes, tipagem 100% estrita sem erros de TypeScript e build Vite de produção bem-sucedido.
+- **Status Geral da Fase 1:** **100% Concluída ✅**
+- **Risco de Regressão:** Zero (blindado por `relatoriosController.test.ts`, `relatoriosMelhorias.test.ts` e `metasRelatorio.test.ts`).
+
+---
+
+### Fase 2: Decomposição do Dashboard Operacional (`Dashboard.ts` — 4.703 linhas)
+- **Objetivo:** Extrair painéis de controle, kanban de viagens e filtros avançados do Dashboard.
+- **Escopo de Decomposição:**
+  - Extrair o painel de filtros superiores para `src/components/dashboard/DashboardFilterBar.ts`.
+  - Isolar a tabela operacional de viagens e kanban em `src/components/dashboard/ViagensTable.ts` e `ViagensKanban.ts`.
+  - Desacoplar totalmente a injeção do `EditTravelModal.ts` e `RiskDiagnosisDrawer.ts`.
+- **Meta:** Reduzir `Dashboard.ts` para **< 600 linhas**.
+- **Risco de Regressão:** Médio (coberto por `dashboardController.test.ts`, `dashboard_filtros_avancados.test.ts` e `viagensController.test.ts`).
+
+---
+
+### Fase 3: Desacoplamento de Orçamentos e Balcão (`Orcamentos.ts` — 3.701 linhas)
+- **Objetivo:** Separar as visões de Funil de Vendas (Kanban/Lista), Modal de Novo Lead e Modal de Balcão.
+- **Escopo de Decomposição:**
+  - Extrair cards e colunas do Kanban de Orçamentos para `src/components/orcamentos/KanbanBoard.ts`.
+  - Isolar o formulário rápido de atendimento balcão em `src/components/orcamentos/BalcaoQuickModal.ts`.
+  - Mover operações de mutação de leads para `orcamentosController.ts` e `orcamentosService.ts`.
+- **Meta:** Reduzir `Orcamentos.ts` para **< 500 linhas**.
+- **Risco de Regressão:** Baixo (coberto por `orcamentosController.test.ts` e `orcamentosService.test.ts`).
+
+---
+
+### Fase 4: Modularização de Cadastros e Configurações (`Cadastros.ts` e `Configuracoes.ts`)
+- **Objetivo:** Dividir os múltiplos formulários de tabelas auxiliares em abas isoladas.
+- **Escopo de Decomposição:**
+  - `Cadastros.ts` (3.254 linhas): Dividir em `ClientesTab.ts`, `FornecedoresTab.ts`, `ProdutosTab.ts` e `FormasRecebimentoTab.ts`.
+  - `Configuracoes.ts` (2.670 linhas): Isolar abas de `AgenciaSettings.ts`, `EquipeSettings.ts`, `SlaSettings.ts` e `RiskScoreSettings.ts`.
+- **Meta:** Reduzir cada arquivo de entrada para **< 400 linhas**.
+- **Risco de Regressão:** Baixo (coberto por `cadastrosController.test.ts`).
+
+---
+
+### Fase 5: Isolamento do PaxFlow Studio & Propostas Editoriais (`StudioPage.ts` — 2.291 linhas)
+- **Objetivo:** Desacoplar a interface visual do Studio dos motores de IA e geradores de templates.
+- **Escopo de Decomposição:**
+  - Extrair o extrator e parser de roteiro em `src/components/studio/StudioPromptEditor.ts`.
+  - Isolar a pré-visualização da proposta editorial em `src/components/studio/StudioProposalPreview.ts`.
+  - Eliminar o import direto de `supabase` em `StudioPage.ts`, utilizando exclusivamente `studioPropostasService.ts` e `studioExtractionService.ts`.
+- **Meta:** Reduzir `StudioPage.ts` para **< 400 linhas**.
+- **Risco de Regressão:** Médio (coberto por `studioPropostasService.test.ts` e `studioUiExperiencia.test.ts`).
+
+---
+
+### Fase 6: Erradicação Completa de Imports do Supabase em Páginas
+- **Objetivo:** Cumprir o princípio arquitetural inviolável nº 1: **Zero chamadas Supabase diretas em `src/pages/`**.
+- **Escopo de Execução:**
+  - Auditar as 14 páginas que ainda realizam queries inline.
+  - Redirecionar todas as consultas para a camada de Serviços correspondente (`inboxService.ts`, `viagensController.ts`, `clienteSearchService.ts`, `reembolsosService.ts`, etc.).
+  - Padronizar tratamento de erros de rede via `errorTranslator.ts`.
+- **Meta:** 0 ocorrências de `import { supabase } from '../services/supabase'` em `src/pages/`.
+- **Risco de Regressão:** Baixo.
+
+---
+
+### Fase 7: Alinhamento Nativo com Multi-Tenant (`AgencyContext`)
+- **Objetivo:** Conectar a camada de serviços e controllers ao contexto de agência reativo.
+- **Escopo de Execução:**
+  - Integrar `AgencyContext.ts` nos 35 serviços de `src/services/`.
+  - Garantir injeção transparente de `agencia_id` nas consultas e mutações.
+  - Implementar testes subcutâneos simulando isolamento entre diferentes agências.
+- **Meta:** Compatibilidade total com o modelo de dados de [`MultiTenant_Plano.md`](file:///home/curupaco/Projetos/PaxFlow/docs/MultiTenant_Plano.md).
+- **Risco de Regressão:** Médio (validação com testes negativos de acesso).
+
+---
+
+### Fase 8: Governança Contínua & Barreiras Anti-Regressão
+- **Objetivo:** Estabelecer regras automáticas no repositório para evitar que novos arquivos monolíticos surjam.
+- **Entregáveis:**
+  - Script de verificação de limites no pré-build: alertar ou falhar se qualquer componente ultrapassar 800 linhas.
+  - Regra de linter impedindo imports de `supabase` fora de `src/services/`.
+  - Checklist obrigatório de PR/commit vinculado ao `AGENTS.md`.
+
+---
+
+## 6. Matriz de Priorização & Roadmap de Execução
+
+```
+Impacto na Manutenibilidade
+  ▲
+  │   [Fase 1: Relatórios]   [Fase 2: Dashboard]
+  │        (5.609 linhas)         (4.703 linhas)
+  │
+  │   [Fase 3: Orçamentos]   [Fase 4: Cadastros]
+  │        (3.701 linhas)         (3.254 linhas)
+  │
+  │   [Fase 5: Studio]       [Fase 6: Zero Supabase em Pages]
+  │        (2.291 linhas)         (14 páginas)
+  │
+  │   [Fase 7: Multi-Tenant] [Fase 8: Barreiras Anti-Regressão]
+  └─────────────────────────────────────────────────────────────► Esforço / Complexidade
 ```
 
 ---
 
-## 5. Estrutura de Diretórios Recomendada
+## 7. Como Executar Cada Fase com o Assistente
 
-```text
-src/
-├── styles/
-│   ├── globals.css          # Reset e regras globais
-│   ├── variables.css        # Cores, fontes e espaçamentos
-│   └── utilities.css        # Classes utilitárias compartilhadas
-├── core/
-│   ├── context/
-│   │   └── AgencyContext.ts # Contexto reativo de agência (Multi-Tenant)
-│   └── router.ts            # Navegação e resolução de rotas
-├── types/
-│   ├── inbox.ts             # Tipos de dados e DTOs da caixa de entrada
-│   ├── orcamentos.ts        # Tipos para orçamentos e leads
-│   └── common.ts            # Tipos transversais (Result, Error, Pagination)
-├── services/
-│   ├── inbox/
-│   │   ├── inboxQueries.ts  # Consultas de leitura (Leitura)
-│   │   └── inboxCommands.ts # Operações de alteração (Escrita)
-│   ├── inboxService.ts      # Fachada consolidada do Inbox
-│   ├── orcamentosService.ts # Serviços de orçamentos e funil
-│   └── clientesService.ts   # Serviços de gestão de clientes
-├── components/
-│   └── inbox/
-│       ├── EmailReaderModal.ts
-│       ├── email-reader.css
-│       ├── CalendarGrid.ts
-│       └── calendar-grid.css
-├── pages/
-│   └── inbox/
-│       ├── Inbox.ts         # Orquestrador visual da página
-│       └── inbox.css        # Estilos específicos da página Inbox
-└── utils/
-    └── formatters.ts        # Formatadores puros de data/moeda
-```
+Para iniciar a execução de qualquer fase:
 
----
-
-## 6. Cronograma de Execução em Fases
-
-Para garantir baixo consumo de tokens e estabilidade no ambiente de desenvolvimento, cada fase deve ser executada de forma independente, finalizando em um estado compilável e com teste de regressão.
-
-### Fase 0: Baseline & Mapeamento de Dependências
-
-- **Objetivo:** Catalogar a estrutura existente antes de realizar qualquer alteração de código.
-- **Escopo:** Mapear tamanho dos arquivos, lista de imports, chamadas diretas ao Supabase, listeners registrados e dependências circulares.
-- **Risco de Regressão:** Nulo.
-- **Definition of Done (DoD):**
-  - [ ] Inventário de arquivos monolíticos documentado.
-  - [ ] Mapeamento das queries Supabase ativas em cada página.
-
-### Fase 1: Extração de Estilos (CSS Modular por Responsabilidade)
-
-- **Objetivo:** Mover os blocos de CSS estático embutido em string para arquivos `.css` dedicados, organizados na hierarquia `styles/`, `pages/` e `components/`.
-- **Escopo:** `main.ts`, `Inbox.ts`, `Orcamentos.ts`, `Clientes.ts`.
-- **Risco de Regressão:** Baixo (preservar especificidade e ordem de carregamento sem refatorar seletores).
-- **Definition of Done (DoD):**
-  - [ ] Zero blocos `<style>` em template literals nas páginas.
-  - [ ] Arquivos `.css` criados e importados via ES Modules (`import './inbox.css'`).
-  - [ ] Layout visual e responsividade mantidos idênticos ao original.
-
-### Fase 2: Service Layer do Inbox & Alinhamento com AgencyContext
-
-- **Objetivo:** Criar `src/services/inboxService.ts` e isolar consultas de alertas, lembretes manuais, SLAs e menções.
-- **Escopo:** Separar a camada em Queries (leitura) e Commands (escrita), integrando a passagem de `agencia_id`.
-- **Risco de Regressão:** Baixo.
-- **Definition of Done (DoD):**
-  - [ ] `Inbox.ts` não possui nenhum import de `@supabase/supabase-js`.
-  - [ ] Todas as chamadas de banco do Inbox utilizam `inboxService.ts`.
-  - [ ] Tipos explicitamente declarados em `src/types/inbox.ts`.
-  - [ ] Integração com `AgencyContext` preservada.
-
-### Fase 3: Service Layer de Orçamentos e Clientes
-
-- **Objetivo:** Criar `orcamentosService.ts` e `clientesService.ts` para isolar buscas de leads, mudanças de status e atribuição de consultores.
-- **Escopo:** Refatoração de `Orcamentos.ts` e `Clientes.ts`.
-- **Risco de Regressão:** Baixo.
-- **Definition of Done (DoD):**
-  - [ ] `Orcamentos.ts` e `Clientes.ts` desvinculados do cliente Supabase.
-  - [ ] Tratamento de exceções e erros de rede padronizados.
-
-### Fase 4: Componentização Funcional & Lifecycle de Modais
-
-- **Objetivo:** Extrair modais e blocos visuais extensos (`EmailReaderModal.ts`, `VerNotasModal.ts`, `CalendarGrid.ts`) para `src/components/`.
-- **Escopo:** Implementar contratos claros de entrada (Props), saída (Events) e ciclo de vida (`mount()` / `unmount()`).
-- **Risco de Regressão:** Médio.
-- **Definition of Done (DoD):**
-  - [ ] Modais extraídos em módulos isolados em `src/components/`.
-  - [ ] Componentes sem acessos diretos ao Supabase.
-  - [ ] Event listeners desanexados no encerramento (`unmount`).
-
-### Fase 5: Application Shell & Bootstrapping
-
-- **Objetivo:** Reduzir `main.ts` a um ponto de entrada (bootstrap) enxuto e estruturado.
-- **Escopo:** Separar o roteamento (`router.ts`), fluxo de autenticação (`auth/`) e o modal global "Meu Perfil".
-- **Risco de Regressão:** Médio.
-- **Definition of Done (DoD):**
-  - [ ] `main.ts` reduzido para < 100 linhas com responsabilidade exclusiva de bootstrapping.
-  - [ ] Fluxo de autenticação isolado em módulo próprio.
-
-### Fase 6: Camada de Estado & Controllers (Por Domínio)
-
-- **Objetivo:** Separar as regras de interação e estado reativo da rendering engine da página.
-- **Escopo:** Introduzir controllers leves (ex: `InboxController.ts`) para controlar filtros, ordenação e itens selecionados.
-- **Risco de Regressão:** Médio.
-- **Definition of Done (DoD):**
-  - [ ] Separação clara entre orquestração de DOM (`InboxPage`) e gerenciamento de estado (`InboxController`).
-
-### Fase 7: Padronização Transversal & Limpeza Estrutural
-
-- **Objetivo:** Padronizar estados visuais de feedback (`loading`, `empty`, `error`) e eliminar código legado.
-- **Risco de Regressão:** Baixo.
-- **Definition of Done (DoD):**
-  - [ ] Padrão de componentes feedback reutilizável em todas as páginas refatoradas.
-  - [ ] Código morto e temporário removido.
-
-### Fase 8: Validação Arquitetural & Anti-Regressão
-
-- **Objetivo:** Garantir a sustentabilidade da arquitetura e evitar o surgimento de novos "God Files".
-- **Definition of Done (DoD):**
-  - [ ] Verificação: Nenhuma página em `src/pages/` importa diretamente o Supabase.
-  - [ ] Nenhuma classe/arquivo ultrapassa os limites recomendados de responsabilidade.
-  - [ ] Ausência de dependências circulares entre componentes e serviços.
-
----
-
-## 7. Workflow de Execução das Fases
-
-Para executar qualquer uma das fases acima com o assistente Antigravity:
-
-1. Informe a **Fase** pretendida (ex: *"Executar a Fase 2 do refactoring_plan.md"*).
-2. O assistente iniciará pelo mapeamento da fase, efetuará as alterações com compilação e validação estática do TypeScript, concluindo com a validação visual/funcional.
+1. Solicite explicitamente:  
+   *Exemplo:* `"Antigravity, vamos executar a Fase 1 do refactoring_plan.md (Modularização do Relatorios.ts)"`.
+2. O assistente seguirá o protocolo obrigatório:
+   * **Mapeamento & Sub-componentes:** Criação dos módulos isolados em `src/components/`.
+   * **Execução dos Testes Subcutâneos:** Validação imediata com `npx vitest run`.
+   * **Verificação de Compilação:** Validação do bundle final com `npm run build`.
+   * **Sincronização da Documentação:** Atualização contínua do `documentation.md` e do `ajuda.ts`.
