@@ -1034,7 +1034,7 @@ Com o objetivo de eliminar assimetrias, alturas discrepantes e o desalinhamento 
 
 ### 3.38 Painel de Filtros Avançados Combináveis, Resumo Financeiro & Exportação CSV de Viagens
 
-Para atender operações de agências de alto volume e demandas complexas de cruzamento operacional e contábil, a tela de Viagens (`Dashboard.ts`) conta com um sistema de **Filtros Avançados Combináveis Reativos** integrado a um painel de métricas financeiras e exportação para planilhas:
+Para atender operações de agências de alto volume e demandas complexas de cruzamento operacional e contábil, a tela de Viagens conta com um componente especialista e desacoplado — `DashboardFilterBar.ts` (`src/components/dashboard/DashboardFilterBar.ts`), integrado ao `Dashboard.ts` por meio de contratos formais de estado (`DashboardFilterState`), contexto de renderização (`DashboardFilterContext`) e despachante de eventos (`DashboardFilterBarHandlers`), mantendo a reatividade instantânea, métricas financeiras consolidadas e exportação para planilhas:
 
 1. **Botão e Painel Expansível `🎛️ Avançado (N)`**:
    - Substitui o filtro simples de data por um botão dinâmico com badge indicativo da quantidade de critérios ativos em tempo real.
@@ -1079,7 +1079,62 @@ Para atender operações de agências de alto volume e demandas complexas de cru
    - Gera arquivo `.csv` codificado em UTF-8 com BOM (`\uFEFF`) e delimitador `;` (ponto e vírgula).
    - Formatação monetária com vírgula decimal brasileira (`R$ 2.500,00` -> `2500,00`) e datas `DD/MM/AAAA`.
 
-### 3.39 Melhorias Estratégicas em Relatórios e Central de Lembretes
+### 3.39 Tabela Operacional Desktop, Cards Mobile & Gestos Swipe (ViagensTableView.ts)
+
+A listagem operacional de viagens conta com o componente especialista `ViagensTableView.ts` (`src/components/dashboard/ViagensTableView.ts`), responsável por comutar dinamicamente entre visualização desktop (tabela densa) e visualização mobile (cards táteis):
+
+1. **Tabela Densa Desktop com Cabeçalhos Ordenáveis**:
+   - Cabeçalhos interativos com indicadores visuais de ordenação (`▲`, `▼`, `⇅`) para colunas como `SLA`, `Cliente`, `Destino / Produtos`, `Data Fin.`, `Financeiro`, `Consultor` e `Fase / Status`.
+   - Badges operacionais integrados: PaxFlow Risk Score™ com acesso direto ao diagnóstico (`RiskDiagnosisDrawer`), status de pagamento quitado (`✔️ PAGO`), cotas proporcionais de parceria (`🤝 Parceria`), e tags de processos de reembolso pendente.
+   - Dropdown inline de alteração rápida de status com validação prévia de conformidade (data financeiro, reconciliação de produtos e saldo zerado) e travas automáticas para o fluxo de reembolso.
+   - Coluna de Ações padronizada com largura travada: Botões `🔍 Ver Detalhes`, `WhatsApp` e `📋 Copiar NPS` (ativo em pós-viagem).
+
+2. **Cards Mobile Responsivos & Gestos de Deslizar (Swipe Actions)**:
+   - Apresentação em cards compactos com borda colorida indicativa do SLA operacional (verde, amarelo ou vermelho pulsante).
+   - Informações financeiras consolidadas (Valor da Venda, Rentabilidade e cota de parceria).
+   - Suporte nativo a gestos táteis de deslizar:
+     - **Deslizar para a direita (> 90px)**: Dispara instantaneamente a mensagem de WhatsApp com o cliente.
+     - **Deslizar para a esquerda (< -90px)**: Abre a gaveta/modal de edição e produtos da viagem.
+   - Botão de compartilhamento nativo de itinerário (`navigator.share`) com fallback automático para cópia de link na área de transferência.
+
+### 3.40 Transições de Status, Criação de Viagem & Modo Co-Piloto Balcão (NovaViagemModal, ViagensTransicaoManager, BalcaoCopilotoSection)
+
+No processo de desacoplamento e robustez da tela operacional de Viagens (`Dashboard.ts`), o núcleo de regras de negócio, modais e atendimento conjunto foi fatiado em componentes especialistas isolados:
+
+1. **Modal de Criação de Viagem (`NovaViagemModal.ts`)**:
+   - Componente localizado em `src/components/dashboard/NovaViagemModal.ts`.
+   - Gerencia a abertura e o ciclo de vida completo do formulário modal para emissão de novas viagens, com busca e autocomplete inteligente de destinos cadastrados (`destinos`), validação de intervalo temporal de datas de ida e volta, cálculo de margem estimada e persistência direta no Supabase com resiliência a campos opcionais.
+
+2. **Gerenciador de Transições e Regras de Negócio de Viagens (`ViagensTransicaoManager.ts`)**:
+   - Componente localizado em `src/components/dashboard/ViagensTransicaoManager.ts`.
+   - Implementa a máquina de estados rigorosa de conformidade:
+     - **Trava de Fechamento**: Impede a passagem manual ou direta de 'Fechado' para 'Pós-Venda' ou 'Em Viagem' sem cumprimento dos critérios de embarque.
+     - **Obrigatoriedade de Data Financeiro**: Exige a definição de data de competência financeira para viagens com produtos ativos antes da conclusão.
+     - **Reconciliação e Recálculo Automático**: Detecta divergências entre a somatória dos produtos vinculados e o valor total cadastrado no cabeçalho da viagem, solicitando confirmação de ajuste automático antes de avançar o status.
+     - **Delegação para Fluxo de Reembolso**: Ao acionar cancelamento ou estorno, orquestra a chamada de `SolicitarReembolsoModal` preservando a integridade da solicitação no banco de dados.
+
+3. **Modo Co-Piloto & Pesquisa Multicritério de Balcão (`BalcaoCopilotoSection.ts`)**:
+   - Componente localizado em `src/components/dashboard/BalcaoCopilotoSection.ts`.
+   - Renderiza a faixa superior moderna e responsiva do Modo Co-Piloto quando a busca rápida textual detecta correspondências de clientes de outros consultores.
+   - Apresenta cartões dedicados com dados do cliente (CPF, telefone, e-mail) e itinerários em andamento, permitindo que qualquer consultor presente na agência atenda presencialmente passageiros com 1-clique (`Atender 🤝`), abrindo o modal de edição e produtos de forma colaborativa e auditada.
+
+4. **Motor de Filtragem Pura, SLAs e Totais Financeiros (`DashboardFilterEngine.ts`)**:
+   - Componente localizado em `src/components/dashboard/DashboardFilterEngine.ts`.
+   - Isola o motor de execução matemática e predicados lógicos em memória:
+     - Regras de SLAs temporais dinâmicos (Pré-Embarque, Pós-Viagem e Reembolsos em Aberto);
+     - Apuração proporcional de receitas de splits e parcerias entre consultores;
+     - Filtragem combinatória multicritério com suporte a operadores booleanos `E` / `OU` sobre produtos, tags, formas de recebimento, origens e faixas de valores;
+     - Ordenação multi-coluna estável e contagem de dossiês por fase operacional.
+
+5. **Gerenciador de Estado Reativo de Filtros (`DashboardFilterStateManager.ts`)**:
+   - Componente localizado em `src/components/dashboard/DashboardFilterStateManager.ts`.
+   - Gerencia de maneira centralizada os mais de 35 parâmetros operacionais e avançados de busca, provendo métodos puros para alteração, remoção por chip (`removeSingleFilter`), reset global (`resetAllFilters`) e geração contratual do contexto visual (`getContext`) e dos ouvintes de evento (`createHandlers`).
+
+6. **Exportador Especialista CSV para Excel Brasil (`DashboardExportManager.ts`)**:
+   - Componente localizado em `src/components/dashboard/DashboardExportManager.ts`.
+   - Gera relatórios analíticos em formato `.csv` compatível nativamente com o Microsoft Excel e LibreOffice Calc no padrão brasileiro (delimitador `;`, formatação monetária `R$ 0,00` e cabeçalho `\uFEFF` UTF-8 BOM).
+
+### 3.41 Melhorias Estratégicas em Relatórios e Central de Lembretes
 
 Para aprofundar o controle gerencial, a governança de auditoria e a agilidade nas rotinas de follow-up, o PaxFlow implementou uma série de melhorias fundamentais nas visões analíticas de Relatórios (`Relatorios.ts`) e no gerenciamento de Lembretes do Mission Control:
 
@@ -1111,7 +1166,7 @@ Para aprofundar o controle gerencial, a governança de auditoria e a agilidade n
    - Adição de campo de texto dedicado (`descricao`) na criação e agendamento de lembretes, permitindo detalhar claramente o objetivo da tarefa (ex: "Conferir marcação de assentos e voucher").
    - Resolução matemática precisa do nome do cliente titular vinculado ao orçamento ou viagem, eliminando de forma definitiva nomenclaturas genéricas (como "CLIENTE VIAGEM").
 
-### 3.40 Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos
+### 3.42 Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos
 
 Para apoiar a retenção comercial, auditoria de perdas e recuperação de leads desengajados, o PaxFlow implementou uma arquitetura completa de governança para propostas finalizadas com sub-status **Desistência**:
 

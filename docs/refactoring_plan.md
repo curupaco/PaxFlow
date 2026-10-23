@@ -152,21 +152,30 @@ Para garantir estabilidade, zero tempo de indisponibilidade e economia de tokens
   - Criada suíte subcutânea em `tests/subcutaneous/dashboard_regras_criticas.test.ts` (12 testes novos, 100% verdes).
   - Cobertura de regras críticas congelada: transições de status com sincronização de produtos, bloqueio de cancelamento com pendências financeiras, SLAs temporais de pré-embarque e pós-viagem, e apuração proporcional de comissões/splits.
 - **Estratégia de Execução em 4 Subpacotes Cirúrgicos (Risco Blindado / Mínimo):**
-  - **Pacote 2.1: Barra de Filtros, Resumo Financeiro & Chips (`DashboardFilterBar.ts`)** ⏳ **PRÓXIMO PASSO**
-    - Extrair a barra de filtros superiores (`h-[42px]`), busca global, atalhos de status, seletor de consultor/equipe, chips de filtros ativos e faixa de resumo financeiro consolidado do topo.
-    - Componente: `src/components/dashboard/DashboardFilterBar.ts`.
-    - Meta: Reduzir ~1.000 linhas de `Dashboard.ts`.
-  - **Pacote 2.2: Tabela Operacional Desktop & Cards Mobile (`ViagensTableView.ts`)**
-    - Extrair a renderização densa da tabela de viagens (cabeçalhos com ordenação, badges de validação financeira/processo, status de pagamento, popover de ações) e visualização responsiva de cards mobile com gestos swipe.
-    - Componente: `src/components/dashboard/ViagensTableView.ts`.
-    - Meta: Reduzir ~1.500 linhas de `Dashboard.ts`.
-  - **Pacote 2.3: Kanban Operacional & Drag-and-Drop (`ViagensKanbanView.ts`)**
-    - Extrair colunas dinâmicas do Kanban, cards arrastáveis, integração com `Sortable.js`, feedback tátil/visual e modal de confirmação de avanço de fase.
-    - Componente: `src/components/dashboard/ViagensKanbanView.ts`.
-    - Meta: Reduzir ~1.200 linhas de `Dashboard.ts`.
-  - **Pacote 2.4: Orquestrador Enxuto do Dashboard (`Dashboard.ts`)**
-    - Injeção de dependências via contrato estrito `DashboardContext`, ciclo de vida limpo, realtime e gerenciamento de atalhos de teclado.
-    - Meta: Reduzir `Dashboard.ts` de **4.704 para < 600 linhas** (-4.100 linhas acumuladas).
+  - **Pacote 2.1: Barra de Filtros, Resumo Financeiro & Chips (`DashboardFilterBar.ts`)** ✅ **CONCLUÍDO**
+    - Extraída a barra de filtros superiores (`h-[42px]`), painel avançado colapsável, atalhos de status, seletor de consultor/equipe, popover de conferência com pills, chips de filtros ativos e faixa de resumo financeiro consolidado do topo com exportação CSV.
+    - Componente: `src/components/dashboard/DashboardFilterBar.ts` (1.341 linhas).
+    - Resultado: `Dashboard.ts` reduzido de **4.704 para 3.586 linhas** (-1.118 linhas eliminadas). 100% dos 564 testes verdes e build de produção aprovado.
+  - **Pacote 2.2: Tabela Operacional Desktop & Cards Mobile (`ViagensTableView.ts`)** ✅ **CONCLUÍDO**
+    - Extraída a renderização densa da tabela de viagens (cabeçalhos ordenáveis com indicadores `▲`/`▼`/`⇅`, badges de validação financeira/processo, status de pagamento `✔️ PAGO`, split/parceria de consultor, SLA, Risk Score e popover de ações) e visualização de cards mobile com suporte a gestos de swipe lateral e ações rápidas.
+    - Componente: `src/components/dashboard/ViagensTableView.ts` (678 linhas).
+    - Handlers centralizados: ordenação, abertura de detalhes, WhatsApp modal, cópia de link NPS, exclusão e alteração inline de status com travas de transição.
+    - Resultado: `Dashboard.ts` reduzido de **3.586 para 3.031 linhas** (-555 linhas eliminadas neste pacote, total de **-1.673 linhas** acumuladas no Dashboard!). 100% dos 564 testes verdes e build Vite aprovado com código 0.
+  - **Pacote 2.3: Transições de Status, Criação de Viagem & Modo Balcão (`NovaViagemModal.ts`, `ViagensTransicaoManager.ts`, `BalcaoCopilotoSection.ts`)** ✅ **CONCLUÍDO**
+    - Purgados resíduos legados de `sortablejs`, `setupDragAndDrop` e classes CSS órfãs do antigo Kanban.
+    - Extraído o modal de criação de viagem para `src/components/dashboard/NovaViagemModal.ts` (336 linhas) com autocomplete de destino, validações de data e criação resiliente.
+    - Extraída a máquina de transições de status e regras financeiras/reembolso para `src/components/dashboard/ViagensTransicaoManager.ts` (147 linhas) com confirmações de recálculo de valor e abertura de reembolso.
+    - Extraída a renderização e manipulação do Modo Co-Piloto (Pesquisa de Balcão e atendimento presencial de outros consultores) para `src/components/dashboard/BalcaoCopilotoSection.ts` (147 linhas).
+    - Resultado: `Dashboard.ts` reduzido de **3.031 para 2.532 linhas** (-499 linhas neste pacote, total de **-2.172 linhas** eliminadas acumuladas no Dashboard!). 100% dos 564 testes verdes e build Vite aprovado com código 0.
+  - **Pacote 2.4: Orquestrador Enxuto do Dashboard (`Dashboard.ts`)** ✅ **CONCLUÍDO**
+    - Extraído o motor de cálculo e filtragem pura para `src/components/dashboard/DashboardFilterEngine.ts` (547 linhas) cobrindo regras de SLA, splits, múltiplos produtos, conferência, competência e ordenação.
+    - Extraído o gerenciador de estado dos 35+ critérios de filtro para `src/components/dashboard/DashboardFilterStateManager.ts` (366 linhas) com reatividade e mutações limpas.
+    - Extraído o exportador CSV para `src/components/dashboard/DashboardExportManager.ts` (112 linhas) com codificação UTF-8 e compatibilidade nativa com Excel Brasil.
+    - `Dashboard.ts` transformado no orquestrador limpo de ciclo de vida, realtime e montagem de componentes.
+    - Resultado: `Dashboard.ts` reduzido de **2.532 para 1.122 linhas** (-1.410 linhas eliminadas neste pacote, total de **-3.582 linhas** eliminadas acumuladas no Dashboard!). 100% dos 564 testes verdes e build Vite aprovado com código 0.
+- **Conclusão da Fase 2:** ✅ **FASE 2 CONCLUÍDA COM SUCESSO**
+  - O antigo monólito de **4.704 linhas** foi fracionado em 7 componentes especialistas coesos (`DashboardFilterBar`, `ViagensTableView`, `NovaViagemModal`, `ViagensTransicaoManager`, `BalcaoCopilotoSection`, `DashboardFilterEngine`, `DashboardFilterStateManager`, `DashboardExportManager`).
+  - Cobertura de 564 testes automatizados 100% verde sem quebra de contrato.
 - **Risco de Regressão:** **Mínimo / Blindado** (protegido por 564 testes automatizados em `dashboard_regras_criticas.test.ts`, `dashboard_filtros_avancados.test.ts`, `dashboardController.test.ts` e `viagensController.test.ts`).
 
 ---
