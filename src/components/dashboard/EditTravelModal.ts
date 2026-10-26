@@ -1195,6 +1195,9 @@ export class EditTravelModal {
       setActiveTab('reembolsos');
     });
 
+    // Configura os ouvintes de eventos da Aba de Reembolsos
+    this.setupReembolsosTabListeners(v);
+
     // Toggle do Formulário de Novo Produto na aba de Produtos
     const btnToggleNovoProd = document.getElementById('btn-toggle-novo-produto');
     const formNovoProdWrapper = document.getElementById('novo-produto-form-wrapper');
@@ -3233,57 +3236,14 @@ export class EditTravelModal {
       }
     }
 
-    // Ações de Solicitação de Reembolso
-    const abrirNovoReembolsoModal = (produtoId?: string) => {
-      SolicitarReembolsoModal.abrir({
-        viagemId: this.tripId,
-        viagemDescricao: `${this.currentLoadedViagem?.destino || 'Viagem'} • ${this.currentLoadedViagem?.cliente?.nome || ''}`,
-        produtos: produtos,
-        produtoPreselecionadoId: produtoId,
-        user: this.options.user,
-        showToast: (msg, type, err) => this.options.showToast(msg, type, err),
-        onSucesso: async () => {
-          await this.open(this.tripId, 'reembolsos');
-          await this.options.onUpdate();
-        }
-      });
-    };
-
+    // Ações de Solicitação de Reembolso no menu dropdown do produto
     container.querySelectorAll('[data-refund-prod-id]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const prodId = btn.getAttribute('data-refund-prod-id');
         if (prodId) {
-          abrirNovoReembolsoModal(prodId);
+          this.abrirNovoReembolsoModal(this.currentLoadedViagem, prodId);
         }
-      });
-    });
-
-    document.getElementById('btn-novo-reembolso-tab')?.addEventListener('click', () => abrirNovoReembolsoModal());
-    document.getElementById('btn-novo-reembolso-empty')?.addEventListener('click', () => abrirNovoReembolsoModal());
-
-    // Edição de Tratativas e Valores do Reembolso dentro da aba da viagem
-    container.querySelectorAll('[data-action-edit-reembolso]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const reembolsoId = btn.getAttribute('data-action-edit-reembolso');
-        if (!reembolsoId) return;
-
-        const viagemAtual = this.currentLoadedViagem || this.options.viagens.find(x => x.id === this.tripId);
-        const reembolsoObj = (viagemAtual?.reembolsos || []).find((r: any) => r.id === reembolsoId);
-        if (!reembolsoObj) return;
-
-        EditarReembolsoModal.abrir({
-          reembolso: {
-            ...reembolsoObj,
-            viagem: viagemAtual
-          },
-          showToast: (msg, type, err) => this.options.showToast(msg, type, err),
-          onSucesso: async () => {
-            await this.open(this.tripId, 'reembolsos');
-            await this.options.onUpdate();
-          }
-        });
       });
     });
 
@@ -3528,6 +3488,63 @@ export class EditTravelModal {
           console.error('Erro ao copiar LOC:', err);
           this.options.showToast('Erro ao copiar localizador.', 'error');
         }
+      });
+    });
+  }
+
+  /**
+   * Abre o modal de nova solicitação de reembolso
+   */
+  private abrirNovoReembolsoModal(v?: any, produtoId?: string): void {
+    const viagemAtual = this.currentLoadedViagem || v || this.options.viagens.find(x => x.id === this.tripId);
+    SolicitarReembolsoModal.abrir({
+      viagemId: this.tripId,
+      viagemDescricao: `${viagemAtual?.destino || 'Viagem'} • ${viagemAtual?.cliente?.nome || ''}`,
+      produtos: viagemAtual?.produtos || [],
+      produtoPreselecionadoId: produtoId,
+      user: this.options.user,
+      showToast: (msg, type, err) => this.options.showToast(msg, type, err),
+      onSucesso: async () => {
+        await this.open(this.tripId, 'reembolsos');
+        await this.options.onUpdate();
+      }
+    });
+  }
+
+  /**
+   * Configura os ouvintes de eventos da Aba de Reembolsos da viagem
+   */
+  private setupReembolsosTabListeners(v: any): void {
+    const tabReembolsos = document.getElementById('tab-reembolsos-content');
+    if (!tabReembolsos) return;
+
+    // Botões de Nova Solicitação na aba de reembolsos
+    tabReembolsos.querySelectorAll('#btn-novo-reembolso-tab, #btn-novo-reembolso-empty').forEach(btn => {
+      btn.addEventListener('click', () => this.abrirNovoReembolsoModal(v));
+    });
+
+    // Edição de Tratativas e Valores do Reembolso dentro da aba da viagem
+    tabReembolsos.querySelectorAll('[data-action-edit-reembolso]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const reembolsoId = btn.getAttribute('data-action-edit-reembolso');
+        if (!reembolsoId) return;
+
+        const viagemAtual = this.currentLoadedViagem || v || this.options.viagens.find(x => x.id === this.tripId);
+        const reembolsoObj = (viagemAtual?.reembolsos || []).find((r: any) => r.id === reembolsoId);
+        if (!reembolsoObj) return;
+
+        EditarReembolsoModal.abrir({
+          reembolso: {
+            ...reembolsoObj,
+            viagem: viagemAtual
+          },
+          showToast: (msg, type, err) => this.options.showToast(msg, type, err),
+          onSucesso: async () => {
+            await this.open(this.tripId, 'reembolsos');
+            await this.options.onUpdate();
+          }
+        });
       });
     });
   }
