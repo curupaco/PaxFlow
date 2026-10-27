@@ -817,6 +817,11 @@ Módulo unificado de governança e custódia documental para agências de viagem
 - **Resiliência a Schema Drift (Padrão Zero-Break)**:
   - O serviço `AnexosService` conta com tratamento nativo para erros de colunas inexistentes (`42703`, `PGRST204` ou `PGRST200`), abrangendo as colunas `numero_documento`, `data_validade` e `passageiro_nome`. Caso a coluna ainda não tenha sido criada no Supabase, a gravação é retrocedida para o schema base de forma transparente, mantendo a operação da agência 100% ativa sem toasts vermelhos nem interrupções.
 
+- **Políticas de RLS para Storage (`documentos-clientes`) e Tabela (`documentos_anexos`)**:
+  - Provisionamento das políticas completas de segurança em nível de linha (RLS) para o bucket de storage `documentos-clientes` (`storage.objects`) e para a tabela relacional `public.documentos_anexos`.
+  - Garante operações irrestritas de `SELECT`, `INSERT`, `UPDATE` e `DELETE` para todos os usuários com papel autenticado (`TO authenticated`), prevenindo o erro genérico de *"Acesso negado. Você não tem permissão para realizar esta operação."* durante o envio de comprovantes e documentos por consultores.
+  - No frontend, o `errorTranslator` e o serviço `AnexosService` contam com mensagens contextuais de apoio diagnóstico caso o bucket não tenha sido provisionado com as políticas no ambiente de banco de dados.
+
 - **Persistência Estrita em Tabela Relacional & Higienização de Observações**:
   - Eliminação de fallbacks que gravavam comentários HTML contendo JSON (`<!-- PAXFLOW_ANEXOS:[...] -->`) na coluna `observacoes` da tabela `viagens`.
   - Em caso de falha de persistência no banco (tabela inexistente ou bloqueio de permissão RLS), o sistema não polui campos de anotações humanas e exibe mensagem amigável e clara para o consultor, logando detalhes técnicos no console.

@@ -531,9 +531,9 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'higienizacao-anexos-observacoes',
     modulo: 'clientes',
-    label: '🛡️ Persistência de Anexos e Higienização de Observações',
-    description: 'Como o PaxFlow armazena anexos em tabela dedicada e mantém as observações da viagem 100% limpas de códigos técnicos.',
-    details: 'Para garantir organização visual e integridade de dados operacionais:\n\n1. **Tabela Dedicada (`documentos_anexos`)**: Todos os arquivos enviados (passagens, vouchers, contratos) são registrados em tabela própria no banco de dados e vinculados aos respectivos arquivos no Supabase Storage.\n2. **Fim de Textos Técnicos em Observações**: O campo de observações da viagem é reservado exclusivamente para anotações humanas e operacionais da equipe. Códigos como `<!-- PAXFLOW_ANEXOS:[...] -->` são automaticamente filtrados e higienizados na visualização e no salvamento.\n3. **Migração Transparente**: Quaisquer referências antigas gravadas em observações são convertidas de forma limpa para a tabela oficial de documentos assim que a viagem é consultada.'
+    label: '🛡️ Persistência de Anexos, Armazenamento Seguro e Políticas RLS',
+    description: 'Como o PaxFlow armazena anexos em tabela dedicada, gerencia o Supabase Storage com RLS e mantém as observações 100% limpas.',
+    details: 'Para garantir organização visual, segurança de arquivos e integridade de dados operacionais:\n\n1. **Tabela Dedicada (`documentos_anexos`)**: Todos os arquivos enviados (passagens, vouchers, contratos) são registrados em tabela própria no banco de dados e vinculados aos respectivos arquivos no Supabase Storage (bucket `documentos-clientes`).\n2. **Segurança de Linha (RLS)**: Consultores autenticados possuem permissão completa de envio, visualização e exclusão asseguradas por políticas de RLS no banco de dados e no Supabase Storage.\n3. **Fim de Textos Técnicos em Observações**: O campo de observações da viagem é reservado exclusivamente para anotações humanas e operacionais da equipe. Códigos como `<!-- PAXFLOW_ANEXOS:[...] -->` são automaticamente filtrados e higienizados na visualização e no salvamento.\n4. **Migração Transparente**: Quaisquer referências antigas gravadas em observações são convertidas de forma limpa para a tabela oficial de documentos assim que a viagem é consultada.'
   },
   {
     id: 'identidade-visual-branding',

@@ -506,7 +506,8 @@ export class UploadAnexoModal {
       await this.options.onSuccess();
     } catch (err: any) {
       console.error('[UploadAnexoModal] Erro ao enviar anexos:', err);
-      this.options.showToast(`Falha no upload: ${err.message || 'Erro desconhecido.'}`, 'error');
+      const mensagemErro = err?.message || 'Falha ao enviar anexos. Tente novamente.';
+      this.options.showToast(mensagemErro, 'error');
     } finally {
       this.enviando = false;
       if (statusEl) statusEl.classList.add('hidden');

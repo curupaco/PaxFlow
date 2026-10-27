@@ -69,6 +69,14 @@ export function traduzirErro(erro: any): string {
   if (msgLower.includes('duplicate key value') || msgLower.includes('violates unique constraint')) {
     return 'Já existe um registro com estes mesmos dados cadastrados.';
   }
+  // Mapeamento específico de Storage / RLS de arquivos
+  if (
+    (msgLower.includes('storage') || msgLower.includes('bucket') || msgLower.includes('armazenamento') || msgLower.includes('documentos-clientes') || msgLower.includes('objects')) &&
+    (msgLower.includes('row-level security') || msgLower.includes('permission denied') || msgLower.includes('permissão negada') || msgLower.includes('unauthorized'))
+  ) {
+    return 'Permissão de armazenamento negada. É necessário aplicar as políticas de acesso (RLS) do bucket de documentos no Supabase.';
+  }
+
   if (
     msgLower.includes('permission denied') || 
     msgLower.includes('row-level security') || 

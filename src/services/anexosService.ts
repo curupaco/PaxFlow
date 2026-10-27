@@ -266,6 +266,15 @@ export class AnexosService {
 
     if (uploadErr) {
       console.error('[AnexosService] Erro ao enviar para o Storage:', uploadErr);
+      const msgErr = (uploadErr.message || '').toLowerCase();
+      const isRls =
+        msgErr.includes('row-level security') ||
+        msgErr.includes('permission denied') ||
+        (uploadErr as any).statusCode === '403' ||
+        (uploadErr as any).error === 'Unauthorized';
+      if (isRls) {
+        throw new Error('Falha no armazenamento na nuvem: Permissão negada no bucket de documentos (RLS). As políticas do Supabase Storage precisam ser aplicadas.');
+      }
       throw new Error(`Falha no armazenamento na nuvem: ${uploadErr.message}`);
     }
 

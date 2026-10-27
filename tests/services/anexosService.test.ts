@@ -1003,6 +1003,33 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     const ultimaTentativa = insercoesFeitas[insercoesFeitas.length - 1];
     expect(ultimaTentativa.created_by).toBeUndefined();
   });
+
+  it('deve identificar erro de RLS no Supabase Storage e lançar mensagem orientando a aplicação de políticas', async () => {
+    // Setup
+    const mockFile = new File(['conteudo fake'], 'comprovante.jpg', { type: 'image/jpeg' });
+    const mockStorage = {
+      from: vi.fn().mockReturnValue({
+        upload: vi.fn().mockResolvedValue({
+          data: null,
+          error: {
+            statusCode: '403',
+            message: 'new row violates row-level security policy for table "objects"'
+          }
+        })
+      })
+    };
+    (supabase.storage as any) = mockStorage;
+
+    // Action & Assert
+    await expect(
+      AnexosService.uploadAnexo({
+        file: mockFile,
+        rotulo: 'Comprovante Pix',
+        tipo_documento: 'OUTROS',
+        viagem_id: 'viagem-teste-rls'
+      })
+    ).rejects.toThrow('Permissão negada no bucket de documentos (RLS)');
+  });
 });
 
 

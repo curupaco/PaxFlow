@@ -39,11 +39,14 @@ describe('ErrorTranslator - Testes Subcutâneos', () => {
     const errNotFound = traduzirErro('object not found');
     const errTooLarge = traduzirErro('payload too large');
 
+    const errStorageRls = traduzirErro('new row violates row-level security policy for table "objects" on bucket documentos-clientes');
+
     // Assert
     expect(errNetwork).toBe('Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.');
     expect(errTimeout).toBe('O servidor demorou muito para responder. Tente novamente mais tarde.');
     expect(errNotFound).toBe('O arquivo solicitado não foi encontrado no servidor.');
     expect(errTooLarge).toBe('O tamanho do arquivo excede o limite máximo permitido.');
+    expect(errStorageRls).toBe('Permissão de armazenamento negada. É necessário aplicar as políticas de acesso (RLS) do bucket de documentos no Supabase.');
   });
 
   it('deve retornar mensagem padrão segura se o erro for nulo ou desconhecido', () => {
