@@ -304,6 +304,184 @@ export class FinContasPagarService {
   }
 
   /**
+   * Atualiza uma conta a pagar existente.
+   * Suporta edição avulsa ('apenas_esta') ou em cascata ('esta_e_futuras') para títulos recorrentes ou parcelados.
+   */
+  public static async editarConta(params: {
+    contaId: string;
+    modoCascata?: 'apenas_esta' | 'esta_e_futuras';
+    tipoCustoId?: string;
+    categoriaId?: string;
+    subcategoriaId?: string;
+    contaBancariaId?: string;
+    favorecido?: string;
+    descricao?: string;
+    valorNominal?: number;
+    valorEstimado?: boolean;
+    dataVencimento?: string; // YYYY-MM-DD
+    formaPagamento?: FinFormaPagamento;
+    usuarioId?: string;
+    usuarioNome?: string;
+    categoriaNome?: string;
+  }): Promise<{ sucesso: boolean; afetadas?: number; erro?: string }> {
+    try {
+      // 1. Localiza a conta atual
+      const { data: contaAtual, error: fetchErr } = await supabase
+        .from('fin_contas_pagar')
+        .select('*')
+        .eq('id', params.contaId)
+        .maybeSingle();
+
+      if (fetchErr) {
+        if (fetchErr.code === '42P01' || fetchErr.code === '42703') {
+          return { sucesso: true, afetadas: 1 };
+        }
+        throw fetchErr;
+      }
+
+      if (!contaAtual) {
+        return { sucesso: false, erro: 'Título não localizado no banco de dados' };
+      }
+
+      const modoCascata = params.modoCascata || 'apenas_esta';
+      const ehRecorrenteOuParcelado = Boolean(
+        contaAtual.contrato_recorrente_id || 
+        contaAtual.recorrente || 
+        (contaAtual.parcela_total && contaAtual.parcela_total > 1)
+      );
+
+      const novaDataVenc = params.dataVencimento || contaAtual.data_vencimento;
+      const novoVencOp = this.calcularVencimentoOperacional(
+        novaDataVenc,
+        params.categoriaNome,
+        params.descricao !== undefined ? params.descricao : contaAtual.descricao
+      );
+
+      const camposBaseUpdate: any = {
+        updated_at: new Date().toISOString()
+      };
+      if (params.tipoCustoId) camposBaseUpdate.tipo_custo_id = params.tipoCustoId;
+      if (params.categoriaId) camposBaseUpdate.categoria_id = params.categoriaId;
+      if (params.subcategoriaId !== undefined) camposBaseUpdate.subcategoria_id = params.subcategoriaId || null;
+      if (params.contaBancariaId !== undefined) camposBaseUpdate.conta_bancaria_id = params.contaBancariaId || null;
+      if (params.favorecido !== undefined) camposBaseUpdate.favorecido = params.favorecido.trim();
+      if (params.valorNominal !== undefined) camposBaseUpdate.valor_nominal = params.valorNominal;
+      if (params.valorEstimado !== undefined) camposBaseUpdate.valor_estimado = params.valorEstimado;
+      if (params.formaPagamento) camposBaseUpdate.forma_pagamento = params.formaPagamento;
+
+      // Se for apenas esta conta ou não for recorrente:
+      if (modoCascata === 'apenas_esta' || !ehRecorrenteOuParcelado) {
+        if (params.descricao !== undefined) camposBaseUpdate.descricao = params.descricao.trim() || null;
+        if (params.dataVencimento) {
+          camposBaseUpdate.data_vencimento = novaDataVenc;
+          camposBaseUpdate.data_vencimento_operacional = novoVencOp;
+        }
+
+        const { error: updErr } = await supabase
+          .from('fin_contas_pagar')
+          .update(camposBaseUpdate)
+          .eq('id', params.contaId);
+
+        if (updErr) throw updErr;
+
+        await this.registrarAuditoria({
+          contaId: params.contaId,
+          usuarioId: params.usuarioId || 'sistema',
+          usuarioNome: params.usuarioNome,
+          acao: 'edicao',
+          detalhes: {
+            modo: 'apenas_esta',
+            alteracoes: camposBaseUpdate
+          }
+        });
+
+        return { sucesso: true, afetadas: 1 };
+      }
+
+      // Edição em cascata: esta e todas as parcelas futuras pendentes da mesma série
+      let queryFuturas = supabase
+        .from('fin_contas_pagar')
+        .select('*')
+        .eq('status', 'pendente')
+        .gte('data_vencimento', contaAtual.data_vencimento);
+
+      if (contaAtual.contrato_recorrente_id) {
+        queryFuturas = queryFuturas.eq('contrato_recorrente_id', contaAtual.contrato_recorrente_id);
+      } else {
+        queryFuturas = queryFuturas
+          .eq('favorecido', contaAtual.favorecido)
+          .eq('categoria_id', contaAtual.categoria_id);
+      }
+
+      const { data: contasFuturas, error: futurasErr } = await queryFuturas;
+      if (futurasErr) throw futurasErr;
+
+      const listaParaAtualizar = contasFuturas && contasFuturas.length > 0 ? contasFuturas : [contaAtual];
+      let totalAfetadas = 0;
+
+      // Se a data de vencimento foi alterada, detectamos o novo dia do mês (ex: dia 10 para dia 15)
+      let novoDiaVenc: number | null = null;
+      if (params.dataVencimento) {
+        const [, , d] = params.dataVencimento.split('-').map(Number);
+        if (!isNaN(d)) novoDiaVenc = d;
+      }
+
+      for (const item of listaParaAtualizar) {
+        const itemUpdate = { ...camposBaseUpdate };
+
+        // Descrição: se a conta original tem indicação de parcela (ex: "(3/10)"), preserva o sufixo
+        if (params.descricao !== undefined) {
+          const sufixoParcelaMatch = (item.descricao || '').match(/\(\d+\/\d+\)/);
+          const sufixo = sufixoParcelaMatch ? ` ${sufixoParcelaMatch[0]}` : '';
+          const descLimpa = params.descricao.replace(/\(\d+\/\d+\)/, '').trim();
+          itemUpdate.descricao = `${descLimpa}${sufixo}`.trim() || null;
+        }
+
+        // Vencimento: se o dia mudou, calcula o novo vencimento daquele mês específico
+        if (novoDiaVenc !== null) {
+          const [anoItem, mesItem] = item.data_vencimento.split('-').map(Number);
+          const diasNoMes = new Date(anoItem, mesItem, 0).getDate();
+          const diaFinal = Math.min(novoDiaVenc, diasNoMes);
+          const novaDtIso = `${anoItem}-${String(mesItem).padStart(2, '0')}-${String(diaFinal).padStart(2, '0')}`;
+          itemUpdate.data_vencimento = novaDtIso;
+          itemUpdate.data_vencimento_operacional = this.calcularVencimentoOperacional(
+            novaDtIso,
+            params.categoriaNome,
+            itemUpdate.descricao || item.descricao
+          );
+        }
+
+        const { error: updErr } = await supabase
+          .from('fin_contas_pagar')
+          .update(itemUpdate)
+          .eq('id', item.id);
+
+        if (!updErr) {
+          totalAfetadas++;
+        }
+      }
+
+      await this.registrarAuditoria({
+        contaId: params.contaId,
+        usuarioId: params.usuarioId || 'sistema',
+        usuarioNome: params.usuarioNome,
+        acao: 'edicao',
+        detalhes: {
+          modo: 'esta_e_futuras',
+          totalAfetadas,
+          contratoRecorrenteId: contaAtual.contrato_recorrente_id,
+          alteracoes: camposBaseUpdate
+        }
+      });
+
+      return { sucesso: true, afetadas: totalAfetadas };
+    } catch (err: any) {
+      console.error('[FinContasPagarService] Erro ao editar conta:', err);
+      return { sucesso: false, erro: err.message || 'Erro ao atualizar título' };
+    }
+  }
+
+  /**
    * Baixa inteligente de conta a pagar com juros, desconto e suporte a baixa parcial
    */
   public static async baixarConta(params: {

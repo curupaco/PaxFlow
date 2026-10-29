@@ -273,5 +273,154 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     expect(resumo.totalCriticas).toBe(0);
     expect(resumo.nivelAlerta).toBe('normal');
   });
+
+  it('deve editar exclusivamente o título selecionado quando modoCascata for apenas_esta', async () => {
+    // Setup
+    const updateSpy = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+    const insertAuditSpy = vi.fn().mockResolvedValue({ error: null });
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'fin_auditoria') {
+        return { insert: insertAuditSpy } as any;
+      }
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: {
+                id: 'conta-aluguel-out',
+                contrato_recorrente_id: 'contrato-aluguel-123',
+                recorrente: true,
+                favorecido: 'Imobiliária Central',
+                descricao: 'Aluguel Outubro',
+                valor_nominal: 28000,
+                data_vencimento: '2026-10-10',
+                status: 'pendente'
+              },
+              error: null
+            })
+          })
+        }),
+        update: updateSpy
+      } as any;
+    });
+
+    // Action
+    const res = await FinContasPagarService.editarConta({
+      contaId: 'conta-aluguel-out',
+      modoCascata: 'apenas_esta',
+      valorNominal: 29500,
+      descricao: 'Aluguel Outubro com taxa extra'
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(res.afetadas).toBe(1);
+    expect(updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      valor_nominal: 29500,
+      descricao: 'Aluguel Outubro com taxa extra'
+    }));
+  });
+
+  it('deve propagar alterações em cascata para parcelas futuras pendentes preservando sufixo de parcelas', async () => {
+    // Setup
+    const updateSpy = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+    const insertAuditSpy = vi.fn().mockResolvedValue({ error: null });
+
+    const parcelasFuturas = [
+      {
+        id: 'parcela-3',
+        contrato_recorrente_id: 'contrato-seguro-999',
+        data_vencimento: '2026-10-15',
+        descricao: 'Seguro Empresarial (3/10)',
+        valor_nominal: 1200,
+        status: 'pendente'
+      },
+      {
+        id: 'parcela-4',
+        contrato_recorrente_id: 'contrato-seguro-999',
+        data_vencimento: '2026-11-15',
+        descricao: 'Seguro Empresarial (4/10)',
+        valor_nominal: 1200,
+        status: 'pendente'
+      }
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'fin_auditoria') {
+        return { insert: insertAuditSpy } as any;
+      }
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: parcelasFuturas[0],
+              error: null
+            }),
+            gte: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({
+                data: parcelasFuturas,
+                error: null
+              })
+            })
+          })
+        }),
+        update: updateSpy
+      } as any;
+    });
+
+    // Action
+    const res = await FinContasPagarService.editarConta({
+      contaId: 'parcela-3',
+      modoCascata: 'esta_e_futuras',
+      valorNominal: 1350,
+      descricao: 'Seguro Reajustado (3/10)',
+      dataVencimento: '2026-10-20' // Mudou dia 15 para 20
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(res.afetadas).toBe(2);
+    expect(updateSpy).toHaveBeenCalledTimes(2);
+    expect(updateSpy).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      valor_nominal: 1350,
+      data_vencimento: '2026-10-20',
+      descricao: 'Seguro Reajustado (3/10)'
+    }));
+    expect(updateSpy).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      valor_nominal: 1350,
+      data_vencimento: '2026-11-20', // Propagou dia 20 para novembro
+      descricao: 'Seguro Reajustado (4/10)' // Preservou (4/10)
+    }));
+  });
+
+  it('deve retornar sucesso com fallback Zero-Break ao capturar erro 42P01 em editarConta', async () => {
+    // Setup
+    vi.mocked(supabase.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: null,
+            error: { code: '42P01', message: 'relation does not exist' }
+          })
+        })
+      })
+    } as any);
+
+    // Action
+    const res = await FinContasPagarService.editarConta({
+      contaId: 'qualquer-id',
+      valorNominal: 100
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(res.afetadas).toBe(1);
+  });
 });
+
 

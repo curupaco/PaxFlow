@@ -898,12 +898,19 @@ export class FinanceiroPage {
       }, 350);
     });
 
-    // Ações de Títulos (Baixar, Cancelar, Estornar)
+    // Ações de Títulos (Baixar, Editar, Cancelar, Estornar)
     this.container.querySelectorAll('.btn-baixar-conta').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
         const c = this.contas.find(x => x.id === id);
         if (c) this.abrirModalBaixa(c);
+      });
+    });
+
+    this.container.querySelectorAll('.btn-editar-conta').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        if (id) this.abrirModalEditarConta(id);
       });
     });
 
@@ -1419,6 +1426,221 @@ export class FinanceiroPage {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Salvar Conta';
         await showCustomAlert(res.erro || 'Falha ao salvar conta', 'Erro');
+      }
+    });
+  }
+
+  // ==========================================================================
+  // MODAL DE EDIÇÃO DE CONTA (COM SUPORTE A CASCATA RECORRENTE)
+  // ==========================================================================
+  private abrirModalEditarConta(contaId: string): void {
+    const c = this.contas.find(x => x.id === contaId);
+    if (!c) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity';
+
+    const ehRecorrenteOuParcelado = Boolean(
+      c.contrato_recorrente_id || 
+      c.recorrente || 
+      (c.parcela_total && c.parcela_total > 1)
+    );
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl">✏️</span>
+            <div>
+              <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Editar Título a Pagar</h3>
+              <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${c.favorecido} • Vencimento: ${c.data_vencimento.split('-').reverse().join('/')}</p>
+            </div>
+          </div>
+          <button id="btn-fechar-modal-editar" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg cursor-pointer">✕</button>
+        </div>
+
+        <form id="form-editar-conta" class="space-y-4">
+          ${ehRecorrenteOuParcelado ? `
+            <div class="p-3.5 bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl space-y-2">
+              <div class="flex items-center gap-2">
+                <span class="text-sm">🔁</span>
+                <span class="text-[11px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Lançamento em Série / Recorrente Detectado</span>
+              </div>
+              <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Este título faz parte de uma programação financeira recorrente. Selecione como deseja aplicar as alterações:
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <label class="flex items-start gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 cursor-pointer hover:border-indigo-500 transition select-none shadow-xs">
+                  <input type="radio" name="modo-cascata" value="apenas_esta" checked class="mt-0.5 accent-indigo-600 cursor-pointer" />
+                  <div class="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <span>📌 Apenas este mês</span>
+                    <span class="block text-[10px] font-normal text-slate-400 leading-tight">Altera exclusivamente o lançamento selecionado</span>
+                  </div>
+                </label>
+                <label class="flex items-start gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 cursor-pointer hover:border-indigo-500 transition select-none shadow-xs">
+                  <input type="radio" name="modo-cascata" value="esta_e_futuras" class="mt-0.5 accent-indigo-600 cursor-pointer" />
+                  <div class="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <span>🔄 Esta e futuras pendentes</span>
+                    <span class="block text-[10px] font-normal text-slate-400 leading-tight">Propaga as alterações para as próximas parcelas</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          ` : ''}
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Tipo de Custo *</label>
+              <select id="input-edit-tipo" required class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+                <option value="">Selecione o tipo...</option>
+                ${this.tiposCusto.map(t => `<option value="${t.id}" ${t.id === c.tipo_custo_id ? 'selected' : ''}>${t.nome}</option>`).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Categoria *</label>
+              <select id="input-edit-categoria" required class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+                <option value="">Selecione a categoria...</option>
+                ${this.categorias.map(cat => `<option value="${cat.id}" data-tipo="${cat.tipo_custo_id}" ${cat.id === c.categoria_id ? 'selected' : ''}>${cat.nome}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Favorecido / Fornecedor *</label>
+            <input type="text" id="input-edit-favorecido" required value="${c.favorecido || ''}" placeholder="Nome da empresa ou prestador" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Descrição do Título</label>
+            <input type="text" id="input-edit-descricao" value="${c.descricao || ''}" placeholder="Ex: Aluguel loja, fatura energia..." class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Valor Nominal (R$) *</label>
+              <input type="number" step="0.01" min="0.01" id="input-edit-valor" required value="${c.valor_nominal || ''}" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-sm font-black text-slate-900 dark:text-slate-100" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Vencimento Nominal *</label>
+              <input type="date" id="input-edit-vencimento" required value="${c.data_vencimento || ''}" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Forma de Pagamento</label>
+              <select id="input-edit-forma" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+                <option value="pix" ${c.forma_pagamento === 'pix' ? 'selected' : ''}>PIX</option>
+                <option value="boleto" ${c.forma_pagamento === 'boleto' ? 'selected' : ''}>Boleto Bancário</option>
+                <option value="transferencia" ${c.forma_pagamento === 'transferencia' ? 'selected' : ''}>Transferência (TED/DOC)</option>
+                <option value="debito" ${c.forma_pagamento === 'debito' ? 'selected' : ''}>Débito em Conta</option>
+                <option value="dinheiro" ${c.forma_pagamento === 'dinheiro' ? 'selected' : ''}>Dinheiro em Espécie</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Conta Bancária de Saída</label>
+              <select id="input-edit-banco" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+                <option value="">Não vinculada (definir na baixa)</option>
+                ${this.contasBancarias.map(b => `<option value="${b.id}" ${b.id === c.conta_bancaria_id ? 'selected' : ''}>${b.nome_banco} (${b.tipo})</option>`).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800">
+            <input type="checkbox" id="input-edit-estimado" ${c.valor_estimado ? 'checked' : ''} class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
+            <label for="input-edit-estimado" class="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+              Valor Estimado / Variável <span class="text-[10px] text-slate-400 block font-normal">(Sinaliza que o montante final pode variar até o fechamento da fatura)</span>
+            </label>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <button type="button" id="btn-cancelar-modal-editar" class="h-[42px] px-4 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+              Cancelar
+            </button>
+            <button type="submit" id="btn-salvar-modal-editar" class="h-[42px] px-5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer">
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const fechar = () => {
+      overlay.remove();
+    };
+
+    overlay.querySelector('#btn-fechar-modal-editar')?.addEventListener('click', fechar);
+    overlay.querySelector('#btn-cancelar-modal-editar')?.addEventListener('click', fechar);
+
+    const form = overlay.querySelector('#form-editar-conta') as HTMLFormElement;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = overlay.querySelector('#btn-salvar-modal-editar') as HTMLButtonElement;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Salvando...';
+
+      const tipoCustoId = (overlay.querySelector('#input-edit-tipo') as HTMLSelectElement).value;
+      const selectCat = overlay.querySelector('#input-edit-categoria') as HTMLSelectElement;
+      const categoriaId = selectCat.value;
+      const categoriaNome = selectCat.selectedOptions[0]?.textContent || undefined;
+      const favorecido = (overlay.querySelector('#input-edit-favorecido') as HTMLInputElement).value;
+      const descricao = (overlay.querySelector('#input-edit-descricao') as HTMLInputElement).value;
+      const valorNominal = Number((overlay.querySelector('#input-edit-valor') as HTMLInputElement).value);
+      const dataVencimento = (overlay.querySelector('#input-edit-vencimento') as HTMLInputElement).value;
+      const formaPagamento = (overlay.querySelector('#input-edit-forma') as HTMLSelectElement).value as any;
+      const contaBancariaId = (overlay.querySelector('#input-edit-banco') as HTMLSelectElement).value || undefined;
+      const valorEstimado = (overlay.querySelector('#input-edit-estimado') as HTMLInputElement).checked;
+
+      const modoCascata = (overlay.querySelector('input[name="modo-cascata"]:checked') as HTMLInputElement)?.value as 'apenas_esta' | 'esta_e_futuras' || 'apenas_esta';
+
+      if (modoCascata === 'esta_e_futuras') {
+        const confirmouCascata = await showCustomConfirm(
+          'Deseja realmente atualizar ESTA e TODAS as próximas parcelas pendentes desta série recorrente? Essa ação atualizará valores e vencimentos futuros.',
+          'Confirmar Edição em Cascata'
+        );
+        if (!confirmouCascata) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Salvar Alterações';
+          return;
+        }
+      }
+
+      const res = await FinContasPagarService.editarConta({
+        contaId: c.id,
+        modoCascata,
+        tipoCustoId,
+        categoriaId,
+        categoriaNome,
+        contaBancariaId,
+        favorecido,
+        descricao,
+        valorNominal,
+        valorEstimado,
+        dataVencimento,
+        formaPagamento,
+        usuarioId: this.user.id,
+        usuarioNome: this.perfil?.nome
+      });
+
+      if (res.sucesso) {
+        fechar();
+        window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
+        const msgSucesso = res.afetadas && res.afetadas > 1
+          ? `${res.afetadas} títulos atualizados em cascata com sucesso!`
+          : 'Título atualizado com sucesso!';
+        await showCustomAlert(msgSucesso, 'Sucesso');
+        await this.carregarDadosAbaAtiva();
+        this.render();
+        this.setupEventListeners();
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Salvar Alterações';
+        await showCustomAlert(res.erro || 'Falha ao salvar alterações do título', 'Erro');
       }
     });
   }

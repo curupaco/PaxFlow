@@ -1058,6 +1058,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🔔 Alertas Reativos de Contas a Pagar & Badge na Sidebar',
     description: 'Como o PaxFlow notifica o operador sobre contas vencendo e pendências críticas.',
     details: 'Para que nenhum pagamento seja esquecido ou pague juros por atraso, o PaxFlow monitora os compromissos em tempo real:\n\n1. **Badge Reativo no Menu Lateral**: No botão \"Financeiro\" da barra de navegação, um indicador numérico informa a quantidade de pendências críticas imediatas. Se houver contas em atraso, a badge pulsa em vermelho vivo (`🔴`); se não houver atrasos mas houver contas vencendo hoje ou nas próximas 48 horas, a badge permanece em tom âmbar (`🟡`).\n2. **Notificações Integradas ao Inbox**: Operadores e administradores recebem cards prioritários com a badge `Financeiro 💰` em sua Caixa de Entrada com todos os dados da conta (fornecedor, valor, vencimento operacional e forma de pagamento).\n3. **Navegação em 1-Clique**: No modal de leitura da notificação no Inbox, o botão `💰 Abrir no Financeiro` direciona instantaneamente o gestor para a tela de pagamentos.\n4. **Sincronização Automática**: Qualquer baixa, cancelamento, estorno ou criação de conta atualiza o contador do menu lateral imediatamente sem necessidade de recarregar a página.'
+  },
+  {
+    id: 'fin-edicao-cascata',
+    modulo: 'financeiro',
+    label: '🔁 Edição em Cascata de Contas Recorrentes e Parcelamentos',
+    description: 'Como reajustar valores ou datas de contratos fixos para o mês atual ou parcelas futuras.',
+    details: 'Ao clicar no ícone de lápis (`✏️`) para editar qualquer título que pertença a um contrato contínuo ou parcelamento:\n\n1. **Detecção Automática**: O PaxFlow identifica o vínculo da série (`contrato_recorrente_id`) e apresenta um bloco informativo com duas alternativas de aplicação.\n2. **📌 Apenas este mês**: Atualiza os dados (valor, categoria, dia ou descrição) exclusivamente para a parcela selecionada, mantendo as demais inalteradas.\n3. **🔄 Esta e futuras pendentes**: Propaga as alterações em lote para a parcela atual e todas as próximas parcelas pendentes daquela série contábil (ex: reajuste de aluguel ou troca de plano de saúde a partir de determinado mês).\n4. **Proteção Histórica**: Títulos já liquidados (`pago`) ou cancelados são blindados contra alterações acidentais, garantindo a integridade dos relatórios contábeis passados.\n5. **Recálculo de Dias Úteis**: Se o dia do vencimento for alterado (ex: do dia 5 para o dia 10), cada mês futuro recebe o novo dia e passa automaticamente pelo crivo de dias úteis com antecipação tributária.'
   }
 ];
 

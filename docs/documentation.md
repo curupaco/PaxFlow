@@ -1470,6 +1470,12 @@ O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operan
    - **Compilação no Inbox (`InboxService`)**: Consultores credenciados e administradores recebem no feed unificado do Inbox cards identificados pelo badge `Financeiro 💰`, contendo dados do fornecedor, valor nominal formatado, vencimento original vs operacional, forma de pagamento e atalho direto `💰 Abrir no Financeiro`.
    - **Reatividade sem Recarregamento**: Evento de sistema `paxflow-financeiro-updated` dispara atualizações instantâneas de badge na Sidebar após qualquer mutação (cadastro, baixa, estorno ou cancelamento).
 
+7. **Edição em Cascata de Contas Recorrentes e Parcelamentos**:
+   - **Controle por Série Contratual (`contrato_recorrente_id`)**: Permite ao operador selecionar se uma alteração em título recorrente (ex: reajuste de aluguel ou troca de plano de telefonia) deve se aplicar exclusivamente ao mês vigente (`apenas_esta`) ou propagar para o título selecionado e todas as parcelas futuras pendentes daquela série (`esta_e_futuras`).
+   - **Preservação de Histórico Liquidado**: Títulos com status `pago` ou `cancelado` são imunes à propagação em lote, protegendo os fechamentos contábeis passados.
+   - **Recálculo Inteligente de Datas e Prazos Úteis**: A alteração do dia de vencimento nominal atualiza o dia em todos os meses futuros pendentes, reavaliando individualmente cada data com o motor de antecipação tributária ou postergação bancária.
+   - **Trilha de Auditoria Granular**: Cada alteração em cascata registra na tabela `fin_auditoria` a quantidade total de títulos afetados, payload de alterações e identificador do usuário responsável.
+
 ---
 
 ## 4. Diferenciais Competitivos
