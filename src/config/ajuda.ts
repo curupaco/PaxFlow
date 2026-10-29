@@ -564,6 +564,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Na aba **Faturamento e Rentabilidade** (menu Relatórios -> Grupo 2: Financeiro & Auditoria):\n\n1. **Filtro de Produto / Linha de Serviço**: Permite selecionar um produto específico (ex: `AÉREO OPERADORA`, `HOTEL`, `CRUZEIRO`, etc.) ou a visão consolidada `Todos os Produtos`. Os cartões de topo (Faturamento Venda, Taxas, Comissão, Markup, RAV, Rentabilidade Total e Margem Média) recalculam imediatamente apenas para os serviços filtrados.\n2. **Filtro de RAV (<> 0)**: Permite auditar receitas com Remuneração Adicional de Venda escolhendo `⚡ Apenas com RAV (RAV <> 0)`, visualizar itens sem RAV (`Sem RAV (RAV = 0)`) ou todos (`Todos`).\n3. **Cálculo de Rentabilidade Total Real & Retenção de RAV**: O RAV exibido já aplica a retenção líquida de 12% (RAV * 0.88), e a rentabilidade total real consolida comissões + markup + RAV líquido deduzindo eventuais descontos e prejuízos cadastrados.\n4. **Exportação CSV Dinâmica**: O botão "Exportar CSV" exporta a tabela respeitando rigorosamente os filtros de Produto e RAV ativos na tela.'
   },
   {
+    id: 'relatorio-origem-leads-rentabilidade',
+    modulo: 'clientes',
+    label: '📢 Origem de Leads e Eficiência de Funil (com Coluna de Rentabilidade)',
+    description: 'Como auditar a conversão, faturamento, rentabilidade líquida e tíquete médio por canal de captação.',
+    details: 'Na aba **Origem de Leads** (menu Relatórios -> Grupo 1: Gestão Comercial):\n\n1. **Performance por Canal de Entrada**: Apura os leads cadastrados pelos canais WhatsApp, Instagram, Indicação, Google, Site e Outros.\n2. **Coluna de Rentabilidade Real**: Posicionada estrategicamente entre *Faturamento Realizado* e *Tíquete Médio*, consolida a margem líquida (comissões + markup + 88% do RAV) de todas as propostas ganhas originadas em cada canal.\n3. **Métricas de Funil**: Avalia Total de Leads, Ganhos, Taxa de Conversão %, Faturamento, Rentabilidade e Tíquete Médio em uma tabela única com cabeçalho congelado.\n4. **Exportação CSV**: Permite baixar a planilha completa estruturada com a nova coluna de Rentabilidade.'
+  },
+  {
     id: 'relatorio-metas-campanhas',
     modulo: 'clientes',
     label: '🎯 Relatório de Metas Comerciais, Campanhas de Incentivo & Auditoria',

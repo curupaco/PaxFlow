@@ -354,3 +354,100 @@ export function calcularFaturamentoLucratividade(
   };
 }
 
+export interface OrigemLeadStat {
+  origem: string;
+  count: number;
+  won: number;
+  lost: number;
+  revenue: number;
+  rentabilidade: number;
+  conversao: number;
+  ticketMedio: number;
+}
+
+export function calcularRentabilidadeViagem(v: any): number {
+  if (!v) return 0;
+  const prods = Array.isArray(v.produtos) ? v.produtos : [];
+  if (prods.length > 0) {
+    return prods.reduce((acc: number, p: any) => {
+      if (p.status === 'cancelado') return acc;
+      const comissao = Number(p.comissao) || 0;
+      const markup = Number(p.markup) || 0;
+      const rav = Number(p.rav) || 0;
+      return acc + comissao + markup + (rav * 0.88);
+    }, 0);
+  }
+  return Number(v.rentabilidade) || 0;
+}
+
+export function calcularOrigensLeads(
+  orcamentos: any[] = [],
+  viagens: any[] = []
+): Record<string, OrigemLeadStat> {
+  const originStats: Record<string, OrigemLeadStat> = {
+    'WhatsApp': { origem: 'WhatsApp', count: 0, won: 0, lost: 0, revenue: 0, rentabilidade: 0, conversao: 0, ticketMedio: 0 },
+    'Instagram': { origem: 'Instagram', count: 0, won: 0, lost: 0, revenue: 0, rentabilidade: 0, conversao: 0, ticketMedio: 0 },
+    'Indicação': { origem: 'Indicação', count: 0, won: 0, lost: 0, revenue: 0, rentabilidade: 0, conversao: 0, ticketMedio: 0 },
+    'Google': { origem: 'Google', count: 0, won: 0, lost: 0, revenue: 0, rentabilidade: 0, conversao: 0, ticketMedio: 0 },
+    'Site': { origem: 'Site', count: 0, won: 0, lost: 0, revenue: 0, rentabilidade: 0, conversao: 0, ticketMedio: 0 },
+    'Outros': { origem: 'Outros', count: 0, won: 0, lost: 0, revenue: 0, rentabilidade: 0, conversao: 0, ticketMedio: 0 }
+  };
+
+  const matchedViagemIds = new Set<string>();
+
+  (orcamentos || []).forEach((o: any) => {
+    const orig = o.origem || 'Outros';
+    const k = originStats[orig] ? orig : 'Outros';
+    originStats[k].count++;
+
+    const isAceito = o.subStatus === 'ACEITO' || o.sub_status === 'ACEITO';
+    const isDesistencia = o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA';
+
+    if (isAceito) {
+      originStats[k].won++;
+      const rev = Number(o.valorViagem || o.valor_viagem || o.valorProposta || o.valor_proposta || 0);
+      originStats[k].revenue += rev;
+
+      let rentLead = Number(o.rentabilidade || o.rentabilidade_prevista || o.lucro || 0);
+      if (!rentLead && Array.isArray(viagens)) {
+        const matchedViagem = viagens.find((v: any) => {
+          if (matchedViagemIds.has(v.id) || v.status === 'cancelada') return false;
+          // 1. Vínculo direto por orcamento_id
+          if ((v.orcamento_id && (v.orcamento_id === o.id || v.orcamentoId === o.id)) ||
+              (v.orcamentoId && (v.orcamentoId === o.id || v.orcamento_id === o.id))) {
+            return true;
+          }
+          // 2. Vínculo por cliente_id
+          if (o.cliente_id && (v.cliente_id === o.cliente_id || v.clienteId === o.cliente_id)) {
+            return true;
+          }
+          // 3. Vínculo por canal de origem e destino
+          const vOrig = v.origem || v.lead_origin || v.cliente?.lead_origin;
+          if (vOrig && orig && vOrig.toLowerCase() === orig.toLowerCase() && v.destino === o.destino) {
+            return true;
+          }
+          return false;
+        });
+
+        if (matchedViagem) {
+          matchedViagemIds.add(matchedViagem.id);
+          rentLead = calcularRentabilidadeViagem(matchedViagem);
+        }
+      }
+      originStats[k].rentabilidade += rentLead;
+    } else if (isDesistencia) {
+      originStats[k].lost++;
+    }
+  });
+
+  // Calcular métricas derivadas (conversão e tíquete médio)
+  Object.values(originStats).forEach(stats => {
+    const totalFin = stats.won + stats.lost;
+    stats.conversao = totalFin > 0 ? Math.round((stats.won / totalFin) * 100) : 0;
+    stats.ticketMedio = stats.won > 0 ? Math.round(stats.revenue / stats.won) : 0;
+  });
+
+  return originStats;
+}
+
+

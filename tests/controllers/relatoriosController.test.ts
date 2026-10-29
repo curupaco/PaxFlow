@@ -5,9 +5,11 @@ import {
   agruparVendasPorCategoriaProduto,
   gerarRankingConsultores,
   processarExtratoRecebimentos,
-  calcularFaturamentoLucratividade
+  calcularFaturamentoLucratividade,
+  calcularOrigensLeads
 } from '../../src/controllers/relatoriosController';
 import { ViagensDivisoesService } from '../../src/services/viagensDivisoesService';
+import { RelatoriosInteligenciaView } from '../../src/components/relatorios/inteligencia/RelatoriosInteligenciaView';
 
 describe('RelatoriosController - Métricas Comerciais e Desempenho da Agência', () => {
   it('deve calcular taxa de conversão do funil de vendas com proteção contra divisão por zero', () => {
@@ -419,6 +421,86 @@ describe('RelatoriosController - Faturamento e Lucratividade com Filtro de Produ
     expect(vendaTitular + vendaParceiro).toBe(viagemDividida.valor_total);
     expect(ravTitular + ravParceiro).toBe(totalRav);
   });
+
+  it('deve calcular métricas de origem de leads incluindo faturamento, rentabilidade e conversão', () => {
+    // Setup
+    const orcamentos = [
+      { id: 'o-1', origem: 'Instagram', subStatus: 'ACEITO', valorViagem: 12000, destino: 'Orlando' },
+      { id: 'o-2', origem: 'Instagram', subStatus: 'DESISTENCIA', valorProposta: 8000, destino: 'Paris' },
+      { id: 'o-3', origem: 'WhatsApp', subStatus: 'ACEITO', valorViagem: 5000, rentabilidade: 950, destino: 'Fortaleza' },
+      { id: 'o-4', origem: 'Google', subStatus: 'EM_ANDAMENTO', valorProposta: 15000, destino: 'Nova York' },
+      { id: 'o-5', origem: 'Canal Novo', subStatus: 'ACEITO', valorViagem: 4000, rentabilidade: 600, destino: 'Lisboa' } // cai em Outros
+    ];
+
+    const viagens = [
+      {
+        id: 'via-1',
+        orcamento_id: 'o-1',
+        origem: 'Instagram',
+        destino: 'Orlando',
+        status: 'fechado',
+        produtos: [
+          { tipo: 'Aéreo', comissao: 400, markup: 200, rav: 0 },
+          { tipo: 'Hotel', comissao: 600, markup: 800, rav: 0 }
+        ]
+      }
+    ];
+
+    // Action
+    const stats = calcularOrigensLeads(orcamentos, viagens);
+
+    // Assert
+    // Instagram: 2 leads (1 ganho, 1 perda) -> 50% conversão. Faturamento: 12.000. Rentabilidade: 400 + 200 + 600 + 800 = 2.000
+    expect(stats['Instagram'].count).toBe(2);
+    expect(stats['Instagram'].won).toBe(1);
+    expect(stats['Instagram'].lost).toBe(1);
+    expect(stats['Instagram'].conversao).toBe(50);
+    expect(stats['Instagram'].revenue).toBe(12000);
+    expect(stats['Instagram'].rentabilidade).toBe(2000);
+    expect(stats['Instagram'].ticketMedio).toBe(12000);
+
+    // WhatsApp: 1 lead ganho com rentabilidade direta no orçamento de 950
+    expect(stats['WhatsApp'].count).toBe(1);
+    expect(stats['WhatsApp'].won).toBe(1);
+    expect(stats['WhatsApp'].revenue).toBe(5000);
+    expect(stats['WhatsApp'].rentabilidade).toBe(950);
+    expect(stats['WhatsApp'].conversao).toBe(100);
+
+    // Outros (Canal Novo): 1 lead ganho com rentabilidade direta de 600
+    expect(stats['Outros'].count).toBe(1);
+    expect(stats['Outros'].won).toBe(1);
+    expect(stats['Outros'].rentabilidade).toBe(600);
+  });
+
+  it('deve conter a coluna Rentabilidade posicionada entre Faturamento Realizado e Tíquete Médio no HTML e no CSV', () => {
+    // Setup
+    const data = {
+      orcamentos: [
+        { id: 'orc-1', origem: 'Instagram', subStatus: 'ACEITO', valorViagem: 10000, rentabilidade: 1800 }
+      ],
+      viagens: []
+    };
+
+    // Action
+    const html = RelatoriosInteligenciaView.renderOrigens(data);
+    const csv = RelatoriosInteligenciaView.appendCsvContent('origens', data, {} as any);
+
+    // Assert
+    // No HTML da tabela: Faturamento Realizado antes de Rentabilidade, e Rentabilidade antes de Tíquete Médio
+    expect(html).toContain('<th class="p-3">Faturamento Realizado</th>');
+    expect(html).toContain('<th class="p-3">Rentabilidade</th>');
+    expect(html).toContain('<th class="p-3">Tíquete Médio</th>');
+    const idxFatTh = html.indexOf('<th class="p-3">Faturamento Realizado</th>');
+    const idxRentTh = html.indexOf('<th class="p-3">Rentabilidade</th>');
+    const idxTiqTh = html.indexOf('<th class="p-3">Tíquete Médio</th>');
+    expect(idxFatTh).toBeLessThan(idxRentTh);
+    expect(idxRentTh).toBeLessThan(idxTiqTh);
+
+    // No CSV: cabeçalho com coluna Rentabilidade (R$) entre Receita e Tíquete Médio
+    expect(csv).toContain('Receita Realizada (R$);Rentabilidade (R$);Tiquete Medio (R$)');
+    expect(csv).toContain('"Instagram";1;1;"100%";10000;1800;10000');
+  });
 });
+
 
 

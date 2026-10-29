@@ -8,6 +8,7 @@ import { supabase } from '../../../services/supabase';
 import { PerfilConsultor } from '../../../types';
 import { obterProgressoNivel, BADGE_DEFINITIONS } from '../../../services/gamification';
 import { EditTravelModal } from '../../dashboard/EditTravelModal';
+import { calcularOrigensLeads } from '../../../controllers/relatoriosController';
 
 export interface RelatoriosInteligenciaContext {
   orcamentos: any[];
@@ -160,33 +161,14 @@ export class RelatoriosInteligenciaView {
   // VIEW: ORIGEM DE LEADS
   // ==========================================
   public static renderOrigens(data: any, _ctx?: RelatoriosInteligenciaContext): string {
-    const orcados = data.orcamentos.length;
-    const fechadosAceitos = data.orcamentos.filter((o: any) => o.subStatus === 'ACEITO' || o.sub_status === 'ACEITO').length;
-    const fechadosRecusados = data.orcamentos.filter((o: any) => o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA').length;
+    const orcados = (data.orcamentos || []).length;
+    const fechadosAceitos = (data.orcamentos || []).filter((o: any) => o.subStatus === 'ACEITO' || o.sub_status === 'ACEITO').length;
+    const fechadosRecusados = (data.orcamentos || []).filter((o: any) => o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA').length;
     const finalizados = fechadosAceitos + fechadosRecusados;
     const conversaoGlobal = finalizados > 0 ? Math.round((fechadosAceitos / finalizados) * 100) : 0;
     
-    // Grouping by origin
-    const originStats: Record<string, { count: number, won: number, lost: number, revenue: number }> = {
-      'WhatsApp': { count: 0, won: 0, lost: 0, revenue: 0 },
-      'Instagram': { count: 0, won: 0, lost: 0, revenue: 0 },
-      'Indicação': { count: 0, won: 0, lost: 0, revenue: 0 },
-      'Google': { count: 0, won: 0, lost: 0, revenue: 0 },
-      'Site': { count: 0, won: 0, lost: 0, revenue: 0 },
-      'Outros': { count: 0, won: 0, lost: 0, revenue: 0 }
-    };
-
-    data.orcamentos.forEach((o: any) => {
-      const orig = o.origem || 'Outros';
-      const k = originStats[orig] ? orig : 'Outros';
-      originStats[k].count++;
-      if (o.subStatus === 'ACEITO' || o.sub_status === 'ACEITO') {
-        originStats[k].won++;
-        originStats[k].revenue += (o.valorViagem || o.valor_viagem || o.valorProposta || o.valor_proposta || 0);
-      } else if (o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA') {
-        originStats[k].lost++;
-      }
-    });
+    // Grouping by origin with revenue & rentabilidade
+    const originStats = calcularOrigensLeads(data.orcamentos, data.viagens);
 
     // Best performing channel by revenue or conversion
     let bestChannel = 'Nenhum';
@@ -226,17 +208,15 @@ export class RelatoriosInteligenciaView {
     }
 
     const tableRows = Object.entries(originStats).map(([orig, stats]) => {
-      const totalFin = stats.won + stats.lost;
-      const conv = totalFin > 0 ? Math.round((stats.won / totalFin) * 100) : 0;
-      const avgTicket = stats.won > 0 ? Math.round(stats.revenue / stats.won) : 0;
       return `
         <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
           <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${orig}</td>
           <td class="p-3 text-center">${stats.count}</td>
           <td class="p-3 text-center">${stats.won}</td>
-          <td class="p-3 font-extrabold text-center text-emerald-600">${conv}%</td>
+          <td class="p-3 font-extrabold text-center text-emerald-600">${stats.conversao}%</td>
           <td class="p-3 font-extrabold text-slate-700 dark:text-slate-200">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(stats.revenue)}</td>
-          <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(avgTicket)}</td>
+          <td class="p-3 font-extrabold text-emerald-600 dark:text-emerald-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(stats.rentabilidade)}</td>
+          <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(stats.ticketMedio)}</td>
         </tr>
       `;
     }).join('');
@@ -287,6 +267,7 @@ export class RelatoriosInteligenciaView {
                   <th class="p-3 text-center">Ganhos</th>
                   <th class="p-3 text-center">Conversão</th>
                   <th class="p-3">Faturamento Realizado</th>
+                  <th class="p-3">Rentabilidade</th>
                   <th class="p-3">Tíquete Médio</th>
                 </tr>
               </thead>
@@ -968,31 +949,10 @@ export class RelatoriosInteligenciaView {
     }
 
     if (activeTab === 'origens') {
-      let csvContent = 'Origem;Leads Criados;Leads Concluidos Ganhos;Taxa Conversao;Receita Realizada (R$);Tiquete Medio (R$)\n';
-      const originStats: Record<string, { count: number, won: number, lost: number, revenue: number }> = {
-        'WhatsApp': { count: 0, won: 0, lost: 0, revenue: 0 },
-        'Instagram': { count: 0, won: 0, lost: 0, revenue: 0 },
-        'Indicação': { count: 0, won: 0, lost: 0, revenue: 0 },
-        'Google': { count: 0, won: 0, lost: 0, revenue: 0 },
-        'Site': { count: 0, won: 0, lost: 0, revenue: 0 },
-        'Outros': { count: 0, won: 0, lost: 0, revenue: 0 }
-      };
-      (data.orcamentos || []).forEach((o: any) => {
-        const orig = o.origem || 'Outros';
-        const k = originStats[orig] ? orig : 'Outros';
-        originStats[k].count++;
-        if (o.subStatus === 'ACEITO' || o.sub_status === 'ACEITO') {
-          originStats[k].won++;
-          originStats[k].revenue += (o.valorViagem || o.valor_viagem || o.valorProposta || o.valor_proposta || 0);
-        } else if (o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA') {
-          originStats[k].lost++;
-        }
-      });
+      let csvContent = 'Origem;Leads Criados;Leads Concluidos Ganhos;Taxa Conversao;Receita Realizada (R$);Rentabilidade (R$);Tiquete Medio (R$)\n';
+      const originStats = calcularOrigensLeads(data.orcamentos, data.viagens);
       Object.entries(originStats).forEach(([orig, stats]) => {
-        const totalFin = stats.won + stats.lost;
-        const conv = totalFin > 0 ? Math.round((stats.won / totalFin) * 100) : 0;
-        const avgTicket = stats.won > 0 ? Math.round(stats.revenue / stats.won) : 0;
-        csvContent += `"${orig}";${stats.count};${stats.won};"${conv}%";${stats.revenue};${avgTicket}\n`;
+        csvContent += `"${orig}";${stats.count};${stats.won};"${stats.conversao}%";${stats.revenue};${stats.rentabilidade};${stats.ticketMedio}\n`;
       });
       return csvContent;
     }

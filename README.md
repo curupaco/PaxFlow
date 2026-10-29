@@ -20,6 +20,11 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Coluna de Rentabilidade no Relatório de Origem de Leads e Eficiência de Funil [NEW]** — Evolução da aba `📢 Origem de Leads` de `Relatorios.ts` para análise aprofundada do retorno financeiro e margem real gerada por cada canal de captação de clientes:
+  - **Coluna Dedicada de Rentabilidade**: Posicionamento estratégico da coluna **Rentabilidade** entre *Faturamento Realizado* e *Tíquete Médio*, discriminando o lucro líquido real apurado (comissões, markups e RAV retido) gerado pelos leads convertidos.
+  - **Apuração Híbrida e Pura de Lucro**: O motor `calcularOrigensLeads` correlaciona orçamentos ganhos (`ACEITO`) diretamente com os produtos e serviços da viagem correspondente (`comissão + markup + 88% RAV`) ou com o lucro declarado no fechamento.
+  - **Exportação CSV Sincronizada**: A exportação analítica em CSV de Origem de Leads reflete a coluna de Rentabilidade na mesma ordem da interface tabular.
+
 - **Padronização Global de Design Tokens PaxFlow & Polimento Visual dos Módulos [NEW]** — Implantação mandatória do Design System unificado em todos os módulos do PaxFlow (Relatórios, Dashboard, Orçamentos, Inbox, Cadastros, Reembolsos, Conciliação e Clientes):
   - **Altura Uniforme de Controles (`h-[42px]`)**: Todos os botões primários/secundários, inputs de texto, seletores de filtros, abas e buscas adotam a altura padrão de 42px com alinhamento uniforme na linha de base (`items-center` / `items-end`), extinguindo saltos e desalinhamentos de botões.
   - **Cabeçalhos de Tabela Padronizados & Congelados no Topo (`sticky top-0`)**: Todas as tabelas de relatórios, embarques, conciliação e reembolsos possuem cabeçalhos congelados que permanecem visíveis durante a rolagem de dados (`sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs`), com limites ergonômicos de altura (`max-h-[600px]` e `max-h-[650px]`).

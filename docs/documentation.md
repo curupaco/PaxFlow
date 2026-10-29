@@ -452,6 +452,10 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **6. Fuga de Receita e Perdas**: Donut chart SVG dinâmico exibindo perdas percentuais classificadas por motivos de desistência (preço, concorrência, etc.).
   - **7. Previsão de Fechamentos (Weighted Pipeline)**: Cálculo estatístico local que pondera o faturamento previsto do pipeline em aberto (solicitado = 15%, andamento = 45%, aguardando = 75%) e estima embarques iminentes.
   - **8. Qualidade de Fornecedores e Incidentes**: Tabulação de reembolsos, volume vendido e score de risco por fornecedor.
+  - **9. Origem de Leads e Eficiência de Funil [UPDATED]**: Matriz analítica de canais de captação (WhatsApp, Instagram, Indicação, Google, Site, Outros) com gráfico de share percentual e tabela de desempenho:
+    - **Coluna de Rentabilidade Real**: Posicionada estrategicamente entre *Faturamento Realizado* e *Tíquete Médio*, permitindo visualizar a rentabilidade líquida total gerada por cada canal comercial (considerando comissão, markup e 88% da RAV dos produtos de viagens vinculadas).
+    - **Métricas Completas por Canal**: Origem, Total de Leads, Ganhos, Conversão %, Faturamento Realizado, Rentabilidade e Tíquete Médio.
+    - **Exportação CSV Sincronizada**: O download de planilha (.csv compatível com Excel) exporta a coluna de Rentabilidade na mesma disposição tabular.
 - **Segurança de Acesso (RLS local)**: Consultores comuns têm visão bloqueada a seu próprio ID (o filtro é desativado). Apenas administradores auditam o consolidado e selecionam qualquer consultor da agência.
 - **Exportação e PDF**: Geração de arquivo **CSV** Excel compatível e folha de estilos de impressão `@media print` que esconde barras de navegação e filtros, permitindo salvar relatórios como PDFs corporativos limpos.
 - **KPIs Financeiros de Caixa**:
