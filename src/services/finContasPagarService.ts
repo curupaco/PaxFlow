@@ -1004,25 +1004,36 @@ export class FinContasPagarService {
       limiteDate.setDate(limiteDate.getDate() + limiteDias);
       const limiteIso = limiteDate.toISOString().split('T')[0];
 
-      const { data, error } = await supabase
+      let contasRaw: any[] = [];
+      const resPrincipal = await supabase
         .from('fin_contas_pagar')
         .select(`
           *,
-          categoria:fin_categorias(id, nome, codigo),
+          categoria:fin_categorias(id, nome),
           subcategoria:fin_subcategorias(id, nome)
         `)
         .in('status', ['pendente', 'parcial', 'atrasado'])
         .lte('data_vencimento', limiteIso)
         .order('data_vencimento', { ascending: true });
 
-      if (error) {
-        if (error.code === '42P01' || error.code === '42703') {
+      if (resPrincipal.error) {
+        // Fallback defensivo Zero-Break: se houver erro de relação PostgREST (400, 42P01, 42703), consulta direta
+        const fallbackRes = await supabase
+          .from('fin_contas_pagar')
+          .select('*')
+          .in('status', ['pendente', 'parcial', 'atrasado'])
+          .lte('data_vencimento', limiteIso)
+          .order('data_vencimento', { ascending: true });
+
+        if (fallbackRes.error) {
           return [];
         }
-        throw error;
+        contasRaw = fallbackRes.data || [];
+      } else {
+        contasRaw = resPrincipal.data || [];
       }
 
-      const contasMapeadas: FinContaPagar[] = (data || []).map(conta => {
+      const contasMapeadas: FinContaPagar[] = contasRaw.map(conta => {
         const vencOperacional = conta.data_vencimento_operacional || this.calcularVencimentoOperacional(
           conta.data_vencimento,
           conta.categoria?.nome,

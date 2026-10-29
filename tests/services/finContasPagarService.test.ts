@@ -245,17 +245,23 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     expect(resumo.totalVencendoHoje).toBe(1);
     expect(resumo.totalCriticas).toBe(2);
     expect(resumo.nivelAlerta).toBe('urgente');
+
+    // Verifica que a query não solicita a coluna inexistente "codigo" em fin_categorias
+    const queryEnviada = mockSelect.mock.calls[0]?.[0] || '';
+    expect(queryEnviada).not.toContain('categoria:fin_categorias(id, nome, codigo)');
+    expect(queryEnviada).toContain('categoria:fin_categorias(id, nome)');
   });
 
-  it('deve retornar vazio de forma segura ao capturar erro 42P01 ou 42703 (Zero-Break Fallback)', async () => {
-    // Setup
+  it('deve executar fallback resiliente e retornar vazio de forma segura ao capturar erro 400, 42P01 ou 42703', async () => {
+    // Setup: simula erro de relação (ex: 400 Bad Request) e fallback também vazio
+    const mockOrder = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: 'PGRST100', message: 'Could not find column' }
+    });
     const mockSelect = vi.fn().mockReturnValue({
       in: vi.fn().mockReturnValue({
         lte: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({
-            data: null,
-            error: { code: '42P01', message: 'relation does not exist' }
-          })
+          order: mockOrder
         })
       })
     });

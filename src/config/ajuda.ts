@@ -1043,9 +1043,9 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'fin-plano-contas',
     modulo: 'financeiro',
-    label: '⚙️ Plano de Contas Hierárquico & DRE Gerencial',
-    description: 'Entenda os 5 macro grupos de custo e como as despesas são consolidadas no fluxo de caixa.',
-    details: 'A matriz de contas do PaxFlow organiza todas as despesas da agência em 5 macro grupos de custos:\n\n1. **Custos Diretos**: Comissões, Premiações, Royalties, Taxa de Marketing e Impostos.\n2. **Despesas Fixas**: Aluguel, Condomínio, Salários, Contabilidade, Energia Elétrica, Limpeza, Plano de Saúde e Tarifas.\n3. **Despesas Variáveis**: Brindes a Clientes, Benfeitorias, Comemorações, Medicina do Trabalho, Prejuízos, Uniformes e REPASSE AGAXTUR.\n4. **Investimentos**: Social Media, Patrocínio Digital, Cursos e Treinamentos.\n5. **Gastos Não Operacionais**: Despesas MKP e despesas extraordinárias.\n\nNa aba **Fluxo de Caixa & DRE**, o sistema totaliza os desembolsos previstos versus realizados de cada grupo com cálculo automático da variação em R$ e exportação para CSV.'
+    label: '⚙️ Plano de Contas Hierárquico, Categorias & Contas Bancárias',
+    description: 'Entenda os 5 macro grupos de custo, criação/edição de categorias e cadastro de contas bancárias.',
+    details: 'A matriz de contas do PaxFlow organiza todas as despesas da agência em 5 macro grupos de custos:\n\n1. **Custos Diretos**: Comissões, Premiações, Royalties, Taxa de Marketing e Impostos.\n2. **Despesas Fixas**: Aluguel, Condomínio, Salários, Contabilidade, Energia Elétrica, Limpeza, Plano de Saúde e Tarifas.\n3. **Despesas Variáveis**: Brindes a Clientes, Benfeitorias, Comemorações, Medicina do Trabalho, Prejuízos, Uniformes e REPASSE AGAXTUR.\n4. **Investimentos**: Social Media, Patrocínio Digital, Cursos e Treinamentos.\n5. **Gastos Não Operacionais**: Despesas MKP e despesas extraordinárias.\n\n### Gestão Interativa de Categorias & Bancos:\n- **+ Nova Categoria**: Botão no cabeçalho ou atalho direto no card do grupo de custo (`+ Adicionar`) que abre o modal para classificar novas despesas (Nível 2) e opcionalmente subcategorias (Nível 3).\n- **Edição em Linha (`✏️`)**: Permite ajustar o nome ou grupo de custo de qualquer categoria existente com persistência instantânea no banco de dados.\n- **Contas Bancárias & Caixas**: Modal para cadastrar e atualizar instituições (`+ Adicionar Banco`), definindo o tipo de conta (Corrente, Poupança ou Caixa Interno) e o saldo inicial para conciliação.'
   },
   {
     id: 'fin-calendario-fluxo',

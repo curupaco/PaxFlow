@@ -1567,6 +1567,11 @@ Para assegurar consistência estética absoluta com os Design Tokens do PaxFlow 
 7. **Reset Rápido de Filtros e Exportação de Contas a Pagar**:
    - Botão dinâmico `✕ Limpar Filtros` exibido quando houver filtros aplicados e atalhos diretos `📥 Exportar CSV` em Contas a Pagar e DRE.
 
+8. **Gestão Interativa do Plano de Contas & Resiliência Defensiva a Erro 400**:
+   - **Modal de Nova Categoria & Edição (`FinPlanoContasService.salvarCategoria`)**: Permite cadastrar categorias associando-as ao Grupo de Custo (Nível 1) e subcategorias iniciais (Nível 3), bem como renomear ou reorganizar categorias existentes via botão de edição (`✏️`).
+   - **Modal de Contas Bancárias (`FinPlanoContasService.salvarContaBancaria`)**: Cadastro e edição de bancos, caixas físicos e saldos iniciais.
+   - **Correção da Query PostgREST**: Remoção da coluna inexistente `codigo` na relação `categoria:fin_categorias(id, nome)` e implementação de fallback defensivo de consulta direta em `obterContasCriticasAlerta`, eliminando retornos de status HTTP 400 Bad Request no console.
+
 ---
 
 ## 4. Diferenciais Competitivos

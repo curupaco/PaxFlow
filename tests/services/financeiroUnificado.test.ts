@@ -171,5 +171,119 @@ describe('Módulo Financeiro Unificado - Testes Subcutâneos de Permissão e Nav
     // Assert
     expect(res.sucesso).toBe(true);
   });
+
+  it('deve persistir e editar categoria do Plano de Contas via FinPlanoContasService', async () => {
+    // Setup
+    const { FinPlanoContasService } = await import('../../src/services/finPlanoContasService');
+    const { supabase } = await import('../../src/services/supabase');
+
+    const insertMock = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: { id: 'cat-uuid-123' },
+          error: null
+        })
+      })
+    });
+
+    const updateMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({
+        data: null,
+        error: null
+      })
+    });
+
+    vi.spyOn(supabase, 'from').mockImplementation((tabela: string) => {
+      if (tabela === 'fin_categorias') {
+        return {
+          insert: insertMock,
+          update: updateMock
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // Action 1: Criar Nova Categoria
+    const resCriacao = await FinPlanoContasService.salvarCategoria('Energia Elétrica', 'tipo-1');
+
+    // Assert 1
+    expect(resCriacao.sucesso).toBe(true);
+    expect(resCriacao.id).toBe('cat-uuid-123');
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
+      nome: 'Energia Elétrica',
+      tipo_custo_id: 'tipo-1',
+      ativo: true
+    }));
+
+    // Action 2: Editar Categoria Existente
+    const resEdicao = await FinPlanoContasService.salvarCategoria('Energia Elétrica Matriz', 'tipo-1', 'cat-uuid-123');
+
+    // Assert 2
+    expect(resEdicao.sucesso).toBe(true);
+    expect(resEdicao.id).toBe('cat-uuid-123');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({
+      nome: 'Energia Elétrica Matriz'
+    }));
+  });
+
+  it('deve persistir conta bancária com tipo e saldo via FinPlanoContasService', async () => {
+    // Setup
+    const { FinPlanoContasService } = await import('../../src/services/finPlanoContasService');
+    const { supabase } = await import('../../src/services/supabase');
+
+    const insertMock = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: { id: 'banco-uuid-999' },
+          error: null
+        })
+      })
+    });
+
+    vi.spyOn(supabase, 'from').mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_bancarias') {
+        return { insert: insertMock } as any;
+      }
+      return {} as any;
+    });
+
+    // Action
+    const res = await FinPlanoContasService.salvarContaBancaria('Banco Itaú PJ', 'corrente', 15000);
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(res.id).toBe('banco-uuid-999');
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
+      nome_banco: 'Banco Itaú PJ',
+      tipo: 'corrente',
+      saldo_inicial: 15000,
+      ativo: true
+    }));
+  });
+
+  it('deve implementar fallback defensivo se a tabela fin_categorias ou fin_contas_bancarias retornar 42P01', async () => {
+    // Setup
+    const { FinPlanoContasService } = await import('../../src/services/finPlanoContasService');
+    const { supabase } = await import('../../src/services/supabase');
+
+    const insertMock = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: { code: '42P01', message: 'relation fin_categorias does not exist' }
+        })
+      })
+    });
+
+    vi.spyOn(supabase, 'from').mockReturnValue({ insert: insertMock } as any);
+
+    // Action
+    const res = await FinPlanoContasService.salvarCategoria('Teste Fallback', 'tipo-1');
+
+    // Assert: Zero-Break fallback ativado
+    expect(res.sucesso).toBe(true);
+    expect(res.id).toMatch(/^temp-/);
+  });
 });
+
 

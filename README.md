@@ -42,6 +42,11 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
     - **Scorecards Executivos em Remessas Agrupadas**: 3 cards superiores exibindo *Lotes Pendentes*, *Total Liquidado* e *Média por Lote*.
     - **Ação de Desagrupar / Desfazer Lotes de Remessa**: Permite ao gestor desfazer remessas com 1 toque, retornando os títulos associados para status pendente avulso de forma segura.
     - **Reset Rápido de Filtros e Exportação de Contas a Pagar**: Botão `✕ Limpar Filtros` exibido dinamicamente quando houver filtros aplicados e botão direto `📥 Exportar CSV` em Contas a Pagar e DRE.
+    - **Gestão Completa de Categorias e Contas Bancárias (Plano de Contas)**:
+      - Modal interativo para criação e edição de categorias contábeis (`+ Nova Categoria`), vinculadas diretamente aos grupos de custo oficiais.
+      - Botões rápidos de inclusão direta por grupo de custo (`+ Adicionar`) e edição rápida em linha (`✏️`).
+      - Modal de cadastro e edição de Contas Bancárias e Caixas (`+ Adicionar Banco`).
+      - Fallback resiliente contra erro 400 e ausência de colunas legadas no PostgREST, garantindo carregamento instantâneo e estável do painel e do badge de alertas.
   - **Governança e RBAC Integrados**: Acesso unificado a todo o Financeiro e Conciliação liberado para a equipe financeira (`admin`, `financeiro` e flag `acesso_financeiro: true`), mantendo a operação crítica de Fechamento de Mês e trancamento de competências estritamente restrita a administradores.
 
 - **Identificação Visual Unificada de Participações & Módulos na Gestão de Equipe [NEW]** — Painel de auditoria visual imediata na tabela de usuários (`Configuracoes.ts` -> Aba Equipe de Consultores):

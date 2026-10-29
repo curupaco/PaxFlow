@@ -1181,13 +1181,21 @@ export class FinanceiroPage {
                 <div class="border border-slate-200/60 dark:border-slate-800 rounded-xl p-3.5 bg-slate-50/40 dark:bg-slate-950/30">
                   <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">${tc.codigo}. ${tc.nome}</span>
-                    <span class="text-[10px] font-bold text-slate-400">${cats.length} categorias</span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] font-bold text-slate-400">${cats.length} categorias</span>
+                      <button class="btn-add-cat-tipo text-[10px] font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 cursor-pointer flex items-center gap-0.5" data-tipo-id="${tc.id}" title="Adicionar categoria a este grupo">
+                        <span>+</span> Adicionar
+                      </button>
+                    </div>
                   </div>
                   <div class="flex flex-wrap gap-1.5">
-                    ${cats.map(c => `
-                      <span class="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 shadow-2xs">
-                        ${c.nome}
-                      </span>
+                    ${cats.length === 0 ? `
+                      <span class="text-[11px] text-slate-400 italic">Nenhuma categoria cadastrada.</span>
+                    ` : cats.map(c => `
+                      <div class="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 shadow-2xs flex items-center gap-1.5 group">
+                        <span>${c.nome}</span>
+                        <button class="btn-editar-categoria opacity-60 hover:opacity-100 transition text-slate-400 hover:text-indigo-600 cursor-pointer text-[10px]" data-cat-id="${c.id}" title="Editar categoria">✏️</button>
+                      </div>
                     `).join('')}
                   </div>
                 </div>
@@ -1206,7 +1214,11 @@ export class FinanceiroPage {
           </div>
 
           <div class="space-y-2">
-            ${this.contasBancarias.map(b => `
+            ${this.contasBancarias.length === 0 ? `
+              <div class="p-4 text-center text-xs text-slate-400 italic border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                Nenhuma conta bancária cadastrada. Clique em "+ Adicionar Banco".
+              </div>
+            ` : this.contasBancarias.map(b => `
               <div class="flex items-center justify-between p-3 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/30">
                 <div class="flex items-center gap-3">
                   <span class="text-lg">🏦</span>
@@ -1215,9 +1227,12 @@ export class FinanceiroPage {
                     <span class="text-[10px] text-slate-400 uppercase font-semibold">${b.tipo}</span>
                   </div>
                 </div>
-                <span class="text-xs font-black text-slate-900 dark:text-slate-100">
-                  ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b.saldo_inicial || 0)}
-                </span>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-black text-slate-900 dark:text-slate-100">
+                    ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b.saldo_inicial || 0)}
+                  </span>
+                  <button class="btn-editar-conta-bancaria text-slate-400 hover:text-indigo-600 cursor-pointer text-xs p-1" data-banco-id="${b.id}" title="Editar conta bancária">✏️</button>
+                </div>
               </div>
             `).join('')}
           </div>
@@ -1478,6 +1493,45 @@ export class FinanceiroPage {
     // Botão Nova Remessa
     this.container.querySelector('#btn-nova-remessa')?.addEventListener('click', () => {
       showCustomAlert('Para agrupar uma remessa, acesse Contas a Pagar e selecione os títulos que deseja consolidar.', 'Info');
+    });
+
+    // Botão Nova Categoria (Plano de Contas)
+    this.container.querySelector('#btn-nova-categoria')?.addEventListener('click', () => {
+      this.abrirModalNovaCategoria();
+    });
+
+    // Botão Nova Conta Bancária
+    this.container.querySelector('#btn-nova-conta-bancaria')?.addEventListener('click', () => {
+      this.abrirModalNovaContaBancaria();
+    });
+
+    // Cliques em botões de editar categoria
+    this.container.querySelectorAll('.btn-editar-categoria').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const catId = btn.getAttribute('data-cat-id');
+        const cat = this.categorias.find(c => c.id === catId);
+        if (cat) this.abrirModalNovaCategoria(cat);
+      });
+    });
+
+    // Cliques em botões de editar conta bancária
+    this.container.querySelectorAll('.btn-editar-conta-bancaria').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const bancoId = btn.getAttribute('data-banco-id');
+        const banco = this.contasBancarias.find(b => b.id === bancoId);
+        if (banco) this.abrirModalNovaContaBancaria(banco);
+      });
+    });
+
+    // Botão de adicionar categoria rápida direto no card do tipo de custo
+    this.container.querySelectorAll('.btn-add-cat-tipo').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tipoId = btn.getAttribute('data-tipo-id');
+        this.abrirModalNovaCategoria(undefined, tipoId || undefined);
+      });
     });
 
     // Cliques nos dias do Calendário de Fluxo de Caixa
@@ -2165,5 +2219,240 @@ export class FinanceiroPage {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  // ==========================================================================
+  // MODAL NOVA / EDITAR CATEGORIA (PLANO DE CONTAS)
+  // ==========================================================================
+  private abrirModalNovaCategoria(catParaEditar?: FinCategoria, tipoCustoIdSugerido?: string): void {
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity';
+
+    const isEdit = !!catParaEditar;
+    const tipoSelecionado = catParaEditar?.tipo_custo_id || tipoCustoIdSugerido || (this.tiposCusto[0]?.id || '');
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-scale-in">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl">🏷️</span>
+            <div>
+              <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">
+                ${isEdit ? 'Editar Categoria' : 'Nova Categoria'}
+              </h3>
+              <p class="text-[11px] text-slate-400">Classificação contábil do Plano de Contas</p>
+            </div>
+          </div>
+          <button id="btn-fechar-modal-cat" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg cursor-pointer">✕</button>
+        </div>
+
+        <form id="form-nova-categoria" class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Grupo de Custo (Nível 1) *</label>
+            <select id="input-cat-tipo-custo" required class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+              <option value="">Selecione o Grupo de Custo...</option>
+              ${this.tiposCusto.map(t => `
+                <option value="${t.id}" ${t.id === tipoSelecionado ? 'selected' : ''}>
+                  ${t.codigo}. ${t.nome}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Nome da Categoria (Nível 2) *</label>
+            <input type="text" id="input-cat-nome" required placeholder="Ex: Energia Elétrica, Aluguel, Google Ads..." value="${catParaEditar?.nome || ''}" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+          </div>
+
+          ${!isEdit ? `
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Subcategoria Inicial (Opcional - Nível 3)</label>
+              <input type="text" id="input-cat-subcategoria" placeholder="Ex: Matriz, Filial, Campanha Institucional..." class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200" />
+            </div>
+          ` : ''}
+
+          <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button type="button" id="btn-cancelar-cat" class="h-[42px] px-4 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
+              Cancelar
+            </button>
+            <button type="submit" id="btn-salvar-cat" class="h-[42px] px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
+              <span>✓</span> ${isEdit ? 'Salvar Alterações' : 'Criar Categoria'}
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const fechar = () => {
+      overlay.remove();
+    };
+
+    overlay.querySelector('#btn-fechar-modal-cat')?.addEventListener('click', fechar);
+    overlay.querySelector('#btn-cancelar-cat')?.addEventListener('click', fechar);
+
+    const form = overlay.querySelector('#form-nova-categoria') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const tipoCustoId = (overlay.querySelector('#input-cat-tipo-custo') as HTMLSelectElement).value;
+      const nome = (overlay.querySelector('#input-cat-nome') as HTMLInputElement).value.trim();
+      const subcatInput = overlay.querySelector('#input-cat-subcategoria') as HTMLInputElement | null;
+      const subcategoria = subcatInput?.value?.trim();
+
+      if (!nome || !tipoCustoId) {
+        await showCustomAlert('Por favor, preencha o grupo e o nome da categoria.', 'Atenção');
+        return;
+      }
+
+      const btnSalvar = overlay.querySelector('#btn-salvar-cat') as HTMLButtonElement;
+      if (btnSalvar) {
+        btnSalvar.disabled = true;
+        btnSalvar.textContent = 'Gravando...';
+      }
+
+      try {
+        const res = await FinPlanoContasService.salvarCategoria(nome, tipoCustoId, catParaEditar?.id);
+        if (!res.sucesso) {
+          throw new Error(res.erro || 'Falha ao salvar categoria no banco');
+        }
+
+        if (subcategoria && res.id) {
+          await FinPlanoContasService.salvarSubcategoria(subcategoria, res.id);
+        }
+
+        fechar();
+        window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
+        await showCustomAlert(
+          isEdit ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso no Plano de Contas!',
+          'Sucesso'
+        );
+
+        this.categorias = await FinPlanoContasService.listarCategorias();
+        this.render();
+        await this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao salvar categoria:', err);
+        await showCustomAlert(err.message || 'Erro ao persistir categoria.', 'Erro');
+        if (btnSalvar) {
+          btnSalvar.disabled = false;
+          btnSalvar.textContent = isEdit ? 'Salvar Alterações' : 'Criar Categoria';
+        }
+      }
+    });
+  }
+
+  // ==========================================================================
+  // MODAL NOVA / EDITAR CONTA BANCÁRIA
+  // ==========================================================================
+  private abrirModalNovaContaBancaria(contaParaEditar?: FinContaBancaria): void {
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity';
+
+    const isEdit = !!contaParaEditar;
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-scale-in">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl">🏦</span>
+            <div>
+              <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">
+                ${isEdit ? 'Editar Conta Bancária' : 'Nova Conta Bancária / Caixa'}
+              </h3>
+              <p class="text-[11px] text-slate-400">Controle de saldos e conciliação bancária</p>
+            </div>
+          </div>
+          <button id="btn-fechar-modal-banco" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg cursor-pointer">✕</button>
+        </div>
+
+        <form id="form-nova-conta-bancaria" class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Nome do Banco ou Caixa *</label>
+            <input type="text" id="input-banco-nome" required placeholder="Ex: Banco Itaú, Nubank PJ, Caixa Físico..." value="${contaParaEditar?.nome_banco || ''}" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Tipo de Conta *</label>
+              <select id="input-banco-tipo" required class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+                <option value="corrente" ${contaParaEditar?.tipo === 'corrente' ? 'selected' : ''}>Conta Corrente</option>
+                <option value="poupanca" ${contaParaEditar?.tipo === 'poupanca' ? 'selected' : ''}>Poupança / Aplicação</option>
+                <option value="caixa" ${contaParaEditar?.tipo === 'caixa' ? 'selected' : ''}>Caixa Interno</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Saldo Inicial (R$)</label>
+              <input type="number" step="0.01" id="input-banco-saldo" placeholder="0,00" value="${contaParaEditar?.saldo_inicial || 0}" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-black text-slate-900 dark:text-slate-100" />
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button type="button" id="btn-cancelar-banco" class="h-[42px] px-4 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
+              Cancelar
+            </button>
+            <button type="submit" id="btn-salvar-banco" class="h-[42px] px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
+              <span>✓</span> ${isEdit ? 'Salvar Alterações' : 'Cadastrar Banco'}
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const fechar = () => {
+      overlay.remove();
+    };
+
+    overlay.querySelector('#btn-fechar-modal-banco')?.addEventListener('click', fechar);
+    overlay.querySelector('#btn-cancelar-banco')?.addEventListener('click', fechar);
+
+    const form = overlay.querySelector('#form-nova-conta-bancaria') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nomeBanco = (overlay.querySelector('#input-banco-nome') as HTMLInputElement).value.trim();
+      const tipo = (overlay.querySelector('#input-banco-tipo') as HTMLSelectElement).value as any;
+      const saldo = Number((overlay.querySelector('#input-banco-saldo') as HTMLInputElement).value) || 0;
+
+      if (!nomeBanco) {
+        await showCustomAlert('Por favor, informe o nome do banco ou caixa.', 'Atenção');
+        return;
+      }
+
+      const btnSalvar = overlay.querySelector('#btn-salvar-banco') as HTMLButtonElement;
+      if (btnSalvar) {
+        btnSalvar.disabled = true;
+        btnSalvar.textContent = 'Gravando...';
+      }
+
+      try {
+        const res = await FinPlanoContasService.salvarContaBancaria(nomeBanco, tipo, saldo, contaParaEditar?.id);
+        if (!res.sucesso) {
+          throw new Error(res.erro || 'Falha ao salvar conta bancária');
+        }
+
+        fechar();
+        window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
+        await showCustomAlert(
+          isEdit ? 'Conta bancária atualizada com sucesso!' : 'Conta bancária cadastrada com sucesso!',
+          'Sucesso'
+        );
+
+        this.contasBancarias = await FinPlanoContasService.listarContasBancarias();
+        this.render();
+        await this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao salvar conta bancária:', err);
+        await showCustomAlert(err.message || 'Erro ao persistir conta bancária.', 'Erro');
+        if (btnSalvar) {
+          btnSalvar.disabled = false;
+          btnSalvar.textContent = isEdit ? 'Salvar Alterações' : 'Cadastrar Banco';
+        }
+      }
+    });
   }
 }
