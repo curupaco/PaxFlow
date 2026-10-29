@@ -1538,6 +1538,35 @@ Com o crescimento das rotinas contábeis da agência, o módulo de **Conciliaç�
    - A barra de endereços reflete o submódulo ativo via querystring (ex: `#financeiro?sub=conciliacao`).
    - Requisições legadas para `#conciliacao` (de links antigos, bookmarks ou notificações) são automaticamente redirecionadas para `#financeiro?sub=conciliacao` sem qualquer quebra de fluxo.
 
+### 3.54 Polimento Visual, UX Responsiva Mobile-First & Scorecards do Financeiro
+
+Para assegurar consistência estética absoluta com os Design Tokens do PaxFlow e garantir usabilidade fluida tanto em notebooks quanto em tablets e smartphones:
+
+1. **Tokens Oficiais PaxFlow nos Indicadores Superiores (KPIs)**:
+   - Os cards de indicadores (`FinResumoLiquidez`) utilizam preenchimento respirável `p-5 sm:p-6` com cantos arredondados `rounded-3xl` e faixas temáticas superiores de acento (`h-1 bg-amber-500`, `bg-emerald-500`, `bg-rose-500`, `bg-indigo-500`).
+   - Pílulas com borda e fundo suave (`px-2.5 py-1 rounded-full text-[10px] whitespace-nowrap`), eliminando esmagamento de dados e colagem em bordas.
+   - Valores monetários destacados com tipografia forte `text-2xl sm:text-3xl font-black` e legendas operacionais no rodapé.
+
+2. **Trilha de Navegação (Breadcrumb) Elegante**:
+   - Inclusão de indicador sutil no cabeçalho unificado (`Financeiro › Contas a Pagar`, `Financeiro › Conciliação Bancária`, etc.), permitindo reconhecimento imediato do submódulo ativo quando o drawer lateral estiver recolhido em smartphones.
+
+3. **Modo Adaptativo Mobile (Cards de Pagamento Ergonômicos)**:
+   - Em telas `< 768px`, as tabelas tabulares densas são substituídas por uma lista vertical de cartões ergonômicos (`block md:hidden`).
+   - Cada cartão exibe: Vencimento operacional/nominal, badge colorido de status, Favorecido e descrição, tags de Categoria e Tipo de Custo, e rodapé com valores e botões confortáveis ao toque do polegar (Baixar, Editar, Comprovante e Estornar).
+
+4. **Rolagem Defensiva no Calendário Diário de Desembolsos**:
+   - A matriz de 7 colunas (Domingo a Sábado) foi envolvida em contêiner com rolagem horizontal suave (`overflow-x-auto min-w-[680px] lg:min-w-0`), protegendo células diárias contra compressão excessiva em telas verticais de smartphones.
+
+5. **DRE Enriquecido com Barras de Progresso Visuais**:
+   - Inclusão da coluna `% Executado` na tabela do DRE gerencial com barra de progresso horizontal semântica (verde se dentro da margem, âmbar entre 85% e 100%, e vermelha se estourado).
+
+6. **Scorecards Executivos em Remessas Agrupadas**:
+   - 3 cartões no topo da visão de remessas: *Lotes Pendentes*, *Total Liquidado* e *Média por Lote*.
+   - Inclusão da ação de **Desfazer / Desagrupar Lote** (`FinRemessasService.desagruparRemessa`), permitindo devolver contas ao estado avulso pendente com segurança e resiliência a schema drift (`42703`).
+
+7. **Reset Rápido de Filtros e Exportação de Contas a Pagar**:
+   - Botão dinâmico `✕ Limpar Filtros` exibido quando houver filtros aplicados e atalhos diretos `📥 Exportar CSV` em Contas a Pagar e DRE.
+
 ---
 
 ## 4. Diferenciais Competitivos

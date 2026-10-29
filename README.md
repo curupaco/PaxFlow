@@ -32,6 +32,16 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
       - `⚙️ Plano de Contas` (`#financeiro?sub=plano-contas`)
     - Expansão automática do menu ao clicar no ícone em modo colapsado e sincronização bidirecional de rotas na URL da SPA.
     - Redirecionamento transparente e retrocompatível de links antigos de `#conciliacao` para `#financeiro?sub=conciliacao`.
+  - **Polimento Visual, Responsividade Mobile-First & UX Aprimorada [NEW]**:
+    - **Padrão de Design Tokens PaxFlow nos Indicadores Superiores**: Cards de KPIs reformulados com padding respirável (`p-5 sm:p-6`), cantos arredondados `rounded-3xl`, faixas temáticas superiores de acento e pílulas sem corte de dados.
+    - **Trilha de Navegação (Breadcrumb) Elegante**: Orientação espacial contínua no topo de todos os submódulos (`Financeiro › Contas a Pagar`, `Financeiro › Conciliação`, etc.), eliminando desorientação em smartphones quando a sidebar estiver recolhida.
+    - **Eliminação de Cabeçalhos Duplicados**: Unificação total dos cabeçalhos na casca do Financeiro, integrando botões de ação ("Importar Extrato", "Fechar Mês" e "Exportar") diretamente na barra superior.
+    - **Visão Responsiva Mobile-First em Contas a Pagar e Remessas**: Modo de visualização adaptativo com tabela completa tabular no desktop (`hidden md:block`) e lista de **Cards de Pagamento Ergonômicos** no mobile (`block md:hidden`), permitindo dar baixa, editar e consultar comprovantes com toques confortáveis no celular sem scroll horizontal excessivo.
+    - **Grade do Calendário Diário com Rolagem Defensiva**: Invólucro com deslize horizontal suave no mobile (`min-w-[680px] lg:min-w-0`), garantindo que dias de pico, valores e contadores nunca sejam espremidos em telas menores.
+    - **DRE Enriquecido com Barras de Progresso Visuais**: Tabela analítica com coluna `% Executado`, indicador visual de absorção de orçamento com cores semânticas (esmeralda até 85%, âmbar de 85% a 100% e vermelho se ultrapassado).
+    - **Scorecards Executivos em Remessas Agrupadas**: 3 cards superiores exibindo *Lotes Pendentes*, *Total Liquidado* e *Média por Lote*.
+    - **Ação de Desagrupar / Desfazer Lotes de Remessa**: Permite ao gestor desfazer remessas com 1 toque, retornando os títulos associados para status pendente avulso de forma segura.
+    - **Reset Rápido de Filtros e Exportação de Contas a Pagar**: Botão `✕ Limpar Filtros` exibido dinamicamente quando houver filtros aplicados e botão direto `📥 Exportar CSV` em Contas a Pagar e DRE.
   - **Governança e RBAC Integrados**: Acesso unificado a todo o Financeiro e Conciliação liberado para a equipe financeira (`admin`, `financeiro` e flag `acesso_financeiro: true`), mantendo a operação crítica de Fechamento de Mês e trancamento de competências estritamente restrita a administradores.
 
 - **Identificação Visual Unificada de Participações & Módulos na Gestão de Equipe [NEW]** — Painel de auditoria visual imediata na tabela de usuários (`Configuracoes.ts` -> Aba Equipe de Consultores):

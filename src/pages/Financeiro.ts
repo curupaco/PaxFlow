@@ -191,6 +191,7 @@ export class FinanceiroPage {
       subtitulo: string;
       icone: string;
       helpId: string;
+      breadcrumb: string;
       botoesAcao: string;
     }> = {
       contas: {
@@ -198,9 +199,13 @@ export class FinanceiroPage {
         subtitulo: 'Controle de liquidez, despesas fixas recorrentes, parcelamentos e liquidações bancárias.',
         icone: '📋',
         helpId: 'fin-contas-pagar',
+        breadcrumb: 'Contas a Pagar',
         botoesAcao: `
+          <button id="btn-exportar-contas-csv" class="h-[42px] px-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 border border-slate-200/60 dark:border-slate-700">
+            <span>📥</span> Exportar CSV
+          </button>
           <button id="btn-nova-conta" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
-            <span>+</span> Nova Conta / Despesa
+            <span>+</span> Nova Despesa
           </button>
         `
       },
@@ -209,6 +214,7 @@ export class FinanceiroPage {
         subtitulo: 'Agrupamento de contas a pagar para autorização e liquidação conjunta via PIX/TED.',
         icone: '📦',
         helpId: 'fin-remessas',
+        breadcrumb: 'Remessas Agrupadas',
         botoesAcao: `
           <button id="btn-nova-remessa" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
             <span>📦</span> Agrupar Nova Remessa
@@ -220,6 +226,7 @@ export class FinanceiroPage {
         subtitulo: 'Demonstrativo de Resultado do Exercício com regime de competência e previsão financeira.',
         icone: '📈',
         helpId: 'fin-fluxo-caixa',
+        breadcrumb: 'Fluxo de Caixa & DRE',
         botoesAcao: `
           <button id="btn-exportar-dre" class="h-[42px] px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition border border-slate-200/60 dark:border-slate-700 cursor-pointer flex items-center gap-2">
             <span>📥</span> Exportar DRE (CSV)
@@ -228,16 +235,28 @@ export class FinanceiroPage {
       },
       conciliacao: {
         titulo: 'Conciliação Bancária',
-        subtitulo: 'Casamento inteligente de extratos bancários com recebimentos de vendas e despesas.',
+        subtitulo: 'FinRecon™ - Casamento inteligente de extratos bancários com recebimentos de vendas e despesas.',
         icone: '🪙',
         helpId: 'conciliacao-bancaria',
-        botoesAcao: ''
+        breadcrumb: 'Conciliação Bancária',
+        botoesAcao: `
+          <button id="btn-exportar-conciliacao-topo" class="h-[42px] px-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition flex items-center gap-1.5 border border-slate-200/60 dark:border-slate-700 cursor-pointer">
+            📥 Exportar
+          </button>
+          <button id="btn-fechar-mes-topo" class="h-[42px] px-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition flex items-center gap-1.5 border border-slate-200/60 dark:border-slate-700 cursor-pointer">
+            🔒 Fechar Mês
+          </button>
+          <button id="btn-abrir-upload-topo" class="h-[42px] px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl font-black text-xs shadow-md shadow-emerald-500/20 transition transform active:scale-95 flex items-center gap-1.5 cursor-pointer">
+            📁 Importar Extrato (OFX/CSV)
+          </button>
+        `
       },
       plano: {
         titulo: 'Plano de Contas & Contas Bancárias',
         subtitulo: 'Estruturação contábil de tipos de custo, categorias, subcategorias e contas correntes.',
         icone: '⚙️',
         helpId: 'fin-plano-contas',
+        breadcrumb: 'Plano de Contas',
         botoesAcao: `
           <button id="btn-nova-categoria" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
             <span>+</span> Nova Categoria
@@ -246,29 +265,35 @@ export class FinanceiroPage {
       }
     };
 
-    // Submódulo de Conciliação renderiza sua própria interface rica sem cabeçalho duplicado
-    if (this.activeTab === 'conciliacao') {
-      this.container.innerHTML = `
-        <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto animate-fade-in">
-          <div id="fin-tab-content">
-            <div id="fin-conciliacao-mount"></div>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
     const cfg = configCabecalho[this.activeTab] || configCabecalho.contas;
+
+    // Métricas para Scorecards de Remessas
+    const totalRemessasAbertas = this.remessas
+      .filter(r => r.status !== 'paga')
+      .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    const qtdRemessasAbertas = this.remessas.filter(r => r.status !== 'paga').length;
+    const totalRemessasPagas = this.remessas
+      .filter(r => r.status === 'paga')
+      .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    const qtdRemessasPagas = this.remessas.filter(r => r.status === 'paga').length;
+    const mediaPorRemessa = this.remessas.length > 0
+      ? (totalRemessasAbertas + totalRemessasPagas) / this.remessas.length
+      : 0;
 
     this.container.innerHTML = `
       <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto animate-fade-in">
-        <!-- Cabeçalho Dinâmico da Sub-Visão -->
+        <!-- Cabeçalho Dinâmico Unificado com Breadcrumbs -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-5">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-700 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 text-2xl font-black shrink-0">
               ${cfg.icone}
             </div>
             <div>
+              <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 flex items-center gap-1.5">
+                <span>Financeiro</span>
+                <span>›</span>
+                <span class="text-indigo-600 dark:text-indigo-400 font-extrabold">${cfg.breadcrumb}</span>
+              </div>
               <div class="flex items-center gap-2">
                 <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-50 tracking-tight">${cfg.titulo}</h1>
                 ${renderHelpIcon(cfg.helpId)}
@@ -277,7 +302,7 @@ export class FinanceiroPage {
             </div>
           </div>
 
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2.5 flex-wrap">
             ${cfg.botoesAcao}
           </div>
         </div>
@@ -355,6 +380,59 @@ export class FinanceiroPage {
           </div>
         ` : ''}
 
+        ${this.activeTab === 'remessas' ? `
+          <!-- Cards de Indicadores de Remessas Agrupadas -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Lotes Pendentes</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 whitespace-nowrap">
+                  ${qtdRemessasAbertas} lotes
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                  ${formatarMoeda(totalRemessasAbertas)}
+                </span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">Aguardando liquidação conjunta</span>
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Total Liquidado</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 whitespace-nowrap">
+                  ${qtdRemessasPagas} pagas
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                  ${formatarMoeda(totalRemessasPagas)}
+                </span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">Remessas com baixa concluída</span>
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div class="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Média por Lote</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 whitespace-nowrap">
+                  ${this.remessas.length} total
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
+                  ${formatarMoeda(mediaPorRemessa)}
+                </span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">Ticket médio das remessas consolidadas</span>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
         <!-- Conteúdo Específico da Sub-Visão Ativa -->
         <div id="fin-tab-content">
           ${this.renderAbaConteudo()}
@@ -409,11 +487,45 @@ export class FinanceiroPage {
       return `${d}/${m}/${y}`;
     };
 
+    const temFiltroAtivo = 
+      this.filtros.status !== 'todos' || 
+      Boolean(this.filtros.tipoCustoId) || 
+      Boolean(this.filtros.categoriaId) || 
+      Boolean(this.filtros.buscaFavorecido?.trim());
+
+    const statusColors: Record<string, string> = {
+      pendente: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-900/40',
+      pago: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-900/40',
+      atrasado: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200/60 dark:border-rose-900/40 animate-pulse',
+      cancelado: 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+    };
+
+    const isAdmin = this.perfil?.role === 'admin';
+
     return `
       <div class="space-y-4">
-        <!-- Barra de Filtros -->
+        <!-- Barra de Filtros com Reset e Exportação -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">Filtros & Busca</span>
+              ${temFiltroAtivo ? `
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/40">Filtros Ativos</span>
+              ` : ''}
+            </div>
+            <div class="flex items-center gap-2">
+              ${temFiltroAtivo ? `
+                <button id="btn-limpar-filtros" class="h-[32px] px-2.5 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer flex items-center gap-1">
+                  ✕ Limpar Filtros
+                </button>
+              ` : ''}
+              <button id="btn-exportar-csv-tabela" class="h-[32px] px-2.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1">
+                📥 Exportar CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
             <div>
               <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Mês de Referência</label>
               <select id="filtro-mes" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
@@ -454,15 +566,15 @@ export class FinanceiroPage {
               </select>
             </div>
 
-            <div>
+            <div class="col-span-2 sm:col-span-2 lg:col-span-1">
               <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Buscar Favorecido</label>
               <input id="filtro-busca" type="text" placeholder="Nome do fornecedor..." value="${this.filtros.buscaFavorecido || ''}" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
             </div>
           </div>
         </div>
 
-        <!-- Tabela de Títulos com Rolagem Defensiva -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+        <!-- 1. Visão Desktop: Tabela com Rolagem Defensiva (hidden md:block) -->
+        <div class="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
           <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
             <table class="w-full text-left border-collapse min-w-[900px]">
               <thead>
@@ -484,16 +596,8 @@ export class FinanceiroPage {
                     </td>
                   </tr>
                 ` : this.contas.map(c => {
-                  const statusColors: Record<string, string> = {
-                    pendente: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-900/40',
-                    pago: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-900/40',
-                    atrasado: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200/60 dark:border-rose-900/40 animate-pulse',
-                    cancelado: 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
-                  };
-
                   const ehEstimado = c.valor_estimado;
                   const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
-                  const isAdmin = this.perfil?.role === 'admin';
 
                   return `
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
@@ -571,6 +675,88 @@ export class FinanceiroPage {
             </table>
           </div>
         </div>
+
+        <!-- 2. Visão Mobile: Lista de Cards de Pagamento Otimizados (block md:hidden) -->
+        <div class="block md:hidden space-y-3">
+          ${this.contas.length === 0 ? `
+            <div class="p-8 text-center text-slate-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
+              Nenhuma conta localizada para o período e filtros selecionados.
+            </div>
+          ` : this.contas.map(c => {
+            const ehEstimado = c.valor_estimado;
+            const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
+
+            return `
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+                <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-black text-slate-900 dark:text-slate-100">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                    ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
+                      <span class="text-[9px] text-slate-400 font-semibold">(Nominal: ${formatarData(c.data_vencimento)})</span>
+                    ` : ''}
+                  </div>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
+                    ${c.status}
+                  </span>
+                </div>
+
+                <div>
+                  <span class="font-extrabold text-slate-900 dark:text-slate-100 text-sm block">${c.favorecido}</span>
+                  <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">${c.descricao || 'Despesa'} ${parcelaLabel}</span>
+                  <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                      ${c.categoria?.nome || 'Geral'}
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-semibold">• ${c.tipo_custo?.nome || 'Operacional'}</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Valor</span>
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
+                      ${ehEstimado ? `<span class="text-[9px] text-sky-600 font-bold uppercase">(Estimado)</span>` : ''}
+                    </div>
+                    ${c.valor_pago && c.valor_pago > 0 ? `
+                      <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">Pago: ${formatarMoeda(c.valor_pago)}</span>
+                    ` : ''}
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    ${c.status !== 'pago' && c.status !== 'cancelado' ? `
+                      <button data-id="${c.id}" class="btn-baixar-conta h-[36px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1" title="Dar Baixa">
+                        <span>✓</span> Baixar
+                      </button>
+                    ` : ''}
+
+                    <button data-id="${c.id}" class="btn-editar-conta h-[36px] w-[36px] flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer" title="Editar">
+                      ✏️
+                    </button>
+
+                    ${c.comprovante_url ? `
+                      <a href="${c.comprovante_url}" target="_blank" class="h-[36px] w-[36px] flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl transition cursor-pointer" title="Comprovante">
+                        📎
+                      </a>
+                    ` : ''}
+
+                    ${c.status === 'pago' && isAdmin ? `
+                      <button data-id="${c.id}" class="btn-estornar-conta h-[36px] w-[36px] flex items-center justify-center bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl transition cursor-pointer" title="Estornar Baixa">
+                        ↩️
+                      </button>
+                    ` : ''}
+
+                    ${c.status !== 'cancelado' && isAdmin ? `
+                      <button data-id="${c.id}" class="btn-cancelar-conta h-[36px] w-[36px] flex items-center justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl transition cursor-pointer" title="Cancelar Título">
+                        🚫
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
       </div>
     `;
   }
@@ -590,7 +776,8 @@ export class FinanceiroPage {
 
     return `
       <div class="space-y-4">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+        <!-- 1. Visão Desktop: Tabela de Remessas com Rolagem Defensiva -->
+        <div class="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
           <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
             <table class="w-full text-left border-collapse min-w-[800px]">
               <thead>
@@ -601,7 +788,7 @@ export class FinanceiroPage {
                   <th class="py-3 px-4 text-center">Qtd. Títulos</th>
                   <th class="py-3 px-4 text-right">Valor Consolidado</th>
                   <th class="py-3 px-4 text-center">Status</th>
-                  <th class="py-3 px-4 w-32 text-center">Ações</th>
+                  <th class="py-3 px-4 w-36 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -634,11 +821,14 @@ export class FinanceiroPage {
                           ${rem.status}
                         </span>
                       </td>
-                      <td class="py-3 px-4 w-32 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center gap-1">
+                      <td class="py-3 px-4 w-36 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1.5">
                           ${rem.status !== 'paga' ? `
                             <button data-remessa-id="${rem.id}" class="btn-baixar-remessa px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition cursor-pointer">
-                              Baixar Tudo
+                              Baixar
+                            </button>
+                            <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa px-2 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 rounded-lg font-bold text-[10px] transition cursor-pointer" title="Desfazer lote e devolver contas">
+                              Desfazer
                             </button>
                           ` : `
                             <span class="text-[10px] text-slate-400 font-bold">Liquidada</span>
@@ -675,6 +865,75 @@ export class FinanceiroPage {
               </tbody>
             </table>
           </div>
+        </div>
+
+        <!-- 2. Visão Mobile: Lista de Cartões de Remessas (block md:hidden) -->
+        <div class="block md:hidden space-y-3">
+          ${this.remessas.length === 0 ? `
+            <div class="p-8 text-center text-slate-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
+              Nenhuma remessa agrupada encontrada. Clique em "+ Agrupar Nova Remessa" para consolidar pagamentos.
+            </div>
+          ` : this.remessas.map(rem => {
+            const expandida = this.remessasExpandidas.has(rem.id);
+            const itens = rem.itens || [];
+
+            return `
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+                <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                  <span class="text-xs font-black text-slate-900 dark:text-slate-100">Previsto: ${formatarData(rem.data_prevista)}</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${rem.status === 'paga' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+                    ${rem.status}
+                  </span>
+                </div>
+
+                <div>
+                  <span class="font-extrabold text-slate-900 dark:text-slate-100 text-sm block">${rem.favorecido}</span>
+                  ${rem.observacoes ? `<span class="text-xs text-slate-500 dark:text-slate-400 block mt-0.5">${rem.observacoes}</span>` : ''}
+                  <span class="text-[11px] text-slate-400 font-bold block mt-1">Lote com ${itens.length} título(s)</span>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Consolidado</span>
+                    <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(rem.valor_total)}</span>
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <button data-remessa-id="${rem.id}" class="btn-toggle-accordion h-[36px] px-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer">
+                      ${expandida ? 'Fechar Itens' : 'Ver Itens'}
+                    </button>
+
+                    ${rem.status !== 'paga' ? `
+                      <button data-remessa-id="${rem.id}" class="btn-baixar-remessa h-[36px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer">
+                        Baixar
+                      </button>
+                      <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa h-[36px] px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 rounded-xl font-bold text-xs transition cursor-pointer" title="Desfazer lote">
+                        Desfazer
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+
+                ${expandida ? `
+                  <div class="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3 border border-slate-200/60 dark:border-slate-800 space-y-2 mt-2">
+                    <span class="text-[10px] uppercase tracking-wider font-black text-indigo-600 dark:text-indigo-400 block">Títulos Deste Lote:</span>
+                    ${itens.map(it => `
+                      <div class="flex items-center justify-between text-xs py-1 border-b border-slate-200/60 dark:border-slate-800/60 last:border-none">
+                        <div>
+                          <span class="font-bold text-slate-800 dark:text-slate-200">${it.descricao || 'Item de pagamento'}</span>
+                          <span class="text-[10px] text-slate-400 block">${it.categoria?.nome || 'Geral'}</span>
+                        </div>
+                        <div class="text-right">
+                          <span class="font-black text-slate-900 dark:text-slate-100">${formatarMoeda(it.valor_nominal)}</span>
+                          <span class="text-[9px] block uppercase font-bold ${it.status === 'pago' ? 'text-emerald-600' : 'text-amber-600'}">${it.status}</span>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }).join('')}
         </div>
       </div>
     `;
@@ -752,104 +1011,108 @@ export class FinanceiroPage {
             <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span> Em Atraso</span>
           </div>
 
-          <!-- Grade Calendário (7 Colunas de Domingo a Sábado) -->
+          <!-- Grade Calendário (7 Colunas de Domingo a Sábado com rolagem defensiva) -->
           <div class="border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50/40 dark:bg-slate-950/20">
-            <!-- Cabeçalho dos Dias da Semana -->
-            <div class="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800 text-center py-2 bg-slate-100/60 dark:bg-slate-900/60 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              ${diasSemanaCabecalho.map(d => `<div>${d}</div>`).join('')}
-            </div>
+            <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
+              <div class="min-w-[680px] lg:min-w-0">
+                <!-- Cabeçalho dos Dias da Semana -->
+                <div class="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800 text-center py-2 bg-slate-100/60 dark:bg-slate-900/60 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  ${diasSemanaCabecalho.map(d => `<div>${d}</div>`).join('')}
+                </div>
 
-            <!-- Células dos Dias -->
-            <div class="grid grid-cols-7 gap-px bg-slate-200/60 dark:bg-slate-800/80">
-              <!-- Espaços vazios antes do dia 1 -->
-              ${Array.from({ length: primeiroDiaSemana }).map(() => `
-                <div class="min-h-[85px] sm:min-h-[95px] p-2 bg-slate-50/20 dark:bg-slate-950/10"></div>
-              `).join('')}
+                <!-- Células dos Dias -->
+                <div class="grid grid-cols-7 gap-px bg-slate-200/60 dark:bg-slate-800/80">
+                  <!-- Espaços vazios antes do dia 1 -->
+                  ${Array.from({ length: primeiroDiaSemana }).map(() => `
+                    <div class="min-h-[85px] sm:min-h-[95px] p-2 bg-slate-50/20 dark:bg-slate-950/10"></div>
+                  `).join('')}
 
-              <!-- Dias do Mês -->
-              ${cal.dias.map(d => {
-                const temTitulos = d.qtdTitulos > 0;
-                const ehPico = d.ehDiaPico;
-                const temAtrasadas = d.qtdAtrasadas > 0;
-                const todasPagas = temTitulos && d.qtdPagas === d.qtdTitulos;
+                  <!-- Dias do Mês -->
+                  ${cal.dias.map(d => {
+                    const temTitulos = d.qtdTitulos > 0;
+                    const ehPico = d.ehDiaPico;
+                    const temAtrasadas = d.qtdAtrasadas > 0;
+                    const todasPagas = temTitulos && d.qtdPagas === d.qtdTitulos;
 
-                return `
-                  <div 
-                    data-cal-dia="${d.dia}" 
-                    class="btn-detalhes-dia-cal min-h-[85px] sm:min-h-[95px] p-2 flex flex-col justify-between transition relative text-left select-none ${
-                      temTitulos ? 'cursor-pointer hover:bg-white dark:hover:bg-slate-900 hover:ring-2 hover:ring-indigo-500/50 hover:z-10 shadow-2xs' : 'cursor-default'
-                    } ${
-                      ehPico 
-                        ? 'bg-amber-50/40 dark:bg-amber-950/25 ring-1 ring-amber-400/25' 
-                        : d.ehFimDeSemana 
-                          ? 'bg-slate-50/60 dark:bg-slate-950/40' 
-                          : 'bg-white dark:bg-slate-900'
-                    }"
-                    title="${temTitulos ? `Clique para conferir os ${d.qtdTitulos} títulos do Dia ${d.dia}` : `Dia ${d.dia} sem vencimentos`}"
-                  >
-                    <!-- Linha do Número do Dia e Badge de Pico -->
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs sm:text-sm font-black ${
-                        temTitulos 
-                          ? (temAtrasadas ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100') 
-                          : (d.ehFimDeSemana ? 'text-slate-400 dark:text-slate-600' : 'text-slate-500 dark:text-slate-400')
-                      }">
-                        ${d.dia}
-                      </span>
+                    return `
+                      <div 
+                        data-cal-dia="${d.dia}" 
+                        class="btn-detalhes-dia-cal min-h-[85px] sm:min-h-[95px] p-2 flex flex-col justify-between transition relative text-left select-none ${
+                          temTitulos ? 'cursor-pointer hover:bg-white dark:hover:bg-slate-900 hover:ring-2 hover:ring-indigo-500/50 hover:z-10 shadow-2xs' : 'cursor-default'
+                        } ${
+                          ehPico 
+                            ? 'bg-amber-50/40 dark:bg-amber-950/25 ring-1 ring-amber-400/25' 
+                            : d.ehFimDeSemana 
+                              ? 'bg-slate-50/60 dark:bg-slate-950/40' 
+                              : 'bg-white dark:bg-slate-900'
+                        }"
+                        title="${temTitulos ? `Clique para conferir os ${d.qtdTitulos} títulos do Dia ${d.dia}` : `Dia ${d.dia} sem vencimentos`}"
+                      >
+                        <!-- Linha do Número do Dia e Badge de Pico -->
+                        <div class="flex items-center justify-between">
+                          <span class="text-xs sm:text-sm font-black ${
+                            temTitulos 
+                              ? (temAtrasadas ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100') 
+                              : (d.ehFimDeSemana ? 'text-slate-400 dark:text-slate-600' : 'text-slate-500 dark:text-slate-400')
+                          }">
+                            ${d.dia}
+                          </span>
 
-                      ${ehPico ? `
-                        <span class="text-[8px] font-black uppercase px-1 py-0.2 rounded bg-amber-500/90 text-white tracking-wider shadow-2xs">
-                          Pico
-                        </span>
-                      ` : ''}
-                    </div>
+                          ${ehPico ? `
+                            <span class="text-[8px] font-black uppercase px-1 py-0.2 rounded bg-amber-500/90 text-white tracking-wider shadow-2xs">
+                              Pico
+                            </span>
+                          ` : ''}
+                        </div>
 
-                    <!-- Conteúdo Financeiro do Dia -->
-                    <div class="my-1">
-                      ${temTitulos ? `
-                        <span class="text-[11px] sm:text-xs font-black block truncate ${
-                          todasPagas 
-                            ? 'text-emerald-600 dark:text-emerald-400' 
-                            : temAtrasadas 
-                              ? 'text-rose-600 dark:text-rose-400' 
-                              : 'text-indigo-600 dark:text-indigo-400'
-                        }">
-                          ${formatarMoeda(d.totalNominal)}
-                        </span>
-                      ` : `
-                        <span class="text-[9px] text-slate-300 dark:text-slate-700 font-semibold block">-</span>
-                      `}
-                    </div>
+                        <!-- Conteúdo Financeiro do Dia -->
+                        <div class="my-1">
+                          ${temTitulos ? `
+                            <span class="text-[11px] sm:text-xs font-black block truncate ${
+                              todasPagas 
+                                ? 'text-emerald-600 dark:text-emerald-400' 
+                                : temAtrasadas 
+                                  ? 'text-rose-600 dark:text-rose-400' 
+                                  : 'text-indigo-600 dark:text-indigo-400'
+                            }">
+                              ${formatarMoeda(d.totalNominal)}
+                            </span>
+                          ` : `
+                            <span class="text-[9px] text-slate-300 dark:text-slate-700 font-semibold block">-</span>
+                          `}
+                        </div>
 
-                    <!-- Rodapé da Célula com Contadores -->
-                    <div>
-                      ${temTitulos ? `
-                        <span class="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md ${
-                          todasPagas 
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' 
-                            : temAtrasadas 
-                              ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 animate-pulse' 
-                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
-                        }">
-                          ${todasPagas ? '✓ ' : ''}${d.qtdTitulos} ${d.qtdTitulos === 1 ? 'conta' : 'contas'}
-                        </span>
-                      ` : `
-                        <span class="text-[9px] text-slate-300 dark:text-slate-700 font-medium block"></span>
-                      `}
-                    </div>
-                  </div>
-                `;
-              }).join('')}
+                        <!-- Rodapé da Célula com Contadores -->
+                        <div>
+                          ${temTitulos ? `
+                            <span class="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                              todasPagas 
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' 
+                                : temAtrasadas 
+                                  ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 animate-pulse' 
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
+                            }">
+                              ${todasPagas ? '✓ ' : ''}${d.qtdTitulos} ${d.qtdTitulos === 1 ? 'conta' : 'contas'}
+                            </span>
+                          ` : `
+                            <span class="text-[9px] text-slate-300 dark:text-slate-700 font-medium block"></span>
+                          `}
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Demonstrativo por Grupos (DRE Simplificado) -->
+        <!-- Demonstrativo por Grupos (DRE Simplificado) com Barra de Progresso Visual -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
           <div class="flex items-center justify-between mb-4">
             <div>
               <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">Demonstrativo por Tipos de Custo (DRE)</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Consolidação orçada vs desembolsada no mês de referência.</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Consolidação orçada vs desembolsada no mês de referência com taxa de realização.</p>
             </div>
             <button id="btn-exportar-csv" class="h-[38px] px-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5">
               <span>📥</span> Exportar CSV
@@ -857,24 +1120,36 @@ export class FinanceiroPage {
           </div>
 
           <div class="overflow-x-auto custom-scrollbar">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse min-w-[650px]">
               <thead>
                 <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
                   <th class="py-2.5 px-4">Macro Grupo de Custo</th>
                   <th class="py-2.5 px-4 text-right">Previsto / Orçado</th>
                   <th class="py-2.5 px-4 text-right">Realizado / Pago</th>
                   <th class="py-2.5 px-4 text-right">Variação (R$)</th>
+                  <th class="py-2.5 px-4 text-center w-40">% Executado</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
                 ${Object.values(agrupamentoDRE).map(item => {
                   const dif = item.nominal - item.pago;
+                  const pct = item.nominal > 0 ? Math.round((item.pago / item.nominal) * 100) : (item.pago > 0 ? 100 : 0);
+                  const corBarra = pct > 100 ? 'bg-rose-500' : (pct >= 85 ? 'bg-amber-500' : 'bg-emerald-500');
+
                   return `
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition">
                       <td class="py-3 px-4 font-bold text-slate-800 dark:text-slate-100">${item.nome}</td>
-                      <td class="py-3 px-4 text-right">${formatarMoeda(item.nominal)}</td>
+                      <td class="py-3 px-4 text-right font-medium">${formatarMoeda(item.nominal)}</td>
                       <td class="py-3 px-4 text-right font-black text-emerald-600 dark:text-emerald-400">${formatarMoeda(item.pago)}</td>
-                      <td class="py-3 px-4 text-right text-slate-500">${formatarMoeda(dif)}</td>
+                      <td class="py-3 px-4 text-right font-medium ${dif < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500'}">${formatarMoeda(dif)}</td>
+                      <td class="py-3 px-4 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                          <div class="w-16 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div class="${corBarra} h-full rounded-full transition-all" style="width: ${Math.min(100, pct)}%"></div>
+                          </div>
+                          <span class="text-[11px] font-black ${pct > 100 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}">${pct}%</span>
+                        </div>
+                      </td>
                     </tr>
                   `;
                 }).join('')}
@@ -958,9 +1233,22 @@ export class FinanceiroPage {
     if (this.activeTab === 'conciliacao') {
       const concMount = this.container.querySelector('#fin-conciliacao-mount') as HTMLElement;
       if (concMount) {
-        this.conciliacaoInstance = new ConciliacaoPage(concMount);
+        this.conciliacaoInstance = new ConciliacaoPage(concMount, { showHeader: false });
         await this.conciliacaoInstance.init(this.user, this.perfil);
       }
+
+      this.container.querySelector('#btn-abrir-upload-topo')?.addEventListener('click', () => {
+        this.conciliacaoInstance?.abrirUploadExtrato();
+      });
+
+      this.container.querySelector('#btn-fechar-mes-topo')?.addEventListener('click', () => {
+        this.conciliacaoInstance?.abrirFecharMes();
+      });
+
+      this.container.querySelector('#btn-exportar-conciliacao-topo')?.addEventListener('click', () => {
+        this.conciliacaoInstance?.exportarCSV();
+      });
+
       return;
     }
 
@@ -1112,14 +1400,84 @@ export class FinanceiroPage {
       });
     });
 
-    // Botão Nova Conta
+    // Botão Limpar Filtros
+    this.container.querySelector('#btn-limpar-filtros')?.addEventListener('click', async () => {
+      this.filtros.status = 'todos';
+      this.filtros.tipoCustoId = undefined;
+      this.filtros.categoriaId = undefined;
+      this.filtros.buscaFavorecido = undefined;
+      await this.carregarDadosAbaAtiva();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // Botões de Exportar CSV
+    this.container.querySelector('#btn-exportar-contas-csv')?.addEventListener('click', () => {
+      this.exportarCSV();
+    });
+    this.container.querySelector('#btn-exportar-csv-tabela')?.addEventListener('click', () => {
+      this.exportarCSV();
+    });
+    this.container.querySelector('#btn-exportar-dre')?.addEventListener('click', () => {
+      this.exportarCSV();
+    });
+    this.container.querySelector('#btn-exportar-csv')?.addEventListener('click', () => {
+      this.exportarCSV();
+    });
+
+    // Ações de Remessa: Desagrupar e Baixar
+    this.container.querySelectorAll('.btn-desagrupar-remessa').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const remId = btn.getAttribute('data-remessa-id');
+        if (!remId) return;
+        const confirmou = await showCustomConfirm('Deseja realmente DESFAZER este lote de remessa? Os títulos associados voltarão a ficar disponíveis individualmente.');
+        if (confirmou) {
+          const res = await FinRemessasService.desagruparRemessa(remId);
+          if (res.sucesso) {
+            await showCustomAlert('Lote de remessa desfeito com sucesso! Títulos desagrupados.', 'Sucesso');
+            await this.carregarDadosAbaAtiva();
+            this.render();
+            this.setupEventListeners();
+          } else {
+            await showCustomAlert(res.erro || 'Falha ao desagrupar remessa', 'Erro');
+          }
+        }
+      });
+    });
+
+    this.container.querySelectorAll('.btn-baixar-remessa').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const remId = btn.getAttribute('data-remessa-id');
+        if (!remId) return;
+        const confirmou = await showCustomConfirm('Confirmar a liquidação / baixa consolidada de TODOS os títulos desta remessa?');
+        if (confirmou) {
+          const res = await FinRemessasService.baixarRemessaConsolidada({
+            remessaId: remId,
+            dataPagamento: new Date().toISOString().split('T')[0],
+            usuarioId: this.user.id,
+            usuarioNome: this.perfil?.nome
+          });
+          if (res.sucesso) {
+            window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
+            await showCustomAlert('Remessa liquidada com sucesso!', 'Sucesso');
+            await this.carregarDadosAbaAtiva();
+            this.render();
+            this.setupEventListeners();
+          } else {
+            await showCustomAlert(res.erro || 'Falha ao liquidar remessa', 'Erro');
+          }
+        }
+      });
+    });
+
+    // Botão Nova Conta / Despesa
     this.container.querySelector('#btn-nova-conta')?.addEventListener('click', () => {
       this.abrirModalNovaConta();
     });
 
-    // Botão Exportar CSV
-    this.container.querySelector('#btn-exportar-csv')?.addEventListener('click', () => {
-      this.exportarCSV();
+    // Botão Nova Remessa
+    this.container.querySelector('#btn-nova-remessa')?.addEventListener('click', () => {
+      showCustomAlert('Para agrupar uma remessa, acesse Contas a Pagar e selecione os títulos que deseja consolidar.', 'Info');
     });
 
     // Cliques nos dias do Calendário de Fluxo de Caixa

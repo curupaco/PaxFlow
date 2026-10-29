@@ -41,9 +41,11 @@ export class ConciliacaoPage {
   private filtroBusca: string = '';
   private filtroBanco: string = 'todos';
   private carregando: boolean = false;
+  private options?: { showHeader?: boolean };
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, options?: { showHeader?: boolean }) {
     this.container = container;
+    this.options = options;
   }
 
   public async init(usuario?: any, perfilConsultor?: PerfilConsultor | null): Promise<void> {
@@ -80,7 +82,7 @@ export class ConciliacaoPage {
     }
   }
 
-  private async carregarDados(): Promise<void> {
+  public async carregarDados(): Promise<void> {
     this.carregando = true;
     this.render();
 
@@ -122,9 +124,12 @@ export class ConciliacaoPage {
       new Set(this.transacoes.map(t => t.banco_origem).filter(Boolean))
     );
 
+    const showHeader = this.options?.showHeader !== false;
+
     this.container.innerHTML = `
       <div class="space-y-6 pb-12 animate-fade-in">
         
+        ${showHeader ? `
         <!-- Header -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div>
@@ -156,6 +161,7 @@ export class ConciliacaoPage {
             </button>
           </div>
         </div>
+        ` : ''}
 
         <!-- KPI Scorecards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -661,21 +667,17 @@ export class ConciliacaoPage {
 
     // Botão Importar Extrato
     this.container.querySelector('#btn-abrir-upload-extrato')?.addEventListener('click', () => {
-      UploadExtratoModal.abrir(() => this.carregarDados());
+      this.abrirUploadExtrato();
     });
 
     // Botão Fechar Mês (Exclusivo Admin)
     this.container.querySelector('#btn-fechar-mes-modal')?.addEventListener('click', () => {
-      if (this.perfil?.role !== 'admin') {
-        showCustomAlert('Apenas Administradores têm permissão para realizar o Fechamento de Mês e trancamento de competências.', 'warning');
-        return;
-      }
-      FecharMesModal.abrir(() => this.carregarDados());
+      this.abrirFecharMes();
     });
 
     // Botão Exportar
     this.container.querySelector('#btn-exportar-conciliacao')?.addEventListener('click', () => {
-      ConciliacaoService.exportarRelatorioCSV(this.transacoes);
+      this.exportarCSV();
     });
 
     // Smart Match 1-clique
@@ -737,6 +739,22 @@ export class ConciliacaoPage {
     });
 
     this.setupTabelaActions();
+  }
+
+  public abrirUploadExtrato(): void {
+    UploadExtratoModal.abrir(() => this.carregarDados());
+  }
+
+  public abrirFecharMes(): void {
+    if (this.perfil?.role !== 'admin') {
+      showCustomAlert('Apenas Administradores têm permissão para realizar o Fechamento de Mês e trancamento de competências.', 'warning');
+      return;
+    }
+    FecharMesModal.abrir(() => this.carregarDados());
+  }
+
+  public exportarCSV(): void {
+    ConciliacaoService.exportarRelatorioCSV(this.transacoes);
   }
 
   private setupTabelaActions(): void {

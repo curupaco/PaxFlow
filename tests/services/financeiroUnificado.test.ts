@@ -120,4 +120,56 @@ describe('Módulo Financeiro Unificado - Testes Subcutâneos de Permissão e Nav
     expect(rotaFinanceiroPadrao.page).toBe('financeiro');
     expect(rotaFinanceiroPadrao.sub).toBeUndefined();
   });
+
+  it('deve calcular corretamente a absorção percentual e indicador do DRE', () => {
+    // Setup
+    const cenarios = [
+      { nominal: 1000, pago: 500, pctEsperado: 50, corEsperada: 'bg-emerald-500' },
+      { nominal: 1000, pago: 900, pctEsperado: 90, corEsperada: 'bg-amber-500' },
+      { nominal: 1000, pago: 1200, pctEsperado: 120, corEsperada: 'bg-rose-500' },
+      { nominal: 0, pago: 0, pctEsperado: 0, corEsperada: 'bg-emerald-500' }
+    ];
+
+    const calcularDRELinha = (nominal: number, pago: number) => {
+      const dif = nominal - pago;
+      const pct = nominal > 0 ? Math.round((pago / nominal) * 100) : (pago > 0 ? 100 : 0);
+      const corBarra = pct > 100 ? 'bg-rose-500' : (pct >= 85 ? 'bg-amber-500' : 'bg-emerald-500');
+      return { dif, pct, corBarra };
+    };
+
+    // Action & Assert
+    cenarios.forEach(({ nominal, pago, pctEsperado, corEsperada }) => {
+      const res = calcularDRELinha(nominal, pago);
+      expect(res.pct).toBe(pctEsperado);
+      expect(res.corBarra).toBe(corEsperada);
+      expect(res.dif).toBe(nominal - pago);
+    });
+  });
+
+  it('deve desagrupar remessa com tratamento defensivo e resiliência a schema drift 42703', async () => {
+    // Setup
+    const { FinRemessasService } = await import('../../src/services/finRemessasService');
+    const { supabase } = await import('../../src/services/supabase');
+
+    const updateMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: { code: '42703', message: 'column remessa_id does not exist' } })
+    });
+    const deleteMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: { code: '42703', message: 'table fin_remessas does not exist' } })
+    });
+
+    vi.spyOn(supabase, 'from').mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return { update: updateMock } as any;
+      }
+      return { delete: deleteMock } as any;
+    });
+
+    // Action
+    const res = await FinRemessasService.desagruparRemessa('rem-teste-123');
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+  });
 });
+

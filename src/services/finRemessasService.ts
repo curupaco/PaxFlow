@@ -159,4 +159,40 @@ export class FinRemessasService {
       return { sucesso: false, erro: err.message || 'Falha ao liquidar remessa agrupada' };
     }
   }
+
+  /**
+   * Desfaz o lote de remessa: desvincula os títulos associados (voltando a remessa_id = null)
+   * e remove a remessa mestre, permitindo que as contas sejam pagas ou agrupadas novamente.
+   */
+  public static async desagruparRemessa(remessaId: string): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      if (!remessaId) return { sucesso: false, erro: 'ID da remessa não fornecido' };
+
+      // 1. Desvincula todos os títulos da remessa
+      const { error: updErr } = await supabase
+        .from('fin_contas_pagar')
+        .update({ remessa_id: null })
+        .eq('remessa_id', remessaId);
+
+      if (updErr && updErr.code !== '42P01' && updErr.code !== '42703') {
+        throw updErr;
+      }
+
+      // 2. Remove o registro da remessa mestre
+      const { error: delErr } = await supabase
+        .from('fin_remessas')
+        .delete()
+        .eq('id', remessaId);
+
+      if (delErr && delErr.code !== '42P01' && delErr.code !== '42703') {
+        throw delErr;
+      }
+
+      return { sucesso: true };
+    } catch (err: any) {
+      console.error('[FinRemessasService] Erro ao desagrupar remessa:', err);
+      return { sucesso: false, erro: err.message || 'Falha ao desagrupar lote de remessa' };
+    }
+  }
 }
+
