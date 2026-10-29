@@ -60,6 +60,7 @@
    - 3.48 [Módulo de Campanhas & Segmentação Comercial de Base](#348-módulo-de-campanhas--segmentação-comercial-de-base)
    - 3.49 [Painel Analítico de Pesquisa de Satisfação (NPS)](#349-painel-analítico-de-pesquisa-de-satisfação-nps)
    - 3.50 [Ergonomia do Painel de Relatórios & Menu Lateral Retrátil](#350-ergonomia-do-painel-de-relatórios--menu-lateral-retrátil)
+   - 3.51 [Módulo Financeiro de Contas a Pagar, Remessas & Plano de Contas](#351-módulo-financeiro-de-contas-a-pagar-remessas--plano-de-contas)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1437,6 +1438,32 @@ Otimização ergonômica e de layout desenvolvida no módulo `Relatorios.ts` par
 3. **Navegação Responsiva Mobile com Seletor Dropdown Agrupado**:
    - Em smartphones e telas menores (`< lg`), as barras laterais verticais são ocultadas (`hidden lg:flex`), eliminando o empilhamento vertical que criava faixas vazias e empurrava o conteúdo para fora da primeira dobra.
    - Um seletor nativo moderno (`#select-relatorio-mobile`) com altura padrão `h-[42px]` e bordas `rounded-xl` é posicionado no topo, estruturado com `<optgroup>` para as 4 categorias estratégicas, permitindo alternar qualquer relatório com 1 toque e mantendo os dados imediatamente visíveis na tela inicial.
+
+### 3.51 Módulo Financeiro de Contas a Pagar, Remessas & Plano de Contas
+
+O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operando desacoplado da área operacional comum, com unidade corporativa consolidada e estritamente protegido por governança baseada em papéis (RBAC):
+
+1. **Governança & Controle de Acesso (RBAC)**:
+   - **Novo Papel de Usuário (`financeiro`)**: Usuário dedicado da equipe financeira com foco operacional no contas a pagar, remessas e fluxo de caixa.
+   - **Interruptor de Liberação (`acesso_financeiro: boolean`)**: Flag na tabela `profiles` do Supabase editável na Gestão de Consultores/Equipe. Permite que administradores e consultores selecionados tenham visibilidade do menu `Financeiro`.
+   - **Competência Exclusiva de Administradores**: Ações críticas de **Estornar Pagamento** (reversão de Pago para Pendente com justificativa) e **Cancelar Título** em definitivo são bloqueadas para operadores comuns e liberadas unicamente a administradores, com registro obrigatório na tabela de auditoria (`fin_auditoria`).
+
+2. **As 4 Abas Especializadas**:
+   - **📋 Contas a Pagar**: Painel de liquidez com KPIs imediatos (Total a Pagar no Mês, Total Pago, Contas em Atraso com indicador pulsante e Vencimentos dos Próximos 7 Dias). Barra de filtros por mês/ano, status, tipo de custo, categoria e busca de favorecido. Tabela rica de títulos com visualização de vencimento nominal vs operacional e suporte a despesas estimadas/variáveis.
+   - **📦 Remessas Agrupadas (Mestre-Detalhe)**: Inspirada na visualização de viagens com produtos dentro. Permite selecionar múltiplos títulos pendentes do mesmo favorecido e consolidar em uma Remessa única, facilitando a liquidação conjunta com um só comprovante de transferência/Pix e controle de accordion expansível.
+   - **📈 Fluxo de Caixa & DRE**: Demonstrativo gerencial estruturado nos 5 macro grupos de custo (Custos Diretos, Despesas Fixas, Despesas Variáveis, Investimentos e Gastos Não Operacionais) com apuração de valores previstos vs realizados, variação nominal e exportação completa para CSV compatível com Excel.
+   - **⚙️ Plano de Contas & Bancos**: Gestão da árvore contábil de 3 níveis (`Tipo de Custo -> Categoria -> Subcategoria`), cadastro das contas bancárias e caixas da agência com seus saldos iniciais.
+
+3. **Motor de Vencimentos em Dias Úteis & Regra Tributária Diferenciada**:
+   - **Para Tributos e Impostos** (ex: *Imposto, IPTU, INSS/IRPF, FGTS*): Qualquer vencimento nominal que recaia em finais de semana ou feriados nacionais é **antecipado para o dia útil anterior**, evitando multas e encargos fiscais.
+   - **Para Todos os Demais Títulos**: O vencimento operacional é **postergado para o próximo dia útil**, respeitando o calendário bancário padrão.
+
+4. **Baixa Inteligente com Suporte a Resíduo Parcial**:
+   - O modal de baixa permite seleção da conta bancária de saída, forma de pagamento (Pix, Boleto, Transferência, Débito, Dinheiro), acréscimo de juros/multa, aplicação de desconto e upload ou link de comprovante.
+   - Caso o valor efetivamente pago seja menor que o total devido, o PaxFlow conclui a baixa do montante informado e gera automaticamente um novo título pendente com o **Saldo Residual** remanescente, eliminando perdas contábeis.
+
+5. **Trilha Imutável de Auditoria (`fin_auditoria`)**:
+   - Todo ciclo de vida dos títulos financeiros (criação, alteração, baixa, estorno e cancelamento) é gravado de forma imutável com carimbo de data/hora, identificador do usuário e payload JSONB com valores anteriores e novos.
 
 ---
 

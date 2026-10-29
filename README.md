@@ -20,6 +20,17 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Módulo Financeiro de Contas a Pagar, Remessas Agrupadas & Plano de Contas [NEW]** — O novo coração financeiro do PaxFlow desacoplado da área operacional comum, projetado com rigor contábil e controle de acesso estrito (RBAC):
+  - **Governança e Perfis de Acesso**: Suporte ao novo papel `financeiro` e interruptor `acesso_financeiro` no perfil dos colaboradores, liberando o menu lateral e operações apenas para operadores credenciados e administradores.
+  - **4 Abas Especializadas**:
+    1. `📋 Contas a Pagar`: Listagem com filtros por mês, status, tipo de custo, categoria e fornecedor; KPIs de liquidez (Total a Pagar, Total Pago, Atrasadas e Janela de 7 dias); suporte a despesas estimadas/variáveis e botão de Nova Conta.
+    2. `📦 Remessas Agrupadas`: Estrutura mestre-detalhe expansível (accordion) no estilo da gestão de viagens, consolidando múltiplos títulos de uma mesma empresa com liquidação unificada e comprovante compartilhado.
+    3. `📈 Fluxo de Caixa & DRE`: Demonstrativo gerencial consolidando os 5 macro grupos de custo (Custos Diretos, Despesas Fixas, Despesas Variáveis, Investimentos e Gastos Não Operacionais) e comparativo Previsto vs Realizado com exportação CSV em 1 clique.
+    4. `⚙️ Plano de Contas & Bancos`: Árvore hierárquica completa (Tipo de Custo -> Categoria -> Subcategoria), gestão de caixas e contas bancárias da agência.
+  - **Regra Inteligente de Dias Úteis & Tributos**: Antecipação automática de tributos e impostos (ISS, DAS, IPTU, INSS/IRPF, FGTS) para o dia útil anterior quando o vencimento cair em finais de semana ou feriados nacionais; postergação comercial para o próximo dia útil para todas as demais despesas.
+  - **Baixa Inteligente com Resíduo Parcial**: Cálculo dinâmico de juros/multa, descontos e valor efetivamente pago. Ao realizar baixa com valor inferior ao total devido, o PaxFlow liquida o montante informado e gera automaticamente um título de saldo residual com a diferença pendente.
+  - **Trilha de Auditoria & Segurança**: Registro histórico e imutável de todas as ações (`fin_auditoria`), permitindo estorno de pagamentos e cancelamentos de títulos exclusivamente a administradores do sistema.
+
 - **Coluna de Rentabilidade no Relatório de Origem de Leads e Eficiência de Funil [NEW]** — Evolução da aba `📢 Origem de Leads` de `Relatorios.ts` para análise aprofundada do retorno financeiro e margem real gerada por cada canal de captação de clientes:
   - **Coluna Dedicada de Rentabilidade**: Posicionamento estratégico da coluna **Rentabilidade** entre *Faturamento Realizado* e *Tíquete Médio*, discriminando o lucro líquido real apurado (comissões, markups e RAV retido) gerado pelos leads convertidos.
   - **Apuração Híbrida e Pura de Lucro**: O motor `calcularOrigensLeads` correlaciona orçamentos ganhos (`ACEITO`) diretamente com os produtos e serviços da viagem correspondente (`comissão + markup + 88% RAV`) ou com o lucro declarado no fechamento.

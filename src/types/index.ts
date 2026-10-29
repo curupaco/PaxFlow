@@ -3,7 +3,7 @@
  * 'admin': Acesso total ao sistema e configurações.
  * 'consultor': Acesso restrito a clientes, viagens e reembolsos próprios ou gerais de consultores.
  */
-export type UserRole = 'admin' | 'consultor';
+export type UserRole = 'admin' | 'consultor' | 'financeiro';
 
 /**
  * Representa o perfil de um consultor associado à autenticação do Supabase.
@@ -14,6 +14,8 @@ export interface PerfilConsultor {
   email: string;
   role: UserRole;
   ativo: boolean;
+  acesso_financeiro?: boolean; // Controla se o usuário tem liberação para o módulo Financeiro
+  acessoFinanceiro?: boolean; // Suporte camelCase
   participa_escala?: boolean; // Controla se o funcionário participa e aparece na escala
   participaEscala?: boolean; // Suporte camelCase
   participa_metricas?: boolean; // Controla se o funcionário participa de rankings, metas e gamificação
@@ -947,5 +949,148 @@ export interface OrigemLead {
   created_at?: string;
   updated_at?: string;
 }
+
+// ============================================================================
+// MÓDULO FINANCEIRO — CONTAS A PAGAR, REMESSAS E PLANO DE CONTAS
+// ============================================================================
+
+export interface FinTipoCusto {
+  id: string;
+  codigo: number;
+  nome: string;
+  ativo: boolean;
+  ordem?: number;
+  created_at?: string;
+}
+
+export interface FinCategoria {
+  id: string;
+  tipo_custo_id: string;
+  nome: string;
+  ativo: boolean;
+  ordem?: number;
+  tipo_custo?: FinTipoCusto;
+  created_at?: string;
+}
+
+export interface FinSubcategoria {
+  id: string;
+  categoria_id: string;
+  nome: string;
+  ativo: boolean;
+  created_at?: string;
+}
+
+export interface FinContaBancaria {
+  id: string;
+  nome_banco: string;
+  tipo: 'corrente' | 'poupanca' | 'caixa';
+  saldo_inicial?: number;
+  ativo: boolean;
+  created_at?: string;
+}
+
+export type FinStatusRemessa = 'aberta' | 'parcial' | 'paga' | 'cancelada';
+
+export interface FinRemessa {
+  id: string;
+  favorecido: string;
+  data_prevista: string;
+  valor_total: number;
+  status: FinStatusRemessa;
+  comprovante_url?: string;
+  observacoes?: string;
+  criado_por?: string;
+  created_at?: string;
+  updated_at?: string;
+  itens?: FinContaPagar[];
+}
+
+export type FinFormaPagamento = 'pix' | 'boleto' | 'transferencia' | 'debito' | 'dinheiro';
+export type FinStatusConta = 'pendente' | 'pago' | 'atrasado' | 'cancelado';
+export type FinPeriodicidade = 'mensal' | 'anual' | 'semanal';
+
+export interface FinContaPagar {
+  id: string;
+  remessa_id?: string;
+  tipo_custo_id: string;
+  categoria_id: string;
+  subcategoria_id?: string;
+  conta_bancaria_id?: string;
+  viagem_id?: string;
+  contrato_recorrente_id?: string;
+  favorecido: string;
+  descricao?: string;
+  valor_nominal: number;
+  valor_estimado?: boolean;
+  juros_multa?: number;
+  desconto?: number;
+  valor_pago?: number;
+  data_vencimento: string; // YYYY-MM-DD nominal
+  data_vencimento_operacional?: string; // YYYY-MM-DD ajustada por dias úteis
+  data_pagamento?: string; // YYYY-MM-DD
+  forma_pagamento?: FinFormaPagamento;
+  status: FinStatusConta;
+  parcela_numero?: number;
+  parcela_total?: number;
+  recorrente?: boolean;
+  periodicidade?: FinPeriodicidade;
+  comprovante_url?: string;
+  observacoes?: string;
+  criado_por?: string;
+  baixado_por?: string;
+  created_at?: string;
+  updated_at?: string;
+  // Joins opcionais
+  tipo_custo?: FinTipoCusto;
+  categoria?: FinCategoria;
+  subcategoria?: FinSubcategoria;
+  conta_bancaria?: FinContaBancaria;
+  remessa?: FinRemessa;
+}
+
+export interface FinAuditoria {
+  id: string;
+  conta_id: string;
+  usuario_id: string;
+  usuario_nome?: string;
+  acao: 'criacao' | 'edicao' | 'baixa' | 'estorno' | 'cancelamento';
+  detalhes: Record<string, any>;
+  created_at: string;
+}
+
+export interface FinFiltrosContas {
+  periodoTipo: 'mes' | 'personalizado';
+  mes?: number;
+  ano?: number;
+  dataInicio?: string;
+  dataFim?: string;
+  status: 'todos' | FinStatusConta;
+  tipoCustoId?: string;
+  categoriaId?: string;
+  contaBancariaId?: string;
+  buscaFavorecido?: string;
+}
+
+export interface FinResumoLiquidez {
+  totalAPagarMes: number;
+  totalPagoMes: number;
+  totalAtrasadas: number;
+  totalProximos7Dias: number;
+  qtdPendentes: number;
+  qtdAtrasadas: number;
+}
+
+export interface FinPrevistoVsRealizadoItem {
+  tipoCustoId: string;
+  tipoCustoNome: string;
+  categoriaId: string;
+  categoriaNome: string;
+  valorPrevisto: number;
+  valorRealizado: number;
+  variacao: number;
+  percentualVariacao: number;
+}
+
 
 

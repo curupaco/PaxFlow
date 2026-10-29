@@ -21,7 +21,8 @@ export const HELP_CATEGORIES: HelpCategory[] = [
   { id: 'dashboard', title: 'Dashboard & Metas', icon: '🏆' },
   { id: 'viagens', title: 'Gestão de Viagens', icon: '✈️' },
   { id: 'orcamentos', title: 'Orçamentos & CRM', icon: '📄' },
-  { id: 'reembolsos', title: 'Reembolsos & Financeiro', icon: '💰' },
+  { id: 'reembolsos', title: 'Reembolsos & Operacional', icon: '💰' },
+  { id: 'financeiro', title: 'Contas a Pagar & Gestão Financeira', icon: '💵' },
   { id: 'conciliacao', title: 'Conciliação Bancária (FinRecon™)', icon: '🪙' },
   { id: 'clientes', title: 'Clientes & Relatórios', icon: '👥' },
   { id: 'copiloto', title: 'Co-piloto de IA & Governança', icon: '🤖' },
@@ -1029,6 +1030,20 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🎨 Design Tokens & Padronização Visual Global PaxFlow',
     description: 'Conheça o padrão visual unificado do PaxFlow para botões, filtros, cabeçalhos de tabela e alinhamentos.',
     details: 'O PaxFlow adota um sistema estrito de Design Tokens para assegurar máxima ergonomia e elegância em todas as telas:\n\n1. **Altura Padrão de 42px (`h-[42px]`)**: Todos os controles de topo (botões de ação, inputs de busca, seletores de filtros, seletores de equipe e abas de navegação) possuem rigorosamente 42px de altura e alinhamento pela linha de base, evitando botões desalinhados ou com alturas conflitantes.\n2. **Cabeçalhos Congelados no Topo (`sticky thead`)**: Todas as tabelas extensas e relatórios operacionais possuem cabeçalhos travados no topo (`sticky top-0 z-10/z-20 bg-slate-50 dark:bg-slate-950 shadow-xs`) com contêiner de rolagem vertical interna (`max-h-[600px]` ou `max-h-[650px]`). As linhas rolam livremente enquanto as colunas e títulos permanecem 100% visíveis.\n3. **Cabeçalhos de Tabela Unificados**: Todas as tabelas do sistema contam com estilo tipográfico homogêneo (`text-[9px] font-black uppercase tracking-widest text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800`), garantindo legibilidade imediata dos dados.\n4. **Colunas de Ação Centralizadas**: As colunas de ação possuem largura fixa (`w-28` ou `w-32`) e botões centralizados, eliminando o desalinhamento visual ("efeito serrote").\n5. **Proteção de Transbordo**: Tabelas amplas contam com barra de rolagem estilizada (`custom-scrollbar`) e efeito de fade lateral (`scroll-indicator-fade`), permitindo navegação fluida sem truncar dados.'
+  },
+  {
+    id: 'fin-contas-pagar',
+    modulo: 'financeiro',
+    label: '💰 Módulo Financeiro: Contas a Pagar, Recorrências e Remessas',
+    description: 'Como funciona o coração financeiro do PaxFlow: lançamentos, liquidez, baixas parciais e plano de contas.',
+    details: 'O módulo financeiro do PaxFlow é o coração contábil e de liquidez da agência, protegido por controle de acesso restrito (RBAC):\n\n1. **Permissões de Acesso**: Somente usuários com perfil `Financeiro`, Administradores ou consultores com a chave `Acesso ao Módulo Financeiro` ativada no cadastro de usuários podem visualizar o menu e operar os lançamentos.\n2. **Motor de Recorrência & Parcelamentos**: Permite lançamentos avulsos, parcelamentos fixos com controle de número de parcela (ex: `9/10`) e despesas mensais contínuas projetadas até o fechamento do ano corrente (31/12).\n3. **Regra de Vencimentos Úteis**: Para **Tributos e Impostos** (ISS, DAS, IPTU, INSS, FGTS), os vencimentos que caírem em sábados, domingos ou feriados são **antecipados para o dia útil anterior** para evitar juros fiscais. Para todos os demais títulos, a data é **postergada para o próximo dia útil**.\n4. **Baixa Inteligente & Resíduo Parcial**: Ao liquidar uma conta, o operador pode aplicar juros/multa, descontos e informar o valor efetivamente pago. Se o valor for inferior ao total devido, o PaxFlow liquida a parcela paga e gera automaticamente um título de saldo residual pendente com a diferença.\n5. **Remessas Agrupadas (Mestre-Detalhe)**: Inspirada na visualização de viagens e produtos, permite selecionar múltiplos títulos de uma mesma empresa/fornecedor e consolidar o pagamento com comprovante unificado.'
+  },
+  {
+    id: 'fin-plano-contas',
+    modulo: 'financeiro',
+    label: '⚙️ Plano de Contas Hierárquico & DRE Gerencial',
+    description: 'Entenda os 5 macro grupos de custo e como as despesas são consolidadas no fluxo de caixa.',
+    details: 'A matriz de contas do PaxFlow organiza todas as despesas da agência em 5 macro grupos de custos:\n\n1. **Custos Diretos**: Comissões, Premiações, Royalties, Taxa de Marketing e Impostos.\n2. **Despesas Fixas**: Aluguel, Condomínio, Salários, Contabilidade, Energia Elétrica, Limpeza, Plano de Saúde e Tarifas.\n3. **Despesas Variáveis**: Brindes a Clientes, Benfeitorias, Comemorações, Medicina do Trabalho, Prejuízos, Uniformes e REPASSE AGAXTUR.\n4. **Investimentos**: Social Media, Patrocínio Digital, Cursos e Treinamentos.\n5. **Gastos Não Operacionais**: Despesas MKP e despesas extraordinárias.\n\nNa aba **Fluxo de Caixa & DRE**, o sistema totaliza os desembolsos previstos versus realizados de cada grupo com cálculo automático da variação em R$ e exportação para CSV.'
   }
 ];
 

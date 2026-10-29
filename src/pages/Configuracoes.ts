@@ -928,6 +928,7 @@ export class ConfiguracoesPage {
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nível de Acesso *</label>
               <select id="select-nc-role" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
                 <option value="consultor" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Consultor</option>
+                <option value="financeiro" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Financeiro</option>
                 <option value="admin" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">ADMIN</option>
               </select>
             </div>
@@ -944,6 +945,14 @@ export class ConfiguracoesPage {
               <span class="text-[10px] text-slate-400 block">Permite que o usuário concorra a rankings, metas comerciais e pontuação de XP.</span>
             </div>
             <input type="checkbox" id="input-nc-participa-metricas" checked class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
+          </div>
+
+          <div class="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+            <div>
+              <label class="text-xs font-bold text-slate-700 dark:text-slate-200 block">💰 Acesso ao Módulo Financeiro</label>
+              <span class="text-[10px] text-slate-400 block">Permite visualizar e gerenciar o Contas a Pagar, Remessas e Fluxo de Caixa.</span>
+            </div>
+            <input type="checkbox" id="input-nc-acesso-financeiro" class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -979,9 +988,10 @@ export class ConfiguracoesPage {
       const submitBtn = document.getElementById('btn-nc-submit') as HTMLButtonElement;
       const nome = (document.getElementById('input-nc-nome') as HTMLInputElement).value;
       const email = (document.getElementById('input-nc-email') as HTMLInputElement).value;
-      const role = (document.getElementById('select-nc-role') as HTMLSelectElement).value as 'admin' | 'consultor';
+      const role = (document.getElementById('select-nc-role') as HTMLSelectElement).value as any;
       const senha = (document.getElementById('input-nc-senha') as HTMLInputElement).value;
       const participaMetricas = (document.getElementById('input-nc-participa-metricas') as HTMLInputElement)?.checked ?? true;
+      const acessoFinanceiro = (document.getElementById('input-nc-acesso-financeiro') as HTMLInputElement)?.checked || role === 'financeiro';
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Cadastrando...';
@@ -991,16 +1001,20 @@ export class ConfiguracoesPage {
           user_email: email,
           user_password: senha,
           user_nome: nome,
-          user_role: role
+          user_role: role === 'financeiro' ? 'consultor' : role // Fallback para enum legado do banco caso 'financeiro' não esteja no enum
         });
 
         if (rpcError) throw rpcError;
 
         if (userId) {
           try {
-            await supabase.from('profiles').update({ participa_metricas: participaMetricas }).eq('id', userId);
+            await supabase.from('profiles').update({ 
+              role: role,
+              participa_metricas: participaMetricas,
+              acesso_financeiro: acessoFinanceiro
+            }).eq('id', userId);
           } catch (errDrift: any) {
-            console.warn('[Schema Drift 42703] Não foi possível atualizar participa_metricas no cadastro inicial:', errDrift);
+            console.warn('[Schema Drift 42703] Não foi possível atualizar flags no cadastro inicial:', errDrift);
           }
         }
 
@@ -1099,6 +1113,7 @@ export class ConfiguracoesPage {
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nível de Acesso *</label>
               <select id="select-ec-role" ${isSelf ? 'disabled' : ''} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
                 <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Consultor</option>
+                <option value="financeiro" ${c.role === 'financeiro' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Financeiro</option>
                 <option value="admin" ${c.role === 'admin' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">ADMIN</option>
               </select>
             </div>
@@ -1126,6 +1141,14 @@ export class ConfiguracoesPage {
               <span class="text-[10px] text-slate-400 block">Permite que o usuário concorra a rankings, metas comerciais e pontuação de XP.</span>
             </div>
             <input type="checkbox" id="input-ec-participa-metricas" ${c.participa_metricas !== false ? 'checked' : ''} class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
+          </div>
+
+          <div class="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+            <div>
+              <label class="text-xs font-bold text-slate-700 dark:text-slate-200 block">💰 Acesso ao Módulo Financeiro</label>
+              <span class="text-[10px] text-slate-400 block">Permite visualizar e gerenciar o Contas a Pagar, Remessas e Fluxo de Caixa.</span>
+            </div>
+            <input type="checkbox" id="input-ec-acesso-financeiro" ${c.acesso_financeiro || (c as any).acessoFinanceiro || c.role === 'financeiro' ? 'checked' : ''} class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
           </div>
 
           <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
@@ -1205,10 +1228,11 @@ export class ConfiguracoesPage {
       e.preventDefault();
       const submitBtn = document.getElementById('btn-ec-submit') as HTMLButtonElement;
       const nomeVal = ecNomeInput.value.trim();
-      const roleVal = (overlay.querySelector('#select-ec-role') as HTMLSelectElement).value as 'admin' | 'consultor';
+      const roleVal = (overlay.querySelector('#select-ec-role') as HTMLSelectElement).value as any;
       const ativoVal = (overlay.querySelector('#select-ec-ativo') as HTMLSelectElement).value === 'true';
       const participaEscalaVal = (overlay.querySelector('#input-ec-participa-escala') as HTMLInputElement).checked;
       const participaMetricasVal = (overlay.querySelector('#input-ec-participa-metricas') as HTMLInputElement)?.checked ?? true;
+      const acessoFinanceiroVal = (overlay.querySelector('#input-ec-acesso-financeiro') as HTMLInputElement)?.checked || roleVal === 'financeiro';
       const senhaVal = (overlay.querySelector('#input-ec-senha') as HTMLInputElement).value;
 
       if (!nomeVal) return;
@@ -1230,6 +1254,7 @@ export class ConfiguracoesPage {
             ativo: ativoVal,
             participa_escala: participaEscalaVal,
             participa_metricas: participaMetricasVal,
+            acesso_financeiro: acessoFinanceiroVal,
             avatar_url: selectedAvatarId
           };
 
@@ -1239,8 +1264,9 @@ export class ConfiguracoesPage {
             .eq('id', c.id);
 
           if (profileErr) {
-            if (profileErr.code === '42703' || profileErr.message?.includes('participa_metricas')) {
-              console.warn('[Schema Drift 42703] Coluna participa_metricas inexistente. Executando fallback.');
+            if (profileErr.code === '42703' || profileErr.message?.includes('acesso_financeiro') || profileErr.message?.includes('participa_metricas')) {
+              console.warn('[Schema Drift 42703] Coluna inexistente detectada no profile. Executando fallback.');
+              delete updatePayload.acesso_financeiro;
               delete updatePayload.participa_metricas;
               const { error: fallbackErr } = await supabase
                 .from('profiles')
@@ -1287,6 +1313,8 @@ export class ConfiguracoesPage {
           this.consultores[idx].participaEscala = participaEscalaVal;
           this.consultores[idx].participa_metricas = participaMetricasVal;
           this.consultores[idx].participaMetricas = participaMetricasVal;
+          this.consultores[idx].acesso_financeiro = acessoFinanceiroVal;
+          this.consultores[idx].acessoFinanceiro = acessoFinanceiroVal;
         }
 
         // Se for a si mesmo, dispara o evento de sincronização geral do app
@@ -2315,9 +2343,14 @@ export class ConfiguracoesPage {
                   const statusBadge = c.ativo 
                     ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 text-[10px] font-bold rounded-lg shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Ativo</span>` 
                     : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Inativo</span>`;
-                  const roleBadge = c.role === 'admin'
-                    ? `<span class="inline-flex items-center px-2.5 py-1 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-200/60 dark:border-purple-900/40 text-[10px] font-extrabold rounded-lg shadow-xs">👑 ADMIN</span>`
-                    : `<span class="inline-flex items-center px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 text-[10px] font-bold rounded-lg shadow-xs">💼 Consultor</span>`;
+                  let roleBadge = `<span class="inline-flex items-center px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 text-[10px] font-bold rounded-lg shadow-xs">💼 Consultor</span>`;
+                  if (c.role === 'admin') {
+                    roleBadge = `<span class="inline-flex items-center px-2.5 py-1 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-200/60 dark:border-purple-900/40 text-[10px] font-extrabold rounded-lg shadow-xs">👑 ADMIN</span>`;
+                  } else if (c.role === 'financeiro') {
+                    roleBadge = `<span class="inline-flex items-center px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 text-[10px] font-extrabold rounded-lg shadow-xs">💰 Financeiro</span>`;
+                  } else if (c.acesso_financeiro || (c as any).acessoFinanceiro) {
+                    roleBadge += `<span class="ml-1 inline-flex items-center px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 text-[9px] font-bold rounded" title="Acesso liberado ao Financeiro">💰 Fin</span>`;
+                  }
                   const metasBadge = c.participa_metricas !== false
                     ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 text-[10px] font-bold rounded-lg shadow-xs" title="Participa de campanhas, metas e XP">🎯 Sim</span>`
                     : `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs" title="Excluído de rankings, metas e XP">🚫 Não</span>`;
