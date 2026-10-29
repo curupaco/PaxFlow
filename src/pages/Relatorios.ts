@@ -129,24 +129,70 @@ export class RelatoriosPage {
   private loading: boolean = false;
   private prazoReembolsoDias: number = 30;
 
-  constructor(container: HTMLElement) {
-    this.container = container;
-    
-    // Set default date range: dia 01 do mês corrente até a data atual
+  /**
+   * Retorna o período padrão para relatórios gerenciais e de fechamento:
+   * Do dia 01 do mês corrente até a data atual.
+   */
+  public static obterPeriodoPadraoGeral(): { inicio: string; fim: string } {
     const hoje = new Date();
     const ano = hoje.getFullYear();
     const mes = String(hoje.getMonth() + 1).padStart(2, '0');
     const dia = String(hoje.getDate()).padStart(2, '0');
+    return {
+      inicio: `${ano}-${mes}-01`,
+      fim: `${ano}-${mes}-${dia}`
+    };
+  }
+
+  /**
+   * Retorna o período padrão para o Relatório de Embarques:
+   * Do dia atual até a quantidade de dias para frente (padrão: 30 dias).
+   */
+  public static obterPeriodoPadraoEmbarques(dias: number = 30): { inicio: string; fim: string } {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+
+    const dFim = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + dias);
+    const anoFim = dFim.getFullYear();
+    const mesFim = String(dFim.getMonth() + 1).padStart(2, '0');
+    const diaFim = String(dFim.getDate()).padStart(2, '0');
+
+    return {
+      inicio: `${ano}-${mes}-${dia}`,
+      fim: `${anoFim}-${mesFim}-${diaFim}`
+    };
+  }
+
+  constructor(container: HTMLElement) {
+    this.container = container;
     
-    this.dataInicio = `${ano}-${mes}-01`;
-    this.dataFim = `${ano}-${mes}-${dia}`;
+    // Set default date range contextual
+    if (this.activeTab === 'embarques') {
+      const p = RelatoriosPage.obterPeriodoPadraoEmbarques(30);
+      this.dataInicio = p.inicio;
+      this.dataFim = p.fim;
+    } else {
+      const p = RelatoriosPage.obterPeriodoPadraoGeral();
+      this.dataInicio = p.inicio;
+      this.dataFim = p.fim;
+    }
   }
 
   /**
    * Initializes the Reports page: validates auth, loads database tables, and renders views.
    */
-  public async init(): Promise<void> {
+  public async init(initialTab?: string): Promise<void> {
     try {
+      if (initialTab && typeof initialTab === 'string') {
+        this.activeTab = initialTab as RelatorioTab;
+        if (this.activeTab === 'embarques') {
+          const p = RelatoriosPage.obterPeriodoPadraoEmbarques(30);
+          this.dataInicio = p.inicio;
+          this.dataFim = p.fim;
+        }
+      }
       this.loading = true;
       this.render();
 
@@ -653,6 +699,23 @@ export class RelatoriosPage {
       },
       exportToCSV: () => {
         this.exportToCSV();
+      },
+      onAlterarPeriodo: (dias: number) => {
+        const periodo = RelatoriosPage.obterPeriodoPadraoEmbarques(dias);
+        this.dataInicio = periodo.inicio;
+        this.dataFim = periodo.fim;
+
+        // Sincroniza bidirecionalmente os campos de input da barra global superior
+        const inputInicio = document.getElementById('filter-data-inicio') as HTMLInputElement;
+        const inputFim = document.getElementById('filter-data-fim') as HTMLInputElement;
+        if (inputInicio) inputInicio.value = formatIsoDateToBr(this.dataInicio);
+        if (inputFim) inputFim.value = formatIsoDateToBr(this.dataFim);
+
+        const container = document.getElementById('report-view-container');
+        if (container) {
+          container.innerHTML = this.renderActiveTabContent(this.getFilteredData());
+          this.setupEventListeners();
+        }
       }
     };
   }
@@ -809,8 +872,21 @@ export class RelatoriosPage {
         }
       },
       onSelectTab: (tab: RelatorioTab) => {
+        const previousTab = this.activeTab;
         this.activeTab = tab;
         this.menuLateralRecolhido = true;
+
+        // Comportamento contextual inteligente para o filtro de datas global
+        if (tab === 'embarques') {
+          const periodo = RelatoriosPage.obterPeriodoPadraoEmbarques(30);
+          this.dataInicio = periodo.inicio;
+          this.dataFim = periodo.fim;
+        } else if (previousTab === 'embarques') {
+          const periodo = RelatoriosPage.obterPeriodoPadraoGeral();
+          this.dataInicio = periodo.inicio;
+          this.dataFim = periodo.fim;
+        }
+
         this.render();
         this.setupEventListeners();
       },
@@ -827,14 +903,19 @@ export class RelatoriosPage {
         this.setupEventListeners();
       },
       onClearFilters: () => {
-        const hoje = new Date();
-        const ano = hoje.getFullYear();
-        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-        const dia = String(hoje.getDate()).padStart(2, '0');
-        
         const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
-        this.dataInicio = `${ano}-${mes}-01`;
-        this.dataFim = `${ano}-${mes}-${dia}`;
+
+        if (this.activeTab === 'embarques') {
+          const periodo = RelatoriosPage.obterPeriodoPadraoEmbarques(30);
+          this.dataInicio = periodo.inicio;
+          this.dataFim = periodo.fim;
+          this.filtroContatoEmbarque = 'todos';
+        } else {
+          const periodo = RelatoriosPage.obterPeriodoPadraoGeral();
+          this.dataInicio = periodo.inicio;
+          this.dataFim = periodo.fim;
+        }
+
         this.consultorIdFilter = isAdmin ? 'todos' : (this.user?.id || '');
         
         this.render();

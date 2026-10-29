@@ -648,6 +648,13 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 **Módulo operacional e analítico de controle de partidas e embarques**, desenhado para garantir que 100% dos passageiros recebam atendimento pré-embarque antes de se dirigirem ao aeroporto ou embarque rodoviário.
 
+- **Filtro Global Inteligente e Contextual (Hoje até Hoje + 30 Dias)**:
+  - Ao alternar para o Relatório de Embarque, a barra global superior ajusta-se automaticamente para o período operacional de `Hoje até Hoje + 30 dias`, focando diretamente nos embarques iminentes sem exigir intervenção manual.
+  - Ao navegar para qualquer relatório comercial ou financeiro (ex: Faturamento, Desempenho), o sistema restaura com segurança o padrão de fechamento contábil (`01 do mês corrente até Hoje`).
+  - O botão _Limpar_ é contextual: quando acionado em Embarques, restaura a janela de `Hoje até Hoje + 30 dias`.
+- **Atalhos Rápidos de Janela no Cabeçalho (7d, 15d, 30d, 60d)**:
+  - Botões compactos de 1-clique no cabeçalho da tabela de embarques para alternar a amplitude temporal (`7d`, `15d`, `30d`, `60d`).
+  - A seleção sincroniza instantaneamente com os inputs de data da barra superior (sincronização bidirecional), permitindo que relatórios impressos em PDF ou exportados em CSV reflitam com fidelidade o período ativo.
 - **Granularidade e Consolidação Inteligente por Trecho**:
   - Se a viagem possui **produtos aéreos cadastrados com trechos**, o relatório prioriza e exibe **exclusivamente os trechos de voo** (com Cia aérea, rota `Origem ➔ Destino` e código localizador/reserva), eliminando qualquer duplicidade visual com as datas gerais do card.
   - Para viagens que **não possuem produtos aéreos** (ex: reservas apenas de hotel, rodoviário ou cruzeiro), o sistema utiliza automaticamente as datas gerais de Ida e Volta da viagem.

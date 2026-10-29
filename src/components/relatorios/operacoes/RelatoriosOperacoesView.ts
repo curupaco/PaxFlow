@@ -32,6 +32,7 @@ export interface RelatoriosOperacoesContext {
   openCommentsModal: (tipo: 'viagem' | 'produto', entityId: string, tripId: string, titulo: string, label: string) => void;
   onRefreshData: () => Promise<void>;
   onStateChange: () => void;
+  onAlterarPeriodo?: (dias: number) => void;
   exportToCSV: () => void;
 }
 
@@ -789,17 +790,59 @@ export class RelatoriosOperacoesView {
 
     const colunasTotais = 7;
 
+    // Detecta se uma janela rápida padrão (7d, 15d, 30d, 60d) está ativa em relação ao dia atual
+    let janelaAtiva: number | null = null;
+    const hojeObj = new Date();
+    const hojeAno = hojeObj.getFullYear();
+    const hojeMes = String(hojeObj.getMonth() + 1).padStart(2, '0');
+    const hojeDia = String(hojeObj.getDate()).padStart(2, '0');
+    const hojeIso = `${hojeAno}-${hojeMes}-${hojeDia}`;
+
+    if (start === hojeIso) {
+      for (const d of [7, 15, 30, 60]) {
+        const dFimObj = new Date(hojeObj.getFullYear(), hojeObj.getMonth(), hojeObj.getDate() + d);
+        const fimIso = `${dFimObj.getFullYear()}-${String(dFimObj.getMonth() + 1).padStart(2, '0')}-${String(dFimObj.getDate()).padStart(2, '0')}`;
+        if (end === fimIso) {
+          janelaAtiva = d;
+          break;
+        }
+      }
+    }
+
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
           <div>
             <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <span>✈️ Relatório de Embarque e Trechos de Voo</span>
             </h2>
             <p class="text-xs text-slate-400 font-semibold mt-0.5">Controle preventivo e auditoria de contatos pré-embarque.</p>
           </div>
-          <div class="flex items-center gap-3 flex-wrap">
-            <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 px-3 py-1.5 rounded-xl">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <!-- Atalhos Rápidos de Janela (7d, 15d, 30d, 60d) -->
+            <div class="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 p-1 rounded-xl shadow-2xs">
+              <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider px-2 select-none">Janela:</span>
+              ${[7, 15, 30, 60].map(dias => {
+                const isAtivo = janelaAtiva === dias;
+                return `
+                  <button
+                    type="button"
+                    data-dias="${dias}"
+                    title="Exibir embarques dos próximos ${dias} dias a partir de hoje"
+                    class="btn-janela-embarque px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer select-none ${
+                      isAtivo
+                        ? 'bg-indigo-600 text-white font-black shadow-xs shadow-indigo-600/20 active:scale-95'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400'
+                    }"
+                  >
+                    ${dias}d
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Filtro de Status de Contato -->
+            <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 px-3 py-1.5 rounded-xl shadow-2xs">
               <label for="filtro-contato-embarque" class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Filtrar Contato:</label>
               <select id="filtro-contato-embarque" class="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer">
                 <option value="todos" class="bg-white dark:bg-slate-900" ${ctx.filtroContatoEmbarque === 'todos' ? 'selected' : ''}>Todos os Embarques</option>
@@ -843,6 +886,17 @@ export class RelatoriosOperacoesView {
   // ==========================================
   public static attachEvents(activeTab: string, ctx: RelatoriosOperacoesContext): void {
     if (activeTab === 'embarques') {
+      // Atalhos Rápidos de Janela de Dias (7d, 15d, 30d, 60d)
+      document.querySelectorAll('.btn-janela-embarque').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const dias = parseInt(btn.getAttribute('data-dias') || '30', 10);
+          if (ctx.onAlterarPeriodo) {
+            ctx.onAlterarPeriodo(dias);
+          }
+        });
+      });
+
       // Filtro de Contato Pré-Embarque
       const selectFiltroContato = document.getElementById('filtro-contato-embarque') as HTMLSelectElement;
       if (selectFiltroContato) {
