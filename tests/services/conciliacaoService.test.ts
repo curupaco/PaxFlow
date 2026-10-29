@@ -250,4 +250,138 @@ describe('ConciliacaoService (PaxFlow FinRecon™)', () => {
     expect(transacoes).toEqual([]);
     expect(pendentes).toEqual([]);
   });
+
+  it('deve calcular Smart Matches de débito bancário contra Contas a Pagar', () => {
+    // Setup
+    const transacoes: ExtratoTransacao[] = [
+      {
+        id: 't-deb-1',
+        lote_id: 'l-1',
+        data_transacao: '2026-10-20',
+        descricao: 'DEB AUT ALUGUEL IMOBILIARIA SOLARIS',
+        valor: -3500.00,
+        tipo: 'DEBIT',
+        status: 'pendente'
+      }
+    ];
+
+    const contasPagar: any[] = [
+      {
+        id: 'cp-1',
+        favorecido: 'Imobiliária Solaris LTDA',
+        data_vencimento: '2026-10-20',
+        data_vencimento_operacional: '2026-10-20',
+        valor_nominal: 3500.00,
+        status: 'pendente'
+      }
+    ];
+
+    // Action
+    const sugestoes = ConciliacaoService.calcularSmartMatches(transacoes, [], contasPagar);
+
+    // Assert
+    expect(sugestoes.length).toBe(1);
+    expect(sugestoes[0].tipoMatch).toBe('conta_pagar');
+    expect(sugestoes[0].contaPagarId).toBe('cp-1');
+    expect(sugestoes[0].score).toBeGreaterThanOrEqual(90);
+    expect(sugestoes[0].motivo).toContain('Valor exato da conta');
+    expect(sugestoes[0].motivo).toContain('Mesmo dia');
+    expect(sugestoes[0].motivo).toContain('Favorecido coincide');
+  });
+
+  it('deve conciliar transação de débito com conta a pagar pendente e disparar baixa assistida', async () => {
+    // Setup
+    const transacaoMock = {
+      id: 't-deb-1',
+      valor: -1250.00,
+      data_transacao: '2026-10-25',
+      banco_origem: 'Itaú Empresas',
+      documento: 'DOC-9988'
+    };
+
+    const contaMock = {
+      id: 'cp-100',
+      favorecido: 'Fornecedor de TI',
+      valor_nominal: 1250.00,
+      status: 'pendente'
+    };
+
+    const updateTransacaoMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null })
+    });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'extratos_bancarios_transacoes') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: transacaoMock, error: null })
+            })
+          }),
+          update: updateTransacaoMock
+        };
+      }
+      if (table === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: contaMock, error: null }),
+              single: vi.fn().mockResolvedValue({ data: contaMock, error: null })
+            })
+          }),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: null, error: null })
+          })
+        };
+      }
+      if (table === 'fin_auditoria') {
+        return {
+          insert: vi.fn().mockResolvedValue({ data: null, error: null })
+        };
+      }
+      return {};
+    });
+
+    // Action
+    const resultado = await ConciliacaoService.conciliarComContaPagar({
+      transacaoExtratoId: 't-deb-1',
+      contaPagarId: 'cp-100',
+      baixarSePendente: true,
+      usuarioId: 'user-admin-123',
+      usuarioNome: 'Administrador PaxFlow'
+    });
+
+    // Assert
+    expect(resultado.sucesso).toBe(true);
+    expect(updateTransacaoMock).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'conciliado',
+      conciliado_por: 'user-admin-123'
+    }));
+  });
+
+  it('deve listar contas a pagar para conciliação com resiliência a schema drift (42P01 / 42703)', async () => {
+    // Setup
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: null,
+                error: { code: '42P01', message: 'relation fin_contas_pagar does not exist' }
+              })
+            })
+          })
+        };
+      }
+      return {};
+    });
+
+    // Action
+    const contas = await ConciliacaoService.listarContasPagarConciliacao();
+
+    // Assert
+    expect(contas).toEqual([]);
+  });
 });
+

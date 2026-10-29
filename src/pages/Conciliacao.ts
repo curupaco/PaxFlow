@@ -1,5 +1,5 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
-import { PerfilConsultor } from '../types';
+import { PerfilConsultor, FinContaPagar } from '../types';
 import {
   ConciliacaoService,
   ExtratoTransacao,
@@ -10,6 +10,7 @@ import {
 } from '../services/conciliacaoService';
 import { UploadExtratoModal } from '../components/conciliacao/UploadExtratoModal';
 import { VincularRecebimentoModal } from '../components/conciliacao/VincularRecebimentoModal';
+import { VincularContaPagarModal } from '../components/conciliacao/VincularContaPagarModal';
 import { JustificarEntradaModal } from '../components/conciliacao/JustificarEntradaModal';
 import { FecharMesModal } from '../components/conciliacao/FecharMesModal';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
@@ -21,6 +22,7 @@ export class ConciliacaoPage {
   private perfil: PerfilConsultor | null = null;
   private transacoes: ExtratoTransacao[] = [];
   private pendentesLocs: LocPagamentoPendente[] = [];
+  private contasPagar: FinContaPagar[] = [];
   private sugestoes: SugestaoMatch[] = [];
   private fechamentos: FechamentoMes[] = [];
   private resumo: ResumoConciliacao = {
@@ -75,17 +77,19 @@ export class ConciliacaoPage {
     this.render();
 
     try {
-      const [transacoes, pendentesLocs, fechamentos] = await Promise.all([
+      const [transacoes, pendentesLocs, fechamentos, contasPagar] = await Promise.all([
         ConciliacaoService.listarTransacoesExtrato(),
         ConciliacaoService.listarRecebimentosPendentes(),
-        ConciliacaoService.listarFechamentos()
+        ConciliacaoService.listarFechamentos(),
+        ConciliacaoService.listarContasPagarConciliacao()
       ]);
 
       this.transacoes = transacoes;
       this.pendentesLocs = pendentesLocs;
       this.fechamentos = fechamentos;
+      this.contasPagar = contasPagar;
       this.resumo = ConciliacaoService.calcularResumo(transacoes, pendentesLocs);
-      this.sugestoes = ConciliacaoService.calcularSmartMatches(transacoes, pendentesLocs);
+      this.sugestoes = ConciliacaoService.calcularSmartMatches(transacoes, pendentesLocs, contasPagar);
     } catch (e) {
       console.error('Erro ao buscar dados de conciliação:', e);
       showCustomAlert('Aviso: Não foi possível carregar os dados completos do extrato.', 'warning');
@@ -291,15 +295,28 @@ export class ConciliacaoPage {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           ${pendentesComSugestao.slice(0, 3).map(s => {
             const transacao = this.transacoes.find(t => t.id === s.transacaoExtratoId);
-            const loc = this.pendentesLocs.find(p => p.id === s.locPagamentoId);
-            if (!transacao || !loc) return '';
+            if (!transacao) return '';
+
+            const isContaPagar = s.tipoMatch === 'conta_pagar';
+            const loc = !isContaPagar ? this.pendentesLocs.find(p => p.id === s.locPagamentoId) : null;
+            const conta = isContaPagar ? this.contasPagar.find(c => c.id === s.contaPagarId) : null;
+
+            if (!loc && !conta) return '';
+
+            const badgeCor = isContaPagar
+              ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50'
+              : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50';
+
+            const subtitulo = isContaPagar && conta
+              ? `<p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">💰 Despesa: <strong class="text-slate-700 dark:text-slate-200">${conta.favorecido}</strong> (${conta.categoria?.nome || 'Conta a Pagar'})</p>`
+              : `<p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">LOC: <strong class="text-slate-700 dark:text-slate-200">${loc?.loc_codigo}</strong> • ${loc?.cliente_nome}</p>`;
 
             return `
-              <div class="p-3.5 bg-white dark:bg-slate-900 rounded-2xl border border-teal-200/60 dark:border-teal-900/40 shadow-sm flex flex-col justify-between gap-3">
+              <div class="p-3.5 bg-white dark:bg-slate-900 rounded-2xl border ${isContaPagar ? 'border-rose-200/60 dark:border-rose-900/40' : 'border-teal-200/60 dark:border-teal-900/40'} shadow-sm flex flex-col justify-between gap-3">
                 <div>
                   <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded">
-                      ${s.score}% Confiança
+                    <span class="text-[10px] font-black ${badgeCor} px-2 py-0.5 rounded">
+                      ${s.score}% Confiança • ${isContaPagar ? 'Débito' : 'Crédito'}
                     </span>
                     <span class="text-[10px] font-bold text-slate-400">
                       ${new Date(transacao.data_transacao + 'T12:00:00').toLocaleDateString('pt-BR')}
@@ -308,23 +325,28 @@ export class ConciliacaoPage {
 
                   <div class="mt-2">
                     <p class="text-xs font-black text-slate-800 dark:text-slate-100 truncate">${transacao.descricao}</p>
-                    <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-                      LOC: <strong class="text-slate-700 dark:text-slate-200">${loc.loc_codigo}</strong> • ${loc.cliente_nome}
-                    </p>
+                    ${subtitulo}
+                    <p class="text-[9px] text-slate-400 mt-1 italic">${s.motivo}</p>
                   </div>
                 </div>
 
                 <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div>
                     <span class="text-[10px] text-slate-400 uppercase font-black">Valor</span>
-                    <div class="text-xs font-black text-slate-800 dark:text-slate-100">
-                      ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transacao.valor)}
+                    <div class="text-xs font-black ${isContaPagar ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'}">
+                      ${isContaPagar ? '-' : '+'}${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.abs(transacao.valor))}
                     </div>
                   </div>
 
-                  <button class="btn-aceitar-smart-match px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-[11px] font-black transition transform active:scale-95 shadow-sm shadow-teal-500/20" data-transacao-id="${transacao.id}" data-loc-id="${loc.id}">
-                    ⚡ Conciliar 1-Clique
-                  </button>
+                  ${isContaPagar ? `
+                    <button class="btn-aceitar-smart-match-conta px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-[11px] font-black transition transform active:scale-95 shadow-sm shadow-rose-500/20 cursor-pointer" data-transacao-id="${transacao.id}" data-conta-id="${conta?.id}">
+                      ⚡ Conciliar Saída
+                    </button>
+                  ` : `
+                    <button class="btn-aceitar-smart-match px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-[11px] font-black transition transform active:scale-95 shadow-sm shadow-teal-500/20 cursor-pointer" data-transacao-id="${transacao.id}" data-loc-id="${loc?.id}">
+                      ⚡ Conciliar 1-Clique
+                    </button>
+                  `}
                 </div>
               </div>
             `;
@@ -388,15 +410,21 @@ export class ConciliacaoPage {
                 <td class="p-4 align-middle text-slate-500 font-mono text-[11px]">
                   ${t.documento || t.fitid || '-'}
                 </td>
-                <td class="p-4 align-middle text-right font-black text-emerald-600 dark:text-emerald-400 text-sm">
-                  ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.valor)}
+                <td class="p-4 align-middle text-right font-black ${t.tipo === 'DEBITO' || t.tipo === 'DEBIT' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'} text-sm whitespace-nowrap">
+                  ${t.tipo === 'DEBITO' || t.tipo === 'DEBIT' ? '-' : '+'}${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.abs(t.valor))}
                 </td>
                 <td class="p-4 align-middle text-center">
                   <div class="flex items-center justify-center gap-1.5">
-                    <button class="btn-abrir-vincular px-2.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-[11px] font-black transition transform active:scale-95 shadow-sm shadow-teal-500/20" data-id="${t.id}">
-                      🔗 Vincular LOC
-                    </button>
-                    <button class="btn-abrir-justificar px-2 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-[11px] font-bold transition" data-id="${t.id}" title="Justificar não venda">
+                    ${t.tipo === 'DEBITO' || t.tipo === 'DEBIT' ? `
+                      <button class="btn-abrir-vincular-conta-pagar px-2.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-[11px] font-black transition transform active:scale-95 shadow-sm shadow-rose-500/20 cursor-pointer" data-id="${t.id}">
+                        💰 Vincular Conta
+                      </button>
+                    ` : `
+                      <button class="btn-abrir-vincular px-2.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-[11px] font-black transition transform active:scale-95 shadow-sm shadow-teal-500/20 cursor-pointer" data-id="${t.id}">
+                        🔗 Vincular LOC
+                      </button>
+                    `}
+                    <button class="btn-abrir-justificar px-2 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-[11px] font-bold transition cursor-pointer" data-id="${t.id}" title="Justificar lançamento">
                       🏷️
                     </button>
                   </div>
@@ -662,17 +690,62 @@ export class ConciliacaoPage {
       });
     });
 
+    // Smart Match 1-clique com Conta a Pagar
+    this.container.querySelectorAll('.btn-aceitar-smart-match-conta').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const transacaoId = btn.getAttribute('data-transacao-id');
+        const contaId = btn.getAttribute('data-conta-id');
+        if (!transacaoId || !contaId) return;
+
+        try {
+          (btn as HTMLButtonElement).disabled = true;
+          (btn as HTMLButtonElement).textContent = 'Conciliando...';
+          const res = await ConciliacaoService.conciliarComContaPagar({
+            transacaoExtratoId: transacaoId,
+            contaPagarId: contaId,
+            baixarSePendente: true,
+            usuarioId: this.user?.id,
+            usuarioNome: this.perfil?.nome
+          });
+
+          if (res.sucesso) {
+            showCustomAlert('Débito conciliado com a Conta a Pagar com sucesso! 🎯', 'success');
+            await this.carregarDados();
+          } else {
+            showCustomAlert(res.erro || 'Erro ao conciliar saída', 'error');
+            (btn as HTMLButtonElement).disabled = false;
+            (btn as HTMLButtonElement).textContent = '⚡ Conciliar Saída';
+          }
+        } catch (e: any) {
+          showCustomAlert(`Erro ao conciliar: ${e.message || 'Erro desconhecido'}`, 'error');
+          (btn as HTMLButtonElement).disabled = false;
+          (btn as HTMLButtonElement).textContent = '⚡ Conciliar Saída';
+        }
+      });
+    });
+
     this.setupTabelaActions();
   }
 
   private setupTabelaActions(): void {
-    // Ações de vincular
+    // Ações de vincular LOC (Crédito)
     this.container.querySelectorAll('.btn-abrir-vincular').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
         const transacao = this.transacoes.find(t => t.id === id);
         if (transacao) {
           VincularRecebimentoModal.abrir(transacao, () => this.carregarDados());
+        }
+      });
+    });
+
+    // Ações de vincular Conta a Pagar (Débito)
+    this.container.querySelectorAll('.btn-abrir-vincular-conta-pagar').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const transacao = this.transacoes.find(t => t.id === id);
+        if (transacao) {
+          VincularContaPagarModal.abrir(transacao, () => this.carregarDados());
         }
       });
     });

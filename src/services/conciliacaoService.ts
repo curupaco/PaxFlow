@@ -1,5 +1,6 @@
 import { supabase, getSessaoAtual } from './supabase';
 import { TransacaoOFX } from './ofxParser';
+import { FinContaPagar } from '../types';
 
 export interface ExtratoTransacao {
   id: string;
@@ -33,7 +34,10 @@ export interface LocPagamentoPendente {
 
 export interface SugestaoMatch {
   transacaoExtratoId: string;
-  locPagamentoId: string;
+  locPagamentoId?: string;
+  contaPagarId?: string;
+  tipoMatch?: 'recebimento' | 'conta_pagar';
+  favorecidoOuDescricao?: string;
   score: number; // 0 a 100
   motivo: string;
 }
@@ -312,11 +316,38 @@ export class ConciliacaoService {
   }
 
   /**
-   * Algoritmo de Smart Matching (Sugestão Inteligente de Casamento)
+   * Lista contas a pagar ativas para conciliação bancária de débitos/saídas
+   */
+  public static async listarContasPagarConciliacao(): Promise<FinContaPagar[]> {
+    try {
+      const { data, error } = await supabase
+        .from('fin_contas_pagar')
+        .select(`
+          *,
+          categoria:fin_categorias(id, nome),
+          conta_bancaria:fin_contas_bancarias(id, nome_banco)
+        `)
+        .in('status', ['pendente', 'pago', 'atrasado'])
+        .order('data_vencimento', { ascending: false });
+
+      if (error) {
+        if (error.code === '42P01' || error.code === '42703') return [];
+        throw error;
+      }
+      return data || [];
+    } catch (err) {
+      console.warn('[Conciliação] Erro ao listar contas a pagar para conciliação:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Algoritmo de Smart Matching (Sugestão Inteligente de Casamento de Créditos e Débitos)
    */
   public static calcularSmartMatches(
     transacoes: ExtratoTransacao[],
-    pendentes: LocPagamentoPendente[]
+    pendentes: LocPagamentoPendente[],
+    contasPagar: FinContaPagar[] = []
   ): SugestaoMatch[] {
     const sugestoes: SugestaoMatch[] = [];
     const pendentesNaoConciliados = pendentes.filter(p => !p.conciliado);
@@ -324,72 +355,156 @@ export class ConciliacaoService {
     for (const t of transacoes) {
       if (t.status !== 'pendente') continue;
 
-      let melhorMatch: LocPagamentoPendente | null = null;
-      let melhorScore = 0;
-      let motivos: string[] = [];
+      const isDebito = t.tipo === 'DEBITO' || t.tipo === 'DEBIT';
 
-      for (const p of pendentesNaoConciliados) {
-        let score = 0;
-        const currentMotivos: string[] = [];
+      if (!isDebito) {
+        // --- 1. TRANSAÇÃO DE CRÉDITO: MATCH COM LOCS / RECEBIMENTOS ---
+        let melhorMatch: LocPagamentoPendente | null = null;
+        let melhorScore = 0;
+        let motivos: string[] = [];
 
-        // 1. Proximidade de Valor
-        const diffValor = Math.abs(t.valor - p.valor);
-        if (diffValor < 0.01) {
-          score += 60;
-          currentMotivos.push('Valor exato');
-        } else if (p.valor > t.valor && (p.valor - t.valor) <= p.valor * 0.05) {
-          // Diferença <= 5% (taxa de cartão de crédito/gateway)
-          score += 40;
-          currentMotivos.push('Diferença de taxa de gateway');
-        }
+        for (const p of pendentesNaoConciliados) {
+          let score = 0;
+          const currentMotivos: string[] = [];
 
-        // 2. Proximidade de Data
-        if (t.data_transacao && p.data_vencimento) {
-          const dtT = new Date(t.data_transacao + 'T12:00:00').getTime();
-          const dtP = new Date(p.data_vencimento + 'T12:00:00').getTime();
-          const diffDias = Math.abs(dtT - dtP) / (1000 * 60 * 60 * 24);
+          // 1. Proximidade de Valor
+          const diffValor = Math.abs(t.valor - p.valor);
+          if (diffValor < 0.01) {
+            score += 60;
+            currentMotivos.push('Valor exato');
+          } else if (p.valor > t.valor && (p.valor - t.valor) <= p.valor * 0.05) {
+            score += 40;
+            currentMotivos.push('Diferença de taxa de gateway');
+          }
 
-          if (diffDias === 0) {
-            score += 30;
-            currentMotivos.push('Mesmo dia');
-          } else if (diffDias <= 1) {
+          // 2. Proximidade de Data
+          if (t.data_transacao && p.data_vencimento) {
+            const dtT = new Date(t.data_transacao + 'T12:00:00').getTime();
+            const dtP = new Date(p.data_vencimento + 'T12:00:00').getTime();
+            const diffDias = Math.abs(dtT - dtP) / (1000 * 60 * 60 * 24);
+
+            if (diffDias === 0) {
+              score += 30;
+              currentMotivos.push('Mesmo dia');
+            } else if (diffDias <= 1) {
+              score += 25;
+              currentMotivos.push('Data ±1 dia');
+            } else if (diffDias <= 3) {
+              score += 15;
+              currentMotivos.push('Data ±3 dias');
+            }
+          }
+
+          // 3. Proximidade de Texto
+          const descUpper = t.descricao.toUpperCase();
+          if (p.loc_codigo && p.loc_codigo !== 'S/LOC' && descUpper.includes(p.loc_codigo.toUpperCase())) {
             score += 25;
-            currentMotivos.push('Data ±1 dia');
-          } else if (diffDias <= 3) {
-            score += 15;
-            currentMotivos.push('Data ±3 dias');
+            currentMotivos.push('LOC coincide');
+          }
+
+          if (p.cliente_nome) {
+            const primeiroNome = p.cliente_nome.split(' ')[0].toUpperCase();
+            if (primeiroNome.length > 3 && descUpper.includes(primeiroNome)) {
+              score += 15;
+              currentMotivos.push('Nome/LOC coincide');
+            }
+          }
+
+          if (score > melhorScore && score >= 50) {
+            melhorScore = score;
+            melhorMatch = p;
+            motivos = currentMotivos;
           }
         }
 
-        // 3. Proximidade de Texto
-        const descUpper = t.descricao.toUpperCase();
-        if (p.loc_codigo && p.loc_codigo !== 'S/LOC' && descUpper.includes(p.loc_codigo.toUpperCase())) {
-          score += 25;
-          currentMotivos.push('LOC coincide');
+        if (melhorMatch && melhorScore >= 50) {
+          sugestoes.push({
+            transacaoExtratoId: t.id,
+            locPagamentoId: melhorMatch.id,
+            tipoMatch: 'recebimento',
+            favorecidoOuDescricao: melhorMatch.cliente_nome || melhorMatch.loc_codigo,
+            score: Math.min(100, melhorScore),
+            motivo: motivos.join(' + ')
+          });
         }
+      } else {
+        // --- 2. TRANSAÇÃO DE DÉBITO: MATCH COM CONTAS A PAGAR ---
+        let melhorConta: FinContaPagar | null = null;
+        let melhorScore = 0;
+        let motivos: string[] = [];
+        const valorDebitoAbs = Math.abs(t.valor);
 
-        if (p.cliente_nome) {
-          const primeiroNome = p.cliente_nome.split(' ')[0].toUpperCase();
-          if (primeiroNome.length > 3 && descUpper.includes(primeiroNome)) {
-            score += 15;
-            currentMotivos.push('Nome/LOC coincide');
+        for (const c of contasPagar) {
+          let score = 0;
+          const currentMotivos: string[] = [];
+
+          // 1. Proximidade de Valor
+          const valorConta = c.status === 'pago' && c.valor_pago ? c.valor_pago : c.valor_nominal;
+          const diffValor = Math.abs(valorDebitoAbs - valorConta);
+
+          if (diffValor < 0.01) {
+            score += 60;
+            currentMotivos.push('Valor exato da conta');
+          } else if (diffValor <= valorConta * 0.03) {
+            score += 40;
+            currentMotivos.push('Diferença de juros/desconto residual');
+          }
+
+          // 2. Proximidade de Data
+          const dataAlvoConta = c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento;
+          if (t.data_transacao && dataAlvoConta) {
+            const dtT = new Date(t.data_transacao + 'T12:00:00').getTime();
+            const dtC = new Date(dataAlvoConta + 'T12:00:00').getTime();
+            const diffDias = Math.abs(dtT - dtC) / (1000 * 60 * 60 * 24);
+
+            if (diffDias === 0) {
+              score += 30;
+              currentMotivos.push('Mesmo dia');
+            } else if (diffDias <= 1) {
+              score += 25;
+              currentMotivos.push('Data ±1 dia');
+            } else if (diffDias <= 3) {
+              score += 15;
+              currentMotivos.push('Data ±3 dias');
+            }
+          }
+
+          // 3. Proximidade Textual (Favorecido ou Categoria)
+          const descUpper = t.descricao.toUpperCase();
+          if (c.favorecido) {
+            const palavrasFavorecido = c.favorecido.toUpperCase().split(/\s+/).filter(w => w.length > 3);
+            const matchPalavra = palavrasFavorecido.some(w => descUpper.includes(w));
+            if (matchPalavra) {
+              score += 25;
+              currentMotivos.push('Favorecido coincide');
+            }
+          }
+
+          if (c.categoria?.nome) {
+            const catUpper = c.categoria.nome.toUpperCase();
+            if (catUpper.length > 3 && descUpper.includes(catUpper)) {
+              score += 15;
+              currentMotivos.push('Categoria coincide');
+            }
+          }
+
+          if (score > melhorScore && score >= 50) {
+            melhorScore = score;
+            melhorConta = c;
+            motivos = currentMotivos;
           }
         }
 
-        if (score > melhorScore && score >= 50) {
-          melhorScore = score;
-          melhorMatch = p;
-          motivos = currentMotivos;
+        if (melhorConta && melhorScore >= 50) {
+          sugestoes.push({
+            transacaoExtratoId: t.id,
+            contaPagarId: melhorConta.id,
+            tipoMatch: 'conta_pagar',
+            favorecidoOuDescricao: melhorConta.favorecido,
+            score: Math.min(100, melhorScore),
+            motivo: motivos.join(' + ')
+          });
         }
-      }
-
-      if (melhorMatch && melhorScore >= 50) {
-        sugestoes.push({
-          transacaoExtratoId: t.id,
-          locPagamentoId: melhorMatch.id,
-          score: Math.min(100, melhorScore),
-          motivo: motivos.join(' + ')
-        });
       }
     }
 
@@ -497,6 +612,84 @@ export class ConciliacaoService {
       taxaDesconto: taxa
     });
     return { sucesso: true };
+  }
+
+  /**
+   * Concilia uma transação de débito do extrato bancário com uma Conta a Pagar.
+   * Se a conta a pagar estiver pendente, pode realizar a baixa inteligente automática no mesmo ato.
+   */
+  public static async conciliarComContaPagar(params: {
+    transacaoExtratoId: string;
+    contaPagarId: string;
+    baixarSePendente?: boolean;
+    usuarioId?: string;
+    usuarioNome?: string;
+  }): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      const { user } = await getSessaoAtual();
+      const userId = params.usuarioId || user?.id || 'sistema';
+
+      const { data: transacao, error: tErr } = await supabase
+        .from('extratos_bancarios_transacoes')
+        .select('*')
+        .eq('id', params.transacaoExtratoId)
+        .maybeSingle();
+
+      if (tErr) throw tErr;
+      if (!transacao) {
+        return { sucesso: false, erro: 'Transação do extrato não localizada' };
+      }
+
+      const { data: conta, error: cErr } = await supabase
+        .from('fin_contas_pagar')
+        .select('*')
+        .eq('id', params.contaPagarId)
+        .maybeSingle();
+
+      if (cErr) throw cErr;
+      if (!conta) {
+        return { sucesso: false, erro: 'Conta a pagar não localizada' };
+      }
+
+      // Se solicitado e a conta estiver pendente, realiza a baixa no módulo financeiro
+      if (params.baixarSePendente && (conta.status === 'pendente' || conta.status === 'atrasado')) {
+        const { FinContasPagarService } = await import('./finContasPagarService');
+        const valorPago = Math.abs(transacao.valor);
+        await FinContasPagarService.baixarConta({
+          contaId: conta.id,
+          dataPagamento: transacao.data_transacao,
+          valorPagoTotal: valorPago,
+          observacoes: `Baixa automática via conciliação bancária: extrato ${transacao.banco_origem || ''} doc: ${transacao.documento || transacao.fitid || ''}`,
+          usuarioId: userId,
+          usuarioNome: params.usuarioNome
+        });
+      }
+
+      const nowIso = new Date().toISOString();
+      const obs = `Conciliado com Conta a Pagar: ${conta.favorecido} (#${conta.id})`;
+
+      const { error: updErr } = await supabase
+        .from('extratos_bancarios_transacoes')
+        .update({
+          status: 'conciliado',
+          data_conciliacao: nowIso,
+          conciliado_por: userId,
+          observacao_justificativa: obs
+        })
+        .eq('id', params.transacaoExtratoId);
+
+      if (updErr) throw updErr;
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
+        window.dispatchEvent(new CustomEvent('paxflow-conciliacao-updated'));
+      }
+
+      return { sucesso: true };
+    } catch (err: any) {
+      console.error('[ConciliacaoService] Erro ao conciliar com conta a pagar:', err);
+      return { sucesso: false, erro: err.message || 'Erro ao conciliar débito bancário' };
+    }
   }
 
   /**

@@ -1476,6 +1476,17 @@ O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operan
    - **Recálculo Inteligente de Datas e Prazos Úteis**: A alteração do dia de vencimento nominal atualiza o dia em todos os meses futuros pendentes, reavaliando individualmente cada data com o motor de antecipação tributária ou postergação bancária.
    - **Trilha de Auditoria Granular**: Cada alteração em cascata registra na tabela `fin_auditoria` a quantidade total de títulos afetados, payload de alterações e identificador do usuário responsável.
 
+8. **Integração de Contas a Pagar na Conciliação Bancária & Importador OFX (FinRecon™)**:
+   - **Conciliação Bidirecional Completa (Créditos & Débitos)**: A conciliação bancária passa a cobrir ambos os lados do balanço contábil da agência, permitindo o batimento de entradas provenientes de pagamentos de viagens (LOCs) e de saídas decorrentes de despesas operacionais e fixas.
+   - **Motor Híbrido de Smart Match**: O algoritmo avalia os lançamentos de débito do extrato contra o banco de contas a pagar (`fin_contas_pagar`), calculando uma pontuação inteligente (0 a 100) baseada em 4 critérios:
+     - *Proximidade de Valor*: +60 pontos para valor exato e +40 pontos para tolerância de até 3% (diferenças de juros ou descontos residuais).
+     - *Proximidade de Data*: +30 pontos para o mesmo dia, +25 pontos para ±1 dia útil e +15 pontos para ±3 dias da data de pagamento ou vencimento operacional.
+     - *Proximidade Textual do Fornecedor*: +25 pontos caso o nome do favorecido (ex: "Solaris", "Imobiliária", "Agaxtur") coincida com a descrição do extrato bancário.
+     - *Proximidade da Categoria Contábil*: +15 pontos caso o nome da categoria do plano de contas esteja presente na descrição do débito bancário.
+   - **Sugestões com Ação em 1-Clique**: Transações com score ≥ 50% são exibidas com destaque no topo da tela com o identificador visual `💰 Despesa: [Favorecido]` e o botão `⚡ Conciliar Saída`, permitindo a reconciliação e baixa assistida instantânea.
+   - **Modal Especializado de Vinculação (`VincularContaPagarModal`)**: Débitos bancários contam com o botão `💰 Vincular Conta` na listagem do extrato, abrindo diálogo com os dados da movimentação bancária, pesquisa textual instantânea, lista ordenada por score de compatibilidade e opção de *Baixa Assistida Automática*.
+   - **Baixa Assistida e Fechamento do Ciclo**: Se o título vinculado ainda estiver com status pendente ou em atraso, a conciliação invoca automaticamente `FinContasPagarService.baixarConta`, registrando a data de pagamento real do extrato, valor pago, observação de conciliação bancária e emitindo os eventos reativos `paxflow-financeiro-updated` e `paxflow-conciliacao-updated`.
+
 ---
 
 ## 4. Diferenciais Competitivos

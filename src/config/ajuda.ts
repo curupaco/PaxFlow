@@ -1065,8 +1065,16 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🔁 Edição em Cascata de Contas Recorrentes e Parcelamentos',
     description: 'Como reajustar valores ou datas de contratos fixos para o mês atual ou parcelas futuras.',
     details: 'Ao clicar no ícone de lápis (`✏️`) para editar qualquer título que pertença a um contrato contínuo ou parcelamento:\n\n1. **Detecção Automática**: O PaxFlow identifica o vínculo da série (`contrato_recorrente_id`) e apresenta um bloco informativo com duas alternativas de aplicação.\n2. **📌 Apenas este mês**: Atualiza os dados (valor, categoria, dia ou descrição) exclusivamente para a parcela selecionada, mantendo as demais inalteradas.\n3. **🔄 Esta e futuras pendentes**: Propaga as alterações em lote para a parcela atual e todas as próximas parcelas pendentes daquela série contábil (ex: reajuste de aluguel ou troca de plano de saúde a partir de determinado mês).\n4. **Proteção Histórica**: Títulos já liquidados (`pago`) ou cancelados são blindados contra alterações acidentais, garantindo a integridade dos relatórios contábeis passados.\n5. **Recálculo de Dias Úteis**: Se o dia do vencimento for alterado (ex: do dia 5 para o dia 10), cada mês futuro recebe o novo dia e passa automaticamente pelo crivo de dias úteis com antecipação tributária.'
+  },
+  {
+    id: 'fin-conciliacao-contas-pagar',
+    modulo: 'financeiro',
+    label: '🏦 Integração de Contas a Pagar na Conciliação Bancária (FinRecon™)',
+    description: 'Como casar débitos de extratos OFX/CSV com despesas e efetuar a baixa assistida em 1-clique.',
+    details: 'A conciliação bancária do PaxFlow agora opera em via de mão dupla, processando créditos (entradas de clientes) e débitos (saídas de despesas):\n\n1. **Smart Matching Inteligente para Débitos**: Ao importar um extrato bancário (OFX ou CSV), o algoritmo FinRecon™ cruza as saídas com as contas a pagar da agência, avaliando proximidade de valor (score +60), tolerância de juros residuais (score +40), mesma data (score +30) e proximidade textual do nome do fornecedor ou categoria (score +25).\n2. **Sugestões com 1-Clique**: Para correspondências com score alto (≥ 50%), o sistema exibe o card destacado `💰 Despesa: [Favorecido]` e o botão `⚡ Conciliar Saída`, permitindo a liquidação imediata.\n3. **Vinculação Manual e Baixa Assistida**: Na tabela de transações do extrato, débitos contam com o botão `💰 Vincular Conta`, que abre um modal inteligente filtrável com todas as contas da agência. Ao confirmar a vinculação, o sistema executa automaticamente a baixa no módulo financeiro (se o título ainda estiver pendente), preenche a data de pagamento com base no extrato e reconcilia a transação bancária.\n4. **Sincronização em Tempo Real**: Toda baixa assistida na conciliação atualiza instantaneamente os indicadores e badges do módulo financeiro sem necessidade de refresh.'
   }
 ];
+
 
 
 
