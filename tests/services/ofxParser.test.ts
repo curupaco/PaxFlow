@@ -144,4 +144,139 @@ NEWFILEFAIL:NONE
     expect(resOfx.transacoes).toEqual([]);
     expect(resCsv.transacoes).toEqual([]);
   });
+
+  it('deve extrair com perfeição o extrato bancário real do Santander (com documento, saldo e valores monetários)', () => {
+    // Setup
+    const santanderCSV = `AGENCIA,0435,CONTA,130061089,
+,,,,
+Data,Histórico,Documento,Valor (R$),Saldo (R$)
+31/08/2026,RENDIMENTO LIQUIDO DE CONTAMAX  7000 RENDIMENTO LIQUIDO DE CONTAMAX     ,,"R$ 0,40","R$ 70.928,42"
+31/08/2026,PIX ENVIADO  57537438 EDSON PEREIRA DO,,"-R$ 300,00","R$ 70.928,02"
+31/08/2026,PAGAMENTO DARF EM CANAIS  INTERNET SIMPLES NACIONAL,213530,"-R$ 1.402,34","R$ 71.228,02"
+31/08/2026,PAGAMENTO DE BOLETO OUTROS BANCOS  NITRO2CODE LTDA EPP,0000000000,"-R$ 343,00","R$ 77.018,51"
+31/08/2026,PIX RECEBIDO  06374602000195,,"R$ 13.609,16","R$ 90.833,32"
+`;
+
+    // Action
+    const resultado = parseCSVExtrato(santanderCSV);
+
+    // Assert
+    expect(resultado.transacoes.length).toBe(5);
+
+    // 1. Rendimento (Crédito)
+    const rendimento = resultado.transacoes.find(t => t.descricao.includes('RENDIMENTO LIQUIDO'));
+    expect(rendimento).toBeDefined();
+    expect(rendimento?.data).toBe('2026-08-31');
+    expect(rendimento?.valor).toBe(0.40);
+    expect(rendimento?.tipo).toBe('CREDITO');
+
+    // 2. Pix Enviado (Débito)
+    const pixEnviado = resultado.transacoes.find(t => t.descricao.includes('EDSON PEREIRA'));
+    expect(pixEnviado).toBeDefined();
+    expect(pixEnviado?.valor).toBe(300.00);
+    expect(pixEnviado?.valorOriginal).toBe(-300.00);
+    expect(pixEnviado?.tipo).toBe('DEBITO');
+
+    // 3. DARF com Documento numérico (que não deve ser confundido com valor!)
+    const darf = resultado.transacoes.find(t => t.documento === '213530');
+    expect(darf).toBeDefined();
+    expect(darf?.documentoRef).toBe('213530');
+    expect(darf?.valor).toBe(1402.34);
+    expect(darf?.valorOriginal).toBe(-1402.34);
+    expect(darf?.tipo).toBe('DEBITO');
+
+    // 4. Boleto Nitro2Code com documento 0000000000
+    const boleto = resultado.transacoes.find(t => t.descricao.includes('NITRO2CODE'));
+    expect(boleto).toBeDefined();
+    expect(boleto?.valor).toBe(343.00);
+    expect(boleto?.tipo).toBe('DEBITO');
+
+    // 5. Pix Recebido (Crédito alto)
+    const pixRecebido = resultado.transacoes.find(t => t.descricao.includes('06374602000195'));
+    expect(pixRecebido).toBeDefined();
+    expect(pixRecebido?.valor).toBe(13609.16);
+    expect(pixRecebido?.tipo).toBe('CREDITO');
+  });
+
+  it('deve extrair com perfeição o extrato bancário real da XP Empresas (delimitador ponto e vírgula e status)', () => {
+    // Setup
+    const xpCSV = `Saldo; Periodo;
+R$ 4.344,16; 01/06/2026 at 31/08/2026
+Descrição; Data da transação; Status da transação; Valor;
+Pix enviado para Agaxtur Agencia de Viagens e Turismo S.A;03/08/2026;Efetivada;-R$ 4.614,01
+Pix enviado para Rafael Arantes Maciel de Sousa;03/08/2026;Efetivada;-R$ 369,81
+Pix recebido de Malta Viagens e Turismo Ltda;03/08/2026;Efetivada;R$ 10.000,00
+`;
+
+    // Action
+    const resultado = parseCSVExtrato(xpCSV);
+
+    // Assert
+    expect(resultado.transacoes.length).toBe(3);
+
+    const pixAgaxtur = resultado.transacoes.find(t => t.descricao.includes('Agaxtur'));
+    expect(pixAgaxtur).toBeDefined();
+    expect(pixAgaxtur?.data).toBe('2026-08-03');
+    expect(pixAgaxtur?.valor).toBe(4614.01);
+    expect(pixAgaxtur?.valorOriginal).toBe(-4614.01);
+    expect(pixAgaxtur?.tipo).toBe('DEBITO');
+
+    const pixMalta = resultado.transacoes.find(t => t.descricao.includes('Malta Viagens'));
+    expect(pixMalta).toBeDefined();
+    expect(pixMalta?.data).toBe('2026-08-03');
+    expect(pixMalta?.valor).toBe(10000.00);
+    expect(pixMalta?.tipo).toBe('CREDITO');
+  });
+
+  it('deve extrair transações a partir de texto de PDF da XP Empresas e do Santander', async () => {
+    // Setup
+    const { parseTextoExtratoBancario } = await import('../../src/services/pdfExtratoParser');
+
+    const textoPdfXP = `
+Extrato da Conta Digital PJ
+03/08/2026 Valor
+Pix enviado para Agaxtur Agencia de Viagens e Turismo S.A -R$ 4.614,01
+Pix enviado para Rafael Arantes Maciel de Sousa -R$ 369,81
+Pix recebido de Malta Viagens e Turismo Ltda R$ 10.000,00
+Saldo do dia R$ 4.344,16
+31/07/2026 Valor
+Pix enviado para Fernanda Ganem Costa -R$ 11.000,00
+TED recebida de K2 PARTNERING SOLUTIONS DO BRA R$ 10.591,84
+Saldo do dia R$ 4.140,77
+`;
+
+    // Action
+    const resXP = parseTextoExtratoBancario(textoPdfXP);
+
+    // Assert
+    expect(resXP.transacoes.length).toBe(5);
+    const debitoAgaxtur = resXP.transacoes.find(t => t.descricao.includes('Agaxtur'));
+    expect(debitoAgaxtur?.valor).toBe(4614.01);
+    expect(debitoAgaxtur?.tipo).toBe('DEBITO');
+
+    const tedK2 = resXP.transacoes.find(t => t.descricao.includes('K2 PARTNERING'));
+    expect(tedK2?.valor).toBe(10591.84);
+    expect(tedK2?.tipo).toBe('CREDITO');
+
+    // Setup Santander PDF
+    const textoPdfSantander = `
+Santander Empresas
+Data Histórico Documento Valor (R$) Saldo (R$)
+31/08/2026 Rendimento Liquido De Contamax 7000 RENDIMENTO LIQUIDO DE CONTAMAX 0,40 70.928,42
+31/08/2026 Pix Enviado 57537438 EDSON PEREIRA DO -300,00 70.928,02
+31/08/2026 Pagamento Darf Em Canais INTERNET SIMPLES NACIONAL 213530 -1.402,34 71.228,02
+`;
+
+    // Action
+    const resSantander = parseTextoExtratoBancario(textoPdfSantander);
+
+    // Assert
+    expect(resSantander.transacoes.length).toBe(3);
+    const darf = resSantander.transacoes.find(t => t.documento === '213530');
+    expect(darf).toBeDefined();
+    expect(darf?.valor).toBe(1402.34);
+    expect(darf?.tipo).toBe('DEBITO');
+  });
 });
+
+

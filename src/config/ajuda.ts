@@ -903,15 +903,16 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'conciliacao',
     label: '🪙 Visão Geral da Conciliação Bancária (FinRecon™)',
     description: 'Casamento inteligente de extratos bancários com recebimentos de vendas e fechamento contábil.',
-    details: 'O módulo **PaxFlow FinRecon™** permite conciliar os lançamentos reais da conta bancária da agência com os recebimentos cadastrados nas viagens (LOCs):\n\n- 📁 **Importação de Extratos**: Suporte para arquivos `.ofx` e `.csv` dos principais bancos (Itaú, Bradesco, Santander, Inter, Nubank, BB, C6).\n- ⚡ **Smart Matching**: Algoritmo que calcula proximidade de valor (±0% a 5%), proximidade de data (±3 dias) e correspondência do código de localizador (LOC) ou nome do passageiro.\n- 🔗 **Casamento Flexível**: Conciliação 1:1 e 1:N (um único depósito liquidando múltiplas parcelas ou viagens).\n- 💳 **Taxa de Gateway / Cartão**: 1-clique para absorver a diferença líquida de taxas cobradas por maquininhas ou adquirentes.\n- 🔒 **Fechamento de Competência**: Trancamento do mês após validação financeira para proteção contra alterações retroativas.'
+    details: 'O módulo **PaxFlow FinRecon™** permite conciliar os lançamentos reais da conta bancária da agência com os recebimentos cadastrados nas viagens (LOCs) e despesas de contas a pagar:\n\n- 📁 **Importação de Extratos Multiformato**: Suporte nativo para arquivos `.ofx`, `.csv`, `.txt` e `.pdf` dos principais bancos corporativos e fintechs (Santander Empresas, XP Empresas/Investimentos, Itaú, Bradesco, Inter, Nubank, Banco do Brasil, C6 Bank).\n- ⚡ **Smart Matching**: Algoritmo que calcula proximidade de valor (±0% a 5%), proximidade de data (±3 dias) e correspondência do código de localizador (LOC), nome do passageiro ou fornecedor.\n- 🔗 **Casamento Flexível**: Conciliação 1:1 e 1:N (um único depósito liquidando múltiplas parcelas ou viagens) e conciliação de saídas com contas a pagar com baixa assistida.\n- 💳 **Taxa de Gateway / Cartão**: 1-clique para absorver a diferença líquida de taxas cobradas por maquininhas ou adquirentes.\n- 🔒 **Fechamento de Competência**: Trancamento do mês após validação financeira para proteção contra alterações retroativas.'
   },
   {
     id: 'importar-extrato-bancario',
     modulo: 'conciliacao',
-    label: '📥 Como Importar Extratos Bancários (OFX e CSV)',
+    label: '📥 Como Importar Extratos Bancários (OFX, CSV e PDF)',
     description: 'Passo a passo para baixar e enviar o extrato do Internet Banking para o PaxFlow.',
-    details: '1. Acesse seu banco online e exporte o extrato do período desejado no formato **OFX** (preferencial) ou **CSV**.\n2. No PaxFlow, acesse **Conciliação** no menu lateral e clique em **📁 Importar Extrato**.\n3. Selecione o banco de origem e arraste o arquivo para a área de upload.\n4. O sistema processará as transações instantaneamente e apresentará a prévia antes de gravar no banco de dados com arquivamento seguro no Storage.'
+    details: '1. Acesse seu banco online (Santander, XP Empresas, Itaú, Bradesco, etc.) e exporte o extrato no formato **OFX**, **CSV** ou baixe o **PDF** da conta corrente/digital PJ.\n2. No PaxFlow, acesse **Conciliação** no menu lateral e clique em **📁 Importar Extrato**.\n3. Selecione o banco de origem e arraste o arquivo para a área de upload.\n4. O motor FinRecon™ fará o mapeamento automático das colunas de data, histórico, documento e valor monetário, apresentando a prévia com o total de entradas e saídas antes de gravar no banco de dados com arquivamento seguro no Storage.'
   },
+
   {
     id: 'justificar-entradas-bancarias',
     modulo: 'conciliacao',

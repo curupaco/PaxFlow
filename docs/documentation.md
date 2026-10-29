@@ -1476,8 +1476,13 @@ O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operan
    - **Recálculo Inteligente de Datas e Prazos Úteis**: A alteração do dia de vencimento nominal atualiza o dia em todos os meses futuros pendentes, reavaliando individualmente cada data com o motor de antecipação tributária ou postergação bancária.
    - **Trilha de Auditoria Granular**: Cada alteração em cascata registra na tabela `fin_auditoria` a quantidade total de títulos afetados, payload de alterações e identificador do usuário responsável.
 
-8. **Integração de Contas a Pagar na Conciliação Bancária & Importador OFX (FinRecon™)**:
+8. **Integração de Contas a Pagar na Conciliação Bancária & Importador Multiformato (FinRecon™)**:
    - **Conciliação Bidirecional Completa (Créditos & Débitos)**: A conciliação bancária passa a cobrir ambos os lados do balanço contábil da agência, permitindo o batimento de entradas provenientes de pagamentos de viagens (LOCs) e de saídas decorrentes de despesas operacionais e fixas.
+   - **Suporte Multiformato Amplo (OFX, CSV, TXT e PDF)**: O sistema suporta nativamente os extratos bancários de qualquer instituição brasileira, com tratamento especializado para **Santander Empresas** e **XP Empresas/Investimentos**:
+     - *Mapeamento Dinâmico de Cabeçalhos*: Identificação estatística do delimitador (`;`, `,`, `\t` ou `|`) e localização da linha de cabeçalho através de sinônimos bancários (`data`, `histórico/descrição`, `documento`, `valor`, `débito/saídas`, `crédito/entradas`, `saldo`).
+     - *Normalização Monetária Robusta*: Tratamento imune a variações com `R$`, espaços, sinais negativos prefixados (`-R$ 1.402,34`), sufixados (`1.402,34 D` ou `1.402,34-`) ou contábeis `(1.402,34)`.
+     - *Blindagem contra Conflito de Documento*: Colunas de documento numérico puro (ex: `194731`, `0000000000`) são segregadas e impedidas de colidir com o valor da operação.
+     - *Extração de Extratos em PDF*: Leitura client-side via `pdfjs-dist` com ordenação espacial de linhas de cima para baixo, suportando layouts em bloco (XP) e tabulares (Santander).
    - **Motor Híbrido de Smart Match**: O algoritmo avalia os lançamentos de débito do extrato contra o banco de contas a pagar (`fin_contas_pagar`), calculando uma pontuação inteligente (0 a 100) baseada em 4 critérios:
      - *Proximidade de Valor*: +60 pontos para valor exato e +40 pontos para tolerância de até 3% (diferenças de juros ou descontos residuais).
      - *Proximidade de Data*: +30 pontos para o mesmo dia, +25 pontos para ±1 dia útil e +15 pontos para ±3 dias da data de pagamento ou vencimento operacional.
