@@ -85,11 +85,13 @@ export class Router {
         this.currentPageInstance = new StudioPage(this.pageContentEl);
         break;
       case 'conciliacao':
-        this.currentPageInstance = new ConciliacaoPage(this.pageContentEl);
-        break;
+        this.currentPageInstance = new FinanceiroPage(this.pageContentEl);
+        this.currentPageInstance.init('conciliacao');
+        return;
       case 'financeiro':
         this.currentPageInstance = new FinanceiroPage(this.pageContentEl);
-        break;
+        this.currentPageInstance.init(extraId || 'contas');
+        return;
       default:
         this.currentPageInstance = new InboxPage(this.pageContentEl);
     }

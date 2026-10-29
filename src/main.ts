@@ -80,10 +80,13 @@ class App {
   private theme: 'light' | 'dark' = 'light';
   private sidebarCollapsed: boolean = false;
   private mobileMenuOpen: boolean = false;
+  private finSubmenuOpen: boolean = true;
+  private activeFinSubView: string = 'contas-pagar';
 
   constructor(container: HTMLElement) {
     this.container = container;
     this.sidebarCollapsed = localStorage.getItem('paxflow-sidebar-collapsed') === 'true';
+    this.finSubmenuOpen = localStorage.getItem('paxflow-fin-submenu-open') !== 'false';
     
     // Delegação global de eventos (alternância de tema e atalhos de ajuda)
     document.addEventListener('click', async (e) => {
@@ -247,16 +250,24 @@ class App {
         let initialPage = (perfil && perfil.role === 'admin') ? 'analytics' : 'inbox';
         let initialExtraId: string | undefined = undefined;
 
+        const paginasValidas = ['analytics', 'inbox', 'orcamentos', 'studio', 'dashboard', 'reembolsos', 'financeiro', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'];
+
         const currentHash = window.location.hash;
         if (currentHash && currentHash.length > 1) {
           const hashClean = currentHash.substring(1);
-          const [pagePart, queryPart] = hashClean.split('?');
-          if (pagePart && ['analytics', 'inbox', 'orcamentos', 'dashboard', 'reembolsos', 'conciliacao', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'].includes(pagePart)) {
+          let [pagePart, queryPart] = hashClean.split('?');
+          if (pagePart === 'conciliacao') {
+            pagePart = 'financeiro';
+            initialExtraId = 'conciliacao';
+          } else if (pagePart && paginasValidas.includes(pagePart)) {
             initialPage = pagePart;
           }
           if (queryPart) {
             const params = new URLSearchParams(queryPart);
-            initialExtraId = params.get('extraId') || params.get('alertId') || params.get('messageId') || params.get('id') || undefined;
+            initialExtraId = params.get('sub') || params.get('extraId') || params.get('alertId') || params.get('messageId') || params.get('id') || initialExtraId;
+          }
+          if (pagePart === 'financeiro' && initialExtraId) {
+            this.activeFinSubView = initialExtraId;
           }
         }
 
@@ -276,12 +287,19 @@ class App {
           const h = window.location.hash;
           if (h && h.length > 1) {
             const hClean = h.substring(1);
-            const [pPart, qPart] = hClean.split('?');
-            if (pPart && ['analytics', 'inbox', 'orcamentos', 'dashboard', 'reembolsos', 'conciliacao', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'].includes(pPart)) {
-              let eId: string | undefined = undefined;
-              if (qPart) {
-                const params = new URLSearchParams(qPart);
-                eId = params.get('extraId') || params.get('alertId') || params.get('messageId') || params.get('id') || undefined;
+            let [pPart, qPart] = hClean.split('?');
+            let eId: string | undefined = undefined;
+            if (pPart === 'conciliacao') {
+              pPart = 'financeiro';
+              eId = 'conciliacao';
+            }
+            if (qPart) {
+              const params = new URLSearchParams(qPart);
+              eId = params.get('sub') || params.get('extraId') || params.get('alertId') || params.get('messageId') || params.get('id') || eId;
+            }
+            if (pPart && paginasValidas.includes(pPart)) {
+              if (pPart === 'financeiro' && eId) {
+                this.activeFinSubView = eId;
               }
               this.navigate(pPart, eId);
             }
@@ -598,33 +616,56 @@ class App {
                 <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Reembolsos</span>
               </button>
 
-              <!-- Link: Conciliação Bancária (Admin / Gestão) -->
-              ${(() => {
-                if (this.perfil?.role === 'admin') {
-                  return `
-                    <button id="nav-conciliacao" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Conciliação</span>
-                    </button>
-                  `;
-                }
-                return '';
-              })()}
-
-              <!-- Link: Financeiro (Contas a Pagar, Remessas, DRE e Plano de Contas) -->
+              <!-- Link: Financeiro Expansível com Submenu Indentado -->
               ${(() => {
                 const podeAcessarFinanceiro = this.perfil?.role === 'admin' || this.perfil?.role === 'financeiro' || (this.perfil as any)?.acesso_financeiro === true || (this.perfil as any)?.acessoFinanceiro === true;
                 if (podeAcessarFinanceiro) {
                   return `
-                    <button id="nav-financeiro" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative">
-                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Financeiro</span>
-                      <span id="nav-financeiro-badge" class="hidden"></span>
-                    </button>
+                    <div class="w-full flex flex-col">
+                      <!-- Botão Pai: Financeiro (Accordion) -->
+                      <button id="nav-financeiro" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-between'} font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                        <div class="flex items-center gap-2.5">
+                          <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Financeiro</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 ${this.sidebarCollapsed ? 'md:hidden' : ''}">
+                          <span id="nav-financeiro-badge" class="hidden"></span>
+                          <svg id="nav-financeiro-chevron" width="14" height="14" class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 transition-transform duration-200 ${this.finSubmenuOpen ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </button>
+
+                      <!-- Submenu Indentado (5 Submódulos) -->
+                      <div id="fin-submenu-container" class="${(!this.finSubmenuOpen || this.sidebarCollapsed) ? 'hidden' : 'flex'} flex-col pl-3 pr-1 py-1 space-y-0.5 border-l-2 border-indigo-200/80 dark:border-indigo-900/60 ml-5 my-1 transition-all duration-200">
+                        <button id="nav-fin-contas-pagar" data-sub="contas-pagar" class="nav-fin-subitem w-full pl-2.5 pr-2 py-1.5 rounded-lg flex items-center justify-start gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 transition select-none group cursor-pointer">
+                          <span class="text-xs">📋</span>
+                          <span class="truncate">Contas a Pagar</span>
+                        </button>
+
+                        <button id="nav-fin-remessas" data-sub="remessas" class="nav-fin-subitem w-full pl-2.5 pr-2 py-1.5 rounded-lg flex items-center justify-start gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 transition select-none group cursor-pointer">
+                          <span class="text-xs">📦</span>
+                          <span class="truncate">Remessas Agrupadas</span>
+                        </button>
+
+                        <button id="nav-fin-fluxo-caixa" data-sub="fluxo-caixa" class="nav-fin-subitem w-full pl-2.5 pr-2 py-1.5 rounded-lg flex items-center justify-start gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 transition select-none group cursor-pointer">
+                          <span class="text-xs">📈</span>
+                          <span class="truncate">Fluxo de Caixa & DRE</span>
+                        </button>
+
+                        <button id="nav-fin-conciliacao" data-sub="conciliacao" class="nav-fin-subitem w-full pl-2.5 pr-2 py-1.5 rounded-lg flex items-center justify-start gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 transition select-none group cursor-pointer">
+                          <span class="text-xs">🪙</span>
+                          <span class="truncate">Conciliação</span>
+                        </button>
+
+                        <button id="nav-fin-plano-contas" data-sub="plano-contas" class="nav-fin-subitem w-full pl-2.5 pr-2 py-1.5 rounded-lg flex items-center justify-start gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 transition select-none group cursor-pointer">
+                          <span class="text-xs">⚙️</span>
+                          <span class="truncate">Plano de Contas</span>
+                        </button>
+                      </div>
+                    </div>
                   `;
                 }
                 return '';
@@ -1339,8 +1380,20 @@ class App {
       }
     });
 
+    // Controle do submenu do financeiro na expansão/colapso
+    const finSubmenu = document.getElementById('fin-submenu-container');
+    if (finSubmenu) {
+      if (this.sidebarCollapsed || !this.finSubmenuOpen) {
+        finSubmenu.classList.add('hidden');
+        finSubmenu.classList.remove('flex');
+      } else {
+        finSubmenu.classList.remove('hidden');
+        finSubmenu.classList.add('flex');
+      }
+    }
+
     // Ajustar alinhamento dos botões de navegação
-    const navButtons = aside.querySelectorAll('nav button');
+    const navButtons = aside.querySelectorAll('nav button:not(.nav-fin-subitem)');
     navButtons.forEach(btn => {
       if (btn.id === 'sidebar-profile-trigger') {
         if (this.sidebarCollapsed) {
@@ -1349,6 +1402,14 @@ class App {
         } else {
           btn.classList.remove('justify-center');
           btn.classList.add('justify-start', 'px-2');
+        }
+      } else if (btn.id === 'nav-financeiro') {
+        if (this.sidebarCollapsed) {
+          btn.classList.remove('justify-between');
+          btn.classList.add('justify-center');
+        } else {
+          btn.classList.remove('justify-center');
+          btn.classList.add('justify-between');
         }
       } else {
         if (this.sidebarCollapsed) {
@@ -1389,12 +1450,76 @@ class App {
    * Associa eventos aos botões de navegação lateral
    */
   private setupNavigationListeners(): void {
-    const pages = ['analytics', 'inbox', 'orcamentos', 'studio', 'dashboard', 'reembolsos', 'conciliacao', 'financeiro', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'];
+    const pages = ['analytics', 'inbox', 'orcamentos', 'studio', 'dashboard', 'reembolsos', 'financeiro', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'];
 
-    pages.forEach(page => {
+    // Botões de primeiro nível regulares (exceto financeiro que possui accordion)
+    pages.filter(p => p !== 'financeiro').forEach(page => {
       const btn = document.getElementById(`nav-${page}`);
       btn?.addEventListener('click', () => {
         this.navigate(page);
+        this.toggleMobileMenu(false);
+      });
+    });
+
+    // Botão Pai: Financeiro (Accordion e Navegação Direta)
+    const btnFin = document.getElementById('nav-financeiro');
+    btnFin?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (this.sidebarCollapsed) {
+        this.toggleSidebar();
+        this.finSubmenuOpen = true;
+        this.navigate('financeiro', this.activeFinSubView || 'contas-pagar');
+        return;
+      }
+
+      const isCurrentPageFin = this.router.getCurrentPage() === 'financeiro';
+      if (isCurrentPageFin) {
+        // Alterna o accordion quando já está no financeiro
+        this.finSubmenuOpen = !this.finSubmenuOpen;
+        localStorage.setItem('paxflow-fin-submenu-open', String(this.finSubmenuOpen));
+        const subMenu = document.getElementById('fin-submenu-container');
+        const chevron = document.getElementById('nav-financeiro-chevron');
+        if (subMenu) {
+          if (this.finSubmenuOpen) {
+            subMenu.classList.remove('hidden');
+            subMenu.classList.add('flex');
+            chevron?.classList.add('rotate-180');
+          } else {
+            subMenu.classList.add('hidden');
+            subMenu.classList.remove('flex');
+            chevron?.classList.remove('rotate-180');
+          }
+        }
+      } else {
+        // Ao abrir a página Financeiro, expande o accordion automaticamente
+        this.finSubmenuOpen = true;
+        localStorage.setItem('paxflow-fin-submenu-open', 'true');
+        const subMenu = document.getElementById('fin-submenu-container');
+        const chevron = document.getElementById('nav-financeiro-chevron');
+        if (subMenu) {
+          subMenu.classList.remove('hidden');
+          subMenu.classList.add('flex');
+          chevron?.classList.add('rotate-180');
+        }
+        this.navigate('financeiro', this.activeFinSubView || 'contas-pagar');
+        this.toggleMobileMenu(false);
+      }
+    });
+
+    // Subitens Indentados do Financeiro (5 submódulos)
+    const finSubItems = [
+      { id: 'nav-fin-contas-pagar', sub: 'contas-pagar' },
+      { id: 'nav-fin-remessas', sub: 'remessas' },
+      { id: 'nav-fin-fluxo-caixa', sub: 'fluxo-caixa' },
+      { id: 'nav-fin-conciliacao', sub: 'conciliacao' },
+      { id: 'nav-fin-plano-contas', sub: 'plano-contas' },
+    ];
+
+    finSubItems.forEach(({ id, sub }) => {
+      document.getElementById(id)?.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.activeFinSubView = sub;
+        this.navigate('financeiro', sub);
         this.toggleMobileMenu(false);
       });
     });
@@ -1405,7 +1530,7 @@ class App {
       this.toggleMobileMenu(false);
     });
 
-    // Suporte para rota por Hash (#next-trip, #orcamentos, etc)
+    // Suporte para rota por Hash (#next-trip, #orcamentos, #financeiro?sub=conciliacao, etc)
     let isInternalNavigating = false;
 
     window.addEventListener('hashchange', () => {
@@ -1414,11 +1539,18 @@ class App {
         return;
       }
       const hashRaw = window.location.hash.replace('#', '');
-      const [hashPage, queryString] = hashRaw.split('?');
+      let [hashPage, queryString] = hashRaw.split('?');
       let extraId: string | undefined = undefined;
+      if (hashPage === 'conciliacao') {
+        hashPage = 'financeiro';
+        extraId = 'conciliacao';
+      }
       if (queryString) {
         const params = new URLSearchParams(queryString);
-        extraId = params.get('extraId') || params.get('alertId') || params.get('messageId') || params.get('id') || undefined;
+        extraId = params.get('sub') || params.get('extraId') || params.get('alertId') || params.get('messageId') || params.get('id') || extraId;
+      }
+      if (hashPage === 'financeiro' && extraId) {
+        this.activeFinSubView = extraId;
       }
       if (hashPage && pages.includes(hashPage)) {
         this.navigate(hashPage, extraId);
@@ -1427,11 +1559,20 @@ class App {
 
     // Suporte a disparos globais de navegação da SPA
     window.addEventListener('paxflow-navigate', (e: any) => {
-      const page = e.detail?.page;
-      const extraId = e.detail?.extraId;
+      let page = e.detail?.page;
+      let extraId = e.detail?.extraId;
+      if (page === 'conciliacao') {
+        page = 'financeiro';
+        extraId = 'conciliacao';
+      }
       if (page) {
         isInternalNavigating = true;
-        window.location.hash = extraId ? `#${page}?extraId=${extraId}` : `#${page}`;
+        if (page === 'financeiro') {
+          this.activeFinSubView = extraId || 'contas-pagar';
+          window.location.hash = `#financeiro?sub=${this.activeFinSubView}`;
+        } else {
+          window.location.hash = extraId ? `#${page}?extraId=${extraId}` : `#${page}`;
+        }
         this.navigate(page, extraId);
       }
     });
@@ -1441,6 +1582,11 @@ class App {
    * Gerencia a navegação e o roteamento entre as diferentes páginas
    */
   private navigate(page: string, extraId?: string): void {
+    if (page === 'conciliacao') {
+      page = 'financeiro';
+      extraId = 'conciliacao';
+    }
+
     if (page === 'next-trip' && !isNextTripEnabled(this.user, this.perfil, this.settings)) {
       this.showToast('O Next Trip Engine está desativado nas configurações globais.', 'error');
       page = (this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox';
@@ -1451,18 +1597,82 @@ class App {
       page = (this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox';
     }
 
-    this.router.navigate(page, extraId);
+    if (page === 'financeiro') {
+      if (extraId) {
+        this.activeFinSubView = extraId;
+      } else {
+        extraId = this.activeFinSubView || 'contas-pagar';
+      }
+
+      // Abre submenu do financeiro se não estiver colapsado
+      if (!this.sidebarCollapsed) {
+        this.finSubmenuOpen = true;
+        const subMenu = document.getElementById('fin-submenu-container');
+        const chevron = document.getElementById('nav-financeiro-chevron');
+        if (subMenu) {
+          subMenu.classList.remove('hidden');
+          subMenu.classList.add('flex');
+          chevron?.classList.add('rotate-180');
+        }
+      }
+
+      // Se já está na página de Financeiro, delega a subview sem reconstruir a tela inteira
+      const currentInst = this.router.getCurrentInstance();
+      if (this.router.getCurrentPage() === 'financeiro' && currentInst && typeof currentInst.setSubView === 'function') {
+        currentInst.setSubView(extraId);
+      } else {
+        this.router.navigate(page, extraId);
+      }
+
+      // Sincroniza a hash da URL
+      window.location.hash = `#financeiro?sub=${this.activeFinSubView}`;
+    } else {
+      this.router.navigate(page, extraId);
+    }
 
     // Atualiza os estilos de botões ativos na Sidebar
-    const navButtons = ['analytics', 'inbox', 'orcamentos', 'studio', 'dashboard', 'reembolsos', 'conciliacao', 'financeiro', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes', 'ajuda'];
+    const navButtons = ['analytics', 'inbox', 'orcamentos', 'studio', 'dashboard', 'reembolsos', 'financeiro', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes', 'ajuda'];
     navButtons.forEach(p => {
       const btn = document.getElementById(`nav-${p}`);
       if (btn) {
-        const alignmentClass = this.sidebarCollapsed ? 'justify-center' : 'justify-start';
+        const alignmentClass = this.sidebarCollapsed ? 'justify-center' : (p === 'financeiro' ? 'justify-between' : 'justify-start');
         if (p === page) {
-          btn.className = `w-full px-3 py-1.5 rounded-xl flex items-center ${alignmentClass} gap-2.5 font-extrabold text-xs text-left transition select-none bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 group`;
+          btn.className = `w-full px-3 py-1.5 rounded-xl flex items-center ${alignmentClass} gap-2.5 font-extrabold text-xs text-left transition select-none bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 group cursor-pointer`;
         } else {
-          btn.className = `w-full px-3 py-1.5 rounded-xl flex items-center ${alignmentClass} gap-2.5 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group`;
+          btn.className = `w-full px-3 py-1.5 rounded-xl flex items-center ${alignmentClass} gap-2.5 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group cursor-pointer`;
+        }
+      }
+    });
+
+    // Atualiza os estilos de seleção dos 5 subitens indentados do Financeiro
+    const finSubItems = [
+      { id: 'nav-fin-contas-pagar', sub: 'contas-pagar' },
+      { id: 'nav-fin-remessas', sub: 'remessas' },
+      { id: 'nav-fin-fluxo-caixa', sub: 'fluxo-caixa' },
+      { id: 'nav-fin-conciliacao', sub: 'conciliacao' },
+      { id: 'nav-fin-plano-contas', sub: 'plano-contas' },
+    ];
+    const mapaSub: Record<string, string> = {
+      'contas': 'contas-pagar',
+      'contas-pagar': 'contas-pagar',
+      'remessas': 'remessas',
+      'remessas-agrupadas': 'remessas',
+      'fluxo': 'fluxo-caixa',
+      'fluxo-caixa': 'fluxo-caixa',
+      'conciliacao': 'conciliacao',
+      'plano': 'plano-contas',
+      'plano-contas': 'plano-contas'
+    };
+    const subAtivo = mapaSub[extraId || this.activeFinSubView || 'contas-pagar'] || 'contas-pagar';
+
+    finSubItems.forEach(({ id, sub }) => {
+      const subBtn = document.getElementById(id);
+      if (subBtn) {
+        const isActive = (page === 'financeiro' && sub === subAtivo);
+        if (isActive) {
+          subBtn.className = 'nav-fin-subitem w-full pl-2.5 pr-2 py-1.5 rounded-lg flex items-center justify-start gap-2 text-xs font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40 shadow-xs transition select-none group cursor-pointer';
+        } else {
+          subBtn.className = 'nav-fin-subitem w-full pl-2.5 pr-2 py-1.5 rounded-lg flex items-center justify-start gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 transition select-none group cursor-pointer';
         }
       }
     });

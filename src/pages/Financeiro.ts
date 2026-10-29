@@ -16,13 +16,17 @@ import { FinPlanoContasService } from '../services/finPlanoContasService';
 import { FinRemessasService } from '../services/finRemessasService';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { renderHelpIcon } from '../utils/helpHelper';
+import { ConciliacaoPage } from './Conciliacao';
+
+export type FinSubView = 'contas' | 'remessas' | 'fluxo' | 'conciliacao' | 'plano';
 
 export class FinanceiroPage {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private activeTab: 'contas' | 'remessas' | 'fluxo' | 'plano' = 'contas';
+  private activeTab: FinSubView = 'contas';
   private carregando: boolean = false;
+  private conciliacaoInstance: ConciliacaoPage | null = null;
 
   // Listagens de dados
   private contas: FinContaPagar[] = [];
@@ -61,7 +65,7 @@ export class FinanceiroPage {
     this.container = container;
   }
 
-  public async init(): Promise<void> {
+  public async init(extraId?: string): Promise<void> {
     try {
       const { user, perfil, error } = await getSessaoAtual();
       if (error || !user) {
@@ -83,18 +87,54 @@ export class FinanceiroPage {
         return;
       }
 
+      if (extraId) {
+        this.definirSubViewPorSlug(extraId);
+      }
+
       await this.carregarCadastrosBase();
       await this.carregarDadosAbaAtiva();
       this.render();
-      this.setupEventListeners();
+      await this.setupEventListeners();
     } catch (err: any) {
       console.error('[FinanceiroPage] Erro ao inicializar:', err);
       this.renderAuthError('Falha ao inicializar módulo financeiro.');
     }
   }
 
+  public async setSubView(sub: string): Promise<void> {
+    const mudou = this.definirSubViewPorSlug(sub);
+    if (mudou) {
+      await this.carregarDadosAbaAtiva();
+      this.render();
+      await this.setupEventListeners();
+    }
+  }
+
+  private definirSubViewPorSlug(slug: string): boolean {
+    const mapa: Record<string, FinSubView> = {
+      'contas': 'contas',
+      'contas-pagar': 'contas',
+      'remessas': 'remessas',
+      'remessas-agrupadas': 'remessas',
+      'fluxo': 'fluxo',
+      'fluxo-caixa': 'fluxo',
+      'conciliacao': 'conciliacao',
+      'plano': 'plano',
+      'plano-contas': 'plano'
+    };
+    const target = mapa[slug] || 'contas';
+    if (this.activeTab !== target) {
+      this.activeTab = target;
+      return true;
+    }
+    return false;
+  }
+
   public destroy(): void {
-    // Limpeza de ouvintes ou timers
+    if (this.conciliacaoInstance && typeof (this.conciliacaoInstance as any).destroy === 'function') {
+      (this.conciliacaoInstance as any).destroy();
+    }
+    this.conciliacaoInstance = null;
   }
 
   private async carregarCadastrosBase(): Promise<void> {
@@ -146,103 +186,176 @@ export class FinanceiroPage {
     const formatarMoeda = (val: number) => 
       new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
+    const configCabecalho: Record<FinSubView, {
+      titulo: string;
+      subtitulo: string;
+      icone: string;
+      helpId: string;
+      botoesAcao: string;
+    }> = {
+      contas: {
+        titulo: 'Contas a Pagar',
+        subtitulo: 'Controle de liquidez, despesas fixas recorrentes, parcelamentos e liquidações bancárias.',
+        icone: '📋',
+        helpId: 'fin-contas-pagar',
+        botoesAcao: `
+          <button id="btn-nova-conta" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
+            <span>+</span> Nova Conta / Despesa
+          </button>
+        `
+      },
+      remessas: {
+        titulo: 'Remessas Agrupadas',
+        subtitulo: 'Agrupamento de contas a pagar para autorização e liquidação conjunta via PIX/TED.',
+        icone: '📦',
+        helpId: 'fin-remessas',
+        botoesAcao: `
+          <button id="btn-nova-remessa" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
+            <span>📦</span> Agrupar Nova Remessa
+          </button>
+        `
+      },
+      fluxo: {
+        titulo: 'Fluxo de Caixa & DRE Gerencial',
+        subtitulo: 'Demonstrativo de Resultado do Exercício com regime de competência e previsão financeira.',
+        icone: '📈',
+        helpId: 'fin-fluxo-caixa',
+        botoesAcao: `
+          <button id="btn-exportar-dre" class="h-[42px] px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition border border-slate-200/60 dark:border-slate-700 cursor-pointer flex items-center gap-2">
+            <span>📥</span> Exportar DRE (CSV)
+          </button>
+        `
+      },
+      conciliacao: {
+        titulo: 'Conciliação Bancária',
+        subtitulo: 'Casamento inteligente de extratos bancários com recebimentos de vendas e despesas.',
+        icone: '🪙',
+        helpId: 'conciliacao-bancaria',
+        botoesAcao: ''
+      },
+      plano: {
+        titulo: 'Plano de Contas & Contas Bancárias',
+        subtitulo: 'Estruturação contábil de tipos de custo, categorias, subcategorias e contas correntes.',
+        icone: '⚙️',
+        helpId: 'fin-plano-contas',
+        botoesAcao: `
+          <button id="btn-nova-categoria" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
+            <span>+</span> Nova Categoria
+          </button>
+        `
+      }
+    };
+
+    // Submódulo de Conciliação renderiza sua própria interface rica sem cabeçalho duplicado
+    if (this.activeTab === 'conciliacao') {
+      this.container.innerHTML = `
+        <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto animate-fade-in">
+          <div id="fin-tab-content">
+            <div id="fin-conciliacao-mount"></div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const cfg = configCabecalho[this.activeTab] || configCabecalho.contas;
+
     this.container.innerHTML = `
-      <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-        <!-- Cabeçalho e Título -->
+      <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto animate-fade-in">
+        <!-- Cabeçalho Dinâmico da Sub-Visão -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-5">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-700 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 text-2xl font-black shrink-0">
-              💰
+              ${cfg.icone}
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-50 tracking-tight">Gestão Financeira & Contas a Pagar</h1>
-                ${renderHelpIcon('fin-contas-pagar')}
+                <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-50 tracking-tight">${cfg.titulo}</h1>
+                ${renderHelpIcon(cfg.helpId)}
               </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Controle de liquidez, despesas fixas recorrentes, parcelamentos e remessas agrupadas.</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">${cfg.subtitulo}</p>
             </div>
           </div>
 
           <div class="flex items-center gap-2.5">
-            ${this.activeTab === 'contas' ? `
-              <button id="btn-nova-conta" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
-                <span>+</span> Nova Conta / Despesa
-              </button>
-            ` : ''}
-
-            ${this.activeTab === 'remessas' ? `
-              <button id="btn-nova-remessa" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
-                <span>📦</span> Agrupar Nova Remessa
-              </button>
-            ` : ''}
-
-            ${this.activeTab === 'plano' ? `
-              <button id="btn-nova-categoria" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
-                <span>+</span> Nova Categoria
-              </button>
-            ` : ''}
+            ${cfg.botoesAcao}
           </div>
         </div>
 
-        <!-- Cards de Indicadores de Liquidez (KPIs) -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4.5 shadow-sm">
-            <span class="text-[10px] uppercase tracking-widest font-black text-slate-400 block mb-1">A Pagar no Mês</span>
-            <div class="flex items-baseline justify-between">
-              <span class="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">${formatarMoeda(this.resumo.totalAPagarMes)}</span>
-              <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-200/60 dark:border-amber-900/40">${this.resumo.qtdPendentes} pendentes</span>
+        ${this.activeTab === 'contas' ? `
+          <!-- Cards de Indicadores de Liquidez (KPIs das Contas a Pagar) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Card 1: A Pagar no Mês -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">A Pagar no Mês</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 whitespace-nowrap">
+                  ${this.resumo.qtdPendentes} pendentes
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                  ${formatarMoeda(this.resumo.totalAPagarMes)}
+                </span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">Previsão total de saídas do mês</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Total Liquidado -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Total Liquidado</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 whitespace-nowrap">
+                  Baixadas
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                  ${formatarMoeda(this.resumo.totalPagoMes)}
+                </span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">Títulos quitados com comprovante</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Títulos em Atraso -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between ${this.resumo.qtdAtrasadas > 0 ? 'ring-2 ring-rose-500/30' : ''}">
+              <div class="absolute top-0 left-0 right-0 h-1 bg-rose-500"></div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Títulos em Atraso</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold ${this.resumo.qtdAtrasadas > 0 ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 animate-pulse' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200/60 dark:border-slate-700'} whitespace-nowrap">
+                  ${this.resumo.qtdAtrasadas} contas
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-2xl sm:text-3xl font-black ${this.resumo.qtdAtrasadas > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100'} tracking-tight">
+                  ${formatarMoeda(this.resumo.totalAtrasadas)}
+                </span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">${this.resumo.qtdAtrasadas > 0 ? 'Exige atenção financeira imediata' : 'Nenhuma conta em atraso'}</span>
+              </div>
+            </div>
+
+            <!-- Card 4: Próximos 7 Dias -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div class="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Próximos 7 Dias</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 whitespace-nowrap">
+                  Janela Curta
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
+                  ${formatarMoeda(this.resumo.totalProximos7Dias)}
+                </span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">Compromissos da semana vigente</span>
+              </div>
             </div>
           </div>
+        ` : ''}
 
-          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4.5 shadow-sm">
-            <span class="text-[10px] uppercase tracking-widest font-black text-slate-400 block mb-1">Total Liquidado</span>
-            <div class="flex items-baseline justify-between">
-              <span class="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400">${formatarMoeda(this.resumo.totalPagoMes)}</span>
-              <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200/60 dark:border-emerald-900/40">Baixadas</span>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4.5 shadow-sm ${this.resumo.qtdAtrasadas > 0 ? 'ring-2 ring-rose-500/20' : ''}">
-            <span class="text-[10px] uppercase tracking-widest font-black text-slate-400 block mb-1">Títulos em Atraso</span>
-            <div class="flex items-baseline justify-between">
-              <span class="text-lg sm:text-xl font-black ${this.resumo.qtdAtrasadas > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100'}">${formatarMoeda(this.resumo.totalAtrasadas)}</span>
-              <span class="text-[10px] font-black ${this.resumo.qtdAtrasadas > 0 ? 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-900/40 animate-pulse' : 'text-slate-500 bg-slate-100 dark:bg-slate-800'} px-2 py-0.5 rounded-lg">
-                ${this.resumo.qtdAtrasadas} contas
-              </span>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4.5 shadow-sm">
-            <span class="text-[10px] uppercase tracking-widest font-black text-slate-400 block mb-1">Próximos 7 Dias</span>
-            <div class="flex items-baseline justify-between">
-              <span class="text-lg sm:text-xl font-black text-indigo-600 dark:text-indigo-400">${formatarMoeda(this.resumo.totalProximos7Dias)}</span>
-              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-lg border border-indigo-200/60 dark:border-indigo-900/40">Janela Curta</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Barra de Navegação de Abas -->
-        <div class="flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 overflow-x-auto custom-scrollbar">
-          <button data-tab="contas" class="tab-btn px-4 py-2.5 font-black text-xs transition border-b-2 whitespace-nowrap cursor-pointer flex items-center gap-2 ${this.activeTab === 'contas' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'}">
-            <span>📋</span> Contas a Pagar
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${this.activeTab === 'contas' ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}">${this.contas.length}</span>
-          </button>
-
-          <button data-tab="remessas" class="tab-btn px-4 py-2.5 font-black text-xs transition border-b-2 whitespace-nowrap cursor-pointer flex items-center gap-2 ${this.activeTab === 'remessas' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'}">
-            <span>📦</span> Remessas Agrupadas
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${this.activeTab === 'remessas' ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}">${this.remessas.length}</span>
-          </button>
-
-          <button data-tab="fluxo" class="tab-btn px-4 py-2.5 font-black text-xs transition border-b-2 whitespace-nowrap cursor-pointer flex items-center gap-2 ${this.activeTab === 'fluxo' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'}">
-            <span>📈</span> Fluxo de Caixa & DRE
-          </button>
-
-          <button data-tab="plano" class="tab-btn px-4 py-2.5 font-black text-xs transition border-b-2 whitespace-nowrap cursor-pointer flex items-center gap-2 ${this.activeTab === 'plano' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'}">
-            <span>⚙️</span> Plano de Contas & Bancos
-          </button>
-        </div>
-
-        <!-- Conteúdo Específico da Aba Ativa -->
+        <!-- Conteúdo Específico da Sub-Visão Ativa -->
         <div id="fin-tab-content">
           ${this.renderAbaConteudo()}
         </div>
@@ -267,6 +380,8 @@ export class FinanceiroPage {
         return this.renderAbaRemessas();
       case 'fluxo':
         return this.renderAbaFluxoCaixa();
+      case 'conciliacao':
+        return `<div id="fin-conciliacao-mount"></div>`;
       case 'plano':
         return this.renderAbaPlanoContas();
       default:
@@ -347,9 +462,9 @@ export class FinanceiroPage {
         </div>
 
         <!-- Tabela de Títulos com Rolagem Defensiva -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-          <div class="overflow-x-auto custom-scrollbar min-w-[900px]">
-            <table class="w-full text-left border-collapse">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
+            <table class="w-full text-left border-collapse min-w-[900px]">
               <thead>
                 <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
                   <th class="py-3 px-4">Vencimento</th>
@@ -475,9 +590,9 @@ export class FinanceiroPage {
 
     return `
       <div class="space-y-4">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-          <div class="overflow-x-auto custom-scrollbar min-w-[800px]">
-            <table class="w-full text-left border-collapse">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
+            <table class="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
                   <th class="py-3 px-4 w-10 text-center"></th>
@@ -839,8 +954,24 @@ export class FinanceiroPage {
   // ==========================================================================
   // CONFIGURAÇÃO DE EVENT LISTENERS E MODAIS
   // ==========================================================================
-  private setupEventListeners(): void {
-    // Alternância de Abas
+  private async setupEventListeners(): Promise<void> {
+    if (this.activeTab === 'conciliacao') {
+      const concMount = this.container.querySelector('#fin-conciliacao-mount') as HTMLElement;
+      if (concMount) {
+        this.conciliacaoInstance = new ConciliacaoPage(concMount);
+        await this.conciliacaoInstance.init(this.user, this.perfil);
+      }
+      return;
+    }
+
+    if (this.conciliacaoInstance) {
+      if (typeof (this.conciliacaoInstance as any).destroy === 'function') {
+        (this.conciliacaoInstance as any).destroy();
+      }
+      this.conciliacaoInstance = null;
+    }
+
+    // Alternância de Abas (retrocompatibilidade)
     this.container.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const tab = btn.getAttribute('data-tab') as any;
@@ -848,7 +979,7 @@ export class FinanceiroPage {
           this.activeTab = tab;
           await this.carregarDadosAbaAtiva();
           this.render();
-          this.setupEventListeners();
+          await this.setupEventListeners();
         }
       });
     });

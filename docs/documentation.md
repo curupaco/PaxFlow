@@ -62,6 +62,7 @@
    - 3.50 [Ergonomia do Painel de Relatórios & Menu Lateral Retrátil](#350-ergonomia-do-painel-de-relatórios--menu-lateral-retrátil)
    - 3.51 [Módulo Financeiro de Contas a Pagar, Remessas & Plano de Contas](#351-módulo-financeiro-de-contas-a-pagar-remessas--plano-de-contas)
    - 3.52 [Identificação Visual de Participações & Módulos na Gestão de Equipe](#352-identificação-visual-de-participações--módulos-na-gestão-de-equipe)
+   - 3.53 [Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral](#353-unificação-do-módulo-financeiro--submenu-indentado-na-barra-lateral)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1505,6 +1506,37 @@ A gestão de colaboradores e consultores em **Configurações -> Equipe de Consu
    - **💰 Financeiro**: Tag com contorno esmeralda `💰 Fin` (`acesso_financeiro || role === 'financeiro' || role === 'admin'`) indica liberação imediata para operação do Contas a Pagar, Remessas e Fluxo de Caixa; tag `💰 Off` para operadores restritos às rotinas comerciais.
 3. **Persistência Completa no Cadastro e Edição**:
    - Checkboxes de ativação/desativação sincronizados em tempo real no Supabase (`profiles`), disponíveis tanto no formulário de cadastro de novos consultores quanto no modal de edição de agentes existentes.
+
+### 3.53 Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral
+
+Com o crescimento das rotinas contábeis da agência, o módulo de **Conciliação Bancária** foi oficialmente integrado ao **Financeiro**, unificando sob uma mesma arquitetura os 5 submódulos contábeis essenciais do PaxFlow e substituindo a antiga organização por abas horizontais internas por um menu expansível (accordion) com indentação elegante na Sidebar:
+
+1. **Eliminação de Abas Internas & 100% de Área Útil**:
+   - A barra horizontal de abas do topo de `Financeiro.ts` foi removida, liberando espaço vertical e horizontal contínuo para tabelas extensas, grade mensal de fluxo de caixa e o painel de conciliação bancária.
+   - O cabeçalho da página se adapta dinamicamente ao submódulo ativo, apresentando título contextual, subtítulo, ícone semântico, `helpIcon` e botões de ação específicos (ex: `+ Nova Conta`, `📦 Agrupar Nova Remessa`, `📥 Exportar DRE`).
+   - Os cards de indicadores de liquidez (A Pagar no Mês, Total Liquidado, Títulos em Atraso e Próximos 7 Dias) permanecem focados no topo da visão de Contas a Pagar, mantendo as demais telas despoluídas.
+
+2. **Menu Expansível (Accordion) com Indentação na Sidebar (`src/main.ts`)**:
+   - **Botão Pai `Financeiro`**: Exibe o ícone contábil, chevron rotativo `▾` e badge reativa de alertas de títulos pendentes/atrasados.
+   - **Submenu Indentado com Borda Conectora**: Contêiner visualmente conectado pela margem esquerda (`border-l-2 border-indigo-200/80 dark:border-indigo-900/60 ml-5`), agrupando os 5 submódulos:
+     - `📋 Contas a Pagar` (`#financeiro?sub=contas-pagar`)
+     - `📦 Remessas Agrupadas` (`#financeiro?sub=remessas`)
+     - `📈 Fluxo de Caixa & DRE` (`#financeiro?sub=fluxo-caixa`)
+     - `🪙 Conciliação` (`#financeiro?sub=conciliacao`)
+     - `⚙️ Plano de Contas` (`#financeiro?sub=plano-contas`)
+   - **Interação Inteligente**:
+     - Clicar no botão pai quando a página atual já for Financeiro alterna o estado de abertura/fechamento do accordion e memoriza a preferência no `localStorage`.
+     - Clicar no botão pai vindo de outra tela expande o accordion automaticamente e abre o último submódulo selecionado.
+     - Clicar com a barra lateral em modo colapsado (mini-barra) expande a sidebar e navega diretamente para o financeiro.
+     - Cada subitem ativo é destacado com fundo suave e borda semântica em tom índigo (`bg-indigo-50 dark:bg-indigo-950/60`).
+
+3. **Matriz de Governança & Controle de Acesso (RBAC)**:
+   - **Acesso Unificado**: Administradores (`admin`), consultores com papel `financeiro` e consultores com a permissão `acesso_financeiro: true` possuem acesso irrestrito a todos os 5 submódulos do Financeiro (incluindo a Conciliação).
+   - **Ação Exclusiva de Administrador**: A operação crítica de **Fechar Mês** (trancamento de competências contábeis na Conciliação) e as ações de **Estornar Pagamento** e **Cancelar Título** continuam estritamente restritas a administradores (`role === 'admin'`), apresentando bloqueio imediato e orientações amigáveis caso outro perfil tente acioná-las.
+
+4. **Sincronização de Rotas na SPA & Retrocompatibilidade Total**:
+   - A barra de endereços reflete o submódulo ativo via querystring (ex: `#financeiro?sub=conciliacao`).
+   - Requisições legadas para `#conciliacao` (de links antigos, bookmarks ou notificações) são automaticamente redirecionadas para `#financeiro?sub=conciliacao` sem qualquer quebra de fluxo.
 
 ---
 

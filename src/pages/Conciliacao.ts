@@ -46,24 +46,32 @@ export class ConciliacaoPage {
     this.container = container;
   }
 
-  public async init(): Promise<void> {
+  public async init(usuario?: any, perfilConsultor?: PerfilConsultor | null): Promise<void> {
     try {
-      const { user, perfil, error } = await getSessaoAtual();
-      if (error || !user) {
-        this.renderAuthError('Usuário não autenticado. Faça login para acessar.');
-        return;
+      if (usuario && perfilConsultor) {
+        this.user = usuario;
+        this.perfil = perfilConsultor;
+      } else {
+        const { user, perfil, error } = await getSessaoAtual();
+        if (error || !user) {
+          this.renderAuthError('Usuário não autenticado. Faça login para acessar.');
+          return;
+        }
+        this.user = user;
+        this.perfil = perfil;
       }
 
-      // Check role permissions: Gestor/Admin
-      const isAdmin = perfil?.role === 'admin';
+      // Permissão: equipe financeira (admin, financeiro ou flag acesso_financeiro)
+      const podeAcessar = 
+        this.perfil?.role === 'admin' || 
+        this.perfil?.role === 'financeiro' || 
+        (this.perfil as any)?.acesso_financeiro === true || 
+        (this.perfil as any)?.acessoFinanceiro === true;
 
-      if (!isAdmin) {
-        this.renderAuthError('Acesso Restrito: Apenas Gestores e a equipe Financeira têm acesso à Conciliação Bancária.');
+      if (!podeAcessar) {
+        this.renderAuthError('Acesso Restrito: Apenas a Equipe Financeira ou Administradores autorizados possuem permissão para acessar a Conciliação Bancária.');
         return;
       }
-
-      this.user = user;
-      this.perfil = perfil;
 
       await this.carregarDados();
     } catch (e: any) {
@@ -656,8 +664,12 @@ export class ConciliacaoPage {
       UploadExtratoModal.abrir(() => this.carregarDados());
     });
 
-    // Botão Fechar Mês
+    // Botão Fechar Mês (Exclusivo Admin)
     this.container.querySelector('#btn-fechar-mes-modal')?.addEventListener('click', () => {
+      if (this.perfil?.role !== 'admin') {
+        showCustomAlert('Apenas Administradores têm permissão para realizar o Fechamento de Mês e trancamento de competências.', 'warning');
+        return;
+      }
       FecharMesModal.abrir(() => this.carregarDados());
     });
 

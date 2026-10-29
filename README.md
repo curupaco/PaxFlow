@@ -20,6 +20,20 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Unificação da Conciliação no Módulo Financeiro & Submenu Indentado na Sidebar [NEW]** — Evolução estrutural da navegação e organização contábil do PaxFlow:
+  - **Módulo de Conciliação Integrado ao Financeiro**: Incorporação definitiva da Conciliação Bancária (*FinRecon™*) para dentro do módulo **Financeiro**, unificando sob uma hierarquia única e intuitiva o controle de contas a pagar, remessas, fluxo de caixa, conciliação e plano de contas.
+  - **Fim das Abas Horizontais no Financeiro**: Eliminação da barra horizontal de abas internas no topo de `Financeiro.ts`, conferindo 100% de área útil para tabelas densas, calendários de fluxo de caixa e interfaces de conciliação.
+  - **Menu Expansível (Accordion) com Submenu Indentado na Sidebar**:
+    - Item Pai `Financeiro` com chevron expansível `▾`, badge reativo de pendências e contêiner indentado com borda conectora lateral contendo os 5 submódulos:
+      - `📋 Contas a Pagar` (`#financeiro?sub=contas-pagar`)
+      - `📦 Remessas Agrupadas` (`#financeiro?sub=remessas`)
+      - `📈 Fluxo de Caixa & DRE` (`#financeiro?sub=fluxo-caixa`)
+      - `🪙 Conciliação` (`#financeiro?sub=conciliacao`)
+      - `⚙️ Plano de Contas` (`#financeiro?sub=plano-contas`)
+    - Expansão automática do menu ao clicar no ícone em modo colapsado e sincronização bidirecional de rotas na URL da SPA.
+    - Redirecionamento transparente e retrocompatível de links antigos de `#conciliacao` para `#financeiro?sub=conciliacao`.
+  - **Governança e RBAC Integrados**: Acesso unificado a todo o Financeiro e Conciliação liberado para a equipe financeira (`admin`, `financeiro` e flag `acesso_financeiro: true`), mantendo a operação crítica de Fechamento de Mês e trancamento de competências estritamente restrita a administradores.
+
 - **Identificação Visual Unificada de Participações & Módulos na Gestão de Equipe [NEW]** — Painel de auditoria visual imediata na tabela de usuários (`Configuracoes.ts` -> Aba Equipe de Consultores):
   - **Coluna Unificada `Participações & Módulos`**: Substituição da antiga coluna isolada de Metas por uma coluna compacta de alta densidade sem alterar a altura das linhas da tabela.
   - **Trio de Tags Semânticas por Usuário**:
