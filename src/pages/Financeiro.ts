@@ -572,7 +572,17 @@ export class FinanceiroPage {
     const formatarMoeda = (val: number) => 
       new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
-    // Agrupamento por Tipo de Custo (DRE Simplificado)
+    const mesAtivo = this.filtros.mes || (new Date().getMonth() + 1);
+    const anoAtivo = this.filtros.ano || new Date().getFullYear();
+
+    // 1. Apuração da Matriz do Calendário Diário
+    const cal = FinContasPagarService.calcularCalendarioMensal(this.contas, mesAtivo, anoAtivo);
+
+    // Identifica o dia da semana do dia 1 do mês para preencher espaços vazios iniciais
+    const primeiroDiaSemana = new Date(anoAtivo, mesAtivo - 1, 1).getDay(); // 0 = Dom, 6 = Sáb
+    const diasSemanaCabecalho = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+
+    // 2. Agrupamento por Tipo de Custo (DRE Simplificado)
     const agrupamentoDRE: Record<string, { nome: string; nominal: number; pago: number }> = {};
     for (const t of this.tiposCusto) {
       agrupamentoDRE[t.id] = { nome: t.nome, nominal: 0, pago: 0 };
@@ -587,6 +597,138 @@ export class FinanceiroPage {
 
     return `
       <div class="space-y-6">
+        <!-- Painel do Calendário Diário de Desembolsos -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-lg">🗓️</span>
+                <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">Calendário Diário de Vencimentos & Picos de Caixa</h3>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Distribuição temporal dos desembolsos com destaque para dias de pico estratégico (1, 5, 10, 15, 20 e 30).</p>
+            </div>
+
+            <!-- Resumo Rápido do Calendário -->
+            <div class="flex items-center gap-2 flex-wrap">
+              ${cal.diaMaiorDesembolso ? `
+                <div class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/40 rounded-xl text-left">
+                  <span class="text-[9px] uppercase tracking-wider font-black text-amber-700 dark:text-amber-400 block">⚡ Maior Desembolso</span>
+                  <span class="text-xs font-black text-slate-900 dark:text-slate-100">Dia ${cal.diaMaiorDesembolso.dia}: ${formatarMoeda(cal.diaMaiorDesembolso.total)}</span>
+                </div>
+              ` : ''}
+
+              <div class="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800 rounded-xl text-left">
+                <span class="text-[9px] uppercase tracking-wider font-black text-slate-400 block">Dias com Vencimento</span>
+                <span class="text-xs font-black text-slate-800 dark:text-slate-200">${cal.diasComVencimento} dias ativos</span>
+              </div>
+
+              <div class="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800 rounded-xl text-left">
+                <span class="text-[9px] uppercase tracking-wider font-black text-slate-400 block">Média por Dia Ativo</span>
+                <span class="text-xs font-black text-slate-800 dark:text-slate-200">${formatarMoeda(cal.mediaDiariaDesembolso)}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Legenda Visual Rápida -->
+          <div class="flex items-center gap-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 flex-wrap">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-400/30"></span> Dias de Pico (1, 5, 10, 15, 20, 30)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Liquidado</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Pendente</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span> Em Atraso</span>
+          </div>
+
+          <!-- Grade Calendário (7 Colunas de Domingo a Sábado) -->
+          <div class="border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50/40 dark:bg-slate-950/20">
+            <!-- Cabeçalho dos Dias da Semana -->
+            <div class="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800 text-center py-2 bg-slate-100/60 dark:bg-slate-900/60 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              ${diasSemanaCabecalho.map(d => `<div>${d}</div>`).join('')}
+            </div>
+
+            <!-- Células dos Dias -->
+            <div class="grid grid-cols-7 gap-px bg-slate-200/60 dark:bg-slate-800/80">
+              <!-- Espaços vazios antes do dia 1 -->
+              ${Array.from({ length: primeiroDiaSemana }).map(() => `
+                <div class="min-h-[85px] sm:min-h-[95px] p-2 bg-slate-50/20 dark:bg-slate-950/10"></div>
+              `).join('')}
+
+              <!-- Dias do Mês -->
+              ${cal.dias.map(d => {
+                const temTitulos = d.qtdTitulos > 0;
+                const ehPico = d.ehDiaPico;
+                const temAtrasadas = d.qtdAtrasadas > 0;
+                const todasPagas = temTitulos && d.qtdPagas === d.qtdTitulos;
+
+                return `
+                  <div 
+                    data-cal-dia="${d.dia}" 
+                    class="btn-detalhes-dia-cal min-h-[85px] sm:min-h-[95px] p-2 flex flex-col justify-between transition relative text-left select-none ${
+                      temTitulos ? 'cursor-pointer hover:bg-white dark:hover:bg-slate-900 hover:ring-2 hover:ring-indigo-500/50 hover:z-10 shadow-2xs' : 'cursor-default'
+                    } ${
+                      ehPico 
+                        ? 'bg-amber-50/40 dark:bg-amber-950/25 ring-1 ring-amber-400/25' 
+                        : d.ehFimDeSemana 
+                          ? 'bg-slate-50/60 dark:bg-slate-950/40' 
+                          : 'bg-white dark:bg-slate-900'
+                    }"
+                    title="${temTitulos ? `Clique para conferir os ${d.qtdTitulos} títulos do Dia ${d.dia}` : `Dia ${d.dia} sem vencimentos`}"
+                  >
+                    <!-- Linha do Número do Dia e Badge de Pico -->
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs sm:text-sm font-black ${
+                        temTitulos 
+                          ? (temAtrasadas ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100') 
+                          : (d.ehFimDeSemana ? 'text-slate-400 dark:text-slate-600' : 'text-slate-500 dark:text-slate-400')
+                      }">
+                        ${d.dia}
+                      </span>
+
+                      ${ehPico ? `
+                        <span class="text-[8px] font-black uppercase px-1 py-0.2 rounded bg-amber-500/90 text-white tracking-wider shadow-2xs">
+                          Pico
+                        </span>
+                      ` : ''}
+                    </div>
+
+                    <!-- Conteúdo Financeiro do Dia -->
+                    <div class="my-1">
+                      ${temTitulos ? `
+                        <span class="text-[11px] sm:text-xs font-black block truncate ${
+                          todasPagas 
+                            ? 'text-emerald-600 dark:text-emerald-400' 
+                            : temAtrasadas 
+                              ? 'text-rose-600 dark:text-rose-400' 
+                              : 'text-indigo-600 dark:text-indigo-400'
+                        }">
+                          ${formatarMoeda(d.totalNominal)}
+                        </span>
+                      ` : `
+                        <span class="text-[9px] text-slate-300 dark:text-slate-700 font-semibold block">-</span>
+                      `}
+                    </div>
+
+                    <!-- Rodapé da Célula com Contadores -->
+                    <div>
+                      ${temTitulos ? `
+                        <span class="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                          todasPagas 
+                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' 
+                            : temAtrasadas 
+                              ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 animate-pulse' 
+                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
+                        }">
+                          ${todasPagas ? '✓ ' : ''}${d.qtdTitulos} ${d.qtdTitulos === 1 ? 'conta' : 'contas'}
+                        </span>
+                      ` : `
+                        <span class="text-[9px] text-slate-300 dark:text-slate-700 font-medium block"></span>
+                      `}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
         <!-- Demonstrativo por Grupos (DRE Simplificado) -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
           <div class="flex items-center justify-between mb-4">
@@ -838,6 +980,128 @@ export class FinanceiroPage {
     // Botão Exportar CSV
     this.container.querySelector('#btn-exportar-csv')?.addEventListener('click', () => {
       this.exportarCSV();
+    });
+
+    // Cliques nos dias do Calendário de Fluxo de Caixa
+    this.container.querySelectorAll('.btn-detalhes-dia-cal').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const diaStr = btn.getAttribute('data-cal-dia');
+        if (!diaStr) return;
+        this.abrirModalDetalhesDia(Number(diaStr));
+      });
+    });
+  }
+
+  // ==========================================================================
+  // MODAL DE DETALHES DOS TÍTULOS DO DIA DO CALENDÁRIO
+  // ==========================================================================
+  private abrirModalDetalhesDia(diaNum: number): void {
+    const mesAtivo = this.filtros.mes || (new Date().getMonth() + 1);
+    const anoAtivo = this.filtros.ano || new Date().getFullYear();
+    const cal = FinContasPagarService.calcularCalendarioMensal(this.contas, mesAtivo, anoAtivo);
+    const diaObj = cal.dias.find(d => d.dia === diaNum);
+
+    if (!diaObj || diaObj.qtdTitulos === 0) {
+      return;
+    }
+
+    const formatarMoeda = (val: number) => 
+      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity';
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 animate-scale-in max-h-[85vh] flex flex-col">
+        <!-- Topo do Modal -->
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl ${diaObj.ehDiaPico ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400'} flex items-center justify-center text-lg font-black shrink-0">
+              ${diaObj.dia}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Vencimentos do Dia ${diaObj.dia} (${diaObj.diaSemanaLabel})</h3>
+                ${diaObj.ehDiaPico ? `
+                  <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-white tracking-wider">
+                    ⚡ Pico de Caixa
+                  </span>
+                ` : ''}
+              </div>
+              <p class="text-xs text-slate-400 font-semibold">${diaObj.qtdTitulos} ${diaObj.qtdTitulos === 1 ? 'título previsto' : 'títulos previstos'} • Total: <strong class="text-indigo-600 dark:text-indigo-400">${formatarMoeda(diaObj.totalNominal)}</strong></p>
+            </div>
+          </div>
+          <button id="btn-fechar-modal-dia" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg cursor-pointer">✕</button>
+        </div>
+
+        <!-- Lista de Títulos do Dia -->
+        <div class="overflow-y-auto custom-scrollbar flex-1 space-y-2 pr-1">
+          ${diaObj.titulos.map(t => {
+            const ehPago = t.status === 'pago';
+            const ehAtrasado = t.status === 'atrasado';
+
+            return `
+              <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 mb-0.5">
+                    <span class="font-extrabold text-slate-900 dark:text-slate-100 text-xs truncate">${t.favorecido}</span>
+                    <span class="text-[9px] uppercase font-black px-1.5 py-0.2 rounded ${
+                      ehPago 
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' 
+                        : ehAtrasado 
+                          ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 animate-pulse' 
+                          : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
+                    }">
+                      ${t.status}
+                    </span>
+                  </div>
+                  <span class="text-[11px] text-slate-500 dark:text-slate-400 block truncate">${t.descricao || 'Despesa'} • <strong class="text-slate-600 dark:text-slate-300">${t.categoria?.nome || 'Geral'}</strong></span>
+                </div>
+
+                <div class="flex items-center gap-3 shrink-0">
+                  <div class="text-right">
+                    <span class="text-xs font-black text-slate-900 dark:text-slate-100 block">${formatarMoeda(t.valor_nominal)}</span>
+                    ${ehPago && t.valor_pago ? `
+                      <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">Pago: ${formatarMoeda(t.valor_pago)}</span>
+                    ` : ''}
+                  </div>
+
+                  ${!ehPago && t.status !== 'cancelado' ? `
+                    <button data-conta-id="${t.id}" class="btn-baixar-do-calendario px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer">
+                      Baixar
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <!-- Rodapé do Modal -->
+        <div class="flex items-center justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button id="btn-fechar-modal-dia-footer" class="h-[42px] px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer">
+            Fechar
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const fechar = () => overlay.remove();
+    overlay.querySelector('#btn-fechar-modal-dia')?.addEventListener('click', fechar);
+    overlay.querySelector('#btn-fechar-modal-dia-footer')?.addEventListener('click', fechar);
+
+    // Ouvinte para dar baixa diretamente a partir do modal do dia
+    overlay.querySelectorAll('.btn-baixar-do-calendario').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const contaId = btn.getAttribute('data-conta-id');
+        const c = diaObj.titulos.find(x => x.id === contaId);
+        if (c) {
+          fechar();
+          this.abrirModalBaixa(c);
+        }
+      });
     });
   }
 

@@ -142,4 +142,55 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     // Assert: não deve estourar erro, deve retornar array vazio resiliente
     expect(contas).toEqual([]);
   });
+
+  it('deve calcular a matriz do calendário mensal de vencimentos identificando dias de pico (1, 5, 10, 15, 20, 30) e fins de semana', () => {
+    // Setup: Outubro 2026 (31 dias)
+    const contasMock: any[] = [
+      { id: '1', valor_nominal: 28434.42, status: 'pendente', data_vencimento: '2026-10-05', data_vencimento_operacional: '2026-10-05' },
+      { id: '2', valor_nominal: 26000.00, status: 'pago', valor_pago: 26000.00, data_vencimento: '2026-10-10', data_vencimento_operacional: '2026-10-13' } // Vencimento operacional após feriado
+    ];
+
+    // Action
+    const cal = FinContasPagarService.calcularCalendarioMensal(contasMock, 10, 2026);
+
+    // Assert
+    expect(cal.dias).toHaveLength(31);
+    
+    // Dia 5 é dia de pico e segunda-feira
+    const dia5 = cal.dias.find(d => d.dia === 5)!;
+    expect(dia5.ehDiaPico).toBe(true);
+    expect(dia5.totalNominal).toBe(28434.42);
+    expect(dia5.qtdTitulos).toBe(1);
+    expect(dia5.qtdPendentes).toBe(1);
+
+    // Dia 10 (Sábado) é dia de pico, mas o título operou no dia 13
+    const dia10 = cal.dias.find(d => d.dia === 10)!;
+    expect(dia10.ehDiaPico).toBe(true);
+    expect(dia10.ehFimDeSemana).toBe(true);
+
+    // Dia 13 recebeu a conta do dia 10
+    const dia13 = cal.dias.find(d => d.dia === 13)!;
+    expect(dia13.totalNominal).toBe(26000.00);
+    expect(dia13.qtdPagas).toBe(1);
+
+    // Maior desembolso aponta para o dia 5
+    expect(cal.diaMaiorDesembolso).toEqual({ dia: 5, total: 28434.42 });
+    expect(cal.diasComVencimento).toBe(2);
+  });
+
+  it('deve desconsiderar contas canceladas na contabilidade dos dias do calendário', () => {
+    // Setup
+    const contasMock: any[] = [
+      { id: '1', valor_nominal: 5000, status: 'cancelado', data_vencimento: '2026-10-15', data_vencimento_operacional: '2026-10-15' }
+    ];
+
+    // Action
+    const cal = FinContasPagarService.calcularCalendarioMensal(contasMock, 10, 2026);
+
+    // Assert
+    const dia15 = cal.dias.find(d => d.dia === 15)!;
+    expect(dia15.totalNominal).toBe(0);
+    expect(dia15.qtdTitulos).toBe(0);
+    expect(cal.diasComVencimento).toBe(0);
+  });
 });

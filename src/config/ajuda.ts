@@ -1044,6 +1044,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '⚙️ Plano de Contas Hierárquico & DRE Gerencial',
     description: 'Entenda os 5 macro grupos de custo e como as despesas são consolidadas no fluxo de caixa.',
     details: 'A matriz de contas do PaxFlow organiza todas as despesas da agência em 5 macro grupos de custos:\n\n1. **Custos Diretos**: Comissões, Premiações, Royalties, Taxa de Marketing e Impostos.\n2. **Despesas Fixas**: Aluguel, Condomínio, Salários, Contabilidade, Energia Elétrica, Limpeza, Plano de Saúde e Tarifas.\n3. **Despesas Variáveis**: Brindes a Clientes, Benfeitorias, Comemorações, Medicina do Trabalho, Prejuízos, Uniformes e REPASSE AGAXTUR.\n4. **Investimentos**: Social Media, Patrocínio Digital, Cursos e Treinamentos.\n5. **Gastos Não Operacionais**: Despesas MKP e despesas extraordinárias.\n\nNa aba **Fluxo de Caixa & DRE**, o sistema totaliza os desembolsos previstos versus realizados de cada grupo com cálculo automático da variação em R$ e exportação para CSV.'
+  },
+  {
+    id: 'fin-calendario-fluxo',
+    modulo: 'financeiro',
+    label: '🗓️ Calendário Visual de Vencimentos & Picos de Caixa',
+    description: 'Como funciona a visualização diária do fluxo de caixa e os dias de pico financeiro.',
+    details: 'Na aba **Fluxo de Caixa & DRE**, o PaxFlow exibe uma grade mensal completa (domingo a sábado) para monitorar a liquidez diária da agência:\n\n1. **Picos Estratégicos (Dias 1, 5, 10, 15, 20 e 30)**: As datas com grande concentração de compromissos contratuais recebem badge destacada `⚡ Pico` e contorno visual âmbar para facilitar o provisionamento de saldo.\n2. **Totalizadores & Maior Desembolso**: O topo do painel identifica automaticamente o dia de maior concentração financeira do mês, a quantidade de dias com vencimentos ativos e a média de desembolso por dia.\n3. **Células Interativas**: Cada dia com títulos exibe o somatório nominal em reais e uma pílula com a contagem de contas e cores por status (🟢 Verde se todas estiverem pagas, 🟡 Âmbar se pendentes e 🔴 Vermelho piscante se houver contas em atraso).\n4. **Modal de Detalhes em 1-Clique**: Ao clicar sobre qualquer dia com movimentação, o sistema abre uma listagem focada de todos os títulos da data com botão de liquidação imediata.'
   }
 ];
 

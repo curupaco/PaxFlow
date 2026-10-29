@@ -1092,5 +1092,28 @@ export interface FinPrevistoVsRealizadoItem {
   percentualVariacao: number;
 }
 
+export interface FinDiaCalendario {
+  dia: number;
+  dataIso: string;
+  diaSemana: number; // 0 (Dom) a 6 (Sáb)
+  diaSemanaLabel: string; // 'Dom', 'Seg', etc.
+  ehFimDeSemana: boolean;
+  ehDiaPico: boolean; // Dias 1, 5, 10, 15, 20 e 30
+  totalNominal: number;
+  totalPago: number;
+  qtdTitulos: number;
+  qtdPendentes: number;
+  qtdAtrasadas: number;
+  qtdPagas: number;
+  titulos: FinContaPagar[];
+}
+
+export interface FinCalendarioMensalResumo {
+  dias: FinDiaCalendario[];
+  diaMaiorDesembolso?: { dia: number; total: number };
+  mediaDiariaDesembolso: number;
+  diasComVencimento: number;
+}
+
 
 

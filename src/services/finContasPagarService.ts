@@ -5,7 +5,9 @@ import {
   FinResumoLiquidez, 
   FinPrevistoVsRealizadoItem,
   FinAuditoria,
-  FinFormaPagamento 
+  FinFormaPagamento,
+  FinDiaCalendario,
+  FinCalendarioMensalResumo
 } from '../types';
 
 /**
@@ -668,6 +670,99 @@ export class FinContasPagarService {
     }
 
     return resultado.sort((a, b) => a.tipoCustoNome.localeCompare(b.tipoCustoNome) || b.valorPrevisto - a.valorPrevisto);
+  }
+
+  /**
+   * Dias marcados como picos estratégicos de liquidez da agência
+   */
+  public static readonly DIAS_PICO_FLUXO: readonly number[] = [1, 5, 10, 15, 20, 30];
+
+  /**
+   * Consolida a matriz de dias do mês com seus desembolsos e sinalização de dias de pico
+   */
+  public static calcularCalendarioMensal(
+    contas: FinContaPagar[], 
+    mes: number, 
+    ano: number
+  ): FinCalendarioMensalResumo {
+    const totalDias = new Date(ano, mes, 0).getDate();
+    const labelsSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const dias: FinDiaCalendario[] = [];
+
+    let somaTotalMes = 0;
+    let diasComVencimento = 0;
+    let maiorDesembolso: { dia: number; total: number } | undefined;
+
+    for (let d = 1; d <= totalDias; d++) {
+      const dataIso = `${ano}-${String(mes).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dt = new Date(ano, mes - 1, d);
+      const diaSemana = dt.getDay();
+      const ehFimDeSemana = diaSemana === 0 || diaSemana === 6;
+      const ehDiaPico = this.DIAS_PICO_FLUXO.includes(d);
+
+      // Filtra títulos com vencimento operacional correspondente ao dia
+      const titulosDoDia = contas.filter(c => {
+        if (c.status === 'cancelado') return false;
+        const venc = c.data_vencimento_operacional || c.data_vencimento;
+        return venc === dataIso;
+      });
+
+      let totalNominal = 0;
+      let totalPago = 0;
+      let qtdPendentes = 0;
+      let qtdAtrasadas = 0;
+      let qtdPagas = 0;
+
+      for (const t of titulosDoDia) {
+        const nominal = Number(t.valor_nominal) || 0;
+        const pago = Number(t.valor_pago) || 0;
+        totalNominal += nominal;
+        totalPago += pago;
+
+        if (t.status === 'pago') {
+          qtdPagas++;
+        } else if (t.status === 'atrasado') {
+          qtdAtrasadas++;
+          qtdPendentes++;
+        } else {
+          qtdPendentes++;
+        }
+      }
+
+      if (titulosDoDia.length > 0) {
+        diasComVencimento++;
+        somaTotalMes += totalNominal;
+
+        if (!maiorDesembolso || totalNominal > maiorDesembolso.total) {
+          maiorDesembolso = { dia: d, total: totalNominal };
+        }
+      }
+
+      dias.push({
+        dia: d,
+        dataIso,
+        diaSemana,
+        diaSemanaLabel: labelsSemana[diaSemana],
+        ehFimDeSemana,
+        ehDiaPico,
+        totalNominal,
+        totalPago,
+        qtdTitulos: titulosDoDia.length,
+        qtdPendentes,
+        qtdAtrasadas,
+        qtdPagas,
+        titulos: titulosDoDia
+      });
+    }
+
+    const mediaDiariaDesembolso = diasComVencimento > 0 ? somaTotalMes / diasComVencimento : 0;
+
+    return {
+      dias,
+      diaMaiorDesembolso: maiorDesembolso,
+      mediaDiariaDesembolso,
+      diasComVencimento
+    };
   }
 
   /**
