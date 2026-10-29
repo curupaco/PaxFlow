@@ -61,6 +61,7 @@
    - 3.49 [Painel Analítico de Pesquisa de Satisfação (NPS)](#349-painel-analítico-de-pesquisa-de-satisfação-nps)
    - 3.50 [Ergonomia do Painel de Relatórios & Menu Lateral Retrátil](#350-ergonomia-do-painel-de-relatórios--menu-lateral-retrátil)
    - 3.51 [Módulo Financeiro de Contas a Pagar, Remessas & Plano de Contas](#351-módulo-financeiro-de-contas-a-pagar-remessas--plano-de-contas)
+   - 3.52 [Identificação Visual de Participações & Módulos na Gestão de Equipe](#352-identificação-visual-de-participações--módulos-na-gestão-de-equipe)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1491,6 +1492,19 @@ O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operan
    - **Sugestões com Ação em 1-Clique**: Transações com score ≥ 50% são exibidas com destaque no topo da tela com o identificador visual `💰 Despesa: [Favorecido]` e o botão `⚡ Conciliar Saída`, permitindo a reconciliação e baixa assistida instantânea.
    - **Modal Especializado de Vinculação (`VincularContaPagarModal`)**: Débitos bancários contam com o botão `💰 Vincular Conta` na listagem do extrato, abrindo diálogo com os dados da movimentação bancária, pesquisa textual instantânea, lista ordenada por score de compatibilidade e opção de *Baixa Assistida Automática*.
    - **Baixa Assistida e Fechamento do Ciclo**: Se o título vinculado ainda estiver com status pendente ou em atraso, a conciliação invoca automaticamente `FinContasPagarService.baixarConta`, registrando a data de pagamento real do extrato, valor pago, observação de conciliação bancária e emitindo os eventos reativos `paxflow-financeiro-updated` e `paxflow-conciliacao-updated`.
+
+### 3.52 Identificação Visual de Participações & Módulos na Gestão de Equipe
+
+A gestão de colaboradores e consultores em **Configurações -> Equipe de Consultores** adota um padrão de alta densidade informativa e ergonomia sem esticar a altura vertical das linhas da tabela:
+
+1. **Coluna Unificada `Participações & Módulos`**:
+   - Substitui a antiga coluna isolada de Metas por um contêiner flexível horizontal com alinhamento centralizado que acomoda o trio de módulos essenciais de governança da agência.
+2. **Os Três Indicadores Semânticos**:
+   - **📅 Escala**: Tag com contorno azul `📅 Escala` (`participa_escala !== false`) sinaliza que o colaborador atua na grade de turnos diários e plantões da Central de Escala; tag suave `📅 Off` sinaliza consultores não escalados.
+   - **🎯 Metas & KPIs**: Tag com contorno roxo `🎯 Metas` (`participa_metricas !== false`) indica que o usuário compete nos rankings comerciais, campanhas da agência e gamificação/XP; tag `🎯 Off` para diretores ou perfis de teste isentos de metas.
+   - **💰 Financeiro**: Tag com contorno esmeralda `💰 Fin` (`acesso_financeiro || role === 'financeiro' || role === 'admin'`) indica liberação imediata para operação do Contas a Pagar, Remessas e Fluxo de Caixa; tag `💰 Off` para operadores restritos às rotinas comerciais.
+3. **Persistência Completa no Cadastro e Edição**:
+   - Checkboxes de ativação/desativação sincronizados em tempo real no Supabase (`profiles`), disponíveis tanto no formulário de cadastro de novos consultores quanto no modal de edição de agentes existentes.
 
 ---
 

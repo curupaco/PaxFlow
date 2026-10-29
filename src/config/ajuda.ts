@@ -581,10 +581,11 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'controle-participacao-metricas',
     modulo: 'configuracoes',
-    label: '🎯 Controle de Participação em Métricas, Rankings e Campanhas (Interruptor de Usuários)',
-    description: 'Como excluir usuários específicos (ex: Administradores, Contas de Teste ou Diretoria) de rankings e metas sem impactar o total da agência.',
-    details: 'No menu **Configurações -> Aba Equipe de Consultores**:\n\n1. **Interruptor Dedicado**: Tanto no cadastro de novos consultores quanto no modal de edição de perfil, administradores podem alternar a opção `🎯 Participa de Campanhas, Metas e KPIs` (`Sim` / `Não`).\n2. **Isolamento de Disputas & Pódios**: Usuários com o interruptor desmarcado (`Não`) são automaticamente removidos de rankings individuais de vendas, tabelas comparativas de conversão comercial, disputas de metas de campanha e da gamificação/leaderboard de XP.\n3. **Fidelidade Financeira Global da Agência**: As vendas, viagens e orçamentos vinculados a esse usuário continuam sendo somados normalmente no faturamento bruto global da agência e relatórios gerenciais, garantindo conciliação financeira precisa.\n4. **Identificação Visual Instantânea**: A tabela de consultores exibe uma badge informativa com o status (`🎯 Sim` ou `🚫 Não`) para fácil governança da equipe.'
+    label: '👥 Participações & Módulos no Cadastro de Usuários (Escala, Metas e Financeiro)',
+    description: 'Como auditar instantaneamente na tabela quem participa da Escala, Metas/Rankings e Módulo Financeiro.',
+    details: 'No menu **Configurações -> Aba Equipe de Consultores**, a tabela exibe a coluna unificada **Participações & Módulos** com um trio de tags informativas para auditoria rápida em um só relance de olhos:\n\n1. **📅 Escala**: Tag azul `📅 Escala` se o colaborador participa dos turnos e plantões na grade mensal; tag cinza `📅 Off` se o usuário não atua na escala.\n2. **🎯 Metas & KPIs**: Tag roxa `🎯 Metas` se concorre a rankings, campanhas e pontuação de XP; tag cinza `🎯 Off` para diretores, testes ou gestores isentos de metas comerciais.\n3. **💰 Financeiro**: Tag esmeralda `💰 Fin` se o usuário tem liberação de acesso ao módulo financeiro (Contas a Pagar, Remessas e Fluxo de Caixa); tag cinza `💰 Off` para operadores restritos ao comercial/operacional.\n4. **Configuração em 1-Clique**: Administradores podem alternar essas permissões tanto no formulário de cadastro de novos consultores quanto no modal de edição de perfil.'
   },
+
   {
     id: 'auto-status-em-andamento',
     modulo: 'orcamentos',

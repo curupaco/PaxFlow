@@ -941,6 +941,14 @@ export class ConfiguracoesPage {
 
           <div class="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
             <div>
+              <label class="text-xs font-bold text-slate-700 dark:text-slate-200 block">📅 Participa da Escala de Funcionários</label>
+              <span class="text-[10px] text-slate-400 block">Exibe o consultor na grade mensal de turnos e no Banco de Folgas.</span>
+            </div>
+            <input type="checkbox" id="input-nc-participa-escala" checked class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
+          </div>
+
+          <div class="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+            <div>
               <label class="text-xs font-bold text-slate-700 dark:text-slate-200 block">🎯 Participa de Campanhas, Metas e KPIs</label>
               <span class="text-[10px] text-slate-400 block">Permite que o usuário concorra a rankings, metas comerciais e pontuação de XP.</span>
             </div>
@@ -990,6 +998,7 @@ export class ConfiguracoesPage {
       const email = (document.getElementById('input-nc-email') as HTMLInputElement).value;
       const role = (document.getElementById('select-nc-role') as HTMLSelectElement).value as any;
       const senha = (document.getElementById('input-nc-senha') as HTMLInputElement).value;
+      const participaEscala = (document.getElementById('input-nc-participa-escala') as HTMLInputElement)?.checked ?? true;
       const participaMetricas = (document.getElementById('input-nc-participa-metricas') as HTMLInputElement)?.checked ?? true;
       const acessoFinanceiro = (document.getElementById('input-nc-acesso-financeiro') as HTMLInputElement)?.checked || role === 'financeiro';
 
@@ -1010,6 +1019,7 @@ export class ConfiguracoesPage {
           try {
             await supabase.from('profiles').update({ 
               role: role,
+              participa_escala: participaEscala,
               participa_metricas: participaMetricas,
               acesso_financeiro: acessoFinanceiro
             }).eq('id', userId);
@@ -2333,7 +2343,7 @@ export class ConfiguracoesPage {
                   <th class="py-3.5 px-5">E-mail</th>
                   <th class="py-3.5 px-5 text-center whitespace-nowrap">Nível de Acesso</th>
                   <th class="py-3.5 px-5 text-center whitespace-nowrap">Status</th>
-                  <th class="py-3.5 px-5 text-center whitespace-nowrap">Metas & KPIs</th>
+                  <th class="py-3.5 px-5 text-center whitespace-nowrap">Participações & Módulos</th>
                   <th class="py-3.5 px-5 text-right whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
@@ -2343,17 +2353,31 @@ export class ConfiguracoesPage {
                   const statusBadge = c.ativo 
                     ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 text-[10px] font-bold rounded-lg shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Ativo</span>` 
                     : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Inativo</span>`;
+                  
                   let roleBadge = `<span class="inline-flex items-center px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 text-[10px] font-bold rounded-lg shadow-xs">💼 Consultor</span>`;
                   if (c.role === 'admin') {
                     roleBadge = `<span class="inline-flex items-center px-2.5 py-1 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-200/60 dark:border-purple-900/40 text-[10px] font-extrabold rounded-lg shadow-xs">👑 ADMIN</span>`;
                   } else if (c.role === 'financeiro') {
                     roleBadge = `<span class="inline-flex items-center px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 text-[10px] font-extrabold rounded-lg shadow-xs">💰 Financeiro</span>`;
-                  } else if (c.acesso_financeiro || (c as any).acessoFinanceiro) {
-                    roleBadge += `<span class="ml-1 inline-flex items-center px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 text-[9px] font-bold rounded" title="Acesso liberado ao Financeiro">💰 Fin</span>`;
                   }
-                  const metasBadge = c.participa_metricas !== false
-                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 text-[10px] font-bold rounded-lg shadow-xs" title="Participa de campanhas, metas e XP">🎯 Sim</span>`
-                    : `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs" title="Excluído de rankings, metas e XP">🚫 Não</span>`;
+
+                  // 1. Escala (c.participa_escala !== false)
+                  const participaEscala = c.participa_escala !== false && (c as any).participaEscala !== false;
+                  const escalaBadge = participaEscala
+                    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/45 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/40 text-[10px] font-bold rounded-lg shadow-xs" title="Participa da Escala e Plantões de Atendimento">📅 Escala</span>`
+                    : `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs opacity-60" title="Não participa da Escala">📅 Off</span>`;
+
+                  // 2. Metas & KPIs (c.participa_metricas !== false)
+                  const participaMetas = c.participa_metricas !== false && (c as any).participaMetricas !== false;
+                  const metasBadge = participaMetas
+                    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 text-[10px] font-bold rounded-lg shadow-xs" title="Participa de Metas, Rankings e Pontuação de XP">🎯 Metas</span>`
+                    : `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs opacity-60" title="Isento de Metas e Rankings">🎯 Off</span>`;
+
+                  // 3. Financeiro (c.acesso_financeiro ou role admin/financeiro)
+                  const temAcessoFinanceiro = c.role === 'admin' || c.role === 'financeiro' || !!c.acesso_financeiro || !!(c as any).acessoFinanceiro;
+                  const finBadge = temAcessoFinanceiro
+                    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 text-[10px] font-bold rounded-lg shadow-xs" title="Acesso liberado ao Módulo Financeiro (Contas a Pagar, Remessas e Fluxo)">💰 Fin</span>`
+                    : `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs opacity-60" title="Sem acesso ao Módulo Financeiro">💰 Off</span>`;
                   
                   return `
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
@@ -2382,7 +2406,11 @@ export class ConfiguracoesPage {
                       </td>
 
                       <td class="py-3.5 px-5 align-middle text-center whitespace-nowrap">
-                        ${metasBadge}
+                        <div class="inline-flex items-center justify-center gap-1.5 flex-nowrap">
+                          ${escalaBadge}
+                          ${metasBadge}
+                          ${finBadge}
+                        </div>
                       </td>
                       
                       <td class="py-3.5 px-5 align-middle text-right whitespace-nowrap">

@@ -20,7 +20,16 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Identificação Visual Unificada de Participações & Módulos na Gestão de Equipe [NEW]** — Painel de auditoria visual imediata na tabela de usuários (`Configuracoes.ts` -> Aba Equipe de Consultores):
+  - **Coluna Unificada `Participações & Módulos`**: Substituição da antiga coluna isolada de Metas por uma coluna compacta de alta densidade sem alterar a altura das linhas da tabela.
+  - **Trio de Tags Semânticas por Usuário**:
+    - 📅 **Escala**: Tag azul `📅 Escala` para colaboradores atuantes nos plantões e grade mensal; tag cinza `📅 Off` para consultores não escalados.
+    - 🎯 **Metas & KPIs**: Tag roxa `🎯 Metas` para consultores concorrendo a metas comerciais, campanhas e pontuação de XP; tag cinza `🎯 Off` para testes ou cargos de diretoria.
+    - 💰 **Financeiro**: Tag esmeralda `💰 Fin` indicando acesso liberado ao Contas a Pagar, Remessas e Fluxo de Caixa; tag cinza `💰 Off` para operadores sem permissão financeira.
+  - **Gestão em 1-Clique no Cadastro e Edição**: Checkboxes independentes para `participa_escala`, `participa_metricas` e `acesso_financeiro` no formulário de cadastro de novo consultor e no modal de edição de perfil com persistência em tempo real no Supabase.
+
 - **Módulo Financeiro de Contas a Pagar, Remessas Agrupadas & Plano de Contas [NEW]** — O novo coração financeiro do PaxFlow desacoplado da área operacional comum, projetado com rigor contábil e controle de acesso estrito (RBAC):
+
   - **Governança e Perfis de Acesso**: Suporte ao novo papel `financeiro` e interruptor `acesso_financeiro` no perfil dos colaboradores, liberando o menu lateral e operações apenas para operadores credenciados e administradores.
   - **4 Abas Especializadas**:
     1. `📋 Contas a Pagar`: Listagem com filtros por mês, status, tipo de custo, categoria e fornecedor; KPIs de liquidez (Total a Pagar, Total Pago, Atrasadas e Janela de 7 dias); suporte a despesas estimadas/variáveis e botão de Nova Conta.
