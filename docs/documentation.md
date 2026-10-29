@@ -1371,7 +1371,8 @@ Expansão das regras de governança e cálculo proporcional de vendas divididas 
 Ferramenta de inteligência relacional e prospecção ativa posicionada na aba `🚀 Campanhas & Segmentação` do módulo de Relatórios (`Relatorios.ts` e `campanhasService.ts`):
 
 1. **Matriz de Filtros Estratégicos Combinados**:
-   - **Origem da Base**: Permite alternar entre *Ambos Unificados* (Viagens Confirmadas + Orçamentos/Leads), *Apenas Viagens Confirmadas* ou *Apenas Orçamentos*.
+   - **Origem da Base (Fonte)**: Permite alternar entre *Ambos Unificados* (Viagens Confirmadas + Orçamentos/Leads), *Apenas Viagens Confirmadas* ou *Apenas Orçamentos*.
+   - **Origem do Lead**: Segmentação por canal de captação e conversão do passageiro (ex: WhatsApp, Instagram, Google, Loja Física, Indicação, etc.), identificado dinamicamente no cadastro do lead/viagem.
    - **Destino e Internacionalidade**: Filtro por Tipo de Destino (Nacional vs Internacional via `classificarTipoDestino`) e multi-busca flexível por termos separados por vírgula (ex: "Cuba, Cancun, Miami").
    - **Janela de Tempo**: Seleção de janelas dinâmicas dos últimos 3, 6, 12, 24 meses ou histórico completo.
    - **Faixa Financeira**: Parâmetros de corte para valor mínimo (R$ acima de X) e máximo (R$ abaixo de Y).

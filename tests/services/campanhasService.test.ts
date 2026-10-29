@@ -26,7 +26,8 @@ describe('CampanhasService - Testes Subcutâneos', () => {
         { fornecedor: 'Copa Airlines', valor_venda: 6000 },
         { fornecedor: 'Iberostar Cuba', valor_venda: 9000 }
       ],
-      passageiros: [{ tipo: 'ADT' }, { tipo: 'CHD', faixaEtaria: 'crianca_8' }]
+      passageiros: [{ tipo: 'ADT' }, { tipo: 'CHD', faixaEtaria: 'crianca_8' }],
+      origem: 'Instagram'
     },
     {
       id: 'viagem-2',
@@ -38,6 +39,7 @@ describe('CampanhasService - Testes Subcutâneos', () => {
       valor_total: 4500,
       consultor_id: 'cons-2',
       consultor_nome: 'Mariana Silva',
+      origem: 'WhatsApp',
       produtos_viagem: [
         { fornecedor: 'Azul Linhas Aéreas' },
         { fornecedor: 'Wish Serrano Resort' }
@@ -56,7 +58,8 @@ describe('CampanhasService - Testes Subcutâneos', () => {
       valor_viagem: 12000,
       consultor_id: 'cons-1',
       consultor_nome: 'Carlos Consultor',
-      status: 'SOLICITADO'
+      status: 'SOLICITADO',
+      origem: 'Instagram'
     },
     {
       id: 'orc-2',
@@ -69,7 +72,8 @@ describe('CampanhasService - Testes Subcutâneos', () => {
       consultor_id: 'cons-1',
       consultor_nome: 'Carlos Consultor',
       status: 'SOLICITADO',
-      sub_status: 'DESISTENCIA'
+      sub_status: 'DESISTENCIA',
+      origem: 'Indicação'
     }
   ];
 
@@ -179,8 +183,47 @@ describe('CampanhasService - Testes Subcutâneos', () => {
     expect(csv).toContain('"Havana / Cuba"');
     expect(csv).toContain('"Viagem"');
     expect(csv).toContain('"Orçamento"');
+    expect(csv).toContain('Origem do Lead');
+    expect(csv).toContain('"Instagram"');
     expect(contatos).toContain('Ana Paula (11999990001)');
     expect(contatos).toContain('Bruno Silva (11999990002)');
+  });
+
+  it('deve normalizar e filtrar oportunidades pela Origem do Lead corretamente', () => {
+    // Setup
+    const normalizados = CampanhasService.normalizarDados(viagensMock, orcamentosMock, npsMock);
+    
+    // Verificando normalização
+    const cuba = normalizados.find(i => i.registroId === 'viagem-1');
+    const gramado = normalizados.find(i => i.registroId === 'viagem-2');
+    expect(cuba?.origemLead).toBe('Instagram');
+    expect(gramado?.origemLead).toBe('WhatsApp');
+
+    // Action 1: Filtrar por Instagram
+    const filtrosInstagram: FiltrosCampanha = {
+      origem: 'todos',
+      tipoVisao: 'oportunidade',
+      tipoDestino: 'todos',
+      origemLead: 'Instagram'
+    };
+    const resultadoInstagram = CampanhasService.filtrarItens(normalizados, filtrosInstagram, { id: 'admin-1', role: 'admin' });
+
+    // Assert 1: Deve retornar apenas os registros cuja origem seja Instagram (viagem-1 e orc-1)
+    expect(resultadoInstagram).toHaveLength(2);
+    expect(resultadoInstagram.every(r => r.origemLead?.toLowerCase() === 'instagram')).toBe(true);
+
+    // Action 2: Filtrar por WhatsApp
+    const filtrosWhatsApp: FiltrosCampanha = {
+      origem: 'todos',
+      tipoVisao: 'oportunidade',
+      tipoDestino: 'todos',
+      origemLead: 'WhatsApp'
+    };
+    const resultadoWhatsApp = CampanhasService.filtrarItens(normalizados, filtrosWhatsApp, { id: 'admin-1', role: 'admin' });
+
+    // Assert 2: Deve retornar apenas gramado (viagem-2)
+    expect(resultadoWhatsApp).toHaveLength(1);
+    expect(resultadoWhatsApp[0].registroId).toBe('viagem-2');
   });
 
   it('deve tratar Schema Drift (código 42P01 / 42703) ao salvar preset com fallback resiliente', async () => {

@@ -90,7 +90,8 @@ export class RelatoriosPage {
     statusOrcamento: 'TODOS',
     classificacaoNps: 'todos',
     perfilPassageiro: 'todos',
-    consultorId: 'TODOS'
+    consultorId: 'TODOS',
+    origemLead: 'TODOS'
   };
   private campanhasPresets: PresetCampanha[] = [];
   private feedbacksNps: any[] = [];

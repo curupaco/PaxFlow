@@ -9,6 +9,7 @@ import { ViagensDivisoesService } from '../../../services/viagensDivisoesService
 import { CampanhasService, FiltrosCampanha, PresetCampanha } from '../../../services/campanhasService';
 import { showCustomPrompt } from '../../../services/dialog';
 import { SendTemplateMessageModal } from '../../dashboard/SendTemplateMessageModal';
+import { ORIGENS_LEAD_PADRAO } from '../../../controllers/cadastrosController';
 
 export interface RelatoriosComercialContext {
   viagens: any[];
@@ -548,6 +549,16 @@ export class RelatoriosComercialView {
     const kpis = CampanhasService.calcularMetricas(itensFiltrados);
     const f = ctx.campanhasFiltros;
 
+    // 4. Lista dinâmica de Origens de Lead
+    const origensLeadSet = new Set<string>();
+    ORIGENS_LEAD_PADRAO.forEach(o => origensLeadSet.add(o.nome));
+    todosItens.forEach(it => {
+      if (it.origemLead && it.origemLead !== 'Não Informada') {
+        origensLeadSet.add(it.origemLead);
+      }
+    });
+    const listaOrigensLead = Array.from(origensLeadSet);
+
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
         
@@ -618,13 +629,24 @@ export class RelatoriosComercialView {
               </select>
             </div>
 
-            <!-- Origem dos Dados -->
+            <!-- Origem dos Dados / Fonte da Base -->
             <div class="space-y-1">
-              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Origem do Contato</label>
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Fonte da Base</label>
               <select id="filtro-campanha-origem" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="todos" ${f.origem === 'todos' ? 'selected' : ''}>Viagens Realizadas + Orçamentos</option>
                 <option value="viagens" ${f.origem === 'viagens' ? 'selected' : ''}>Apenas Viagens Realizadas</option>
                 <option value="orcamentos" ${f.origem === 'orcamentos' ? 'selected' : ''}>Apenas Orçamentos Cadastrados</option>
+              </select>
+            </div>
+
+            <!-- Origem do Lead (Canal de Entrada) -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Origem do Lead</label>
+              <select id="filtro-campanha-origem-lead" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="TODOS" ${!f.origemLead || f.origemLead === 'TODOS' ? 'selected' : ''}>Todas as Origens de Lead</option>
+                ${listaOrigensLead.map(orig => `
+                  <option value="${orig}" ${f.origemLead === orig ? 'selected' : ''}>${orig}</option>
+                `).join('')}
               </select>
             </div>
 
@@ -836,6 +858,7 @@ export class RelatoriosComercialView {
                       <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">
                         ${item.clienteNome}
                         ${item.clienteTelefone ? `<div class="text-[10px] text-slate-400 font-normal">${item.clienteTelefone}</div>` : ''}
+                        ${item.origemLead && item.origemLead !== 'Não Informada' ? `<div class="mt-0.5"><span class="inline-flex items-center gap-1 text-[9px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">📣 ${item.origemLead}</span></div>` : ''}
                       </td>
                       <td class="p-3 font-semibold text-slate-700 dark:text-slate-200">
                         ${item.destino}
@@ -1043,6 +1066,7 @@ export class RelatoriosComercialView {
         const statusOrcamento = (document.getElementById('filtro-campanha-status-orcamento') as HTMLSelectElement)?.value || 'TODOS';
         const classificacaoNps = (document.getElementById('filtro-campanha-nps') as HTMLSelectElement)?.value as any || 'todos';
         const consultorSelect = (document.getElementById('filtro-campanha-consultor') as HTMLSelectElement)?.value;
+        const origemLead = (document.getElementById('filtro-campanha-origem-lead') as HTMLSelectElement)?.value || 'TODOS';
 
         const isAdmin = (ctx.perfil?.role || '').toLowerCase() === 'admin';
 
@@ -1059,7 +1083,8 @@ export class RelatoriosComercialView {
           statusOrcamento,
           classificacaoNps,
           perfilPassageiro: 'todos',
-          consultorId: isAdmin ? (consultorSelect || 'TODOS') : (ctx.user?.id || '')
+          consultorId: isAdmin ? (consultorSelect || 'TODOS') : (ctx.user?.id || ''),
+          origemLead: origemLead
         };
 
         ctx.showToast('Segmentação atualizada com sucesso!', 'success');
@@ -1082,7 +1107,8 @@ export class RelatoriosComercialView {
           statusOrcamento: 'TODOS',
           classificacaoNps: 'todos',
           perfilPassageiro: 'todos',
-          consultorId: isAdmin ? 'TODOS' : (ctx.user?.id || '')
+          consultorId: isAdmin ? 'TODOS' : (ctx.user?.id || ''),
+          origemLead: 'TODOS'
         };
         ctx.showToast('Filtros restaurados para o padrão.', 'success');
         ctx.onStateChange();

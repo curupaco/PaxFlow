@@ -32,6 +32,7 @@ export interface FiltrosCampanha {
   classificacaoNps?: 'todos' | 'promotores' | 'neutros' | 'detratores';
   perfilPassageiro?: 'todos' | 'com_criancas' | 'apenas_adultos';
   consultorId?: string; // Se admin pode filtrar por qualquer consultor; se consultor é travado
+  origemLead?: string; // Filtro por canal de captação (ex: 'TODOS', 'WhatsApp', 'Instagram', 'Indicação', etc.)
 }
 
 export interface ItemSegmentacaoCampanha {
@@ -56,6 +57,7 @@ export interface ItemSegmentacaoCampanha {
   qtdPassageiros?: number;
   possuiCriancas?: boolean;
   totalOportunidadesCliente?: number; // Preenchido na visão por cliente único
+  origemLead?: string; // Canal de captação do lead/cliente
 }
 
 export interface MetricasCampanha {
@@ -166,6 +168,9 @@ export class CampanhasService {
       const qtdPass = pass.length || Number(v.numero_passageiros || v.numeroPassageiros || 1);
       const possuiCriancas = pass.some((p: any) => p.tipo === 'CHD' || p.tipo === 'INF' || (p.faixaEtaria && p.faixaEtaria.includes('crianca')));
 
+      // Origem do Lead
+      const origemLeadViagem = v.origem || v.cliente?.lead_origin || v.lead_origin || (v.cliente ? v.cliente.origem : '') || 'Não Informada';
+
       resultado.push({
         id: `viagem-${v.id}`,
         registroId: v.id,
@@ -186,7 +191,8 @@ export class CampanhasService {
         npsNota,
         npsCategoria,
         qtdPassageiros: qtdPass,
-        possuiCriancas
+        possuiCriancas,
+        origemLead: origemLeadViagem
       });
     }
 
@@ -217,6 +223,9 @@ export class CampanhasService {
         statusOrc = 'DESISTENCIA';
       }
 
+      // Origem do Lead
+      const origemLeadOrc = o.origem || o.cliente?.lead_origin || (o.cliente ? o.cliente.origem : '') || 'Não Informada';
+
       resultado.push({
         id: `orcamento-${o.id}`,
         registroId: o.id,
@@ -237,7 +246,8 @@ export class CampanhasService {
         npsNota,
         npsCategoria,
         qtdPassageiros: 1,
-        possuiCriancas: false
+        possuiCriancas: false,
+        origemLead: origemLeadOrc
       });
     }
 
@@ -346,6 +356,15 @@ export class CampanhasService {
         if (filtros.perfilPassageiro === 'apenas_adultos' && item.possuiCriancas) return false;
       }
 
+      // 12. Origem do Lead (Canal de captação)
+      if (filtros.origemLead && filtros.origemLead !== 'TODOS') {
+        const origFiltro = filtros.origemLead.trim().toLowerCase();
+        const itemOrigem = (item.origemLead || '').trim().toLowerCase();
+        if (!itemOrigem || (!itemOrigem.includes(origFiltro) && !origFiltro.includes(itemOrigem))) {
+          return false;
+        }
+      }
+
       return true;
     });
   }
@@ -388,6 +407,12 @@ export class CampanhasService {
 
       // Se qualquer uma das oportunidades tiver crianças
       principal.possuiCriancas = grupo.some(g => g.possuiCriancas);
+
+      // Preserva a origem do lead mais significativa
+      const origemEncontrada = grupo.find(g => g.origemLead && g.origemLead !== 'Não Informada')?.origemLead;
+      if (origemEncontrada) {
+        principal.origemLead = origemEncontrada;
+      }
 
       unificados.push(principal);
     }
@@ -561,6 +586,7 @@ export class CampanhasService {
   static gerarCsv(itens: ItemSegmentacaoCampanha[]): string {
     const colunas = [
       'Tipo',
+      'Origem do Lead',
       'Cliente',
       'Telefone',
       'Email',
@@ -584,6 +610,7 @@ export class CampanhasService {
 
     const linhas = itens.map(i => [
       escape(i.tipo === 'viagem' ? 'Viagem' : 'Orçamento'),
+      escape(i.origemLead || 'Não Informada'),
       escape(i.clienteNome),
       escape(i.clienteTelefone),
       escape(i.clienteEmail || ''),
