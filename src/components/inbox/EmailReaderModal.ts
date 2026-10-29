@@ -207,6 +207,12 @@ export class EmailReaderModal {
               </button>
             ` : ''}
 
+            ${item.type === 'financeiro' ? `
+              <button id="modal-action-financeiro-btn" class="flex-1 sm:flex-none px-4 py-2 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-md shadow-emerald-600/10 flex items-center justify-center gap-1.5" data-conta-id="${item.targetId}">
+                💰 Abrir no Financeiro
+              </button>
+            ` : ''}
+
             ${(options.perfil?.role === 'admin' && options.onDelete) ? `
               <button id="modal-delete-btn" class="px-3.5 py-2 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-xl transition flex items-center justify-center gap-1.5 border border-rose-200/50 dark:border-rose-900/40 shrink-0">
                 🗑️ Excluir
@@ -431,6 +437,12 @@ export class EmailReaderModal {
       } catch (err: any) {
         showCustomAlert(`Erro ao abrir modal de WhatsApp:\n\n${err.message}`, 'Erro');
       }
+    });
+
+    // Evento do botão de ação de Financeiro
+    document.getElementById('modal-action-financeiro-btn')?.addEventListener('click', () => {
+      closeModal(true);
+      window.location.hash = '#financeiro';
     });
 
     // DEEP LINK INTERACTIVE TRIGGER CLICK

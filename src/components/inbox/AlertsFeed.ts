@@ -155,6 +155,9 @@ export class AlertsFeed {
           } else if (a.type === 'direct_message') {
             badgeClass = 'bg-gradient-to-tr from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-500 text-white font-extrabold';
             badgeText = 'Mensagem ✉️';
+          } else if (a.type === 'financeiro') {
+            badgeClass = 'bg-gradient-to-tr from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white font-extrabold shadow-xs';
+            badgeText = 'Financeiro 💰';
           }
 
           const isUnread = !a.arquivado && !a.isSent && !a.isDecision && !this.readList.includes(a.id);

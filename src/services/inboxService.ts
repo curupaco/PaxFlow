@@ -1665,6 +1665,78 @@ export class InboxService {
         console.warn('Erro ao compilar solicitações de escala para o feed do Inbox:', errEscala);
       }
 
+      // --- PART 9: CONTAS A PAGAR & GESTÃO FINANCEIRA ---
+      try {
+        const podeVerFinanceiro = userIsAdmin || 
+          perfil?.role === 'financeiro' || 
+          (perfil as any)?.acesso_financeiro === true || 
+          (perfil as any)?.acessoFinanceiro === true;
+
+        if (podeVerFinanceiro) {
+          const { FinContasPagarService } = await import('./finContasPagarService');
+          const contasCriticas = await FinContasPagarService.obterContasCriticasAlerta(2);
+          const hojeIso = new Date().toISOString().split('T')[0];
+
+          contasCriticas.forEach(conta => {
+            const venc = conta.data_vencimento_operacional || conta.data_vencimento;
+            const uniqueId = `financeiro-conta-${conta.id}`;
+            const isAtrasada = conta.status === 'atrasado' || venc < hojeIso;
+            const isHoje = venc === hojeIso;
+
+            let cardTitle = '';
+            if (isAtrasada) {
+              cardTitle = `🚨 Conta em Atraso: ${conta.descricao}`;
+            } else if (isHoje) {
+              cardTitle = `⏰ Vence Hoje: ${conta.descricao}`;
+            } else {
+              cardTitle = `📅 Vencimento Próximo: ${conta.descricao}`;
+            }
+
+            const valorFmt = (conta.valor_nominal || 0).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL'
+            });
+
+            const vencFormatado = venc.split('-').reverse().join('/');
+            const cardSubject = `Valor: ${valorFmt} | Vencimento: ${vencFormatado} | Favorecido: ${conta.favorecido || 'Não informado'}`;
+            
+            const cardBody = `
+              <div class="space-y-2">
+                <p>Conta a pagar pendente de liquidação no módulo financeiro:</p>
+                <p>• <strong>Descrição:</strong> ${conta.descricao || 'Sem descrição'}</p>
+                <p>• <strong>Favorecido / Fornecedor:</strong> ${conta.favorecido || 'Não informado'}</p>
+                <p>• <strong>Valor Nominal:</strong> <span class="font-bold text-rose-600 dark:text-rose-400">${valorFmt}</span></p>
+                <p>• <strong>Vencimento Original:</strong> ${conta.data_vencimento.split('-').reverse().join('/')}</p>
+                <p>• <strong>Vencimento Operacional:</strong> <span class="font-bold">${vencFormatado}</span></p>
+                <p>• <strong>Forma de Pagamento:</strong> ${(conta.forma_pagamento || 'pix').toUpperCase()}</p>
+                ${conta.observacoes ? `<p>• <strong>Observações:</strong> ${conta.observacoes}</p>` : ''}
+              </div>
+            `;
+
+            list.push({
+              id: uniqueId,
+              type: 'financeiro',
+              title: cardTitle,
+              sender: 'Financeiro PaxFlow',
+              senderAvatar: undefined,
+              dateStr: new Date(conta.created_at || Date.now()).toLocaleDateString('pt-BR'),
+              subject: cardSubject,
+              body: cardBody,
+              targetId: conta.id,
+              arquivado: archivedSet.has(uniqueId),
+              isSent: false,
+              isDecision: false,
+              consultorId: user.id,
+              consultorNome: perfil?.nome || 'Operador Financeiro',
+              createdAt: conta.created_at || new Date().toISOString(),
+              eventDate: venc
+            });
+          });
+        }
+      } catch (errFin) {
+        console.warn('Erro ao compilar alertas financeiros para o feed do Inbox:', errFin);
+      }
+
     } catch (err) {
       console.error('Erro ao compilar alertas no serviço:', err);
     }

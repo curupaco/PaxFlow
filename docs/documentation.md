@@ -1465,6 +1465,11 @@ O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operan
 5. **Trilha Imutável de Auditoria (`fin_auditoria`)**:
    - Todo ciclo de vida dos títulos financeiros (criação, alteração, baixa, estorno e cancelamento) é gravado de forma imutável com carimbo de data/hora, identificador do usuário e payload JSONB com valores anteriores e novos.
 
+6. **Badge Reativo na Sidebar & Notificações no Inbox**:
+   - **Indicador Dinâmico no Menu Lateral (`nav-financeiro-badge`)**: Monitora ativamente compromissos críticos. Exibe badge vermelha pulsante (`animate-pulse`) se houver títulos atrasados, badge âmbar se houver contas vencendo no dia ou nas próximas 48h, ou oculta quando todos os pagamentos estiverem em dia.
+   - **Compilação no Inbox (`InboxService`)**: Consultores credenciados e administradores recebem no feed unificado do Inbox cards identificados pelo badge `Financeiro 💰`, contendo dados do fornecedor, valor nominal formatado, vencimento original vs operacional, forma de pagamento e atalho direto `💰 Abrir no Financeiro`.
+   - **Reatividade sem Recarregamento**: Evento de sistema `paxflow-financeiro-updated` dispara atualizações instantâneas de badge na Sidebar após qualquer mutação (cadastro, baixa, estorno ou cancelamento).
+
 ---
 
 ## 4. Diferenciais Competitivos

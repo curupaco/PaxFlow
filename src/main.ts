@@ -121,6 +121,11 @@ class App {
     window.addEventListener('paxflow-inbox-updated', () => {
       this.atualizarInboxBadge();
     });
+
+    // Ouvinte para reatividade do financeiro atualizado
+    window.addEventListener('paxflow-financeiro-updated', () => {
+      this.atualizarFinanceiroBadge();
+    });
   }
 
   /**
@@ -618,6 +623,7 @@ class App {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Financeiro</span>
+                      <span id="nav-financeiro-badge" class="hidden"></span>
                     </button>
                   `;
                 }
@@ -728,6 +734,7 @@ class App {
     this.atualizarSidebarProfileFooter();
     this.setupNavigationListeners();
     this.atualizarInboxBadge();
+    this.atualizarFinanceiroBadge();
 
     // Event listener para sair do modo Sandbox no banner
     document.getElementById('btn-sair-demo-banner')?.addEventListener('click', async () => {
@@ -1462,6 +1469,7 @@ class App {
 
     this.atualizarSidebarProfileFooter();
     this.atualizarInboxBadge();
+    this.atualizarFinanceiroBadge();
   }
 
   /**
@@ -1510,6 +1518,54 @@ class App {
       }
     } catch (err) {
       console.warn('Erro ao atualizar badge do inbox:', err);
+    }
+  }
+
+  /**
+   * Busca e atualiza o badge de alertas de contas a pagar no menu lateral de forma assíncrona
+   */
+  private async atualizarFinanceiroBadge(): Promise<void> {
+    if (!this.user) return;
+    const podeAcessarFinanceiro = this.perfil?.role === 'admin' || 
+      this.perfil?.role === 'financeiro' || 
+      (this.perfil as any)?.acesso_financeiro === true || 
+      (this.perfil as any)?.acessoFinanceiro === true;
+
+    if (!podeAcessarFinanceiro) return;
+
+    try {
+      const { FinContasPagarService } = await import('./services/finContasPagarService');
+      const resumo = await FinContasPagarService.obterResumoBadge();
+
+      const badge = document.getElementById('nav-financeiro-badge');
+      if (badge) {
+        if (resumo.totalCriticas > 0) {
+          badge.textContent = String(resumo.totalCriticas);
+          badge.classList.remove('hidden');
+
+          const isCollapsed = this.sidebarCollapsed;
+          if (resumo.nivelAlerta === 'urgente') {
+            // Há contas atrasadas: destaque vermelho pulsante
+            if (isCollapsed) {
+              badge.className = "absolute top-2.5 right-2.5 px-1 py-0.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-black bg-rose-500 text-white animate-pulse shadow-sm";
+            } else {
+              badge.className = "ml-auto px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white animate-pulse shadow-sm";
+            }
+          } else {
+            // Há contas vencendo hoje ou próximas 48h: destaque âmbar/alerta
+            if (isCollapsed) {
+              badge.className = "absolute top-2.5 right-2.5 px-1 py-0.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-black bg-amber-500 text-white shadow-sm";
+            } else {
+              badge.className = "ml-auto px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500 text-white shadow-sm";
+            }
+          }
+        } else {
+          badge.classList.add('hidden');
+          badge.textContent = '';
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao atualizar badge do financeiro:', err);
     }
   }
 }

@@ -921,6 +921,7 @@ export class FinanceiroPage {
             this.perfil?.nome
           );
           if (res.sucesso) {
+            window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
             await showCustomAlert('Título cancelado com sucesso!', 'Sucesso');
             await this.carregarDadosAbaAtiva();
             this.render();
@@ -946,6 +947,7 @@ export class FinanceiroPage {
             this.perfil?.nome
           );
           if (res.sucesso) {
+            window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
             await showCustomAlert('Baixa estornada com sucesso!', 'Sucesso');
             await this.carregarDadosAbaAtiva();
             this.render();
@@ -1248,6 +1250,7 @@ export class FinanceiroPage {
 
       if (res.sucesso) {
         fechar();
+        window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
         await showCustomAlert('Baixa efetuada com sucesso!', 'Sucesso');
         await this.carregarDadosAbaAtiva();
         this.render();
@@ -1407,6 +1410,7 @@ export class FinanceiroPage {
 
       if (res.sucesso) {
         fechar();
+        window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
         await showCustomAlert('Conta cadastrada com sucesso!', 'Sucesso');
         await this.carregarDadosAbaAtiva();
         this.render();

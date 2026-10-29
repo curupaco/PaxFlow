@@ -810,4 +810,114 @@ export class FinContasPagarService {
       return [];
     }
   }
+
+  /**
+   * Obtém contas a pagar críticas que necessitam de atenção imediata:
+   * 1. Contas atrasadas (vencimento operacional < hoje)
+   * 2. Contas vencendo hoje
+   * 3. Contas vencendo nos próximos N dias (padrão 2 dias / 48 horas)
+   */
+  public static async obterContasCriticasAlerta(limiteDias = 2): Promise<FinContaPagar[]> {
+    try {
+      const hoje = new Date();
+      const hojeIso = hoje.toISOString().split('T')[0];
+      
+      const limiteDate = new Date(hoje);
+      limiteDate.setDate(limiteDate.getDate() + limiteDias);
+      const limiteIso = limiteDate.toISOString().split('T')[0];
+
+      const { data, error } = await supabase
+        .from('fin_contas_pagar')
+        .select(`
+          *,
+          categoria:fin_categorias(id, nome, codigo),
+          subcategoria:fin_subcategorias(id, nome)
+        `)
+        .in('status', ['pendente', 'parcial', 'atrasado'])
+        .lte('data_vencimento', limiteIso)
+        .order('data_vencimento', { ascending: true });
+
+      if (error) {
+        if (error.code === '42P01' || error.code === '42703') {
+          return [];
+        }
+        throw error;
+      }
+
+      const contasMapeadas: FinContaPagar[] = (data || []).map(conta => {
+        const vencOperacional = conta.data_vencimento_operacional || this.calcularVencimentoOperacional(
+          conta.data_vencimento,
+          conta.categoria?.nome,
+          conta.descricao
+        );
+
+        let statusFinal = conta.status;
+        if ((statusFinal === 'pendente' || statusFinal === 'parcial') && vencOperacional < hojeIso) {
+          statusFinal = 'atrasado';
+        }
+
+        return {
+          ...conta,
+          data_vencimento_operacional: vencOperacional,
+          status: statusFinal
+        };
+      });
+
+      // Filtra as que realmente caem até o limite operacional de 48h
+      return contasMapeadas.filter(c => {
+        const venc = c.data_vencimento_operacional || c.data_vencimento;
+        return venc <= limiteIso;
+      });
+    } catch (err) {
+      console.warn('[FinContasPagarService] Erro ao obter contas críticas para alertas:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Retorna o resumo consolidado de status e quantidades para o badge da sidebar
+   */
+  public static async obterResumoBadge(): Promise<{
+    totalAtrasadas: number;
+    totalVencendoHoje: number;
+    totalVencendo48h: number;
+    totalCriticas: number;
+    nivelAlerta: 'urgente' | 'atencao' | 'normal';
+  }> {
+    try {
+      const contas = await this.obterContasCriticasAlerta(2);
+      const hojeIso = new Date().toISOString().split('T')[0];
+      
+      let totalAtrasadas = 0;
+      let totalVencendoHoje = 0;
+      let totalVencendo48h = 0;
+
+      for (const conta of contas) {
+        const venc = conta.data_vencimento_operacional || conta.data_vencimento;
+        if (conta.status === 'atrasado' || venc < hojeIso) {
+          totalAtrasadas++;
+        } else if (venc === hojeIso) {
+          totalVencendoHoje++;
+        } else {
+          totalVencendo48h++;
+        }
+      }
+
+      const totalCriticas = totalAtrasadas + totalVencendoHoje + totalVencendo48h;
+      const nivelAlerta: 'urgente' | 'atencao' | 'normal' = 
+        totalAtrasadas > 0 ? 'urgente' : (totalVencendoHoje > 0 || totalVencendo48h > 0 ? 'atencao' : 'normal');
+
+      return {
+        totalAtrasadas,
+        totalVencendoHoje,
+        totalVencendo48h,
+        totalCriticas,
+        nivelAlerta
+      };
+    } catch (e) {
+      console.warn('[FinContasPagarService] Erro ao calcular resumo de badge:', e);
+      return { totalAtrasadas: 0, totalVencendoHoje: 0, totalVencendo48h: 0, totalCriticas: 0, nivelAlerta: 'normal' };
+    }
+  }
 }
+

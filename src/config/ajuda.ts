@@ -1051,6 +1051,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🗓️ Calendário Visual de Vencimentos & Picos de Caixa',
     description: 'Como funciona a visualização diária do fluxo de caixa e os dias de pico financeiro.',
     details: 'Na aba **Fluxo de Caixa & DRE**, o PaxFlow exibe uma grade mensal completa (domingo a sábado) para monitorar a liquidez diária da agência:\n\n1. **Picos Estratégicos (Dias 1, 5, 10, 15, 20 e 30)**: As datas com grande concentração de compromissos contratuais recebem badge destacada `⚡ Pico` e contorno visual âmbar para facilitar o provisionamento de saldo.\n2. **Totalizadores & Maior Desembolso**: O topo do painel identifica automaticamente o dia de maior concentração financeira do mês, a quantidade de dias com vencimentos ativos e a média de desembolso por dia.\n3. **Células Interativas**: Cada dia com títulos exibe o somatório nominal em reais e uma pílula com a contagem de contas e cores por status (🟢 Verde se todas estiverem pagas, 🟡 Âmbar se pendentes e 🔴 Vermelho piscante se houver contas em atraso).\n4. **Modal de Detalhes em 1-Clique**: Ao clicar sobre qualquer dia com movimentação, o sistema abre uma listagem focada de todos os títulos da data com botão de liquidação imediata.'
+  },
+  {
+    id: 'fin-alertas-badge',
+    modulo: 'financeiro',
+    label: '🔔 Alertas Reativos de Contas a Pagar & Badge na Sidebar',
+    description: 'Como o PaxFlow notifica o operador sobre contas vencendo e pendências críticas.',
+    details: 'Para que nenhum pagamento seja esquecido ou pague juros por atraso, o PaxFlow monitora os compromissos em tempo real:\n\n1. **Badge Reativo no Menu Lateral**: No botão \"Financeiro\" da barra de navegação, um indicador numérico informa a quantidade de pendências críticas imediatas. Se houver contas em atraso, a badge pulsa em vermelho vivo (`🔴`); se não houver atrasos mas houver contas vencendo hoje ou nas próximas 48 horas, a badge permanece em tom âmbar (`🟡`).\n2. **Notificações Integradas ao Inbox**: Operadores e administradores recebem cards prioritários com a badge `Financeiro 💰` em sua Caixa de Entrada com todos os dados da conta (fornecedor, valor, vencimento operacional e forma de pagamento).\n3. **Navegação em 1-Clique**: No modal de leitura da notificação no Inbox, o botão `💰 Abrir no Financeiro` direciona instantaneamente o gestor para a tela de pagamentos.\n4. **Sincronização Automática**: Qualquer baixa, cancelamento, estorno ou criação de conta atualiza o contador do menu lateral imediatamente sem necessidade de recarregar a página.'
   }
 ];
 

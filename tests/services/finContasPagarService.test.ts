@@ -193,4 +193,85 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     expect(dia15.qtdTitulos).toBe(0);
     expect(cal.diasComVencimento).toBe(0);
   });
+
+  it('deve obter contas críticas de alerta e classificar nível de urgência do badge', async () => {
+    // Setup
+    const hoje = new Date();
+    const hojeIso = hoje.toISOString().split('T')[0];
+    const ontemDate = new Date(hoje);
+    ontemDate.setDate(ontemDate.getDate() - 1);
+    const ontemIso = ontemDate.toISOString().split('T')[0];
+
+    const mockSelect = vi.fn().mockReturnValue({
+      in: vi.fn().mockReturnValue({
+        lte: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({
+            data: [
+              {
+                id: 'conta-atrasada-1',
+                descricao: 'Conta de Luz Atrasada',
+                valor_nominal: 350,
+                status: 'pendente',
+                data_vencimento: ontemIso,
+                data_vencimento_operacional: ontemIso
+              },
+              {
+                id: 'conta-hoje-2',
+                descricao: 'Internet Vence Hoje',
+                valor_nominal: 180,
+                status: 'pendente',
+                data_vencimento: hojeIso,
+                data_vencimento_operacional: hojeIso
+              }
+            ],
+            error: null
+          })
+        })
+      })
+    });
+
+    vi.mocked(supabase.from).mockReturnValue({
+      select: mockSelect
+    } as any);
+
+    // Action
+    const contasCriticas = await FinContasPagarService.obterContasCriticasAlerta(2);
+    const resumo = await FinContasPagarService.obterResumoBadge();
+
+    // Assert
+    expect(contasCriticas.length).toBe(2);
+    expect(contasCriticas[0].status).toBe('atrasado');
+    expect(resumo.totalAtrasadas).toBe(1);
+    expect(resumo.totalVencendoHoje).toBe(1);
+    expect(resumo.totalCriticas).toBe(2);
+    expect(resumo.nivelAlerta).toBe('urgente');
+  });
+
+  it('deve retornar vazio de forma segura ao capturar erro 42P01 ou 42703 (Zero-Break Fallback)', async () => {
+    // Setup
+    const mockSelect = vi.fn().mockReturnValue({
+      in: vi.fn().mockReturnValue({
+        lte: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({
+            data: null,
+            error: { code: '42P01', message: 'relation does not exist' }
+          })
+        })
+      })
+    });
+
+    vi.mocked(supabase.from).mockReturnValue({
+      select: mockSelect
+    } as any);
+
+    // Action
+    const contas = await FinContasPagarService.obterContasCriticasAlerta(2);
+    const resumo = await FinContasPagarService.obterResumoBadge();
+
+    // Assert
+    expect(contas).toEqual([]);
+    expect(resumo.totalCriticas).toBe(0);
+    expect(resumo.nivelAlerta).toBe('normal');
+  });
 });
+
