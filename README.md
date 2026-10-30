@@ -20,18 +20,18 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
-- **Unificação da Conciliação no Módulo Financeiro & Submenu Indentado na Sidebar [NEW]** — Evolução estrutural da navegação e organização contábil do PaxFlow:
-  - **Módulo de Conciliação Integrado ao Financeiro**: Incorporação definitiva da Conciliação Bancária (*FinRecon™*) para dentro do módulo **Financeiro**, unificando sob uma hierarquia única e intuitiva o controle de contas a pagar, remessas, fluxo de caixa, conciliação e plano de contas.
+- **Unificação de Contas a Pagar, Remessas & Conciliação no Módulo Financeiro [NEW]** — Evolução estrutural da navegação e organização contábil do PaxFlow:
+  - **Experiência Unificada em Contas a Pagar**: Eliminação de rotas fragmentadas. Todos os títulos — avulsos ou agrupados em lotes de remessa — agora residem exclusivamente na tela unificada de **Contas a Pagar**, dispondo de um alternador visual instantâneo (`📋 Todos os Títulos`, `📄 Apenas Avulsos` e `📦 Lotes de Remessa`), seleção múltipla via checkbox, barra de ação flutuante e modal de agrupamento em lote (`FinRemessasService`).
+  - **Módulo de Conciliação Integrado ao Financeiro**: Incorporação definitiva da Conciliação Bancária (*FinRecon™*) para dentro do módulo **Financeiro**, unificando sob uma hierarquia única e intuitiva o controle contábil.
   - **Fim das Abas Horizontais no Financeiro**: Eliminação da barra horizontal de abas internas no topo de `Financeiro.ts`, conferindo 100% de área útil para tabelas densas, calendários de fluxo de caixa e interfaces de conciliação.
-  - **Menu Expansível (Accordion) com Submenu Indentado na Sidebar**:
-    - Item Pai `Financeiro` com chevron expansível `▾`, badge reativo de pendências e contêiner indentado com borda conectora lateral contendo os 5 submódulos:
-      - `📋 Contas a Pagar` (`#financeiro?sub=contas-pagar`)
-      - `📦 Remessas Agrupadas` (`#financeiro?sub=remessas`)
+  - **Menu Expansível (Accordion) com Submenu Indentado na Sidebar (4 Submódulos)**:
+    - Item Pai `Financeiro` com chevron expansível `▾`, badge reativo de pendências e contêiner indentado com borda conectora lateral contendo os 4 submódulos objetivos:
+      - `📋 Contas a Pagar` (`#financeiro?sub=contas-pagar`) — Títulos avulsos, parcelamentos e remessas agrupadas em lote.
       - `📈 Fluxo de Caixa & DRE` (`#financeiro?sub=fluxo-caixa`)
       - `🪙 Conciliação` (`#financeiro?sub=conciliacao`)
       - `⚙️ Plano de Contas` (`#financeiro?sub=plano-contas`)
     - Expansão automática do menu ao clicar no ícone em modo colapsado e sincronização bidirecional de rotas na URL da SPA.
-    - Redirecionamento transparente e retrocompatível de links antigos de `#conciliacao` para `#financeiro?sub=conciliacao`.
+    - Redirecionamento transparente e retrocompatível de links antigos de `#conciliacao` e `#financeiro?sub=remessas` para `#financeiro?sub=contas-pagar`.
   - **Polimento Visual, Responsividade Mobile-First & UX Aprimorada [NEW]**:
     - **Padrão de Design Tokens PaxFlow nos Indicadores Superiores**: Cards de KPIs reformulados com padding respirável (`p-5 sm:p-6`), cantos arredondados `rounded-3xl`, faixas temáticas superiores de acento e pílulas sem corte de dados.
     - **Trilha de Navegação (Breadcrumb) Elegante**: Orientação espacial contínua no topo de todos os submódulos (`Financeiro › Contas a Pagar`, `Financeiro › Conciliação`, etc.), eliminando desorientação em smartphones quando a sidebar estiver recolhida.

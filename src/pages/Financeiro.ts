@@ -18,7 +18,7 @@ import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { renderHelpIcon } from '../utils/helpHelper';
 import { ConciliacaoPage } from './Conciliacao';
 
-export type FinSubView = 'contas' | 'remessas' | 'fluxo' | 'conciliacao' | 'plano';
+export type FinSubView = 'contas' | 'fluxo' | 'conciliacao' | 'plano';
 
 export class FinanceiroPage {
   private container: HTMLElement;
@@ -35,6 +35,10 @@ export class FinanceiroPage {
   private categorias: FinCategoria[] = [];
   private subcategorias: FinSubcategoria[] = [];
   private contasBancarias: FinContaBancaria[] = [];
+
+  // Modo de visualização de agrupamento em Contas a Pagar
+  private filtroAgrupamento: 'todos' | 'avulsos' | 'remessas' = 'todos';
+  private titulosSelecionados: Set<string> = new Set();
 
   // Indicadores de liquidez
   private resumo: FinResumoLiquidez = {
@@ -58,7 +62,7 @@ export class FinanceiroPage {
     buscaFavorecido: ''
   };
 
-  // Estado da aba de Remessas (IDs de remessas expandidas)
+  // Estado das Remessas (IDs de remessas com accordion expandido)
   private remessasExpandidas: Set<string> = new Set();
 
   constructor(container: HTMLElement) {
@@ -114,14 +118,17 @@ export class FinanceiroPage {
     const mapa: Record<string, FinSubView> = {
       'contas': 'contas',
       'contas-pagar': 'contas',
-      'remessas': 'remessas',
-      'remessas-agrupadas': 'remessas',
+      'remessas': 'contas',
+      'remessas-agrupadas': 'contas',
       'fluxo': 'fluxo',
       'fluxo-caixa': 'fluxo',
       'conciliacao': 'conciliacao',
       'plano': 'plano',
       'plano-contas': 'plano'
     };
+    if (slug === 'remessas' || slug === 'remessas-agrupadas') {
+      this.filtroAgrupamento = 'remessas';
+    }
     const target = mapa[slug] || 'contas';
     if (this.activeTab !== target) {
       this.activeTab = target;
@@ -152,11 +159,13 @@ export class FinanceiroPage {
     this.carregando = true;
     try {
       if (this.activeTab === 'contas' || this.activeTab === 'fluxo') {
-        const listaContas = await FinContasPagarService.listarContas(this.filtros);
+        const [listaContas, listaRemessas] = await Promise.all([
+          FinContasPagarService.listarContas(this.filtros),
+          FinRemessasService.listarRemessas()
+        ]);
         this.contas = listaContas;
+        this.remessas = listaRemessas;
         this.resumo = FinContasPagarService.calcularResumoLiquidez(listaContas);
-      } else if (this.activeTab === 'remessas') {
-        this.remessas = await FinRemessasService.listarRemessas();
       }
     } catch (err) {
       console.error('[FinanceiroPage] Erro ao carregar dados:', err);
@@ -196,7 +205,7 @@ export class FinanceiroPage {
     }> = {
       contas: {
         titulo: 'Contas a Pagar',
-        subtitulo: 'Controle de liquidez, despesas fixas recorrentes, parcelamentos e liquidações bancárias.',
+        subtitulo: 'Controle integral de despesas: títulos avulsos, parcelamentos e remessas agrupadas em lote.',
         icone: '📋',
         helpId: 'fin-contas-pagar',
         breadcrumb: 'Contas a Pagar',
@@ -204,20 +213,11 @@ export class FinanceiroPage {
           <button id="btn-exportar-contas-csv" class="h-[42px] px-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 border border-slate-200/60 dark:border-slate-700">
             <span>📥</span> Exportar CSV
           </button>
+          <button id="btn-agrupar-remessa-topo" class="h-[42px] px-3.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 border border-indigo-200/60 dark:border-indigo-800/60">
+            <span>📦</span> Agrupar em Lote
+          </button>
           <button id="btn-nova-conta" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
             <span>+</span> Nova Despesa
-          </button>
-        `
-      },
-      remessas: {
-        titulo: 'Remessas Agrupadas',
-        subtitulo: 'Agrupamento de contas a pagar para autorização e liquidação conjunta via PIX/TED.',
-        icone: '📦',
-        helpId: 'fin-remessas',
-        breadcrumb: 'Remessas Agrupadas',
-        botoesAcao: `
-          <button id="btn-nova-remessa" class="h-[42px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-2">
-            <span>📦</span> Agrupar Nova Remessa
           </button>
         `
       },
@@ -380,59 +380,6 @@ export class FinanceiroPage {
           </div>
         ` : ''}
 
-        ${this.activeTab === 'remessas' ? `
-          <!-- Cards de Indicadores de Remessas Agrupadas -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Lotes Pendentes</span>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 whitespace-nowrap">
-                  ${qtdRemessasAbertas} lotes
-                </span>
-              </div>
-              <div class="mt-3">
-                <span class="block text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                  ${formatarMoeda(totalRemessasAbertas)}
-                </span>
-                <span class="block text-[11px] text-slate-400 font-medium mt-1">Aguardando liquidação conjunta</span>
-              </div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Total Liquidado</span>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 whitespace-nowrap">
-                  ${qtdRemessasPagas} pagas
-                </span>
-              </div>
-              <div class="mt-3">
-                <span class="block text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                  ${formatarMoeda(totalRemessasPagas)}
-                </span>
-                <span class="block text-[11px] text-slate-400 font-medium mt-1">Remessas com baixa concluída</span>
-              </div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div class="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Média por Lote</span>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 whitespace-nowrap">
-                  ${this.remessas.length} total
-                </span>
-              </div>
-              <div class="mt-3">
-                <span class="block text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
-                  ${formatarMoeda(mediaPorRemessa)}
-                </span>
-                <span class="block text-[11px] text-slate-400 font-medium mt-1">Ticket médio das remessas consolidadas</span>
-              </div>
-            </div>
-          </div>
-        ` : ''}
-
         <!-- Conteúdo Específico da Sub-Visão Ativa -->
         <div id="fin-tab-content">
           ${this.renderAbaConteudo()}
@@ -454,8 +401,6 @@ export class FinanceiroPage {
     switch (this.activeTab) {
       case 'contas':
         return this.renderAbaContas();
-      case 'remessas':
-        return this.renderAbaRemessas();
       case 'fluxo':
         return this.renderAbaFluxoCaixa();
       case 'conciliacao':
@@ -487,6 +432,17 @@ export class FinanceiroPage {
       return `${d}/${m}/${y}`;
     };
 
+    const contasAvulsas = this.contas.filter(c => !c.remessa_id);
+    const contasAgrupadas = this.contas.filter(c => !!c.remessa_id);
+    const contasParaExibir = this.filtroAgrupamento === 'avulsos' 
+      ? contasAvulsas 
+      : this.contas;
+
+    const totalSelecionado = Array.from(this.titulosSelecionados).reduce((acc, id) => {
+      const conta = this.contas.find(c => c.id === id);
+      return acc + (conta ? Number(conta.valor_nominal || 0) : 0);
+    }, 0);
+
     const temFiltroAtivo = 
       this.filtros.status !== 'todos' || 
       Boolean(this.filtros.tipoCustoId) || 
@@ -502,29 +458,50 @@ export class FinanceiroPage {
 
     const isAdmin = this.perfil?.role === 'admin';
 
+    // Métricas para Scorecards de Remessas
+    const totalRemessasAbertas = this.remessas
+      .filter(r => r.status !== 'paga')
+      .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    const qtdRemessasAbertas = this.remessas.filter(r => r.status !== 'paga').length;
+    const totalRemessasPagas = this.remessas
+      .filter(r => r.status === 'paga')
+      .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    const qtdRemessasPagas = this.remessas.filter(r => r.status === 'paga').length;
+    const mediaPorRemessa = this.remessas.length > 0
+      ? (totalRemessasAbertas + totalRemessasPagas) / this.remessas.length
+      : 0;
+
     return `
       <div class="space-y-4">
-        <!-- Barra de Filtros com Reset e Exportação -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">Filtros & Busca</span>
-              ${temFiltroAtivo ? `
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/40">Filtros Ativos</span>
-              ` : ''}
+        <!-- Barra de Filtros Unificada com Alternador de Agrupamento -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
+          <!-- Topo dos Filtros: Alternador de Visão de Agrupamento & Ações Rápidas -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl w-full sm:w-fit overflow-x-auto">
+              <button data-modo="todos" class="btn-filtro-agrupamento flex-1 sm:flex-initial px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${this.filtroAgrupamento === 'todos' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'}">
+                <span>📋</span> Todos (${this.contas.length})
+              </button>
+              <button data-modo="avulsos" class="btn-filtro-agrupamento flex-1 sm:flex-initial px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${this.filtroAgrupamento === 'avulsos' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'}">
+                <span>📄</span> Apenas Avulsos (${contasAvulsas.length})
+              </button>
+              <button data-modo="remessas" class="btn-filtro-agrupamento flex-1 sm:flex-initial px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${this.filtroAgrupamento === 'remessas' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'}">
+                <span>📦</span> Lotes de Remessa (${this.remessas.length})
+              </button>
             </div>
-            <div class="flex items-center gap-2">
+
+            <div class="flex items-center gap-2 self-end sm:self-auto">
               ${temFiltroAtivo ? `
-                <button id="btn-limpar-filtros" class="h-[32px] px-2.5 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer flex items-center gap-1">
+                <button id="btn-limpar-filtros" class="h-[36px] px-3 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer flex items-center gap-1 border border-rose-200/60 dark:border-rose-900/40">
                   ✕ Limpar Filtros
                 </button>
               ` : ''}
-              <button id="btn-exportar-csv-tabela" class="h-[32px] px-2.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1">
+              <button id="btn-exportar-csv-tabela" class="h-[36px] px-3 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1 border border-slate-200/60 dark:border-slate-700">
                 📥 Exportar CSV
               </button>
             </div>
           </div>
 
+          <!-- Campos de Filtro (Mês, Status, Tipo, Categoria, Busca) -->
           <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
             <div>
               <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Mês de Referência</label>
@@ -573,190 +550,451 @@ export class FinanceiroPage {
           </div>
         </div>
 
-        <!-- 1. Visão Desktop: Tabela com Rolagem Defensiva (hidden md:block) -->
-        <div class="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-          <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
-            <table class="w-full text-left border-collapse min-w-[900px]">
-              <thead>
-                <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
-                  <th class="py-3 px-4">Vencimento</th>
-                  <th class="py-3 px-4">Favorecido / Descrição</th>
-                  <th class="py-3 px-4">Tipo / Categoria</th>
-                  <th class="py-3 px-4 text-right">Valor Nominal</th>
-                  <th class="py-3 px-4 text-right">Valor Pago</th>
-                  <th class="py-3 px-4 text-center">Status</th>
-                  <th class="py-3 px-4 w-32 text-center">Ações</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300">
-                ${this.contas.length === 0 ? `
-                  <tr>
-                    <td colspan="7" class="py-12 text-center text-slate-400 font-bold">
-                      Nenhuma conta localizada para o período e filtros selecionados.
-                    </td>
+        <!-- Barra de Ação Flutuante para Itens Selecionados -->
+        ${this.titulosSelecionados.size > 0 ? `
+          <div class="p-3.5 sm:p-4 bg-indigo-600 text-white rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl shadow-indigo-600/25 animate-scale-in">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-xl shrink-0">
+                📦
+              </div>
+              <div>
+                <span class="font-black text-sm block">${this.titulosSelecionados.size} títulos avulsos selecionados</span>
+                <span class="text-[11px] text-indigo-100 font-medium">Total Consolidado: ${formatarMoeda(totalSelecionado)}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <button id="btn-desmarcar-selecao" class="flex-1 sm:flex-none px-3.5 py-2 text-xs font-bold text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer">
+                Desmarcar
+              </button>
+              <button id="btn-agrupar-selecionadas" class="flex-1 sm:flex-none h-[40px] px-5 bg-white text-indigo-700 hover:bg-indigo-50 font-black text-xs rounded-xl shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+                <span>✓</span> Agrupar em Lote de Remessa
+              </button>
+            </div>
+          </div>
+        ` : ''}
+
+        ${this.filtroAgrupamento === 'remessas' ? `
+          <!-- VISÃO DE LOTES DE REMESSA CONSOLIDADOS (ACCORDION MESTRE-DETALHE) -->
+          <!-- Cards de Indicadores de Remessas -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Lotes Pendentes</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 whitespace-nowrap">
+                  ${qtdRemessasAbertas} lotes
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                  ${formatarMoeda(totalRemessasAbertas)}
+                </span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">Aguardando liquidação conjunta</span>
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Total Liquidado</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 whitespace-nowrap">
+                  ${qtdRemessasPagas} pagas
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                  ${formatarMoeda(totalRemessasPagas)}
+                </span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">Lotes de remessa com baixa concluída</span>
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div class="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Média por Lote</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 whitespace-nowrap">
+                  ${this.remessas.length} total
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
+                  ${formatarMoeda(mediaPorRemessa)}
+                </span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">Ticket médio das remessas consolidadas</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabela Desktop de Lotes de Remessa -->
+          <div class="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
+              <table class="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
+                    <th class="py-3 px-4 w-10 text-center"></th>
+                    <th class="py-3 px-4">Favorecido Principal / Nome do Lote</th>
+                    <th class="py-3 px-4">Data Prevista</th>
+                    <th class="py-3 px-4 text-center">Qtd. Títulos</th>
+                    <th class="py-3 px-4 text-right">Valor Consolidado</th>
+                    <th class="py-3 px-4 text-center">Status</th>
+                    <th class="py-3 px-4 w-36 text-center">Ações</th>
                   </tr>
-                ` : this.contas.map(c => {
-                  const ehEstimado = c.valor_estimado;
-                  const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
-
-                  return `
-                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                      <td class="py-3 px-4 whitespace-nowrap">
-                        <span class="font-extrabold text-slate-900 dark:text-slate-100 block">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
-                        ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
-                          <span class="text-[9px] text-slate-400 block font-semibold" title="Vencimento nominal no final de semana / feriado">Nominal: ${formatarData(c.data_vencimento)}</span>
-                        ` : ''}
-                      </td>
-
-                      <td class="py-3 px-4">
-                        <span class="font-bold text-slate-800 dark:text-slate-100 block truncate max-w-xs">${c.favorecido}</span>
-                        <span class="text-[10px] text-slate-400 block truncate max-w-xs">${c.descricao || 'Despesa'} ${parcelaLabel}</span>
-                      </td>
-
-                      <td class="py-3 px-4 whitespace-nowrap">
-                        <span class="font-bold text-slate-700 dark:text-slate-300 block">${c.categoria?.nome || 'Geral'}</span>
-                        <span class="text-[10px] text-slate-400 block">${c.tipo_custo?.nome || 'Operacional'}</span>
-                      </td>
-
-                      <td class="py-3 px-4 text-right whitespace-nowrap">
-                        <span class="font-extrabold text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
-                        ${ehEstimado ? `
-                          <span class="ml-1 text-[9px] bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 px-1 py-0.5 rounded font-black uppercase">Estimado</span>
-                        ` : ''}
-                      </td>
-
-                      <td class="py-3 px-4 text-right whitespace-nowrap">
-                        <span class="font-extrabold ${c.status === 'pago' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
-                          ${c.valor_pago && c.valor_pago > 0 ? formatarMoeda(c.valor_pago) : '-'}
-                        </span>
-                      </td>
-
-                      <td class="py-3 px-4 text-center whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
-                          ${c.status}
-                        </span>
-                      </td>
-
-                      <td class="py-3 px-4 w-32 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center gap-1">
-                          ${c.status !== 'pago' && c.status !== 'cancelado' ? `
-                            <button data-id="${c.id}" class="btn-baixar-conta p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg transition cursor-pointer" title="Dar Baixa Inteligente">
-                              ✅
-                            </button>
-                          ` : ''}
-
-                          <button data-id="${c.id}" class="btn-editar-conta p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg transition cursor-pointer" title="Editar Título">
-                            ✏️
-                          </button>
-
-                          ${c.comprovante_url ? `
-                            <a href="${c.comprovante_url}" target="_blank" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg transition cursor-pointer" title="Ver Comprovante Anexo">
-                              📎
-                            </a>
-                          ` : ''}
-
-                          ${c.status === 'pago' && isAdmin ? `
-                            <button data-id="${c.id}" class="btn-estornar-conta p-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-lg transition cursor-pointer" title="Estornar Baixa (Admin)">
-                              ↩️
-                            </button>
-                          ` : ''}
-
-                          ${c.status !== 'cancelado' && isAdmin ? `
-                            <button data-id="${c.id}" class="btn-cancelar-conta p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-lg transition cursor-pointer" title="Cancelar Título (Admin)">
-                              🚫
-                            </button>
-                          ` : ''}
-                        </div>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300">
+                  ${this.remessas.length === 0 ? `
+                    <tr>
+                      <td colspan="7" class="py-12 text-center text-slate-400 font-bold">
+                        Nenhum lote de remessa cadastrado. Selecione títulos avulsos na visão "Avulsos" e clique em "Agrupar em Lote de Remessa".
                       </td>
                     </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  ` : this.remessas.map(rem => {
+                    const expandida = this.remessasExpandidas.has(rem.id);
+                    const itens = rem.itens || [];
 
-        <!-- 2. Visão Mobile: Lista de Cards de Pagamento Otimizados (block md:hidden) -->
-        <div class="block md:hidden space-y-3">
-          ${this.contas.length === 0 ? `
-            <div class="p-8 text-center text-slate-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
-              Nenhuma conta localizada para o período e filtros selecionados.
+                    return `
+                      <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                        <td class="py-3 px-2 text-center">
+                          <button data-remessa-id="${rem.id}" class="btn-toggle-accordion p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition cursor-pointer">
+                            ${expandida ? '▼' : '▶'}
+                          </button>
+                        </td>
+                        <td class="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
+                          ${rem.favorecido}
+                          ${rem.observacoes ? `<span class="text-[10px] text-slate-400 block font-normal">${rem.observacoes}</span>` : ''}
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">${formatarData(rem.data_prevista)}</td>
+                        <td class="py-3 px-4 text-center whitespace-nowrap font-bold">${itens.length || 0}</td>
+                        <td class="py-3 px-4 text-right font-black text-slate-900 dark:text-slate-100 whitespace-nowrap">${formatarMoeda(rem.valor_total)}</td>
+                        <td class="py-3 px-4 text-center whitespace-nowrap">
+                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase ${rem.status === 'paga' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+                            ${rem.status}
+                          </span>
+                        </td>
+                        <td class="py-3 px-4 w-36 text-center whitespace-nowrap">
+                          <div class="flex items-center justify-center gap-1.5">
+                            ${rem.status !== 'paga' ? `
+                              <button data-remessa-id="${rem.id}" class="btn-baixar-remessa px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition cursor-pointer">
+                                Baixar
+                              </button>
+                              <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa px-2 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 rounded-lg font-bold text-[10px] transition cursor-pointer" title="Desfazer lote e devolver contas">
+                                Desfazer
+                              </button>
+                            ` : `
+                              <span class="text-[10px] text-slate-400 font-bold">Liquidada</span>
+                            `}
+                          </div>
+                        </td>
+                      </tr>
+
+                      ${expandida ? `
+                        <tr class="bg-slate-50/70 dark:bg-slate-950/60">
+                          <td colspan="7" class="p-4">
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-xs">
+                              <span class="text-[10px] uppercase tracking-wider font-black text-indigo-600 dark:text-indigo-400 block mb-2">Títulos Componentes Desta Remessa</span>
+                              <div class="space-y-2">
+                                ${itens.map(it => `
+                                  <div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-none">
+                                    <div>
+                                      <span class="font-bold text-slate-800 dark:text-slate-200">${it.descricao || 'Item de pagamento'}</span>
+                                      <span class="text-[10px] text-slate-400 block">${it.categoria?.nome || 'Geral'}</span>
+                                    </div>
+                                    <div class="text-right">
+                                      <span class="font-black text-slate-900 dark:text-slate-100">${formatarMoeda(it.valor_nominal)}</span>
+                                      <span class="text-[9px] block uppercase font-bold ${it.status === 'pago' ? 'text-emerald-600' : 'text-amber-600'}">${it.status}</span>
+                                    </div>
+                                  </div>
+                                `).join('')}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ` : ''}
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
             </div>
-          ` : this.contas.map(c => {
-            const ehEstimado = c.valor_estimado;
-            const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
+          </div>
 
-            return `
-              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
-                <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-xs font-black text-slate-900 dark:text-slate-100">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
-                    ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
-                      <span class="text-[9px] text-slate-400 font-semibold">(Nominal: ${formatarData(c.data_vencimento)})</span>
-                    ` : ''}
-                  </div>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
-                    ${c.status}
-                  </span>
-                </div>
-
-                <div>
-                  <span class="font-extrabold text-slate-900 dark:text-slate-100 text-sm block">${c.favorecido}</span>
-                  <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">${c.descricao || 'Despesa'} ${parcelaLabel}</span>
-                  <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                      ${c.categoria?.nome || 'Geral'}
-                    </span>
-                    <span class="text-[10px] text-slate-400 font-semibold">• ${c.tipo_custo?.nome || 'Operacional'}</span>
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div>
-                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Valor</span>
-                    <div class="flex items-baseline gap-1">
-                      <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
-                      ${ehEstimado ? `<span class="text-[9px] text-sky-600 font-bold uppercase">(Estimado)</span>` : ''}
-                    </div>
-                    ${c.valor_pago && c.valor_pago > 0 ? `
-                      <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">Pago: ${formatarMoeda(c.valor_pago)}</span>
-                    ` : ''}
-                  </div>
-
-                  <div class="flex items-center gap-1.5">
-                    ${c.status !== 'pago' && c.status !== 'cancelado' ? `
-                      <button data-id="${c.id}" class="btn-baixar-conta h-[36px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1" title="Dar Baixa">
-                        <span>✓</span> Baixar
-                      </button>
-                    ` : ''}
-
-                    <button data-id="${c.id}" class="btn-editar-conta h-[36px] w-[36px] flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer" title="Editar">
-                      ✏️
-                    </button>
-
-                    ${c.comprovante_url ? `
-                      <a href="${c.comprovante_url}" target="_blank" class="h-[36px] w-[36px] flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl transition cursor-pointer" title="Comprovante">
-                        📎
-                      </a>
-                    ` : ''}
-
-                    ${c.status === 'pago' && isAdmin ? `
-                      <button data-id="${c.id}" class="btn-estornar-conta h-[36px] w-[36px] flex items-center justify-center bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl transition cursor-pointer" title="Estornar Baixa">
-                        ↩️
-                      </button>
-                    ` : ''}
-
-                    ${c.status !== 'cancelado' && isAdmin ? `
-                      <button data-id="${c.id}" class="btn-cancelar-conta h-[36px] w-[36px] flex items-center justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl transition cursor-pointer" title="Cancelar Título">
-                        🚫
-                      </button>
-                    ` : ''}
-                  </div>
-                </div>
+          <!-- Visão Mobile: Lista de Cartões de Remessas -->
+          <div class="block md:hidden space-y-3">
+            ${this.remessas.length === 0 ? `
+              <div class="p-8 text-center text-slate-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
+                Nenhum lote de remessa cadastrado.
               </div>
-            `;
-          }).join('')}
-        </div>
+            ` : this.remessas.map(rem => {
+              const expandida = this.remessasExpandidas.has(rem.id);
+              const itens = rem.itens || [];
+
+              return `
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+                  <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                    <span class="text-xs font-black text-slate-900 dark:text-slate-100">Previsto: ${formatarData(rem.data_prevista)}</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${rem.status === 'paga' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+                      ${rem.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span class="font-extrabold text-slate-900 dark:text-slate-100 text-sm block">${rem.favorecido}</span>
+                    ${rem.observacoes ? `<span class="text-xs text-slate-500 dark:text-slate-400 block mt-0.5">${rem.observacoes}</span>` : ''}
+                    <span class="text-[11px] text-slate-400 font-bold block mt-1">Lote com ${itens.length} título(s)</span>
+                  </div>
+
+                  <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div>
+                      <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Consolidado</span>
+                      <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(rem.valor_total)}</span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                      <button data-remessa-id="${rem.id}" class="btn-toggle-accordion h-[36px] px-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer">
+                        ${expandida ? 'Fechar' : 'Itens'}
+                      </button>
+
+                      ${rem.status !== 'paga' ? `
+                        <button data-remessa-id="${rem.id}" class="btn-baixar-remessa h-[36px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer">
+                          Baixar
+                        </button>
+                        <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa h-[36px] px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 rounded-xl font-bold text-xs transition cursor-pointer" title="Desfazer lote">
+                          Desfazer
+                        </button>
+                      ` : ''}
+                    </div>
+                  </div>
+
+                  ${expandida ? `
+                    <div class="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3 border border-slate-200/60 dark:border-slate-800 space-y-2 mt-2">
+                      <span class="text-[10px] uppercase tracking-wider font-black text-indigo-600 dark:text-indigo-400 block">Títulos Deste Lote:</span>
+                      ${itens.map(it => `
+                        <div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-none">
+                          <div>
+                            <span class="font-bold text-slate-800 dark:text-slate-200 block">${it.descricao || 'Item de pagamento'}</span>
+                            <span class="text-[10px] text-slate-400">${it.categoria?.nome || 'Geral'}</span>
+                          </div>
+                          <div class="text-right">
+                            <span class="font-black text-slate-900 dark:text-slate-100">${formatarMoeda(it.valor_nominal)}</span>
+                            <span class="text-[9px] block uppercase font-bold ${it.status === 'pago' ? 'text-emerald-600' : 'text-amber-600'}">${it.status}</span>
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : `
+          <!-- VISÃO PADRÃO: LISTAGEM DE TÍTULOS (TODOS OU APENAS AVULSOS) -->
+          <!-- 1. Visão Desktop: Tabela com Rolagem Defensiva (hidden md:block) -->
+          <div class="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
+              <table class="w-full text-left border-collapse min-w-[900px]">
+                <thead>
+                  <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
+                    <th class="py-3 px-3 w-10 text-center">
+                      <input type="checkbox" id="check-selecionar-todas-contas" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" title="Selecionar todos os títulos avulsos pendentes" />
+                    </th>
+                    <th class="py-3 px-4">Vencimento</th>
+                    <th class="py-3 px-4">Favorecido / Descrição</th>
+                    <th class="py-3 px-4">Tipo / Categoria</th>
+                    <th class="py-3 px-4 text-right">Valor Nominal</th>
+                    <th class="py-3 px-4 text-right">Valor Pago</th>
+                    <th class="py-3 px-4 text-center">Status</th>
+                    <th class="py-3 px-4 w-32 text-center">Ações</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300">
+                  ${contasParaExibir.length === 0 ? `
+                    <tr>
+                      <td colspan="8" class="py-12 text-center text-slate-400 font-bold">
+                        Nenhuma conta localizada para o período e filtros selecionados.
+                      </td>
+                    </tr>
+                  ` : contasParaExibir.map(c => {
+                    const ehEstimado = c.valor_estimado;
+                    const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
+                    const podeSelecionar = !c.remessa_id && (c.status === 'pendente' || c.status === 'atrasado');
+
+                    return `
+                      <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                        <td class="py-3 px-3 text-center">
+                          ${podeSelecionar ? `
+                            <input type="checkbox" data-id="${c.id}" class="check-selecionar-conta h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${this.titulosSelecionados.has(c.id) ? 'checked' : ''} />
+                          ` : ''}
+                        </td>
+
+                        <td class="py-3 px-4 whitespace-nowrap">
+                          <span class="font-extrabold text-slate-900 dark:text-slate-100 block">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                          ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
+                            <span class="text-[9px] text-slate-400 block font-semibold" title="Vencimento nominal no final de semana / feriado">Nominal: ${formatarData(c.data_vencimento)}</span>
+                          ` : ''}
+                        </td>
+
+                        <td class="py-3 px-4">
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="font-bold text-slate-800 dark:text-slate-100 truncate max-w-xs">${c.favorecido}</span>
+                            ${c.remessa_id ? `
+                              <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/40 inline-flex items-center gap-0.5" title="Agrupado em Lote de Remessa">
+                                📦 Lote
+                              </span>
+                            ` : ''}
+                          </div>
+                          <span class="text-[10px] text-slate-400 block truncate max-w-xs">${c.descricao || 'Despesa'} ${parcelaLabel}</span>
+                        </td>
+
+                        <td class="py-3 px-4 whitespace-nowrap">
+                          <span class="font-bold text-slate-700 dark:text-slate-300 block">${c.categoria?.nome || 'Geral'}</span>
+                          <span class="text-[10px] text-slate-400 block">${c.tipo_custo?.nome || 'Operacional'}</span>
+                        </td>
+
+                        <td class="py-3 px-4 text-right whitespace-nowrap">
+                          <span class="font-extrabold text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
+                          ${ehEstimado ? `
+                            <span class="ml-1 text-[9px] bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 px-1 py-0.5 rounded font-black uppercase">Estimado</span>
+                          ` : ''}
+                        </td>
+
+                        <td class="py-3 px-4 text-right whitespace-nowrap">
+                          <span class="font-extrabold ${c.status === 'pago' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
+                            ${c.valor_pago && c.valor_pago > 0 ? formatarMoeda(c.valor_pago) : '-'}
+                          </span>
+                        </td>
+
+                        <td class="py-3 px-4 text-center whitespace-nowrap">
+                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
+                            ${c.status}
+                          </span>
+                        </td>
+
+                        <td class="py-3 px-4 w-32 text-center whitespace-nowrap">
+                          <div class="flex items-center justify-center gap-1">
+                            ${c.status !== 'pago' && c.status !== 'cancelado' ? `
+                              <button data-id="${c.id}" class="btn-baixar-conta p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg transition cursor-pointer" title="Dar Baixa Inteligente">
+                                ✅
+                              </button>
+                            ` : ''}
+
+                            <button data-id="${c.id}" class="btn-editar-conta p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg transition cursor-pointer" title="Editar Título">
+                              ✏️
+                            </button>
+
+                            ${c.comprovante_url ? `
+                              <a href="${c.comprovante_url}" target="_blank" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg transition cursor-pointer" title="Ver Comprovante Anexo">
+                                📎
+                              </a>
+                            ` : ''}
+
+                            ${c.status === 'pago' && isAdmin ? `
+                              <button data-id="${c.id}" class="btn-estornar-conta p-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-lg transition cursor-pointer" title="Estornar Baixa (Admin)">
+                                ↩️
+                              </button>
+                            ` : ''}
+
+                            ${c.status !== 'cancelado' && isAdmin ? `
+                              <button data-id="${c.id}" class="btn-cancelar-conta p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-lg transition cursor-pointer" title="Cancelar Título (Admin)">
+                                🚫
+                              </button>
+                            ` : ''}
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2. Visão Mobile: Lista de Cards de Pagamento Otimizados (block md:hidden) -->
+          <div class="block md:hidden space-y-3">
+            ${contasParaExibir.length === 0 ? `
+              <div class="p-8 text-center text-slate-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
+                Nenhuma conta localizada para o período e filtros selecionados.
+              </div>
+            ` : contasParaExibir.map(c => {
+              const ehEstimado = c.valor_estimado;
+              const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
+              const podeSelecionar = !c.remessa_id && (c.status === 'pendente' || c.status === 'atrasado');
+
+              return `
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+                  <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                    <div class="flex items-center gap-2">
+                      ${podeSelecionar ? `
+                        <input type="checkbox" data-id="${c.id}" class="check-selecionar-conta h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${this.titulosSelecionados.has(c.id) ? 'checked' : ''} />
+                      ` : ''}
+                      <span class="text-xs font-black text-slate-900 dark:text-slate-100">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                      ${c.remessa_id ? `
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/40 inline-flex items-center gap-0.5">
+                          📦 Lote
+                        </span>
+                      ` : ''}
+                    </div>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
+                      ${c.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span class="font-extrabold text-slate-900 dark:text-slate-100 text-sm block">${c.favorecido}</span>
+                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">${c.descricao || 'Despesa'} ${parcelaLabel}</span>
+                    <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                        ${c.categoria?.nome || 'Geral'}
+                      </span>
+                      <span class="text-[10px] text-slate-400 font-semibold">• ${c.tipo_custo?.nome || 'Operacional'}</span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div>
+                      <span class="text-[10px] uppercase font-bold text-slate-400 block">Valor</span>
+                      <div class="flex items-baseline gap-1">
+                        <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
+                        ${ehEstimado ? `<span class="text-[9px] text-sky-600 font-bold uppercase">(Estimado)</span>` : ''}
+                      </div>
+                      ${c.valor_pago && c.valor_pago > 0 ? `
+                        <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">Pago: ${formatarMoeda(c.valor_pago)}</span>
+                      ` : ''}
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                      ${c.status !== 'pago' && c.status !== 'cancelado' ? `
+                        <button data-id="${c.id}" class="btn-baixar-conta h-[36px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1" title="Dar Baixa">
+                          <span>✓</span> Baixar
+                        </button>
+                      ` : ''}
+
+                      <button data-id="${c.id}" class="btn-editar-conta h-[36px] w-[36px] flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer" title="Editar">
+                        ✏️
+                      </button>
+
+                      ${c.comprovante_url ? `
+                        <a href="${c.comprovante_url}" target="_blank" class="h-[36px] w-[36px] flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl transition cursor-pointer" title="Comprovante">
+                          📎
+                        </a>
+                      ` : ''}
+
+                      ${c.status === 'pago' && isAdmin ? `
+                        <button data-id="${c.id}" class="btn-estornar-conta h-[36px] w-[36px] flex items-center justify-center bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl transition cursor-pointer" title="Estornar Baixa">
+                          ↩️
+                        </button>
+                      ` : ''}
+
+                      ${c.status !== 'cancelado' && isAdmin ? `
+                        <button data-id="${c.id}" class="btn-cancelar-conta h-[36px] w-[36px] flex items-center justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl transition cursor-pointer" title="Cancelar Título">
+                          🚫
+                        </button>
+                      ` : ''}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `}
       </div>
     `;
   }
@@ -1490,9 +1728,80 @@ export class FinanceiroPage {
       this.abrirModalNovaConta();
     });
 
-    // Botão Nova Remessa
+    // Alternador de Filtro de Agrupamento (Todos, Avulsos, Remessas)
+    this.container.querySelectorAll('.btn-filtro-agrupamento').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const modo = btn.getAttribute('data-modo') as 'todos' | 'avulsos' | 'remessas';
+        if (modo && modo !== this.filtroAgrupamento) {
+          this.filtroAgrupamento = modo;
+          this.render();
+          this.setupEventListeners();
+        }
+      });
+    });
+
+    // Checkbox Mestre: Selecionar todos os títulos avulsos pendentes
+    const checkAll = this.container.querySelector('#check-selecionar-todas-contas') as HTMLInputElement;
+    checkAll?.addEventListener('change', () => {
+      const contasAvulsasPendentes = this.contas.filter(c => !c.remessa_id && (c.status === 'pendente' || c.status === 'atrasado'));
+      if (checkAll.checked) {
+        contasAvulsasPendentes.forEach(c => this.titulosSelecionados.add(c.id));
+      } else {
+        this.titulosSelecionados.clear();
+      }
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // Checkbox Individual de Título Avulso
+    this.container.querySelectorAll('.check-selecionar-conta').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const target = e.target as HTMLInputElement;
+        const id = target.getAttribute('data-id');
+        if (!id) return;
+        if (target.checked) {
+          this.titulosSelecionados.add(id);
+        } else {
+          this.titulosSelecionados.delete(id);
+        }
+        this.render();
+        this.setupEventListeners();
+      });
+    });
+
+    // Barra Flutuante de Seleção: Desmarcar
+    this.container.querySelector('#btn-desmarcar-selecao')?.addEventListener('click', () => {
+      this.titulosSelecionados.clear();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // Botões de Agrupar em Lote de Remessa
+    this.container.querySelector('#btn-agrupar-selecionadas')?.addEventListener('click', () => {
+      if (this.titulosSelecionados.size === 0) {
+        showCustomAlert('Selecione ao menos um título avulso para agrupar em lote de remessa.', 'Atenção');
+        return;
+      }
+      this.abrirModalCriarRemessa(Array.from(this.titulosSelecionados));
+    });
+
+    this.container.querySelector('#btn-agrupar-remessa-topo')?.addEventListener('click', () => {
+      if (this.titulosSelecionados.size === 0) {
+        this.filtroAgrupamento = 'avulsos';
+        this.render();
+        this.setupEventListeners();
+        showCustomAlert('Marque as caixas de seleção dos títulos avulsos que deseja agrupar e clique em "Agrupar em Lote de Remessa".', 'Instrução');
+        return;
+      }
+      this.abrirModalCriarRemessa(Array.from(this.titulosSelecionados));
+    });
+
+    // Botão Nova Remessa (Atalho)
     this.container.querySelector('#btn-nova-remessa')?.addEventListener('click', () => {
-      showCustomAlert('Para agrupar uma remessa, acesse Contas a Pagar e selecione os títulos que deseja consolidar.', 'Info');
+      this.filtroAgrupamento = 'avulsos';
+      this.render();
+      this.setupEventListeners();
+      showCustomAlert('Marque as caixas de seleção dos títulos avulsos que deseja agrupar e clique em "Agrupar em Lote de Remessa".', 'Instrução');
     });
 
     // Botão Nova Categoria (Plano de Contas)
@@ -2451,6 +2760,147 @@ export class FinanceiroPage {
         if (btnSalvar) {
           btnSalvar.disabled = false;
           btnSalvar.textContent = isEdit ? 'Salvar Alterações' : 'Cadastrar Banco';
+        }
+      }
+    });
+  }
+
+  // ==========================================================================
+  // MODAL DE CRIAÇÃO DE LOTE DE REMESSA (AGRUPAMENTO)
+  // ==========================================================================
+  private abrirModalCriarRemessa(contasIds?: string[]): void {
+    const ids = contasIds && contasIds.length > 0 ? contasIds : Array.from(this.titulosSelecionados);
+    const titulosAgrupamento = this.contas.filter(c => ids.includes(c.id));
+
+    if (titulosAgrupamento.length === 0) {
+      showCustomAlert('Nenhum título selecionado para agrupar em remessa.', 'Atenção');
+      return;
+    }
+
+    const formatarMoeda = (val: number) => 
+      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+
+    const totalCalculado = titulosAgrupamento.reduce((acc, c) => acc + Number(c.valor_nominal || 0), 0);
+    const favorecidoPadrao = titulosAgrupamento[0]?.favorecido || '';
+    const hojeStr = new Date().toISOString().split('T')[0];
+
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity';
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl">📦</span>
+            <div>
+              <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Criar Lote de Remessa Agrupada</h3>
+              <p class="text-[11px] text-slate-400 font-medium">Consolidação de títulos avulsos para pagamento em lote</p>
+            </div>
+          </div>
+          <button id="btn-fechar-modal-remessa" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg cursor-pointer">✕</button>
+        </div>
+
+        <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block">Total do Lote Consolidado</span>
+            <span class="text-xl font-black text-slate-900 dark:text-slate-100">${formatarMoeda(totalCalculado)}</span>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-600 text-white shadow-xs">
+            ${titulosAgrupamento.length} título(s)
+          </span>
+        </div>
+
+        <form id="form-criar-remessa" class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Favorecido / Nome Identificador do Lote *</label>
+            <input type="text" id="remessa-favorecido" required value="${favorecidoPadrao}" placeholder="Ex: Fornecedor Central ou Lote Operacional 10/26" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200" />
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Data Prevista de Liquidação / Pagamento *</label>
+            <input type="date" id="remessa-data-prevista" required value="${hojeStr}" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200" />
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Instruções Bancárias / Observações (Opcional)</label>
+            <textarea id="remessa-observacoes" rows="2" placeholder="Observações do lote, chave PIX agregada ou instruções para o financeiro..." class="w-full p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 resize-none"></textarea>
+          </div>
+
+          <!-- Resumo dos Títulos Inclusos -->
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Títulos Componentes do Lote:</label>
+            <div class="max-h-40 overflow-y-auto space-y-1.5 p-2 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200/60 dark:border-slate-800">
+              ${titulosAgrupamento.map(t => `
+                <div class="flex items-center justify-between text-xs py-1 border-b border-slate-200/40 dark:border-slate-800/60 last:border-none">
+                  <div class="truncate max-w-[280px]">
+                    <span class="font-bold text-slate-800 dark:text-slate-200">${t.favorecido}</span>
+                    <span class="text-[10px] text-slate-400 block">${t.descricao || 'Despesa'}</span>
+                  </div>
+                  <span class="font-black text-slate-900 dark:text-slate-100">${formatarMoeda(t.valor_nominal)}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button type="button" id="btn-cancelar-modal-remessa" class="h-[42px] px-4 text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded-xl transition cursor-pointer">
+              Cancelar
+            </button>
+            <button type="submit" id="btn-confirmar-criar-remessa" class="h-[42px] px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer flex items-center gap-1.5">
+              <span>✓</span> Concluir Agrupamento
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const fechar = () => overlay.remove();
+    overlay.querySelector('#btn-fechar-modal-remessa')?.addEventListener('click', fechar);
+    overlay.querySelector('#btn-cancelar-modal-remessa')?.addEventListener('click', fechar);
+
+    const form = overlay.querySelector('#form-criar-remessa') as HTMLFormElement;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btnSubmit = overlay.querySelector('#btn-confirmar-criar-remessa') as HTMLButtonElement;
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Agrupando...';
+      }
+
+      const favorecido = (overlay.querySelector('#remessa-favorecido') as HTMLInputElement).value;
+      const dataPrevista = (overlay.querySelector('#remessa-data-prevista') as HTMLInputElement).value;
+      const observacoes = (overlay.querySelector('#remessa-observacoes') as HTMLTextAreaElement).value;
+
+      try {
+        const res = await FinRemessasService.criarRemessa({
+          favorecido,
+          dataPrevista,
+          contasIds: ids,
+          observacoes,
+          criadoPorId: this.user.id
+        });
+
+        if (!res.sucesso) {
+          throw new Error(res.erro || 'Falha ao agrupar títulos em lote de remessa.');
+        }
+
+        fechar();
+        this.titulosSelecionados.clear();
+        this.filtroAgrupamento = 'remessas';
+        window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
+        await showCustomAlert('Lote de remessa agrupado com sucesso!', 'Sucesso');
+
+        await this.carregarDadosAbaAtiva();
+        this.render();
+        await this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao agrupar remessa:', err);
+        await showCustomAlert(err.message || 'Erro ao processar criação da remessa.', 'Erro');
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Concluir Agrupamento';
         }
       }
     });

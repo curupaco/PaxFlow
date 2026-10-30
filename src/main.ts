@@ -638,16 +638,11 @@ class App {
                         </div>
                       </button>
 
-                      <!-- Submenu Indentado (5 Submódulos) -->
+                      <!-- Submenu Indentado (4 Submódulos Unificados) -->
                       <div id="fin-submenu-container" class="${(!this.finSubmenuOpen || this.sidebarCollapsed) ? 'hidden' : 'flex'} flex-col pl-3 pr-1 py-1 space-y-0.5 border-l-2 border-indigo-200/80 dark:border-indigo-900/60 ml-5 my-1 transition-all duration-200">
                         <button id="nav-fin-contas-pagar" data-sub="contas-pagar" class="nav-fin-subitem w-full pl-2.5 pr-2 py-1.5 rounded-lg flex items-center justify-start gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 transition select-none group cursor-pointer">
                           <span class="text-xs">📋</span>
                           <span class="truncate">Contas a Pagar</span>
-                        </button>
-
-                        <button id="nav-fin-remessas" data-sub="remessas" class="nav-fin-subitem w-full pl-2.5 pr-2 py-1.5 rounded-lg flex items-center justify-start gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 transition select-none group cursor-pointer">
-                          <span class="text-xs">📦</span>
-                          <span class="truncate">Remessas Agrupadas</span>
                         </button>
 
                         <button id="nav-fin-fluxo-caixa" data-sub="fluxo-caixa" class="nav-fin-subitem w-full pl-2.5 pr-2 py-1.5 rounded-lg flex items-center justify-start gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 transition select-none group cursor-pointer">
@@ -1506,10 +1501,9 @@ class App {
       }
     });
 
-    // Subitens Indentados do Financeiro (5 submódulos)
+    // Subitens Indentados do Financeiro (4 submódulos unificados)
     const finSubItems = [
       { id: 'nav-fin-contas-pagar', sub: 'contas-pagar' },
-      { id: 'nav-fin-remessas', sub: 'remessas' },
       { id: 'nav-fin-fluxo-caixa', sub: 'fluxo-caixa' },
       { id: 'nav-fin-conciliacao', sub: 'conciliacao' },
       { id: 'nav-fin-plano-contas', sub: 'plano-contas' },
@@ -1644,10 +1638,9 @@ class App {
       }
     });
 
-    // Atualiza os estilos de seleção dos 5 subitens indentados do Financeiro
+    // Atualiza os estilos de seleção dos 4 subitens indentados do Financeiro
     const finSubItems = [
       { id: 'nav-fin-contas-pagar', sub: 'contas-pagar' },
-      { id: 'nav-fin-remessas', sub: 'remessas' },
       { id: 'nav-fin-fluxo-caixa', sub: 'fluxo-caixa' },
       { id: 'nav-fin-conciliacao', sub: 'conciliacao' },
       { id: 'nav-fin-plano-contas', sub: 'plano-contas' },
@@ -1655,8 +1648,8 @@ class App {
     const mapaSub: Record<string, string> = {
       'contas': 'contas-pagar',
       'contas-pagar': 'contas-pagar',
-      'remessas': 'remessas',
-      'remessas-agrupadas': 'remessas',
+      'remessas': 'contas-pagar',
+      'remessas-agrupadas': 'contas-pagar',
       'fluxo': 'fluxo-caixa',
       'fluxo-caixa': 'fluxo-caixa',
       'conciliacao': 'conciliacao',

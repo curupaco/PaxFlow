@@ -50,13 +50,13 @@ describe('Módulo Financeiro Unificado - Testes Subcutâneos de Permissão e Nav
     });
   });
 
-  it('deve normalizar slugs e resolver corretamente os 5 submódulos do Financeiro', () => {
+  it('deve normalizar slugs e resolver corretamente os 4 submódulos do Financeiro com remessas unificadas', () => {
     // Setup
     const mapaSubView: Record<string, string> = {
       'contas': 'contas',
       'contas-pagar': 'contas',
-      'remessas': 'remessas',
-      'remessas-agrupadas': 'remessas',
+      'remessas': 'contas',
+      'remessas-agrupadas': 'contas',
       'fluxo': 'fluxo',
       'fluxo-caixa': 'fluxo',
       'conciliacao': 'conciliacao',
@@ -80,7 +80,7 @@ describe('Módulo Financeiro Unificado - Testes Subcutâneos de Permissão e Nav
 
     // Assert
     expect(subContas).toBe('contas');
-    expect(subRemessas).toBe('remessas');
+    expect(subRemessas).toBe('contas'); // Unificado em Contas a Pagar
     expect(subFluxo).toBe('fluxo');
     expect(subConciliacao).toBe('conciliacao');
     expect(subPlano).toBe('plano');

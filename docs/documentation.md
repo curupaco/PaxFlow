@@ -1518,9 +1518,8 @@ Com o crescimento das rotinas contábeis da agência, o módulo de **Conciliaç�
 
 2. **Menu Expansível (Accordion) com Indentação na Sidebar (`src/main.ts`)**:
    - **Botão Pai `Financeiro`**: Exibe o ícone contábil, chevron rotativo `▾` e badge reativa de alertas de títulos pendentes/atrasados.
-   - **Submenu Indentado com Borda Conectora**: Contêiner visualmente conectado pela margem esquerda (`border-l-2 border-indigo-200/80 dark:border-indigo-900/60 ml-5`), agrupando os 5 submódulos:
-     - `📋 Contas a Pagar` (`#financeiro?sub=contas-pagar`)
-     - `📦 Remessas Agrupadas` (`#financeiro?sub=remessas`)
+   - **Submenu Indentado com Borda Conectora**: Contêiner visualmente conectado pela margem esquerda (`border-l-2 border-indigo-200/80 dark:border-indigo-900/60 ml-5`), agrupando os 4 submódulos objetivos:
+     - `📋 Contas a Pagar` (`#financeiro?sub=contas-pagar`): Tela única e central de liquidez, englobando títulos avulsos, parcelamentos e remessas agrupadas em lote via alternador visual (`Todos`, `Apenas Avulsos` e `Lotes de Remessa`).
      - `📈 Fluxo de Caixa & DRE` (`#financeiro?sub=fluxo-caixa`)
      - `🪙 Conciliação` (`#financeiro?sub=conciliacao`)
      - `⚙️ Plano de Contas` (`#financeiro?sub=plano-contas`)
@@ -1531,12 +1530,12 @@ Com o crescimento das rotinas contábeis da agência, o módulo de **Conciliaç�
      - Cada subitem ativo é destacado com fundo suave e borda semântica em tom índigo (`bg-indigo-50 dark:bg-indigo-950/60`).
 
 3. **Matriz de Governança & Controle de Acesso (RBAC)**:
-   - **Acesso Unificado**: Administradores (`admin`), consultores com papel `financeiro` e consultores com a permissão `acesso_financeiro: true` possuem acesso irrestrito a todos os 5 submódulos do Financeiro (incluindo a Conciliação).
+   - **Acesso Unificado**: Administradores (`admin`), consultores com papel `financeiro` e consultores com a permissão `acesso_financeiro: true` possuem acesso irrestrito a todos os 4 submódulos do Financeiro (incluindo a Conciliação).
    - **Ação Exclusiva de Administrador**: A operação crítica de **Fechar Mês** (trancamento de competências contábeis na Conciliação) e as ações de **Estornar Pagamento** e **Cancelar Título** continuam estritamente restritas a administradores (`role === 'admin'`), apresentando bloqueio imediato e orientações amigáveis caso outro perfil tente acioná-las.
 
 4. **Sincronização de Rotas na SPA & Retrocompatibilidade Total**:
    - A barra de endereços reflete o submódulo ativo via querystring (ex: `#financeiro?sub=conciliacao`).
-   - Requisições legadas para `#conciliacao` (de links antigos, bookmarks ou notificações) são automaticamente redirecionadas para `#financeiro?sub=conciliacao` sem qualquer quebra de fluxo.
+   - Requisições legadas para `#conciliacao` ou `#financeiro?sub=remessas` são automaticamente redirecionadas para seus destinos unificados (`#financeiro?sub=conciliacao` e `#financeiro?sub=contas-pagar`) sem qualquer quebra de fluxo.
 
 ### 3.54 Polimento Visual, UX Responsiva Mobile-First & Scorecards do Financeiro
 
