@@ -41,6 +41,8 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
     - Modal de fotografias com alternador de abas: `🌐 Catálogo Unsplash™` e `📁 Minha Galeria & Upload`.
     - Upload direto de imagens do computador com compressão client-side em alta performance via Canvas API (imagens pesadas reduzidas para ~250KB sem perda visual perceptível).
     - Persistência das imagens na galeria da agência com padrão Zero-Break e resiliência a Schema Drift, permitindo reutilizar o acervo fotográfico em qualquer proposta.
+    - **Padrão Zero-Break Resiliente & Tolerância a Schema Drift**: Persistência inteligente de propostas no Supabase sem erros 400. Se colunas estendidas (métricas, avatares, contatos) ainda não existirem fisicamente na tabela, os valores são encapsulados automaticamente em metadados estruturados (`dados_extraidos._paxflow_meta`), mantendo 100% de integridade com zero interrupção.
+    - **Aprovação Online & Ciclo Automático de Venda**: Quando o cliente aprova a proposta no link público, o PaxFlow registra formalmente o aceite com IP e dispositivo, cria automaticamente a Viagem Confirmada na operação, move o Orçamento para *Venda Fechada (ACEITO)* no Kanban e gera notificação Web Push e alerta no Inbox do consultor.
   - **Next Trip Engine™ — Ações Comerciais em Lote com Presets**:
     - Seleção individual e em massa através de checkboxes nos cards e seletor mestre no cabeçalho de filtros.
     - Barra de Ações em Lote com 1-clique:

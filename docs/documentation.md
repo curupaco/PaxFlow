@@ -812,6 +812,11 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
   - Painel lateral deslizante aberto pelo botão `📂 Minhas Propostas`, contendo campo de busca em tempo real por cliente ou destino, status da proposta e botões de carregamento e emissão de PDF. Mantém a bancada de trabalho 100% desobstruída.
 - **Modal Focado de Atividades**:
   - Permite configurar detalhes profundos de voos (origem, destino, cia aérea via catálogo oficial, número de voo, PNR), hospedagens (quarto, regime, voucher, mapa) e serviços de forma espaçosa e focada, com botão explícito `Aplicar ao Roteiro`.
+- **Persistência Blindada Zero-Break & Tolerância a Schema Drift (`StudioPropostasService.ts`)**:
+  - **Eliminação de Requisições Inválidas**: O serviço não realiza consultas em tabelas estruturadas corporativas para armazenar dados genéricos de chave-valor (eliminando completamente erros 400).
+  - **Encapsulamento Transparente de Metadados (`dados_extraidos._paxflow_meta`)**: Se o banco de dados da agência ainda não tiver recebido a migração de colunas (`consultor_avatar`, `consultor_whatsapp`, `consultor_telefone`, `consultor_email`, `titulo_cabecalho`, `visualizacoes_count`, `ultima_visualizacao_em`, `orcamento_origem_id`), o PostgREST responderia 400 (`PGRST204` / `42703`). O serviço intercepta o erro em tempo de execução, encapsula todos os campos novos dentro do campo JSONB existente `dados_extraidos._paxflow_meta` e reexecuta o salvamento com sucesso (Status 200).
+  - **Normalização Bidirecional**: Tanto na listagem quanto na busca por ID, qualquer proposta carregada do banco desempacota automaticamente os metadados de `_paxflow_meta` para as propriedades raiz do TypeScript, garantindo integridade visual imediata e compatibilidade reversa.
+  - **Fallback Estruturado em Supabase**: Caso a tabela principal inteira esteja ausente, o serviço mantém contingência relacional no Supabase em tabela com suporte a JSON, preservando 100% a premissa de ZERO localStorage para dados de negócio.
 
 ---
 

@@ -9,12 +9,12 @@ vi.mock('../../src/services/supabase', () => ({
   }
 }));
 
-describe('StudioPropostasService - Testes Subcutâneos com Resiliência a Schema Drift', () => {
+describe('StudioPropostasService - Testes Subcutâneos com Resiliência a Schema Drift (Zero-Break)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('deve salvar proposta com sucesso quando a tabela studio_propostas existe no banco', async () => {
+  it('deve salvar proposta com sucesso quando a tabela studio_propostas possui todas as colunas', async () => {
     // Setup
     const mockPropostaRetornada: StudioProposta = {
       id: 'prop-uuid-123',
@@ -54,40 +54,47 @@ describe('StudioPropostasService - Testes Subcutâneos com Resiliência a Schema
     expect(mockFrom).toHaveBeenCalledWith('studio_propostas');
   });
 
-  it('deve ativar fallback resiliente sem quebrar ao receber erro 42703 (coluna inexistente) ou PGRST204', async () => {
+  it('deve tratar erro 42703 / PGRST204 de coluna inexistente encapsulando em dados_extraidos._paxflow_meta sem quebrar', async () => {
     // Setup
-    const fallbackDb = new Map<string, any>();
+    let tentativas = 0;
+    let payloadGravado: any = null;
+
     const mockFrom = vi.fn().mockImplementation((tabela: string) => {
       if (tabela === 'studio_propostas') {
         return {
-          upsert: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({
-                data: null,
-                error: {
-                  code: '42703',
-                  message: 'column "foto_capa_url" does not exist'
-                }
-              })
-            })
-          })
-        };
-      }
-      if (tabela === 'global_settings') {
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              maybeSingle: vi.fn().mockImplementation(async () => {
-                return {
-                  data: fallbackDb.get('studio_propostas_cache_drift') || null,
+          upsert: vi.fn().mockImplementation((payload: any) => {
+            tentativas++;
+            payloadGravado = payload;
+            if (tentativas === 1) {
+              // Primeira tentativa simula erro de coluna inexistente (PGRST204 / 42703)
+              return {
+                select: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: null,
+                    error: {
+                      code: 'PGRST204',
+                      message: "Could not find the 'consultor_avatar' column of 'studio_propostas' in the schema cache"
+                    }
+                  })
+                })
+              };
+            }
+            // Segunda tentativa: o serviço removeu as colunas inexistentes e guardou em dados_extraidos
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: 'prop-resiliente-123',
+                    cliente_nome: payload.cliente_nome,
+                    destino: payload.destino,
+                    valor_total: payload.valor_total,
+                    dados_extraidos: payload.dados_extraidos,
+                    status: 'RASCUNHO'
+                  },
                   error: null
-                };
+                })
               })
-            })
-          }),
-          upsert: vi.fn().mockImplementation(async (payload: any) => {
-            fallbackDb.set(payload.key, payload);
-            return { error: null };
+            };
           })
         };
       }
@@ -99,14 +106,81 @@ describe('StudioPropostasService - Testes Subcutâneos com Resiliência a Schema
     const resultado = await StudioPropostasService.salvarProposta({
       cliente_nome: 'Roberto Justus',
       destino: 'Nova York',
-      valor_total: 28000
+      valor_total: 28000,
+      consultor_avatar: 'https://exemplo.com/avatar.jpg',
+      consultor_whatsapp: '(11) 99999-8888',
+      titulo_cabecalho: 'PAXFLOW PRIVATE JET'
+    });
+
+    // Assert
+    expect(tentativas).toBe(2);
+    expect(resultado).toBeDefined();
+    expect(resultado.cliente_nome).toBe('Roberto Justus');
+    expect(resultado.destino).toBe('Nova York');
+    expect(resultado.consultor_avatar).toBe('https://exemplo.com/avatar.jpg');
+    expect(resultado.consultor_whatsapp).toBe('(11) 99999-8888');
+    expect(resultado.titulo_cabecalho).toBe('PAXFLOW PRIVATE JET');
+    // Verifica que o payload da 2ª tentativa salvou no _paxflow_meta
+    expect(payloadGravado.dados_extraidos?._paxflow_meta?.consultor_avatar).toBe('https://exemplo.com/avatar.jpg');
+    expect(payloadGravado.consultor_avatar).toBeUndefined();
+  });
+
+  it('deve ativar fallback estruturado em templates_mensagem se a tabela studio_propostas inteira não existir (42P01)', async () => {
+    // Setup
+    const fallbackDb = new Map<string, any>();
+    const mockFrom = vi.fn().mockImplementation((tabela: string) => {
+      if (tabela === 'studio_propostas') {
+        return {
+          upsert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: {
+                  code: '42P01',
+                  message: 'relation "studio_propostas" does not exist'
+                }
+              })
+            })
+          })
+        };
+      }
+      if (tabela === 'templates_mensagem') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockImplementation(async () => {
+                return {
+                  data: fallbackDb.get('SYS_STUDIO_PROPOSTAS_CONTINGENCIA') || null,
+                  error: null
+                };
+              })
+            })
+          }),
+          insert: vi.fn().mockImplementation(async (payload: any) => {
+            fallbackDb.set(payload.titulo, payload);
+            return { error: null };
+          }),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ error: null })
+          })
+        };
+      }
+      return {};
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action
+    const resultado = await StudioPropostasService.salvarProposta({
+      cliente_nome: 'Grazi Massafera',
+      destino: 'Capadócia',
+      valor_total: 32000
     });
 
     // Assert
     expect(resultado).toBeDefined();
-    expect(resultado.cliente_nome).toBe('Roberto Justus');
-    expect(resultado.destino).toBe('Nova York');
-    expect(mockFrom).toHaveBeenCalledWith('global_settings');
+    expect(resultado.cliente_nome).toBe('Grazi Massafera');
+    expect(resultado.destino).toBe('Capadócia');
+    expect(mockFrom).toHaveBeenCalledWith('templates_mensagem');
   });
 
   it('deve registrar aceite formal do passageiro com status APROVADO e metadados de IP/dispositivo', async () => {

@@ -7,11 +7,53 @@ import { StudioProposta, StudioAceiteFormal } from '../types';
  */
 export class StudioPropostasService {
   private static TABELA = 'studio_propostas';
-  private static TABELA_SETTINGS = 'global_settings';
-  private static CHAVE_FALLBACK = 'studio_propostas_cache_drift';
+  private static TABELA_CONTINGENCIA = 'templates_mensagem';
+  private static TITULO_CONTINGENCIA = 'SYS_STUDIO_PROPOSTAS_CONTINGENCIA';
+
+  /**
+   * Colunas estendidas adicionadas em versões recentes do PaxFlow Studio.
+   * Se o banco de dados da agência ainda não tiver recebido a migração DDL,
+   * o serviço encapsula esses valores de forma transparente dentro de
+   * `dados_extraidos._paxflow_meta` (JSONB) sem quebrar a operação nem gerar erro 400.
+   */
+  private static COLUNAS_ESTENDIDAS = [
+    'consultor_avatar',
+    'consultor_whatsapp',
+    'consultor_telefone',
+    'consultor_email',
+    'titulo_cabecalho',
+    'visualizacoes_count',
+    'ultima_visualizacao_em',
+    'orcamento_origem_id'
+  ];
+
+  /**
+   * Normaliza os dados retornados do Supabase, desempacotando campos estendidos
+   * de `dados_extraidos._paxflow_meta` caso tenham sido salvos sob fallback de contingência.
+   */
+  public static normalizarPropostaDoBanco(raw: any): StudioProposta {
+    if (!raw) return raw;
+    const meta = (raw.dados_extraidos && typeof raw.dados_extraidos === 'object')
+      ? (raw.dados_extraidos._paxflow_meta || {})
+      : {};
+
+    return {
+      ...raw,
+      consultor_avatar: raw.consultor_avatar ?? meta.consultor_avatar ?? null,
+      consultor_whatsapp: raw.consultor_whatsapp ?? meta.consultor_whatsapp ?? null,
+      consultor_telefone: raw.consultor_telefone ?? meta.consultor_telefone ?? null,
+      consultor_email: raw.consultor_email ?? meta.consultor_email ?? null,
+      titulo_cabecalho: raw.titulo_cabecalho ?? meta.titulo_cabecalho ?? 'PAXFLOW LUXURY TRAVEL',
+      visualizacoes_count: raw.visualizacoes_count !== undefined ? raw.visualizacoes_count : (meta.visualizacoes_count ?? 0),
+      ultima_visualizacao_em: raw.ultima_visualizacao_em ?? meta.ultima_visualizacao_em ?? null,
+      orcamento_origem_id: raw.orcamento_origem_id ?? meta.orcamento_origem_id ?? null
+    };
+  }
 
   /**
    * Salva ou atualiza uma proposta do Studio no Supabase.
+   * Resiliência Padrão Zero-Break: se colunas novas não existirem no schema do banco,
+   * encapsula automaticamente em dados_extraidos e reexecuta com sucesso (Status 200).
    */
   public static async salvarProposta(proposta: Partial<StudioProposta>): Promise<StudioProposta> {
     const payload: Record<string, any> = {
@@ -53,12 +95,35 @@ export class StudioPropostasService {
         .single();
 
       if (error) {
-        // Fallback defensivo para colunas novas inexistentes (42703)
-        if (error.code === '42703') {
-          const payloadSanitizado = { ...payload };
-          delete payloadSanitizado.visualizacoes_count;
-          delete payloadSanitizado.ultima_visualizacao_em;
-          delete payloadSanitizado.orcamento_origem_id;
+        // Fallback defensivo para colunas estendidas inexistentes (42703, PGRST204, status 400 ou schema cache)
+        if (
+          error.code === '42703' ||
+          error.code === 'PGRST204' ||
+          error.code === 'PGRST200' ||
+          (error as any).status === 400 ||
+          error.message?.includes('schema cache') ||
+          error.message?.includes('does not exist') ||
+          error.message?.includes('column') ||
+          error.message?.includes('Could not find')
+        ) {
+          console.warn('[StudioPropostasService] Schema drift detectado na tabela studio_propostas. Encapsulando campos estendidos em dados_extraidos._paxflow_meta.');
+          
+          const payloadSanitizado: Record<string, any> = { ...payload };
+          const metaSeguro: Record<string, any> = {
+            ...(payloadSanitizado.dados_extraidos?._paxflow_meta || {})
+          };
+
+          for (const col of this.COLUNAS_ESTENDIDAS) {
+            if (payloadSanitizado[col] !== undefined) {
+              metaSeguro[col] = payloadSanitizado[col];
+              delete payloadSanitizado[col];
+            }
+          }
+
+          payloadSanitizado.dados_extraidos = {
+            ...(payloadSanitizado.dados_extraidos || {}),
+            _paxflow_meta: metaSeguro
+          };
 
           const { data: dRetry, error: errRetry } = await supabase
             .from(this.TABELA)
@@ -67,34 +132,43 @@ export class StudioPropostasService {
             .single();
 
           if (!errRetry && dRetry) {
-            return { ...dRetry, ...payload } as StudioProposta;
+            return this.normalizarPropostaDoBanco(dRetry);
+          }
+
+          if (errRetry) {
+            // Se a tabela studio_propostas inteira não existir no Supabase (42P01)
+            if (
+              errRetry.code === '42P01' ||
+              errRetry.message?.includes('does not exist')
+            ) {
+              return await this.salvarFallbackDrift(payload as StudioProposta);
+            }
+            throw errRetry;
           }
         }
 
-        // Fallback para schema drift geral (42P01, PGRST204, PGRST200)
+        // Fallback para quando a tabela studio_propostas inteira não existir
         if (
-          error.code === '42703' ||
           error.code === '42P01' ||
-          error.code === 'PGRST204' ||
-          error.code === 'PGRST200' ||
-          error.message?.includes('schema cache') ||
           error.message?.includes('does not exist')
         ) {
-          console.warn('[StudioPropostasService] Schema drift detectado na tabela studio_propostas. Ativando fallback resiliente.');
+          console.warn('[StudioPropostasService] Tabela studio_propostas ausente no Supabase. Ativando contingência estruturada.');
           return await this.salvarFallbackDrift(payload as StudioProposta);
         }
         throw error;
       }
 
-      return data as StudioProposta;
+      return this.normalizarPropostaDoBanco(data);
     } catch (err: any) {
       if (
         err?.code === '42703' ||
         err?.code === '42P01' ||
         err?.code === 'PGRST204' ||
         err?.code === 'PGRST200' ||
+        err?.status === 400 ||
         err?.message?.includes('schema cache') ||
-        err?.message?.includes('does not exist')
+        err?.message?.includes('does not exist') ||
+        err?.message?.includes('column')
       ) {
         return await this.salvarFallbackDrift(payload as StudioProposta);
       }
@@ -120,6 +194,7 @@ export class StudioPropostasService {
           error.code === '42P01' ||
           error.code === 'PGRST204' ||
           error.code === 'PGRST200' ||
+          (error as any).status === 400 ||
           error.message?.includes('schema cache') ||
           error.message?.includes('does not exist')
         ) {
@@ -128,13 +203,14 @@ export class StudioPropostasService {
         return null;
       }
 
-      return data as StudioProposta;
+      return this.normalizarPropostaDoBanco(data);
     } catch (err: any) {
       if (
         err?.code === '42703' ||
         err?.code === '42P01' ||
         err?.code === 'PGRST204' ||
-        err?.code === 'PGRST200'
+        err?.code === 'PGRST200' ||
+        err?.status === 400
       ) {
         return await this.buscarFallbackDrift(id);
       }
@@ -157,14 +233,15 @@ export class StudioPropostasService {
           error.code === '42703' ||
           error.code === '42P01' ||
           error.code === 'PGRST204' ||
-          error.code === 'PGRST200'
+          error.code === 'PGRST200' ||
+          (error as any).status === 400
         ) {
           return await this.listarFallbackDrift();
         }
         return [];
       }
 
-      return (data || []) as StudioProposta[];
+      return (data || []).map(p => this.normalizarPropostaDoBanco(p));
     } catch {
       return await this.listarFallbackDrift();
     }
@@ -528,19 +605,22 @@ export class StudioPropostasService {
 
   // ==========================================================================
   // FALLBACK SEGURO DE CONTINGÊNCIA (Zero-Break Pattern)
-  // Persistido estruturadamente no Supabase (global_settings) - ZERO localStorage
+  // Persistido estruturadamente no Supabase (templates_mensagem) - ZERO localStorage
   // ==========================================================================
 
   private static async obterListaContingencia(): Promise<StudioProposta[]> {
     try {
-      const { data } = await supabase
-        .from(this.TABELA_SETTINGS)
-        .select('value')
-        .eq('key', this.CHAVE_FALLBACK)
+      const { data, error } = await supabase
+        .from(this.TABELA_CONTINGENCIA)
+        .select('conteudo')
+        .eq('titulo', this.TITULO_CONTINGENCIA)
         .maybeSingle();
 
-      if (data && data.value && Array.isArray(data.value)) {
-        return data.value as StudioProposta[];
+      if (!error && data && data.conteudo) {
+        const parsed = JSON.parse(data.conteudo);
+        if (Array.isArray(parsed)) {
+          return parsed.map(p => this.normalizarPropostaDoBanco(p));
+        }
       }
       return [];
     } catch {
@@ -557,12 +637,12 @@ export class StudioPropostasService {
 
   private static async salvarFallbackDrift(proposta: StudioProposta): Promise<StudioProposta> {
     const lista = await this.obterListaContingencia();
-    const propostaNormalizada: StudioProposta = {
+    const propostaNormalizada: StudioProposta = this.normalizarPropostaDoBanco({
       ...proposta,
       id: proposta.id || this.gerarUuidSeguro(),
       created_at: proposta.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
-    };
+    });
 
     const index = lista.findIndex(p => p.id === propostaNormalizada.id);
     if (index >= 0) {
@@ -572,15 +652,32 @@ export class StudioPropostasService {
     }
 
     try {
-      await supabase
-        .from(this.TABELA_SETTINGS)
-        .upsert({
-          key: this.CHAVE_FALLBACK,
-          value: lista,
-          description: 'PaxFlow Studio - Fallback resiliente para schema drift'
-        });
+      const conteudoJson = JSON.stringify(lista);
+      const { data: existente } = await supabase
+        .from(this.TABELA_CONTINGENCIA)
+        .select('id')
+        .eq('titulo', this.TITULO_CONTINGENCIA)
+        .maybeSingle();
+
+      if (existente?.id) {
+        await supabase
+          .from(this.TABELA_CONTINGENCIA)
+          .update({
+            conteudo: conteudoJson,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existente.id);
+      } else {
+        await supabase
+          .from(this.TABELA_CONTINGENCIA)
+          .insert({
+            titulo: this.TITULO_CONTINGENCIA,
+            descricao: 'PaxFlow Studio - Fallback de contingência estruturada Zero-Break',
+            conteudo: conteudoJson
+          });
+      }
     } catch (err) {
-      console.warn('[StudioPropostasService] Fallback em global_settings falhou:', err);
+      console.warn('[StudioPropostasService] Fallback de contingência avisou:', err);
     }
 
     return propostaNormalizada;
