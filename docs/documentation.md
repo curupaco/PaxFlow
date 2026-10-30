@@ -774,8 +774,14 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
 - **Rastreamento de Leitura em Tempo Real (Viewer Analytics)**:
   - Ao carregar a página pública da proposta (`/proposta/:id`), o sistema incrementa o contador `visualizacoes_count` e registra o timestamp exato em `ultima_visualizacao_em` de forma não-bloqueante e resiliente a schema drift.
   - Permite aos consultores e à liderança monitorar o momento exato em que o passageiro está interagindo com a proposta para timing perfeito de fechamento.
-- **Experiência Pública Interativa do Viajante (`PublicViews.ts`)**:
-  - **Aprovação Formal & Conversão no WhatsApp**: A página pública da proposta (`/proposta/:id`) disponibiliza no card de status a ação de aprovação interativa pelo passageiro e o botão direto _Conversar com o Consultor no WhatsApp_, direcionando para a central de atendimento oficial da loja.
+- **Experiência Pública Interativa do Viajante & Ciclo Automático de Aprovação (`PublicViews.ts` & `studioPropostasService.ts`)**:
+  - **Aprovação Formal com Metadados Jurídicos**: Na visualização pública (`#proposta?id=...`), o passageiro dispõe do botão de aceite formal onde insere seu Nome Completo e CPF/Passaporte. O sistema captura de forma não-bloqueante o endereço IP público do cliente, User-Agent do dispositivo e timestamp exato ISO, gravando o bloco de auditoria jurídica `aceite_formal`.
+  - **Automação Completa de Fechamento de Venda (Zero Fricção)**:
+    1. *Criação Automática da Viagem*: O motor cria imediatamente a viagem confirmada (`status: confirmada`) na tabela `viagens`, vinculando ou criando a ficha do cliente na tabela `clientes`, datas de ida e volta, destino e valor total;
+    2. *Fechamento do Orçamento no Kanban*: Caso a proposta tenha nascido a partir de um orçamento (`orcamento_origem_id`), ele é transicionado automaticamente para *Venda Fechada (CONCLUÍDO / sub_status: ACEITO)* com o valor da viagem atualizado;
+    3. *Alerta Imediato no Inbox*: Insere um lembrete comemorativo no Inbox do consultor responsável para acompanhamento da emissão e contato com o cliente;
+    4. *Notificação Web Push Server-Side*: Dispara alerta push instantâneo no navegador/dispositivo do consultor informando o nome do cliente e o destino aprovado;
+    5. *Efetivação de Status*: A proposta é atualizada para o status `EFETIVADA`, garantindo resiliência Zero-Break com fallback de schema drift para qualquer coluna nova no banco.
   - **Dúvidas Contextuais por Dia do Itinerário**: Cada dia sequencial da programação possui o botão `💬 Dúvida sobre o Dia X`, que gera um link inteligente de WhatsApp contendo a identificação do dia e da atividade para o viajante tirar dúvidas operacionais ou solicitar personalizações pontuais diretamente com o consultor.
 - **Arquitetura Split Screen (Tela Dividida)**:
   - **Coluna da Esquerda (Editor Estruturado)**:

@@ -172,12 +172,16 @@ export class StudioPropostasService {
 
   /**
    * Registra o aceite formal do passageiro com IP, dispositivo e timestamp.
+   * Converte automaticamente a proposta em Viagem Confirmada na operação,
+   * move o orçamento de origem para Venda Fechada (ACEITO) e notifica o consultor no Inbox.
    */
   public static async registrarAceite(id: string, aceite: StudioAceiteFormal): Promise<StudioProposta | null> {
     const atualizacao = {
       status: 'APROVADO' as const,
       aceite_formal: aceite
     };
+
+    let propostaAprovada: StudioProposta | null = null;
 
     try {
       const { data, error } = await supabase
@@ -198,13 +202,14 @@ export class StudioPropostasService {
           if (propostaExistente) {
             propostaExistente.status = 'APROVADO';
             propostaExistente.aceite_formal = aceite;
-            return await this.salvarFallbackDrift(propostaExistente);
+            propostaAprovada = await this.salvarFallbackDrift(propostaExistente);
           }
+        } else {
+          throw error;
         }
-        throw error;
+      } else {
+        propostaAprovada = data as StudioProposta;
       }
-
-      return data as StudioProposta;
     } catch (err: any) {
       if (
         err?.code === '42703' ||
@@ -216,15 +221,33 @@ export class StudioPropostasService {
         if (propostaExistente) {
           propostaExistente.status = 'APROVADO';
           propostaExistente.aceite_formal = aceite;
-          return await this.salvarFallbackDrift(propostaExistente);
+          propostaAprovada = await this.salvarFallbackDrift(propostaExistente);
         }
+      } else {
+        throw err;
       }
-      throw err;
     }
+
+    // Executa a conversão e automações em background seguro sem travar o retorno ao viajante
+    if (propostaAprovada) {
+      try {
+        await this.converterEmViagem(id);
+      } catch (errConv) {
+        console.error('[StudioPropostasService] Aviso ao automatizar conversão da proposta em viagem:', errConv);
+      }
+    }
+
+    return propostaAprovada;
   }
 
   /**
-   * Converte a proposta aprovada em uma viagem ativa no sistema PaxFlow.
+   * Converte a proposta aprovada em uma viagem ativa no sistema PaxFlow:
+   * 1. Resolve ou cadastra o cliente na base de clientes;
+   * 2. Cria a Viagem Confirmada na tabela 'viagens' (com fallback Zero-Break);
+   * 3. Mover o Orçamento de origem (se houver) para 'CONCLUIDO' com sub_status 'ACEITO';
+   * 4. Gera Lembrete / Alerta comemorativo no Inbox do consultor;
+   * 5. Dispara Notificação Web Push para o consultor;
+   * 6. Atualiza o status da proposta para 'EFETIVADA'.
    */
   public static async converterEmViagem(propostaId: string): Promise<{ viagemId: string }> {
     const proposta = await this.buscarPorId(propostaId);
@@ -232,33 +255,184 @@ export class StudioPropostasService {
       throw new Error('Proposta não encontrada para conversão');
     }
 
-    const { data: viagem, error: viagemErr } = await supabase
-      .from('viagens')
-      .insert({
-        cliente: proposta.cliente_nome,
-        passageiro: proposta.cliente_nome,
-        destino: proposta.destino,
-        data_embarque: proposta.data_ida || new Date().toISOString().split('T')[0],
-        data_retorno: proposta.data_volta || null,
-        valor_total: proposta.valor_total || 0,
-        status: 'CONFIRMADA',
-        observacoes: `Convertida do PaxFlow Studio (Proposta ${proposta.id}). Aceite formal registrado em: ${proposta.aceite_formal?.data_aceite || 'N/A'}`
-      })
-      .select('id')
-      .single();
+    const hojeIso = new Date().toISOString().split('T')[0];
+    const dataIda = proposta.data_ida || hojeIso;
+    const dataVolta = proposta.data_volta || null;
+    const valorTotal = proposta.valor_total || 0;
+    const obsTexto = `Convertida do PaxFlow Studio (Proposta ${proposta.id}). Aceite formal registrado por ${proposta.aceite_formal?.cliente_nome || proposta.cliente_nome} (Doc: ${proposta.aceite_formal?.documento || 'N/A'}, IP: ${proposta.aceite_formal?.ip || 'N/A'}) em: ${proposta.aceite_formal?.data_aceite || hojeIso}`;
 
-    if (viagemErr) {
-      console.error('[StudioPropostasService] Erro ao criar viagem a partir da proposta:', viagemErr);
-      throw viagemErr;
+    // 1. Identificar ou vincular cliente
+    let clienteId: string | null = null;
+    try {
+      if (proposta.cliente_email || proposta.cliente_whatsapp || proposta.aceite_formal?.documento) {
+        const filters: string[] = [];
+        if (proposta.cliente_email) filters.push(`email.eq.${proposta.cliente_email}`);
+        if (proposta.cliente_whatsapp) filters.push(`telefone.eq.${proposta.cliente_whatsapp}`);
+        if (proposta.aceite_formal?.documento) filters.push(`documento.eq.${proposta.aceite_formal.documento}`);
+
+        if (filters.length > 0) {
+          const { data: cliExistente } = await supabase
+            .from('clientes')
+            .select('id')
+            .or(filters.join(','))
+            .limit(1);
+
+          if (cliExistente && cliExistente.length > 0) {
+            clienteId = cliExistente[0].id;
+          }
+        }
+      }
+
+      // Se ainda não encontrou e temos nome do cliente
+      if (!clienteId && proposta.cliente_nome) {
+        const { data: cliPorNome } = await supabase
+          .from('clientes')
+          .select('id')
+          .ilike('nome', proposta.cliente_nome.trim())
+          .limit(1);
+
+        if (cliPorNome && cliPorNome.length > 0) {
+          clienteId = cliPorNome[0].id;
+        } else {
+          // Criar cliente básico
+          const { data: novoCli } = await supabase
+            .from('clientes')
+            .insert({
+              nome: proposta.cliente_nome.trim(),
+              email: proposta.cliente_email || null,
+              telefone: proposta.cliente_whatsapp || null,
+              documento: proposta.aceite_formal?.documento || null
+            })
+            .select('id')
+            .single();
+
+          if (novoCli) {
+            clienteId = novoCli.id;
+          }
+        }
+      }
+    } catch (errCli) {
+      console.warn('[StudioPropostasService] Aviso ao vincular cliente na conversão:', errCli);
     }
 
-    // Atualiza status da proposta para EFETIVADA
+    // 2. Inserir Viagem na tabela 'viagens' com resiliência 42703
+    let viagemId = '';
+    const payloadViagem: Record<string, any> = {
+      cliente_id: clienteId,
+      consultor_id: proposta.consultor_id || null,
+      destino: proposta.destino || 'Destino a Definir',
+      data_ida: dataIda,
+      data_volta: dataVolta,
+      valor_total: valorTotal,
+      status: 'confirmada',
+      observacoes: obsTexto,
+      orcamento_id: proposta.orcamento_origem_id || null
+    };
+
+    try {
+      const { data: vCreated, error: vErr } = await supabase
+        .from('viagens')
+        .insert(payloadViagem)
+        .select('id')
+        .single();
+
+      if (vErr) {
+        if (vErr.code === '42703') {
+          // Fallback resiliente retirando colunas extras
+          delete payloadViagem.orcamento_id;
+          const { data: vRetry, error: retryErr } = await supabase
+            .from('viagens')
+            .insert(payloadViagem)
+            .select('id')
+            .single();
+
+          if (retryErr) throw retryErr;
+          viagemId = vRetry?.id;
+        } else {
+          throw vErr;
+        }
+      } else {
+        viagemId = vCreated?.id;
+      }
+    } catch (errViagem: any) {
+      console.error('[StudioPropostasService] Erro ao criar viagem a partir da proposta:', errViagem);
+      throw errViagem;
+    }
+
+    // 3. Atualizar Orçamento de origem para CONCLUIDO (ACEITO) no Kanban
+    if (proposta.orcamento_origem_id) {
+      try {
+        const { error: orcErr } = await supabase
+          .from('orcamentos')
+          .update({
+            status: 'CONCLUIDO',
+            sub_status: 'ACEITO',
+            valor_viagem: valorTotal,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', proposta.orcamento_origem_id);
+
+        if (orcErr && orcErr.code === '42703') {
+          await supabase
+            .from('orcamentos')
+            .update({
+              status: 'CONCLUIDO',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', proposta.orcamento_origem_id);
+        }
+      } catch (errOrc) {
+        console.warn('[StudioPropostasService] Aviso ao atualizar orçamento no Kanban:', errOrc);
+      }
+    }
+
+    // 4. Inserir Lembrete / Alerta no Inbox para o consultor
+    if (proposta.consultor_id) {
+      const lembretePayload: Record<string, any> = {
+        consultor_id: proposta.consultor_id,
+        data_lembrete: hojeIso,
+        periodo: 'manha',
+        descricao: `🎉 Proposta Aprovada: ${proposta.cliente_nome} aprovou o roteiro para ${proposta.destino}! Viagem gerada na operação.`,
+        viagem_id: viagemId || null,
+        orcamento_id: proposta.orcamento_origem_id || null,
+        arquivado: false
+      };
+
+      try {
+        const { error: lembErr } = await supabase
+          .from('lembretes')
+          .insert(lembretePayload);
+
+        if (lembErr && lembErr.code === '42703') {
+          delete lembretePayload.descricao;
+          delete lembretePayload.viagem_id;
+          delete lembretePayload.orcamento_id;
+          await supabase.from('lembretes').insert(lembretePayload);
+        }
+      } catch (errLemb) {
+        console.warn('[StudioPropostasService] Aviso ao criar lembrete de proposta aprovada:', errLemb);
+      }
+
+      // 5. Disparar Web Push para o consultor
+      try {
+        const { PushSenderService } = await import('./pushSenderService');
+        await PushSenderService.sendToUser(proposta.consultor_id, {
+          title: `🎉 Proposta Aprovada pelo Passageiro!`,
+          body: `${proposta.cliente_nome} aprovou ${proposta.destino}. Viagem criada com sucesso.`,
+          url: `/#dashboard`
+        });
+      } catch (errPush) {
+        console.warn('[StudioPropostasService] Aviso ao enviar Web Push de proposta aprovada:', errPush);
+      }
+    }
+
+    // 6. Atualiza status da proposta para EFETIVADA
     await this.salvarProposta({
       ...proposta,
       status: 'EFETIVADA'
     });
 
-    return { viagemId: viagem.id };
+    return { viagemId };
   }
 
   /**
