@@ -334,15 +334,17 @@ export class LandingPage {
             Gestão &amp; Blindagem Operacional para Agências de Turismo
           </div>
 
-          <!-- Emblema de Prestígio -->
-          <div data-parallax="20" class="pf-rise-1 relative mb-8">
-            <div class="relative w-24 h-24 sm:w-28 sm:h-28 mx-auto">
-              <div class="absolute -inset-4 rounded-3xl bg-gradient-to-br from-[#0052d4]/30 via-[#00a8f5]/25 to-[#00e5a3]/25 blur-xl opacity-70"></div>
-              <div class="relative w-full h-full rounded-2xl bg-slate-900/90 border border-white/20 shadow-2xl flex items-center justify-center p-4 backdrop-blur-xl">
-                <img src="/logo.svg" alt="PaxFlow" class="w-full h-full object-contain filter drop-shadow-[0_4px_12px_rgba(0,168,245,0.35)]" />
+          <!-- Logo grande centralizado em card de bússola com rotação e órbita -->
+          <div data-parallax="26" class="pf-rise-1 relative mb-10 sm:mb-14">
+            <div class="relative w-56 h-56 md:w-72 md:h-72 pf-float mx-auto">
+              <div class="absolute -inset-8 rounded-full bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] blur-3xl opacity-60 pf-glow"></div>
+              <div class="relative w-full h-full rounded-full bg-gradient-to-br from-[#0a1a3f] to-[#0d0f1f] border-2 border-[#00a8f5]/40 shadow-2xl flex items-center justify-center overflow-hidden backdrop-blur-md">
+                <img src="/logo.svg" alt="PaxFlow" class="w-[82%] h-[82%] object-contain pf-spin-slow filter drop-shadow-[0_4px_20px_rgba(0,168,245,0.4)]" />
               </div>
-              <span class="absolute -bottom-2 -right-2 px-2.5 py-0.5 rounded-full bg-slate-900 border border-emerald-500/40 text-[9px] font-black text-emerald-300 shadow-md flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Operação 24/7
+              <span class="absolute -top-3 -left-3 w-11 h-11 rounded-full bg-gradient-to-br from-[#f12711] to-[#f5af19] flex items-center justify-center text-white font-black text-lg shadow-xl pf-bounce select-none">✈️</span>
+              <span class="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-gradient-to-br from-[#00e5a3] to-[#00a8f5] flex items-center justify-center text-white text-lg font-black shadow-xl pf-bounce select-none" style="animation-delay:.4s">+</span>
+              <span class="absolute top-1/2 -left-16 hidden md:flex w-24 h-24 rounded-2xl bg-white/[0.04] border border-white/10 items-center justify-center pf-spin-rev shadow-xl">
+                <img src="/logo.svg" alt="" class="w-14 h-14 object-contain" />
               </span>
             </div>
           </div>

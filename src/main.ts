@@ -241,11 +241,23 @@ class App {
       ]);
       this.settings = settingsData || null;
 
-      if (error || !user) {
+      if (!isSandbox && (error || !user)) {
         this.renderLogin();
       } else {
+        const currentUser = user || { id: 'sandbox-user-id', email: 'consultor.fake@paxflowdemo.com' };
+        const currentPerfil: PerfilConsultor = perfil || {
+          id: 'sandbox-user-id',
+          nome: 'Consultor Demonstrativo',
+          email: 'consultor.fake@paxflowdemo.com',
+          role: 'admin',
+          ativo: true,
+          xp: 1500,
+          nivel: 4,
+          avatar_url: 'lion'
+        };
+
         // Detecção de rotas por hash na URL (ex: #inbox, #orcamentos, #inbox?extraId=xxx)
-        let initialPage = (perfil && perfil.role === 'admin') ? 'analytics' : 'inbox';
+        let initialPage = (currentPerfil && currentPerfil.role === 'admin') ? 'analytics' : 'inbox';
         let initialExtraId: string | undefined = undefined;
 
         const paginasValidas = ['analytics', 'inbox', 'orcamentos', 'studio', 'dashboard', 'reembolsos', 'financeiro', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'];
@@ -269,16 +281,18 @@ class App {
           }
         }
 
-        this.inicializarSessaoUsuario(user, perfil, initialPage, initialExtraId);
+        this.inicializarSessaoUsuario(currentUser, currentPerfil, initialPage, initialExtraId);
 
         // Escuta mudanças de autenticação do Supabase (ex: logout em outra aba ou token expirado)
-        supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_OUT' || (!session && !isSandbox)) {
-            this.user = null;
-            this.perfil = null;
-            this.renderLogin();
-          }
-        });
+        if (supabase.auth && typeof supabase.auth.onAuthStateChange === 'function') {
+          supabase.auth.onAuthStateChange((event, session) => {
+            if (!isSandbox && (event === 'SIGNED_OUT' || !session)) {
+              this.user = null;
+              this.perfil = null;
+              this.renderLogin();
+            }
+          });
+        }
 
         // Escuta mudanças de Hash em tempo real quando o usuário clica numa notificação Push com o app já aberto
         window.addEventListener('hashchange', () => {
@@ -306,7 +320,22 @@ class App {
       }
     } catch (err) {
       console.error('Erro ao inicializar app:', err);
-      this.renderLogin();
+      if (isSandbox) {
+        const mockUser = { id: 'sandbox-user-id', email: 'consultor.fake@paxflowdemo.com' };
+        const mockPerfil: PerfilConsultor = {
+          id: 'sandbox-user-id',
+          nome: 'Consultor Demonstrativo',
+          email: 'consultor.fake@paxflowdemo.com',
+          role: 'admin',
+          ativo: true,
+          xp: 1500,
+          nivel: 4,
+          avatar_url: 'lion'
+        };
+        this.inicializarSessaoUsuario(mockUser, mockPerfil, 'analytics');
+      } else {
+        this.renderLogin();
+      }
     }
   }
 

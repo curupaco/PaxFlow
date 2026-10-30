@@ -321,10 +321,40 @@ export const supabase = new Proxy(realSupabase, {
     if (isSandboxActive()) {
       if (prop === 'auth') {
         return {
-          signInWithPassword: () => Promise.resolve({ data: { user: { id: 'sandbox-user-id' } }, error: null }),
-          signOut: () => Promise.resolve({ error: null }),
-          getSession: () => Promise.resolve({ data: { session: { user: { id: 'sandbox-user-id' } } }, error: null }),
-          updateUser: () => Promise.resolve({ error: null })
+          signInWithPassword: () => Promise.resolve({ data: { user: { id: 'sandbox-user-id', email: 'consultor.fake@paxflowdemo.com' } }, error: null }),
+          signOut: () => {
+            try {
+              sessionStorage.removeItem('paxflowSandbox');
+              (window as any).paxflowSandbox = false;
+            } catch (e) {}
+            return Promise.resolve({ error: null });
+          },
+          getSession: () => Promise.resolve({
+            data: {
+              session: {
+                user: { id: 'sandbox-user-id', email: 'consultor.fake@paxflowdemo.com' },
+                access_token: 'sandbox-mock-token'
+              }
+            },
+            error: null
+          }),
+          getUser: () => Promise.resolve({
+            data: {
+              user: { id: 'sandbox-user-id', email: 'consultor.fake@paxflowdemo.com' }
+            },
+            error: null
+          }),
+          updateUser: () => Promise.resolve({ error: null }),
+          onAuthStateChange: (callback?: any) => {
+            return {
+              data: {
+                subscription: {
+                  unsubscribe: () => {}
+                }
+              }
+            };
+          },
+          resetPasswordForEmail: () => Promise.resolve({ data: {}, error: null })
         };
       }
       if (prop === 'from') {

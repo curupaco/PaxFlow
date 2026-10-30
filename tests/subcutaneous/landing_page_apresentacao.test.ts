@@ -108,4 +108,25 @@ describe('Subcutaneous: Landing Page - Apresentação Comercial Oficial Completa
     expect(html).not.toContain('R$ 199');
     expect(html).not.toContain('R$ 799');
   });
+
+  it('deve exibir o logo de bússola grande e não conter menções a 24/7 ou 24x7', () => {
+    // Setup & Action
+    const html = LandingPage.renderHtml();
+
+    // Assert
+    // Logo imponente em formato de bússola com rotação suave e detalhes decorativos
+    expect(html).toContain('w-56 h-56 md:w-72 md:h-72 pf-float');
+    expect(html).toContain('pf-spin-slow');
+    expect(html).toContain('✈️');
+
+    // NUNCA conter menção a 24/7 ou 24x7
+    expect(html).not.toContain('24/7');
+    expect(html).not.toContain('24x7');
+
+    // Botões de acionamento do Modo Demonstração
+    expect(html).toContain('id="btn-iniciar-demo"');
+    expect(html).toContain('id="btn-menu-demo"');
+    expect(html).toContain('id="btn-cta-demo-final"');
+    expect(html).toContain('id="btn-footer-demo"');
+  });
 });
