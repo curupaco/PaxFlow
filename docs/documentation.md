@@ -67,6 +67,7 @@
    - 3.54 [Identificação Visual de Participações & Módulos na Gestão de Equipe](#354-identificação-visual-de-participações--módulos-na-gestão-de-equipe)
    - 3.55 [Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral](#355-unificação-do-módulo-financeiro--submenu-indentado-na-barra-lateral)
    - 3.56 [Polimento Visual, UX Responsiva Mobile-First & Scorecards do Financeiro](#356-polimento-visual-ux-responsiva-mobile-first--scorecards-do-financeiro)
+   - 3.57 [Apresentação Comercial Oficial & Vitrine de Produto (/conheca)](#357-apresentação-comercial-oficial--vitrine-de-produto-conheca)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1610,6 +1611,30 @@ Para assegurar consistência estética absoluta com os Design Tokens do PaxFlow 
    - **Ordenação Alfabética Estrita (A-Z)**: Tipos de custo, categorias e subcategorias são ordenados alfabeticamente tanto no retorno das consultas (`FinPlanoContasService`) quanto nos fallbacks locais via `localeCompare('pt-BR')`.
    - **Busca Rápida de Categorias**: Nos modais de Novo Lançamento e Edição de Contas a Pagar, o campo `🔍 Filtrar categoria...` permite filtrar instantaneamente as opções de categoria em tempo real conforme a digitação, integrado ao Tipo de Custo selecionado.
    - **Máscaras Monetárias em Tempo Real**: Todos os formulários contábeis (lançamento, edição, liquidação na baixa com juros/desconto e saldo inicial de contas bancárias) contam com formatação assistida `R$ 0,00` via `attachCurrencyMask` e conversão decimal segura via `parsePastedCurrency`, prevenindo erros de digitação e inconsistências de ponto versus vírgula no Supabase.
+
+10. **Apresentação Comercial Oficial & Vitrine de Produto (`/conheca`)**:
+    - **Reestruturação Narrativa**: Reformulação integral da página pública do PaxFlow com foco em apresentação comercial clara, descontraída e madura, eliminando gatilhos de urgência, cronômetros regressivos e tabelas de planos agressivas de e-commerce.
+    - **Jornada Cronológica em 5 Etapas com Telas Reais Integradas**:
+      1. *01. Na Criação da Proposta (PaxFlow Studio™)*: Montagem de propostas de luxo e itinerários vivos com galeria de fotos integrada, visualização lado a lado e links interativos para o passageiro abrir no celular.
+      2. *02. Antes do Embarque (PaxFlow Risk Score™)*: Auditoria contínua de passaportes, vistos, exigências sanitárias (Tratado de Schengen, febre amarela, visto americano) e vouchers aéreos/hoteleiros com ações em lote para resolução em massa.
+      3. *03. Durante a Viagem & no Plantão (Escalas & App Mobile)*: Grade semanal de plantões para finais de semana e feriados com controle automático de banco de compensação de folgas e notificações push nativas no celular.
+      4. *04. No Pós-Venda & no Caixa (Reembolsos & Financeiro)*: Monitoramento de prazos de reembolso de cias aéreas com cronômetro de SLA, contas a pagar/receber de turismo e conciliação bancária por extratos em PDF e CSV com baixa automática.
+      5. *05. No Próximo Ciclo (Next Trip Engine™)*: Radar preditivo de recompra baseado na análise de 5 vetores (sazonalidade, histórico, NPS, perfil e SLA) com geração de abordagens personalizadas para o WhatsApp em 1 clique.
+    - **Painel Matinal das 08:00 AM**: Simulação executiva da rotina matinal da agência exibindo o índice de saúde da carteira (87/100), totalizadores de viagens validadas e alertas críticos do dia.
+    - **Fechamento Comercial em Dose Dupla**: Substituição de tabelas de preços por dois cards claros: convite para testar no Modo Demonstração (sandbox isolado) ou bater um papo no WhatsApp com o time de especialistas.
+    - **Unificação de Rotas**: Centralização definitiva da vitrine comercial na rota `/conheca`, expurgando a rota legada `/landing` e unificando o código no componente `LandingPage.ts`.
+
+---
+
+### 3.57 Apresentação Comercial Oficial & Vitrine de Produto (/conheca)
+
+A página pública de apresentação do PaxFlow (`src/pages/LandingPage.ts`) foi consolidada como o ponto de contato institucional do produto com donos e gestores de agências de turismo.
+
+#### Características Arquiteturais:
+- **Rota Única e Exclusiva (`/conheca`)**: O roteador central em `src/main.ts` intercepta acessos diretos via pathname ou query string (`window.location.search.includes('conheca')`) direcionando o visitante para a apresentação.
+- **Isolamento Completo do Modo Demonstração (Sandbox)**: Ao acionar o botão de demonstração, o sistema sinaliza a flag de sessão `paxflowSandbox = true` e limpa chaves de dados operacionais sem tocar em dados de autenticação ou preferências globais de tema.
+- **Renderização Subcutânea Testável (`LandingPage.renderHtml()`)**: O template HTML da página é desacoplado do ciclo de vida do DOM do navegador, permitindo validações automatizadas de alta velocidade via Vitest em ambiente Node puro.
+- **Design Tokens e Responsividade**: Conformidade estrita com o padrão de cores dark mode (`#06070f`), animações de aceleração por hardware e rolagem defensiva otimizada para dispositivos móveis.
 
 ---
 

@@ -18,6 +18,18 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ---
 
+- **Apresentação Comercial Oficial & Vitrine de Produto (`/conheca`) [NEW]**:
+  - **Tom Institucional, Descontraído e Sem Gatilhos de Venda Agressiva**: Comunicação clara e acolhedora de agente para agente, eliminando contadores regressivos, tabelas de e-commerce e urgências artificiais.
+  - **Jornada Cronológica em 5 Etapas com Telas Reais Integradas**:
+    1. *01. Proposta que Encanta*: PaxFlow Studio™ com live preview e galeria de fotos.
+    2. *02. Blindagem Pré-Embarque*: PaxFlow Risk Score™ (Onda 3) com checagens sanitárias e ações em lote.
+    3. *03. Operação & Escala*: Grade semanal de plantões, banco de compensação de folgas e app mobile no bolso.
+    4. *04. Pós-Venda & Caixa*: Cronômetro de SLA de reembolsos aéreos e conciliação bancária por extrato em PDF/CSV.
+    5. *05. Próximo Embarque*: Next Trip Engine™ com radar preditivo de recompra em 5 vetores.
+  - **Painel Matinal das 08:00 AM**: Demonstração visual de abertura rápida exibindo saúde da carteira (87/100) e alertas acionáveis do dia.
+  - **Fechamento Comercial em Dose Dupla**: Convites transparentes para explorar o modo demonstração ou conversar diretamente no WhatsApp.
+  - **Rota Oficial Unificada**: Rota oficial exclusiva em `/conheca`, expurgando rotas e arquivos legados.
+
 - **Onda 3 dos Motores Estratégicos PaxFlow (Escala, Fidelização de Base & Blindagem Operacional) [NEW]**:
   - **PaxFlow Risk Score™ — Guia / Validador Inteligente de Exigências Sanitárias, Vacinas e Vistos por Destino**: Motor heurístico integrado que mapeia requisitos legais de entrada por país e região:
     - *Europa / Espaço Schengen*: Verificação mandatória do Tratado de Schengen com penalidade crítica (25 pts) caso falte apólice de seguro viagem com cobertura mínima de 30.000€, prevenindo recusa de entrada na imigração europeia.

@@ -213,30 +213,14 @@ class App {
 
     const isSandbox = (window as any).paxflowSandbox === true;
 
-    // Rota dedicada para a Nova Landing Page (/conheca_nova)
-    const isConhecaNovaRoute =
-      !isSandbox && (
-        path.includes('/conheca_nova') ||
-        window.location.search.includes('conheca_nova') ||
-        window.location.hash.includes('conheca_nova')
-      );
-
-    if (isConhecaNovaRoute) {
-      this.renderLandingPageNova();
-      return;
-    }
-
     const isConhecaRoute =
       !isSandbox && (
         path.includes('/conheca') ||
-        path.includes('/landing') ||
         window.location.search.includes('conheca') ||
-        window.location.search.includes('landing') ||
-        window.location.hash.includes('conheca') ||
-        window.location.hash.includes('landing')
+        window.location.hash.includes('conheca')
       );
 
-    // Se o usuário acessar explicitamente /conheca ou /landing (e não estiver em modo demo), exibe a Landing Page comercial
+    // Se o usuário acessar explicitamente /conheca (e não estiver em modo demo), exibe a Landing Page comercial
     if (isConhecaRoute) {
       this.renderLandingPage();
       return;
@@ -348,28 +332,6 @@ class App {
     }, { once: true });
   }
 
-  /**
-   * Renderiza a Nova Landing Page comercial (/conheca_nova) com carregamento sob demanda
-   */
-  private async renderLandingPageNova(): Promise<void> {
-    const { LandingPageNova } = await import('./pages/LandingPageNova');
-    const page = new LandingPageNova(this.container);
-    page.init();
-
-    // Escuta transição para o Modo Sandbox
-    window.addEventListener('paxflow-navigate-to-demo', () => {
-      if (window.location.pathname !== '/' || window.location.search || window.location.hash) {
-        window.location.href = '/';
-      } else {
-        window.location.reload();
-      }
-    }, { once: true });
-
-    // Escuta transição para a Tela de Login a partir da Landing Page
-    window.addEventListener('paxflow-navigate-to-login', () => {
-      this.renderLogin();
-    }, { once: true });
-  }
 
   /**
    * Verifica e aplica o tema inicial (salvo no localStorage ou preferência do SO)
