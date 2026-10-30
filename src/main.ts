@@ -554,29 +554,29 @@ class App {
             <div class="space-y-0.5">
 
               <!-- Link: Dashboard Comercial -->
-              <button id="nav-analytics" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <button id="nav-analytics" title="Dashboard Comercial" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2" />
                 </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Dashboard</span>
+                <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Dashboard</span>
               </button>
               
               <!-- Link: Inbox de Alertas -->
-              <button id="nav-inbox" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <button id="nav-inbox" title="Inbox &amp; Escala" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <rect width="20" height="16" x="2" y="4" rx="2" />
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                 </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Inbox &amp; Escala</span>
+                <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Inbox &amp; Escala</span>
                 <span id="nav-inbox-badge" class="hidden"></span>
               </button>
 
               <!-- Link: Kanban de Orçamentos -->
-              <button id="nav-orcamentos" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <button id="nav-orcamentos" title="Orçamentos" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Orçamentos</span>
+                <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Orçamentos</span>
               </button>
 
               <!-- Link: PaxFlow Studio™ -->
@@ -584,42 +584,42 @@ class App {
                 const studioActive = isStudioEnabled(this.user, this.perfil, this.settings);
                 if (studioActive) {
                   return `
-                    <button id="nav-studio" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative">
-                      <svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-400 group-hover:text-indigo-600 dark:text-indigo-400 dark:group-hover:text-indigo-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <button id="nav-studio" title="PaxFlow Studio" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                      <svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-400 group-hover:text-indigo-600 dark:text-indigo-400 dark:group-hover:text-indigo-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                       </svg>
-                      <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow Studio</span>
-                      <span class="ml-auto px-1.5 py-0.5 rounded text-[8px] font-black bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-xs ${this.sidebarCollapsed ? 'md:hidden' : ''}">PRO</span>
+                      <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">PaxFlow Studio</span>
+                      <span class="sidebar-label ml-auto px-1.5 py-0.5 rounded text-[8px] font-black bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-xs ${this.sidebarCollapsed ? 'hidden' : ''}">PRO</span>
                     </button>
                   `;
                 } else {
                   return `
                     <button id="nav-studio" title="Recurso desativado nas configurações globais" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left opacity-40 cursor-not-allowed select-none group relative" disabled>
-                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                       </svg>
-                      <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow Studio</span>
-                      <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 font-bold uppercase ${this.sidebarCollapsed ? 'md:hidden' : ''}">Off</span>
+                      <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">PaxFlow Studio</span>
+                      <span class="sidebar-label ml-auto text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 font-bold uppercase ${this.sidebarCollapsed ? 'hidden' : ''}">Off</span>
                     </button>
                   `;
                 }
               })()}
 
               <!-- Link: Dashboard Kanban -->
-              <button id="nav-dashboard" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <button id="nav-dashboard" title="Viagens" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Viagens</span>
+                <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Viagens</span>
                 <span id="nav-viagens-badge" class="hidden"></span>
               </button>
 
               <!-- Link: Reembolsos -->
-              <button id="nav-reembolsos" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <button id="nav-reembolsos" title="Reembolsos" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Reembolsos</span>
+                <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Reembolsos</span>
               </button>
 
               <!-- Link: Financeiro Expansível com Submenu Indentado -->
@@ -629,19 +629,19 @@ class App {
                   return `
                     <div class="w-full flex flex-col">
                       <!-- Botão Pai: Financeiro (Accordion) -->
-                      <button id="nav-financeiro" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-between'} font-semibold text-xs text-left transition select-none group relative cursor-pointer">
-                        <div class="flex items-center gap-2.5">
-                          <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <button id="nav-financeiro" title="Financeiro" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-between'} font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Financeiro</span>
+                          <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Financeiro</span>
                         </div>
-                        <div class="flex items-center gap-1.5 ${this.sidebarCollapsed ? 'md:hidden' : ''}">
-                          <span id="nav-financeiro-badge" class="hidden"></span>
+                        <div class="sidebar-fin-controls flex items-center gap-1.5 ${this.sidebarCollapsed ? 'hidden' : ''}">
                           <svg id="nav-financeiro-chevron" width="14" height="14" class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 transition-transform duration-200 ${this.finSubmenuOpen ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                           </svg>
                         </div>
+                        <span id="nav-financeiro-badge" class="hidden"></span>
                       </button>
 
                       <!-- Submenu Indentado (4 Submódulos Unificados) -->
@@ -673,11 +673,11 @@ class App {
               })()}
 
               <!-- Link: Clientes -->
-              <button id="nav-clientes" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <button id="nav-clientes" title="Clientes" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Clientes</span>
+                <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Clientes</span>
               </button>
 
               <!-- Link: Next Trip Engine -->
@@ -685,66 +685,66 @@ class App {
                 const nextTripActive = isNextTripEnabled(this.user, this.perfil, this.settings);
                 if (nextTripActive) {
                   return `
-                    <button id="nav-next-trip" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <button id="nav-next-trip" title="Next Trip Engine" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <circle cx="12" cy="12" r="9" />
                         <circle cx="12" cy="12" r="5" />
                         <circle cx="12" cy="12" r="1.5" fill="currentColor" />
                       </svg>
-                      <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Next Trip Engine</span>
+                      <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Next Trip Engine</span>
                     </button>
                   `;
                 } else {
                   return `
-                    <button id="nav-next-trip" title="Recurso desativado nas configurações globais" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left opacity-40 cursor-not-allowed select-none group" disabled>
-                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <button id="nav-next-trip" title="Recurso desativado nas configurações globais" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left opacity-40 cursor-not-allowed select-none group relative" disabled>
+                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <circle cx="12" cy="12" r="9" />
                         <circle cx="12" cy="12" r="5" />
                         <circle cx="12" cy="12" r="1.5" fill="currentColor" />
                       </svg>
-                      <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Next Trip Engine</span>
-                      <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 font-bold uppercase ${this.sidebarCollapsed ? 'md:hidden' : ''}">Off</span>
+                      <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Next Trip Engine</span>
+                      <span class="sidebar-label ml-auto text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 font-bold uppercase ${this.sidebarCollapsed ? 'hidden' : ''}">Off</span>
                     </button>
                   `;
                 }
               })()}
 
               <!-- Link: Relatórios -->
-              <button id="nav-relatorios" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <button id="nav-relatorios" title="Relatórios" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
                 </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Relatórios</span>
+                <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Relatórios</span>
               </button>
 
               <!-- Link: Cadastros (Somente ADMIN) -->
               ${this.perfil?.role === 'admin' ? `
-                <button id="nav-cadastros" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                  <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <button id="nav-cadastros" title="Cadastros" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                  <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
-                  <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Cadastros</span>
+                  <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Cadastros</span>
                 </button>
               ` : ''}
 
               <!-- Link: Configurações (Somente ADMIN) -->
               ${this.perfil?.role === 'admin' ? `
-                <button id="nav-configuracoes" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                  <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <button id="nav-configuracoes" title="Configurações" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative cursor-pointer">
+                  <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Configurações</span>
+                  <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Configurações</span>
                 </button>
               ` : ''}
 
               <!-- Link: Central de Ajuda -->
-              <button id="nav-ajuda" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <button id="nav-ajuda" title="Central de Ajuda" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group relative cursor-pointer">
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Central de Ajuda</span>
+                <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Central de Ajuda</span>
               </button>
 
 
@@ -1383,12 +1383,12 @@ class App {
     }
 
     // Ocultar/Exibir textos do menu lateral
-    const textLabels = aside.querySelectorAll('#sidebar-logo-text, nav button:not(#sidebar-profile-trigger) > span, #sidebar-profile-text');
+    const textLabels = aside.querySelectorAll('#sidebar-logo-text, .sidebar-label, .sidebar-fin-controls, #sidebar-profile-text');
     textLabels.forEach(el => {
       if (this.sidebarCollapsed) {
-        el.classList.add('md:hidden');
+        el.classList.add('hidden');
       } else {
-        el.classList.remove('md:hidden');
+        el.classList.remove('hidden');
       }
     });
 
@@ -1435,6 +1435,9 @@ class App {
     });
 
     this.atualizarSidebarProfileFooter();
+    this.atualizarInboxBadge();
+    this.atualizarFinanceiroBadge();
+    this.atualizarViagensRiscoBadge();
   }
 
   /**
@@ -1648,9 +1651,9 @@ class App {
       if (btn) {
         const alignmentClass = this.sidebarCollapsed ? 'justify-center' : (p === 'financeiro' ? 'justify-between' : 'justify-start');
         if (p === page) {
-          btn.className = `w-full px-3 py-1.5 rounded-xl flex items-center ${alignmentClass} gap-2.5 font-extrabold text-xs text-left transition select-none bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 group cursor-pointer`;
+          btn.className = `w-full px-3 py-1.5 rounded-xl flex items-center ${alignmentClass} gap-2.5 font-extrabold text-xs text-left transition select-none bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 group relative cursor-pointer`;
         } else {
-          btn.className = `w-full px-3 py-1.5 rounded-xl flex items-center ${alignmentClass} gap-2.5 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group cursor-pointer`;
+          btn.className = `w-full px-3 py-1.5 rounded-xl flex items-center ${alignmentClass} gap-2.5 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group relative cursor-pointer`;
         }
       }
     });
@@ -1728,9 +1731,9 @@ class App {
           badge.textContent = String(unreadCount);
           badge.classList.remove('hidden');
           if (this.sidebarCollapsed) {
-            badge.className = "absolute top-2.5 right-2.5 px-1 py-0.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-black bg-rose-500 text-white animate-pulse";
+            badge.className = "absolute top-1.5 right-1.5 px-1 py-0.2 min-w-[15px] h-[15px] flex items-center justify-center rounded-full text-[8px] font-black bg-rose-500 text-white animate-pulse shadow-sm z-10 pointer-events-none";
           } else {
-            badge.className = "ml-auto px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white animate-pulse";
+            badge.className = "ml-auto px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white animate-pulse shadow-sm";
           }
         } else {
           badge.classList.add('hidden');
@@ -1767,16 +1770,16 @@ class App {
           if (resumo.nivelAlerta === 'urgente') {
             // Há contas atrasadas: destaque vermelho pulsante
             if (isCollapsed) {
-              badge.className = "absolute top-2.5 right-2.5 px-1 py-0.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-black bg-rose-500 text-white animate-pulse shadow-sm";
+              badge.className = "absolute top-1.5 right-1.5 px-1 py-0.2 min-w-[15px] h-[15px] flex items-center justify-center rounded-full text-[8px] font-black bg-rose-500 text-white animate-pulse shadow-sm z-10 pointer-events-none";
             } else {
-              badge.className = "ml-auto px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white animate-pulse shadow-sm";
+              badge.className = "absolute right-7 top-1/2 -translate-y-1/2 px-1.5 py-0.2 min-w-[15px] h-[15px] flex items-center justify-center rounded-full text-[8px] font-black bg-rose-500 text-white animate-pulse shadow-sm";
             }
           } else {
             // Há contas vencendo hoje ou próximas 48h: destaque âmbar/alerta
             if (isCollapsed) {
-              badge.className = "absolute top-2.5 right-2.5 px-1 py-0.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-black bg-amber-500 text-white shadow-sm";
+              badge.className = "absolute top-1.5 right-1.5 px-1 py-0.2 min-w-[15px] h-[15px] flex items-center justify-center rounded-full text-[8px] font-black bg-amber-500 text-white shadow-sm z-10 pointer-events-none";
             } else {
-              badge.className = "ml-auto px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500 text-white shadow-sm";
+              badge.className = "absolute right-7 top-1/2 -translate-y-1/2 px-1.5 py-0.2 min-w-[15px] h-[15px] flex items-center justify-center rounded-full text-[8px] font-black bg-amber-500 text-white shadow-sm";
             }
           }
         } else {
@@ -1833,7 +1836,7 @@ class App {
 
           const isCollapsed = this.sidebarCollapsed;
           if (isCollapsed) {
-            badge.className = "absolute top-2.5 right-2.5 px-1 py-0.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-black bg-rose-600 text-white animate-pulse shadow-sm";
+            badge.className = "absolute top-1.5 right-1.5 px-1 py-0.2 min-w-[15px] h-[15px] flex items-center justify-center rounded-full text-[8px] font-black bg-rose-600 text-white animate-pulse shadow-sm z-10 pointer-events-none";
           } else {
             badge.className = "ml-auto px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-600 text-white animate-pulse shadow-sm";
           }
