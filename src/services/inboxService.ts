@@ -4,6 +4,7 @@ import { BADGE_DEFINITIONS } from './gamification';
 import { EscalaService, isSameConsultantName } from './escalaService';
 import { formatTipoSolicitacaoEscala, formatStatusEscala, formatReembolsoStatus, formatarDataBR, formatarPeriodoDataBR } from '../utils/messageFormatter';
 import { PushSenderService } from './pushSenderService';
+import { podeAcessarFinanceiro } from '../utils/permissaoFinanceiro';
 
 export class InboxService {
   /**
@@ -1667,10 +1668,7 @@ export class InboxService {
 
       // --- PART 9: CONTAS A PAGAR & GESTÃO FINANCEIRA ---
       try {
-        const podeVerFinanceiro = userIsAdmin || 
-          perfil?.role === 'financeiro' || 
-          (perfil as any)?.acesso_financeiro === true || 
-          (perfil as any)?.acessoFinanceiro === true;
+        const podeVerFinanceiro = podeAcessarFinanceiro(perfil);
 
         if (podeVerFinanceiro) {
           const { FinContasPagarService } = await import('./finContasPagarService');

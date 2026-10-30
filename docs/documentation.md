@@ -1478,22 +1478,6 @@ O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operan
    - **Recálculo Inteligente de Datas e Prazos Úteis**: A alteração do dia de vencimento nominal atualiza o dia em todos os meses futuros pendentes, reavaliando individualmente cada data com o motor de antecipação tributária ou postergação bancária.
    - **Trilha de Auditoria Granular**: Cada alteração em cascata registra na tabela `fin_auditoria` a quantidade total de títulos afetados, payload de alterações e identificador do usuário responsável.
 
-8. **Integração de Contas a Pagar na Conciliação Bancária & Importador Multiformato (FinRecon™)**:
-   - **Conciliação Bidirecional Completa (Créditos & Débitos)**: A conciliação bancária passa a cobrir ambos os lados do balanço contábil da agência, permitindo o batimento de entradas provenientes de pagamentos de viagens (LOCs) e de saídas decorrentes de despesas operacionais e fixas.
-   - **Suporte Multiformato Amplo (OFX, CSV, TXT e PDF)**: O sistema suporta nativamente os extratos bancários de qualquer instituição brasileira, com tratamento especializado para **Santander Empresas** e **XP Empresas/Investimentos**:
-     - *Mapeamento Dinâmico de Cabeçalhos*: Identificação estatística do delimitador (`;`, `,`, `\t` ou `|`) e localização da linha de cabeçalho através de sinônimos bancários (`data`, `histórico/descrição`, `documento`, `valor`, `débito/saídas`, `crédito/entradas`, `saldo`).
-     - *Normalização Monetária Robusta*: Tratamento imune a variações com `R$`, espaços, sinais negativos prefixados (`-R$ 1.402,34`), sufixados (`1.402,34 D` ou `1.402,34-`) ou contábeis `(1.402,34)`.
-     - *Blindagem contra Conflito de Documento*: Colunas de documento numérico puro (ex: `194731`, `0000000000`) são segregadas e impedidas de colidir com o valor da operação.
-     - *Extração de Extratos em PDF*: Leitura client-side via `pdfjs-dist` com ordenação espacial de linhas de cima para baixo, suportando layouts em bloco (XP) e tabulares (Santander).
-   - **Motor Híbrido de Smart Match**: O algoritmo avalia os lançamentos de débito do extrato contra o banco de contas a pagar (`fin_contas_pagar`), calculando uma pontuação inteligente (0 a 100) baseada em 4 critérios:
-     - *Proximidade de Valor*: +60 pontos para valor exato e +40 pontos para tolerância de até 3% (diferenças de juros ou descontos residuais).
-     - *Proximidade de Data*: +30 pontos para o mesmo dia, +25 pontos para ±1 dia útil e +15 pontos para ±3 dias da data de pagamento ou vencimento operacional.
-     - *Proximidade Textual do Fornecedor*: +25 pontos caso o nome do favorecido (ex: "Solaris", "Imobiliária", "Agaxtur") coincida com a descrição do extrato bancário.
-     - *Proximidade da Categoria Contábil*: +15 pontos caso o nome da categoria do plano de contas esteja presente na descrição do débito bancário.
-   - **Sugestões com Ação em 1-Clique**: Transações com score ≥ 50% são exibidas com destaque no topo da tela com o identificador visual `💰 Despesa: [Favorecido]` e o botão `⚡ Conciliar Saída`, permitindo a reconciliação e baixa assistida instantânea.
-   - **Modal Especializado de Vinculação (`VincularContaPagarModal`)**: Débitos bancários contam com o botão `💰 Vincular Conta` na listagem do extrato, abrindo diálogo com os dados da movimentação bancária, pesquisa textual instantânea, lista ordenada por score de compatibilidade e opção de *Baixa Assistida Automática*.
-   - **Baixa Assistida e Fechamento do Ciclo**: Se o título vinculado ainda estiver com status pendente ou em atraso, a conciliação invoca automaticamente `FinContasPagarService.baixarConta`, registrando a data de pagamento real do extrato, valor pago, observação de conciliação bancária e emitindo os eventos reativos `paxflow-financeiro-updated` e `paxflow-conciliacao-updated`.
-
 ### 3.52 Identificação Visual de Participações & Módulos na Gestão de Equipe
 
 A gestão de colaboradores e consultores em **Configurações -> Equipe de Consultores** adota um padrão de alta densidade informativa e ergonomia sem esticar a altura vertical das linhas da tabela:
@@ -1503,13 +1487,13 @@ A gestão de colaboradores e consultores em **Configurações -> Equipe de Consu
 2. **Os Três Indicadores Semânticos**:
    - **📅 Escala**: Tag com contorno azul `📅 Escala` (`participa_escala !== false`) sinaliza que o colaborador atua na grade de turnos diários e plantões da Central de Escala; tag suave `📅 Off` sinaliza consultores não escalados.
    - **🎯 Metas & KPIs**: Tag com contorno roxo `🎯 Metas` (`participa_metricas !== false`) indica que o usuário compete nos rankings comerciais, campanhas da agência e gamificação/XP; tag `🎯 Off` para diretores ou perfis de teste isentos de metas.
-   - **💰 Financeiro**: Tag com contorno esmeralda `💰 Fin` (`acesso_financeiro || role === 'financeiro' || role === 'admin'`) indica liberação imediata para operação do Contas a Pagar, Remessas e Fluxo de Caixa; tag `💰 Off` para operadores restritos às rotinas comerciais.
+   - **💰 Financeiro**: Tag com contorno esmeralda `💰 Fin` (`podeAcessarFinanceiro(perfil)`) indica liberação para operação do Contas a Pagar, Conciliação e Fluxo de Caixa; tag `💰 Off` para operadores e administradores com acesso financeiro revogado.
 3. **Persistência Completa no Cadastro e Edição**:
    - Checkboxes de ativação/desativação sincronizados em tempo real no Supabase (`profiles`), disponíveis tanto no formulário de cadastro de novos consultores quanto no modal de edição de agentes existentes.
 
 ### 3.53 Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral
 
-Com o crescimento das rotinas contábeis da agência, o módulo de **Conciliação Bancária** foi oficialmente integrado ao **Financeiro**, unificando sob uma mesma arquitetura os 5 submódulos contábeis essenciais do PaxFlow e substituindo a antiga organização por abas horizontais internas por um menu expansível (accordion) com indentação elegante na Sidebar:
+Com o crescimento das rotinas contábeis da agência, o módulo de **Conciliação Bancária** foi oficialmente integrado ao **Financeiro**, unificando sob uma mesma arquitetura os 4 submódulos contábeis essenciais do PaxFlow e substituindo a antiga organização por abas horizontais internas por um menu expansível (accordion) com indentação elegante na Sidebar:
 
 1. **Eliminação de Abas Internas & 100% de Área Útil**:
    - A barra horizontal de abas do topo de `Financeiro.ts` foi removida, liberando espaço vertical e horizontal contínuo para tabelas extensas, grade mensal de fluxo de caixa e o painel de conciliação bancária.
@@ -1518,6 +1502,24 @@ Com o crescimento das rotinas contábeis da agência, o módulo de **Conciliaç�
 
 2. **Menu Expansível (Accordion) com Indentação na Sidebar (`src/main.ts`)**:
    - **Botão Pai `Financeiro`**: Exibe o ícone contábil, chevron rotativo `▾` e badge reativa de alertas de títulos pendentes/atrasados.
+   - **Submenu Indentado com Borda Conectora**: Contêiner visualmente conectado pela margem esquerda (`border-l-2 border-indigo-200/80 dark:border-indigo-900/60 ml-5`), agrupando os 4 submódulos objetivos:
+     - `📋 Contas a Pagar` (`#financeiro?sub=contas-pagar`): Tela única e central de liquidez, englobando títulos avulsos, parcelamentos e remessas agrupadas em lote via alternador visual (`Todos`, `Apenas Avulsos` e `Lotes de Remessa`).
+     - `📈 Fluxo de Caixa & DRE` (`#financeiro?sub=fluxo-caixa`)
+     - `🪙 Conciliação` (`#financeiro?sub=conciliacao`)
+     - `⚙️ Plano de Contas` (`#financeiro?sub=plano-contas`)
+   - **Interação Inteligente**:
+     - Clicar no botão pai quando a página atual já for Financeiro alterna o estado de abertura/fechamento do accordion e memoriza a preferência no `localStorage`.
+     - Clicar no botão pai vindo de outra tela expande o accordion automaticamente e abre o último submódulo selecionado.
+     - Clicar com a barra lateral em modo colapsado (mini-barra) expande a sidebar e navega diretamente para o financeiro.
+     - Cada subitem ativo é destacado com fundo suave e borda semântica em tom índigo (`bg-indigo-50 dark:bg-indigo-950/60`).
+
+3. **Matriz de Governança & Controle de Acesso Estrito (RBAC)**:
+   - **Controle Explícito por Usuário (`podeAcessarFinanceiro`)**: Usuários com perfil `financeiro` ou com a flag `acesso_financeiro: true` têm acesso liberado. **Administradores com a flag `acesso_financeiro: false` têm o acesso estritamente revogado**, não visualizando o menu lateral, não recebendo badges/alertas e sendo barrados nas rotas do financeiro.
+   - **Ação Exclusiva de Administrador**: A operação crítica de **Fechar Mês** (trancamento de competências contábeis na Conciliação) e as ações de **Estornar Pagamento** e **Cancelar Título** continuam restritas a administradores autorizados (`role === 'admin' && podeAcessarFinanceiro`).
+
+4. **Sincronização de Rotas na SPA & Retrocompatibilidade Total**:
+   - A barra de endereços reflete o submódulo ativo via querystring (ex: `#financeiro?sub=conciliacao`).
+   - Requisições legadas para `#conciliacao` ou `#financeiro?sub=remessas` são automaticamente redirecionadas para seus destinos unificados (`#financeiro?sub=conciliacao` e `#financeiro?sub=contas-pagar`) sem qualquer quebra de fluxo.
    - **Submenu Indentado com Borda Conectora**: Contêiner visualmente conectado pela margem esquerda (`border-l-2 border-indigo-200/80 dark:border-indigo-900/60 ml-5`), agrupando os 4 submódulos objetivos:
      - `📋 Contas a Pagar` (`#financeiro?sub=contas-pagar`): Tela única e central de liquidez, englobando títulos avulsos, parcelamentos e remessas agrupadas em lote via alternador visual (`Todos`, `Apenas Avulsos` e `Lotes de Remessa`).
      - `📈 Fluxo de Caixa & DRE` (`#financeiro?sub=fluxo-caixa`)

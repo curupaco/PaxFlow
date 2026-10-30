@@ -1,32 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { podeAcessarFinanceiro } from '../../src/utils/permissaoFinanceiro';
 
 describe('Módulo Financeiro Unificado - Testes Subcutâneos de Permissão e Navegação', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('deve validar permissão de acesso ao Financeiro e Conciliação para perfis autorizados', () => {
+  it('deve validar permissão de acesso ao Financeiro respeitando acesso_financeiro inclusive para perfil admin (caso Eduardo)', () => {
     // Setup
     const perfis = [
-      { role: 'admin', acesso_financeiro: false, esperado: true },
-      { role: 'financeiro', acesso_financeiro: false, esperado: true },
-      { role: 'consultor', acesso_financeiro: true, esperado: true },
-      { role: 'consultor', acesso_financeiro: false, esperado: false },
+      { role: 'admin', acesso_financeiro: false, esperado: false }, // Eduardo: admin com flag desligada NÃO ACESSA
+      { role: 'admin', acesso_financeiro: true, esperado: true },  // Admin com flag ligada ACESSA
+      { role: 'admin', acesso_financeiro: undefined, esperado: true }, // Admin não configurado ACESSA por padrão
+      { role: 'financeiro', acesso_financeiro: false, esperado: true }, // Papel dedicado sempre acessa
+      { role: 'consultor', acesso_financeiro: true, esperado: true },  // Consultor com flag ligada ACESSA
+      { role: 'consultor', acesso_financeiro: false, esperado: false }, // Consultor com flag desligada NÃO ACESSA
+      { role: 'consultor', acesso_financeiro: undefined, esperado: false }, // Consultor padrão NÃO ACESSA
       { role: 'gestor', acesso_financeiro: false, esperado: false }
     ];
 
-    const verificarPermissaoFinanceiro = (perfil: any): boolean => {
-      return (
-        perfil?.role === 'admin' ||
-        perfil?.role === 'financeiro' ||
-        perfil?.acesso_financeiro === true ||
-        perfil?.acessoFinanceiro === true
-      );
-    };
-
     // Action & Assert
     perfis.forEach(({ role, acesso_financeiro, esperado }) => {
-      const autorizado = verificarPermissaoFinanceiro({ role, acesso_financeiro });
+      const autorizado = podeAcessarFinanceiro({ role, acesso_financeiro });
       expect(autorizado).toBe(esperado);
     });
   });

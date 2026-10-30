@@ -15,6 +15,7 @@ import { JustificarEntradaModal } from '../components/conciliacao/JustificarEntr
 import { FecharMesModal } from '../components/conciliacao/FecharMesModal';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { renderHelpIcon } from '../utils/helpHelper';
+import { podeAcessarFinanceiro } from '../utils/permissaoFinanceiro';
 
 export class ConciliacaoPage {
   private container: HTMLElement;
@@ -64,11 +65,7 @@ export class ConciliacaoPage {
       }
 
       // Permissão: equipe financeira (admin, financeiro ou flag acesso_financeiro)
-      const podeAcessar = 
-        this.perfil?.role === 'admin' || 
-        this.perfil?.role === 'financeiro' || 
-        (this.perfil as any)?.acesso_financeiro === true || 
-        (this.perfil as any)?.acessoFinanceiro === true;
+      const podeAcessar = podeAcessarFinanceiro(this.perfil);
 
       if (!podeAcessar) {
         this.renderAuthError('Acesso Restrito: Apenas a Equipe Financeira ou Administradores autorizados possuem permissão para acessar a Conciliação Bancária.');

@@ -29,6 +29,7 @@ import { VersionToast } from './components/VersionToast';
 import { PushNotificationService } from './services/pushNotificationService';
 import { isNextTripEnabled, isStudioEnabled } from './utils/featureFlags';
 import { initGlobalDateMask } from './utils/masks';
+import { podeAcessarFinanceiro } from './utils/permissaoFinanceiro';
 
 (window as any).traduzirErro = traduzirErro;
 
@@ -112,12 +113,20 @@ class App {
 
     // Ouvinte para reatividade do perfil atualizado
     window.addEventListener('paxflow-profile-updated', (e: any) => {
-      const { nome, avatar_url } = e.detail;
-      if (this.perfil) {
-        this.perfil.nome = nome;
-        this.perfil.avatar_url = avatar_url;
+      const detail = e.detail;
+      const oldAcessoFin = podeAcessarFinanceiro(this.perfil);
+      if (this.perfil && detail) {
+        Object.assign(this.perfil, detail);
       }
-      this.atualizarSidebarProfileFooter();
+      const newAcessoFin = podeAcessarFinanceiro(this.perfil);
+      if (oldAcessoFin !== newAcessoFin) {
+        this.renderAppShell();
+        if (!newAcessoFin && window.location.hash.startsWith('#financeiro')) {
+          this.navigate('analytics');
+        }
+      } else {
+        this.atualizarSidebarProfileFooter();
+      }
     });
 
     // Ouvinte para reatividade do inbox atualizado
@@ -618,8 +627,8 @@ class App {
 
               <!-- Link: Financeiro Expansível com Submenu Indentado -->
               ${(() => {
-                const podeAcessarFinanceiro = this.perfil?.role === 'admin' || this.perfil?.role === 'financeiro' || (this.perfil as any)?.acesso_financeiro === true || (this.perfil as any)?.acessoFinanceiro === true;
-                if (podeAcessarFinanceiro) {
+                const podeAcessar = podeAcessarFinanceiro(this.perfil);
+                if (podeAcessar) {
                   return `
                     <div class="w-full flex flex-col">
                       <!-- Botão Pai: Financeiro (Accordion) -->
@@ -1252,13 +1261,23 @@ class App {
           const newXp = updated.xp || 0;
 
           // Atualiza dados locais
+          const oldAcessoFin = podeAcessarFinanceiro(this.perfil);
           if (this.perfil) {
+            Object.assign(this.perfil, updated);
             this.perfil.xp = newXp;
             this.perfil.nivel = newLevel;
           }
+          const newAcessoFin = podeAcessarFinanceiro(this.perfil);
 
-          // Atualiza visualmente o rodapé e re-renderiza
-          this.atualizarSidebarProfileFooter();
+          // Se a permissão de acesso ao financeiro mudou em tempo real, re-renderiza a navegação
+          if (oldAcessoFin !== newAcessoFin) {
+            this.renderAppShell();
+            if (!newAcessoFin && window.location.hash.startsWith('#financeiro')) {
+              this.navigate('analytics');
+            }
+          } else {
+            this.atualizarSidebarProfileFooter();
+          }
 
           // Checagem de Level Up ou XP recebido
           if (newLevel > oldLevel) {
@@ -1729,12 +1748,11 @@ class App {
    */
   private async atualizarFinanceiroBadge(): Promise<void> {
     if (!this.user) return;
-    const podeAcessarFinanceiro = this.perfil?.role === 'admin' || 
-      this.perfil?.role === 'financeiro' || 
-      (this.perfil as any)?.acesso_financeiro === true || 
-      (this.perfil as any)?.acessoFinanceiro === true;
-
-    if (!podeAcessarFinanceiro) return;
+    if (!podeAcessarFinanceiro(this.perfil)) {
+      const badge = document.getElementById('nav-financeiro-badge');
+      if (badge) badge.classList.add('hidden');
+      return;
+    }
 
     try {
       const { FinContasPagarService } = await import('./services/finContasPagarService');

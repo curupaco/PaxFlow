@@ -17,6 +17,7 @@ import { FinRemessasService } from '../services/finRemessasService';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { renderHelpIcon } from '../utils/helpHelper';
 import { ConciliacaoPage } from './Conciliacao';
+import { podeAcessarFinanceiro } from '../utils/permissaoFinanceiro';
 
 export type FinSubView = 'contas' | 'fluxo' | 'conciliacao' | 'plano';
 
@@ -80,11 +81,7 @@ export class FinanceiroPage {
       this.user = user;
       this.perfil = perfil;
 
-      const podeAcessar = 
-        perfil?.role === 'admin' || 
-        perfil?.role === 'financeiro' || 
-        perfil?.acesso_financeiro === true || 
-        (perfil as any)?.acessoFinanceiro === true;
+      const podeAcessar = podeAcessarFinanceiro(perfil);
 
       if (!podeAcessar) {
         this.renderAuthError('Acesso Restrito: Apenas a Equipe Financeira ou Administradores autorizados possuem permissão para acessar este módulo.');

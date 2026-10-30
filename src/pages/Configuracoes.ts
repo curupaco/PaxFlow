@@ -6,6 +6,7 @@ import { renderEmailInputHTML, setupFormValidation } from '../utils/masks';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { parseCSV, batchInsertOrcamentos, formatBrDateToYmd, parseBrFloat } from '../services/csvImporter';
 import { renderHelpIcon } from '../utils/helpHelper';
+import { podeAcessarFinanceiro } from '../utils/permissaoFinanceiro';
 
 
 declare const process: any;
@@ -1158,7 +1159,7 @@ export class ConfiguracoesPage {
               <label class="text-xs font-bold text-slate-700 dark:text-slate-200 block">💰 Acesso ao Módulo Financeiro</label>
               <span class="text-[10px] text-slate-400 block">Permite visualizar e gerenciar o Contas a Pagar, Remessas e Fluxo de Caixa.</span>
             </div>
-            <input type="checkbox" id="input-ec-acesso-financeiro" ${c.acesso_financeiro || (c as any).acessoFinanceiro || c.role === 'financeiro' ? 'checked' : ''} class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
+            <input type="checkbox" id="input-ec-acesso-financeiro" ${podeAcessarFinanceiro(c) ? 'checked' : ''} class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
           </div>
 
           <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
@@ -1330,7 +1331,7 @@ export class ConfiguracoesPage {
         // Se for a si mesmo, dispara o evento de sincronização geral do app
         if (isSelf) {
           window.dispatchEvent(new CustomEvent('paxflow-profile-updated', {
-            detail: { nome: nomeVal, avatar_url: selectedAvatarId }
+            detail: { nome: nomeVal, avatar_url: selectedAvatarId, acesso_financeiro: acessoFinanceiroVal }
           }));
         }
 
@@ -2374,7 +2375,7 @@ export class ConfiguracoesPage {
                     : `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs opacity-60" title="Isento de Metas e Rankings">🎯 Off</span>`;
 
                   // 3. Financeiro (c.acesso_financeiro ou role admin/financeiro)
-                  const temAcessoFinanceiro = c.role === 'admin' || c.role === 'financeiro' || !!c.acesso_financeiro || !!(c as any).acessoFinanceiro;
+                  const temAcessoFinanceiro = podeAcessarFinanceiro(c);
                   const finBadge = temAcessoFinanceiro
                     ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 text-[10px] font-bold rounded-lg shadow-xs" title="Acesso liberado ao Módulo Financeiro (Contas a Pagar, Remessas e Fluxo)">💰 Fin</span>`
                     : `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs opacity-60" title="Sem acesso ao Módulo Financeiro">💰 Off</span>`;
