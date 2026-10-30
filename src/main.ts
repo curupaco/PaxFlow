@@ -172,7 +172,14 @@ class App {
         const hash = window.location.hash;
         const queryIndex = hash.indexOf('?');
         const params = new URLSearchParams(queryIndex >= 0 ? hash.substring(queryIndex) : window.location.search);
-        const entityId = params.get('id') || params.get('propostaId') || hash.replace('#proposta/', '').replace('#proposta', '');
+        let entityId = params.get('id') || params.get('propostaId') || params.get('viagemId');
+        if (!entityId) {
+          const cleanHash = (queryIndex >= 0 ? hash.substring(0, queryIndex) : hash).replace(/^#/, '');
+          const parts = cleanHash.split('/');
+          if (parts.length > 1 && parts[1].trim()) {
+            entityId = parts[1].trim();
+          }
+        }
 
         if (!entityId) {
           this.container.innerHTML = `
@@ -180,6 +187,7 @@ class App {
               <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-xl">
                 <span class="text-3xl">⚠️</span>
                 <h3 class="text-md font-extrabold text-slate-800 dark:text-slate-200 mt-3">Identificador ausente na URL.</h3>
+                <p class="text-xs text-slate-400 mt-1">Por favor, verifique o link recebido e tente novamente.</p>
               </div>
             </div>
           `;

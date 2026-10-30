@@ -595,7 +595,7 @@ export class PublicViews {
 
           let descricaoEvento = `Viagem para ${data.destino}\n`;
           if (data.codigo_localizador) descricaoEvento += `Localizador Geral: ${data.codigo_localizador}\n`;
-          if (data.consultor_nome) descricaoEvento += `Consultor de Viagens: ${data.consultor_nome} (WhatsApp: (11) 3090-7070)\n`;
+          if (data.consultor_nome) descricaoEvento += `Consultor de Viagens: ${data.consultor_nome} (Suporte: ${telExibicao})\n`;
           descricaoEvento += `Itinerário Online: ${window.location.href}\n`;
 
           if (isIOS) {
