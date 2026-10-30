@@ -146,31 +146,96 @@ export class StudioExtractionService {
    */
   public static async extrairTextoDeArquivo(file: File): Promise<string> {
     try {
+      if (file.name.toLowerCase().endsWith('.txt') || file.type.includes('text/plain')) {
+        return await file.text();
+      }
+
+      // 1. Tenta carregar e analisar via pdfjs-dist
+      try {
+        const pdfjsLib = await import('pdfjs-dist');
+        if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+          try {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+              'pdfjs-dist/build/pdf.worker.min.mjs',
+              import.meta.url
+            ).toString();
+          } catch {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.0.379'}/pdf.worker.min.mjs`;
+          }
+        }
+
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({
+          data: arrayBuffer,
+          useSystemFonts: true
+        });
+
+        const pdf = await loadingTask.promise;
+        const linhasTotais: string[] = [];
+
+        for (let p = 1; p <= pdf.numPages; p++) {
+          const page = await pdf.getPage(p);
+          const textContent = await page.getTextContent();
+
+          const itensPorLinha: Map<number, { x: number; str: string }[]> = new Map();
+
+          for (const item of textContent.items as any[]) {
+            if (!item.str || !item.str.trim()) continue;
+            const y = Math.round(item.transform[5]);
+            const x = Math.round(item.transform[4]);
+
+            let chaveY = y;
+            for (const k of itensPorLinha.keys()) {
+              if (Math.abs(k - y) <= 3) {
+                chaveY = k;
+                break;
+              }
+            }
+
+            if (!itensPorLinha.has(chaveY)) {
+              itensPorLinha.set(chaveY, []);
+            }
+            itensPorLinha.get(chaveY)!.push({ x, str: item.str });
+          }
+
+          const chavesOrdenadas = Array.from(itensPorLinha.keys()).sort((a, b) => b - a);
+          for (const k of chavesOrdenadas) {
+            const itens = itensPorLinha.get(k)!;
+            itens.sort((a, b) => a.x - b.x);
+            const linhaTexto = itens.map(i => i.str.trim()).join(' ');
+            if (linhaTexto) {
+              linhasTotais.push(linhaTexto);
+            }
+          }
+        }
+
+        const textoExtraido = linhasTotais.join('\n');
+        if (textoExtraido && textoExtraido.trim().length > 20) {
+          return textoExtraido;
+        }
+      } catch (pdfErr) {
+        console.warn('[StudioExtractionService] Fallback de PDFJS acionado:', pdfErr);
+      }
+
+      // 2. Fallback de streams diretos de bytes
       const buffer = await file.arrayBuffer();
       const bytes = new Uint8Array(buffer);
-      
-      // Decodificação de streams de texto para PDFs padrão
-      let textoCompleto = '';
       const decoder = new TextDecoder('utf-8', { fatal: false });
       const rawText = decoder.decode(bytes);
 
-      // Extrai blocos de texto entre parênteses em streams PDF: (Texto) Tj ou [(T)(exto)] TJ
       const textMatches = rawText.match(/\(([^()]{2,})\)\s*(?:Tj|'|")/g);
       if (textMatches && textMatches.length > 5) {
-        textoCompleto = textMatches
+        return textMatches
           .map(m => m.replace(/^\(/, '').replace(/\)\s*(?:Tj|'|")$/, ''))
           .join(' ');
       }
 
-      // Se a extração por streams for muito curta, busca strings legíveis contínuas
-      if (textoCompleto.length < 50) {
-        const readableStrings = rawText.match(/[A-Za-z0-9À-ÿ\s\.,:\-\/\(\)]{4,}/g);
-        if (readableStrings) {
-          textoCompleto = readableStrings.join(' ');
-        }
+      const readableStrings = rawText.match(/[A-Za-z0-9À-ÿ\s\.,:\-\/\(\)]{4,}/g);
+      if (readableStrings) {
+        return readableStrings.join(' ');
       }
 
-      return textoCompleto || rawText.slice(0, 5000);
+      return rawText.slice(0, 5000);
     } catch (err) {
       console.warn('Erro na extração de texto do arquivo:', err);
       return '';
@@ -417,8 +482,71 @@ export class StudioExtractionService {
     // Datas potenciais no documento
     const datasDetectadas = this.extrairDatas(texto);
 
-    // Regra de Tolerância Zero: apenas cria registro de voo se houver indício real de trecho ou bilhete
-    if (
+    // Regra Avançada Multi-Voo (ex: Tabelas da Agaxtur / NDC LATAM / GDS com trecho de ida e trecho de volta)
+    const regexBlocoTrechoVoo = /([A-Z]{3})\s*[-–]\s*([A-Za-z0-9\s]+?)\s+(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(\d{2}:\d{2})[\s\S]*?([A-Z]{3})\s*[-–]\s*([A-Za-z0-9\s]+?)\s+(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(\d{2}:\d{2})\s+([A-Z0-9]{2}\s*\d{2,5})/gi;
+    let matchTrecho: RegExpExecArray | null;
+    const voosEstruturados: Array<{
+      origem: string;
+      destino: string;
+      dataIda: string;
+      horaIda: string;
+      dataVolta: string;
+      horaVolta: string;
+      voo: string;
+      companhia: string;
+      localizador: string;
+    }> = [];
+
+    const mesesMap: Record<string, string> = {
+      jan: '01', fev: '02', feb: '02', mar: '03', abr: '04', apr: '04',
+      mai: '05', may: '05', jun: '06', jul: '07', ago: '08', aug: '08',
+      set: '09', sep: '09', out: '10', oct: '10', nov: '11', dez: '12', dec: '12'
+    };
+
+    const parseDataMesIso = (dStr: string): string => {
+      const parts = dStr.trim().split(/\s+/);
+      if (parts.length === 3) {
+        const dia = parts[0].padStart(2, '0');
+        const mes = mesesMap[parts[1].toLowerCase().slice(0, 3)] || '01';
+        const ano = parts[2];
+        return `${ano}-${mes}-${dia}`;
+      }
+      return dStr;
+    };
+
+    while ((matchTrecho = regexBlocoTrechoVoo.exec(texto)) !== null) {
+      const origIata = matchTrecho[1].toUpperCase();
+      const dataEmbarque = parseDataMesIso(matchTrecho[3]);
+      const horaEmbarque = matchTrecho[4];
+      const destIata = matchTrecho[5].toUpperCase();
+      const dataChegada = parseDataMesIso(matchTrecho[7]);
+      const horaChegada = matchTrecho[8];
+      const numVoo = matchTrecho[9].replace(/\s+/g, ' ').trim();
+
+      // Companhia pelo prefixo (ex: LA = LATAM, G3 = GOL, AD = Azul)
+      let cia = ciaDetectada;
+      if (!cia) {
+        if (/^LA\b/i.test(numVoo)) cia = 'LATAM Airlines';
+        else if (/^G3\b/i.test(numVoo)) cia = 'GOL Linhas Aéreas';
+        else if (/^AD\b/i.test(numVoo)) cia = 'Azul Linhas Aéreas';
+      }
+
+      voosEstruturados.push({
+        origem: origIata,
+        destino: destIata,
+        dataIda: dataEmbarque,
+        horaIda: horaEmbarque,
+        dataVolta: dataChegada,
+        horaVolta: horaChegada,
+        voo: numVoo,
+        companhia: cia || '',
+        localizador: locDetectado
+      });
+    }
+
+    if (voosEstruturados.length > 0) {
+      resultado.voos?.push(...voosEstruturados);
+    } else if (
       ciaDetectada ||
       vooDetectado ||
       textoLower.includes('voo') ||
@@ -442,6 +570,51 @@ export class StudioExtractionService {
         horaVolta: this.extrairHorario(texto, 'volta'),
         localizador: locDetectado
       });
+    }
+
+    // Extração de Passageiros (ex: Tipo Sobrenome Nome Sexo Nascimento)
+    const paxList: Array<{ nome: string; tipo?: string; nascimento?: string }> = [];
+    const paxRegex = /(?:Adulto|Crian[çc]a|Beb[êe]|ADT|CHD|INF)\s+([A-Z\s]+?)\s+([A-Z\s]+?)\s+(?:Feminino|Masculino|Mas\s*c\s*ulino|F|M)\s+([0-9]{2}\/[0-9]{2}\/[0-9]{2,4})/gi;
+    let mPax: RegExpExecArray | null;
+    while ((mPax = paxRegex.exec(texto)) !== null) {
+      const sobrenome = mPax[1].trim();
+      const prenome = mPax[2].trim();
+      const nomeCompleto = `${prenome} ${sobrenome}`.replace(/\s+/g, ' ');
+      paxList.push({
+        nome: nomeCompleto,
+        tipo: 'Adulto',
+        nascimento: mPax[3]
+      });
+    }
+
+    if (paxList.length > 0) {
+      resultado.passageiros = paxList;
+      resultado.cliente = {
+        nome: paxList[0].nome
+      };
+    } else {
+      // Tenta achar campo de Cliente ou Usuário
+      const clienteMatch = texto.match(/(?:cliente|passageiro|pax|titular|viajante|usu[áa]rio)\s*[:\-]\s*([A-Za-zÀ-ÿ\s]{4,40})/i);
+      if (clienteMatch && clienteMatch[1]) {
+        resultado.cliente = {
+          nome: clienteMatch[1].trim()
+        };
+      }
+    }
+
+    // Extração de Bilhetes e E-tickets
+    const bilhetes: Array<{ numero: string; passageiro?: string; localizador?: string }> = [];
+    const bilheteRegex = /(\d{3}[-\s]\d{10})\s+([A-Z0-9]+)\s+([A-Z\s\/]+?)\s+(\d{2}\/\d{2}\/\d{4})/gi;
+    let mBilhete: RegExpExecArray | null;
+    while ((mBilhete = bilheteRegex.exec(texto)) !== null) {
+      bilhetes.push({
+        numero: mBilhete[1].replace(/\s+/g, ''),
+        localizador: mBilhete[2],
+        passageiro: mBilhete[3].replace(/\//g, ' ').replace(/\s+/g, ' ').trim()
+      });
+    }
+    if (bilhetes.length > 0) {
+      resultado.bilhetes = bilhetes;
     }
 
     // 3. Extração de Hotel / Hospedagem (ex: Resort, Hotel, Pousada, Suíte, Check-in)
@@ -522,6 +695,62 @@ export class StudioExtractionService {
     dataInicioStr?: string,
     diasDuracao: number = 5
   ): StudioDiaItinerario[] {
+    // Se temos múltiplos voos com datas definidas, geramos os itens de voo e usamos gerarItinerarioDiaADia
+    if (dados.voos && dados.voos.length > 1) {
+      const itens: StudioItemItinerario[] = [];
+      dados.voos.forEach((v, idx) => {
+        itens.push({
+          id: `item-voo-${idx}-${Date.now()}`,
+          tipo: 'voo',
+          titulo: `Voo ${v.companhia} (${v.origem} ➔ ${v.destino})`,
+          subtitulo: `Voo ${v.voo} · Embarque Previsto`,
+          horario: v.horaIda || '10:00',
+          dataInicio: v.dataIda,
+          dataFim: v.dataVolta || v.dataIda,
+          origem: v.origem,
+          destino: v.destino,
+          companhia: v.companhia,
+          numeroVoo: v.voo,
+          localizador: v.localizador,
+          fornecedor: v.companhia,
+          rotuloLink: 'Fazer Check-in',
+          linkAcao: 'https://www.google.com/travel/flights',
+          observacoes: 'Apresente-se com antecedência para os procedimentos de embarque.'
+        });
+      });
+
+      if (dados.hospedagens && dados.hospedagens.length > 0) {
+        dados.hospedagens.forEach((h, hIdx) => {
+          itens.push({
+            id: `item-hotel-${hIdx}-${Date.now()}`,
+            tipo: 'hotel',
+            titulo: h.hotel,
+            subtitulo: `${h.quarto || 'Acomodação'} · ${h.regime || 'Hospedagem'}`,
+            dataInicio: h.checkIn,
+            dataFim: h.checkOut,
+            localizador: h.voucher,
+            fornecedor: h.hotel
+          });
+        });
+      }
+
+      if (dados.servicos && dados.servicos.length > 0) {
+        dados.servicos.forEach((s, sIdx) => {
+          itens.push({
+            id: `item-servico-${sIdx}-${Date.now()}`,
+            tipo: s.tipo === 'Seguro Viagem' ? 'seguro' : 'transfer',
+            titulo: s.tipo,
+            subtitulo: s.descricao,
+            dataInicio: s.data,
+            localizador: s.voucher,
+            fornecedor: s.fornecedor
+          });
+        });
+      }
+
+      return this.gerarItinerarioDiaADia(itens);
+    }
+
     const dias: StudioDiaItinerario[] = [];
     const baseDate = dataInicioStr ? new Date(dataInicioStr + 'T00:00:00') : new Date();
 
@@ -643,8 +872,26 @@ export class StudioExtractionService {
   public static extrairLocalizador(texto: string): string {
     const palavrasIgnoradas = new Set([
       'HOTEL', 'LATAM', 'GOL', 'AZUL', 'VIAGEM', 'VOUCHER', 'AEREO', 'PASSAGEM',
-      'CONFIRMACAO', 'RESIDENCIAL', 'SERVICO', 'CHECKIN', 'CHECKOUT', 'TURISMO'
+      'CONFIRMACAO', 'RESIDENCIAL', 'SERVICO', 'CHECKIN', 'CHECKOUT', 'TURISMO',
+      'STATUS', 'PRAZO', 'SISTEMA', 'CRIAÇÃO', 'CRIACAO', 'CONTATOS', 'AGENCIA', 'AGÊNCIA'
     ]);
+
+    // Prioridade 0.1: Bloco de Reserva da Agaxtur / NDC LATAM
+    // Onde aparecem o localizador interno (ex: LA9575541SANJ) e o PNR do GDS/Cia (ex: FFCWIZ)
+    const mReservaAgaxtur = texto.match(/Reserva[\s\S]*?(?:Localizador|Prazo|Status)[\s\S]*?\b([A-Z0-9]{10,16})\b[\s\S]*?\b([A-Z0-9]{6})\b/i);
+    if (mReservaAgaxtur) {
+      const pnrCia = mReservaAgaxtur[2].toUpperCase();
+      if (!palavrasIgnoradas.has(pnrCia)) {
+        return pnrCia;
+      }
+    }
+
+    // Prioridade 0.2: Token explicitamente posicionado sob "LocCia"
+    const padraoLocCia = /(?:LocCia|Loc\s*Cia|Localizador\s+Cia)[\s\S]*?\b([A-Z0-9]{6})\b/i;
+    const mLocCia = padraoLocCia.exec(texto);
+    if (mLocCia && !palavrasIgnoradas.has(mLocCia[1].toUpperCase()) && !/STANDARD|ECON|CABINE/i.test(mLocCia[1])) {
+      return mLocCia[1].toUpperCase();
+    }
 
     // Padrão 1: Com delimitador forte (: ou #) e contexto de reserva/código
     const padraoForte = /(?:localizador|loc|reserva|pnr|voucher|c[oó]digo|confirma[çc][aã]o)(?:\s+de\s+[a-zà-ÿ]+)?\s*[:#]\s*([A-Z0-9\-]{4,15})\b/gi;
@@ -672,7 +919,8 @@ export class StudioExtractionService {
         candidato.length <= 8 &&
         /[0-9]/.test(candidato) &&
         /[A-Z]/.test(candidato) &&
-        !palavrasIgnoradas.has(candidato)
+        !palavrasIgnoradas.has(candidato) &&
+        !candidato.startsWith('QLTKM')
       ) {
         return candidato;
       }
@@ -684,8 +932,12 @@ export class StudioExtractionService {
   /**
    * Extrai datas no formato DD/MM/AAAA ou AAAA-MM-DD presentes no texto.
    */
-  private static extrairDatas(texto: string): string[] {
+  /**
+   * Extrai datas nos formatos DD/MM/AAAA, AAAA-MM-DD ou 'DD Mes AAAA' (ex: 06 Fev 2027).
+   */
+  public static extrairDatas(texto: string): string[] {
     const datas: string[] = [];
+
     // Padrão DD/MM/AAAA ou DD-MM-AAAA
     const matchesBr = texto.match(/\b([0-3]?[0-9])[\/\-]([0-1]?[0-9])[\/\-](202[4-9]|203[0-5])\b/g);
     if (matchesBr) {
@@ -695,7 +947,8 @@ export class StudioExtractionService {
           const dia = parts[0].padStart(2, '0');
           const mes = parts[1].padStart(2, '0');
           const ano = parts[2];
-          datas.push(`${ano}-${mes}-${dia}`);
+          const iso = `${ano}-${mes}-${dia}`;
+          if (!datas.includes(iso)) datas.push(iso);
         }
       });
     }
@@ -706,6 +959,25 @@ export class StudioExtractionService {
       matchesIso.forEach(d => {
         if (!datas.includes(d)) datas.push(d);
       });
+    }
+
+    // Padrão com mês por extenso (ex: 06 Fev 2027, 23 FEV 2027, 10 Dezembro 2026)
+    const mesesMap: Record<string, string> = {
+      jan: '01', fev: '02', feb: '02', mar: '03', abr: '04', apr: '04',
+      mai: '05', may: '05', jun: '06', jul: '07', ago: '08', aug: '08',
+      set: '09', sep: '09', out: '10', oct: '10', nov: '11', dez: '12', dec: '12'
+    };
+
+    const regexMesExtenso = /\b([0-3]?[0-9])\s+([A-Za-z]{3,10})\s+(202[4-9]|203[0-5])\b/gi;
+    let mExt: RegExpExecArray | null;
+    while ((mExt = regexMesExtenso.exec(texto)) !== null) {
+      const dia = mExt[1].padStart(2, '0');
+      const mesStr = mExt[2].toLowerCase().slice(0, 3);
+      const ano = mExt[3];
+      if (mesesMap[mesStr]) {
+        const iso = `${ano}-${mesesMap[mesStr]}-${dia}`;
+        if (!datas.includes(iso)) datas.push(iso);
+      }
     }
 
     return datas;

@@ -18,6 +18,11 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ---
 
+- **PaxFlow Studio™: Ingestão Inteligente de PDFs, Máscaras Brasileiras e Unsplash Flexível [NEW]** — Experiência completa e sem atritos para montagem de propostas e cadernos de viagem:
+  - **Ingestão Nativa de PDFs de Operadoras com `pdfjs-dist`**: Resolução definitiva da extração de documentos PDF (Agaxtur, LATAM NDC, GDS). Suporte total a múltiplos trechos aéreos (ida e volta), passageiros, bilhetes eletrônicos e localizadores PNR reais, alimentando o itinerário dia a dia de forma precisa.
+  - **Máscaras e Padrão Brasileiro (`DD/MM/AAAA` e `R$ 0,00`)**: Substituição de campos nativos em formato americano por inputs com máscara brasileira estrita para datas de embarque/retorno e valores monetários com suporte a vírgula para centavos (`parseDoubleBr` e `formatCurrencyValue`).
+  - **Galeria Unsplash™ Resiliente com Inserção de Link Direto**: Catálogo enriquecido com os destinos mais vendidos por agências no Brasil e no exterior, combinado a campo dedicado para colar qualquer URL de foto do Unsplash ou da web diretamente na proposta.
+
 - **Gestão de Títulos em Atraso, Busca Rápida & Máscaras Financeiras [NEW]** — Refinamento completo da usabilidade, busca e precisão contábil no Contas a Pagar:
   - **Filtro de Atrasadas Históricas (Sem Limitação de Mês)**: Ao filtrar por `Em Atraso (Histórico)`, o sistema ignora a trava de período mensal e traz **todas as contas atrasadas da história da agência**, sem que o operador precise adivinhar em qual mês a conta venceu.
   - **Card KPI de Títulos em Atraso Global & Interativo**: O terceiro card superior exibe permanentemente o passivo real total acumulado da agência em atraso (independente do mês selecionado). Clicar sobre o card aplica o filtro de atrasadas imediatamente na tela.

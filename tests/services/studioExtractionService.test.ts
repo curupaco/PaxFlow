@@ -195,5 +195,85 @@ describe('StudioExtractionService - Testes Subcutâneos de Extração e Linha do
     expect(reordenados[1].id).toBe('a1');
     expect(reordenados[2].id).toBe('a2');
   });
+
+  it('deve extrair com fidelidade bilhete aéreo Agaxtur / NDC LATAM com múltiplos trechos, passageiros e datas por extenso', async () => {
+    // Setup
+    const textoAgaxtur = `
+      Reserva Aérea - Plano de Viagem
+      Usuário: Rafael Arantes Maciel de Sousa
+      E-mail: atendimento4.ibirapuera1@agaxtur.com.br
+      Telefone: 55 11 30907070
+      Reserva
+      Localizador Prazo Status Sistema Criação Contatos Agência
+      LA9575541SANJ
+      FFCWIZ
+      --- Emitido NDCLatam
+      26 OUT 21:55
+      Passageiros
+      Tipo Sobrenome Nome Sexo Nascimento Fidelidade Status
+      Adulto NICODEM LIANE MARIA Feminino 02/03/74 Emitido
+      Adulto PESSOA TRIO MARCELO Masculino 08/02/69 Emitido
+      Voos
+      Cia Origem / Destino Voo Esc. Cl. Info LocCia
+      GRU- SAOPAULO
+      06 Fev 2027 21:15
+      Cabine: Econ.
+      JFK - NOVA IORQUE
+      07 Fev 2027 05:09 LA 6349 0 Q
+      1
+      1pc 23kg por peça
+      Família: STANDARD Avião: 339 Base Tar: QLTKM50B Cabine: Econ. FFCWIZ
+      ATENÇÃO: o voo 6349 pertence à companhia Lan Chile, mas é operado pela Delta.
+      JFK - NOVA IORQUE
+      23 Fev 2027 19:10
+      Cabine: Econ.
+      GRU- SAOPAULO
+      24 Fev 2027 07:00 LA 8181 0 Q
+      1
+      1pc 23kg por peça
+      Família: STANDARD Avião: 789 Base Tar: QLTKM50B Cabine: Econ. FFCWIZ
+      Bilhetes
+      Número Localizador Passageiro Data Emissão Conjugados
+      957-2307960802 LA9575541SANJ NICODEM/ LIANE MARIA 27/10/2026 -
+      957-2307960803 LA9575541SANJ PESSOA TRIO/MARCELO 27/10/2026 -
+    `;
+
+    // Action
+    const resultado = await StudioExtractionService.extrairDados(textoAgaxtur, 'reserva_agaxtur.pdf');
+
+    // Assert
+    expect(resultado.tipoDetectado).toBe('voo');
+    expect(resultado.loc).toBe('FFCWIZ');
+    expect(resultado.itens.length).toBe(2);
+
+    // Trecho 1: Ida GRU -> JFK
+    const vooIda = resultado.itens[0];
+    expect(vooIda.origem).toBe('GRU');
+    expect(vooIda.destino).toBe('JFK');
+    expect(vooIda.dataInicio).toBe('2027-02-06');
+    expect(vooIda.numeroVoo).toBe('LA 6349');
+    expect(vooIda.horaInicio).toBe('21:15');
+
+    // Trecho 2: Volta JFK -> GRU
+    const vooVolta = resultado.itens[1];
+    expect(vooVolta.origem).toBe('JFK');
+    expect(vooVolta.destino).toBe('GRU');
+    expect(vooVolta.dataInicio).toBe('2027-02-23');
+    expect(vooVolta.numeroVoo).toBe('LA 8181');
+    expect(vooVolta.horaInicio).toBe('19:10');
+
+    // Passageiros e Bilhetes
+    expect(resultado.dadosBrutos.passageiros).toBeDefined();
+    expect(resultado.dadosBrutos.passageiros?.length).toBe(2);
+    expect(resultado.dadosBrutos.passageiros?.[0].nome).toBe('LIANE MARIA NICODEM');
+    expect(resultado.dadosBrutos.bilhetes?.length).toBe(2);
+    expect(resultado.dadosBrutos.bilhetes?.[0].numero).toBe('957-2307960802');
+
+    // Itinerário gerado dia a dia
+    const dias = StudioExtractionService.gerarItinerarioDias(resultado.dadosBrutos);
+    expect(dias.length).toBe(2);
+    expect(dias[0].dataStr).toBe('2027-02-06');
+    expect(dias[1].dataStr).toBe('2027-02-23');
+  });
 });
 

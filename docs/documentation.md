@@ -736,13 +736,15 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
 
 - **Arquitetura Split Screen (Tela Dividida)**:
   - **Coluna da Esquerda (Editor Estruturado)**:
-    - **1. Ingestão de Documentos**: Dropzone de PDFs de consolidadoras e botão de colar texto livre de WhatsApp/e-mail com motor de extração documental com fidelidade estrita. Recolhível automaticamente para maximizar espaço.
+    - **1. Ingestão de Documentos com pdfjs-dist**:
+      - Motor avançado de parsing de arquivos PDF de operadoras (ex: Agaxtur, CVC, Trend, BeFly) e bilhetes NDC/GDS (LATAM, Azul, Gol, Delta, Air France) utilizando `pdfjs-dist` nativo.
+      - Extração inteligente de múltiplos trechos aéreos (ida e volta independentes), códigos de voo, horários de decolagem/pouso, passageiros, bilhetes eletrônicos e localizadores de reserva (PNR), integrando-os de forma instantânea na linha do tempo dia a dia da proposta.
     - **2. Dados do Passageiro, Capa & Consultor**:
       - **Branding / Tagline da Capa**: Campo editável para personalizar o título de marca (padrão _"PAXFLOW LUXURY TRAVEL"_) para o nome da agência ou slogan da proposta.
-      - **Galeria Unsplash™ com Tradução Semântica**: Motor de busca com tradução automática PT-BR ➔ EN (ex: _praia -> tropical beach_, _neve -> snow_, _safari_, _vinhedos -> wine_) e pills temáticas rápidas.
+      - **Galeria Unsplash™ Resiliente**: Motor de busca de alta fidelidade com catálogo de destinos mundiais e nacionais (ex: Nova York, Paris, Pantanal, Bonito, Toscana, Maldivas, Dubai, etc.), suporte a tags semânticas e **campo para aplicação direta de URL de foto do Unsplash ou da web**, eliminando dependência estrita de chaves de API externas.
       - **Governança de Canais de Atendimento**: O telefone fixo e WhatsApp vinculados à proposta são **estritamente institucionais e padronizados da agência / loja** (campos travados para leitura), garantindo que nenhum consultor informe números pessoais aos clientes. O e-mail profissional de atendimento é sempre o do consultor atribuído.
       - **Consultor Dedicado**: Seletor integrado à equipe cadastrada com auto-preenchimento de foto/avatar via `getAvatarSvg` (suporte a animais do PaxFlow, fotos de perfil ou iniciais estilizadas), nome, e-mail profissional e preview visual imediato.
-      - **Cotação e Datas**: Definição de moeda (BRL/USD/EUR), valor total e datas de ida e volta.
+      - **Máscaras e Padrão Brasileiro**: Todos os campos de data utilizam formato nacional `DD/MM/AAAA` com conversão bidirecional transparente para ISO (`YYYY-MM-DD`), e o campo de valor total adota separador decimal por vírgula no padrão brasileiro (`R$ 1.234,56`), prevenindo erros de digitação.
     - **3. Roteiro & Atividades**: Lista de dias sequenciais com cartões compactos de atividades (voos, hotéis, transfers, passeios e seguros) com badges visuais de localizador, companhia aérea e horários.
   - **Coluna da Direita (Live Preview em Tempo Real)**:
     - Prévia fidedigna da proposta de luxo com renderização instantânea a cada caractere digitado pelo consultor.

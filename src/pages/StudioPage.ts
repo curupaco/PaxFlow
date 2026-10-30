@@ -5,6 +5,13 @@ import { StudioPdfGenerator } from '../components/studio/StudioPdfGenerator';
 import { supabase } from '../services/supabase';
 import { getAvatarSvg } from '../services/avatars';
 import { StudioProposta, StudioDiaItinerario, StudioItemItinerario } from '../types';
+import {
+  formatBrDateToIso,
+  formatIsoDateToBr,
+  applyDateMask,
+  formatCurrencyValue,
+  parseDoubleBr
+} from '../utils/masks';
 
 export class StudioPage {
   private container: HTMLElement;
@@ -347,13 +354,13 @@ export class StudioPage {
                 </div>
 
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Data de Embarque</label>
-                  <input type="date" id="campo-data-ida" value="${this.propostaAtual.data_ida || ''}" class="input-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+                  <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Data de Embarque (DD/MM/AAAA)</label>
+                  <input type="text" id="campo-data-ida" value="${this.propostaAtual.data_ida ? (this.propostaAtual.data_ida.includes('-') ? formatIsoDateToBr(this.propostaAtual.data_ida) : this.propostaAtual.data_ida) : ''}" placeholder="DD/MM/AAAA" maxlength="10" class="input-sync input-data-br w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-semibold" />
                 </div>
 
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Data de Retorno</label>
-                  <input type="date" id="campo-data-volta" value="${this.propostaAtual.data_volta || ''}" class="input-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+                  <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Data de Retorno (DD/MM/AAAA)</label>
+                  <input type="text" id="campo-data-volta" value="${this.propostaAtual.data_volta ? (this.propostaAtual.data_volta.includes('-') ? formatIsoDateToBr(this.propostaAtual.data_volta) : this.propostaAtual.data_volta) : ''}" placeholder="DD/MM/AAAA" maxlength="10" class="input-sync input-data-br w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-semibold" />
                 </div>
 
                 <div>
@@ -364,7 +371,7 @@ export class StudioPage {
                       <option value="USD" ${this.propostaAtual.moeda === 'USD' ? 'selected' : ''}>USD</option>
                       <option value="EUR" ${this.propostaAtual.moeda === 'EUR' ? 'selected' : ''}>EUR</option>
                     </select>
-                    <input type="number" step="0.01" id="campo-valor-total" value="${this.propostaAtual.valor_total || 0}" class="input-sync flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-bold" />
+                    <input type="text" id="campo-valor-total" value="${formatCurrencyValue(this.propostaAtual.valor_total || 0)}" placeholder="0,00" class="input-sync input-currency-br flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-bold" />
                   </div>
                 </div>
               </div>
@@ -666,7 +673,7 @@ export class StudioPage {
               DIA ${dia.diaNumero}
             </span>
             <input type="text" class="input-titulo-dia text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-100 flex-1 focus:outline-none focus:border-indigo-500" value="${dia.tituloDia || `Dia ${dia.diaNumero}`}" data-dia-idx="${dIdx}" placeholder="Título do Dia" />
-            <input type="date" class="input-data-dia text-[11px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-600 dark:text-slate-300 focus:outline-none focus:border-indigo-500 shrink-0" value="${dia.dataStr || dia.data || ''}" data-dia-idx="${dIdx}" />
+            <input type="text" class="input-data-dia text-[11px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-600 dark:text-slate-300 focus:outline-none focus:border-indigo-500 shrink-0 w-24 text-center font-semibold" value="${(dia.dataStr || dia.data || '').includes('-') ? formatIsoDateToBr(dia.dataStr || dia.data || '') : (dia.dataStr || dia.data || '')}" data-dia-idx="${dIdx}" placeholder="DD/MM/AAAA" maxlength="10" />
           </div>
 
           <div class="flex items-center gap-1.5 shrink-0">
@@ -1108,6 +1115,14 @@ export class StudioPage {
                 ${s.label}
               </button>
             `).join('')}
+          </div>
+
+          <!-- OPÇÃO DE COLAR URL DIRETA DO UNSPLASH / WEB -->
+          <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+            <input type="text" id="input-url-direta-unsplash" placeholder="Ou cole aqui o link direto de qualquer foto do Unsplash ou da web..." class="flex-1 px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium" />
+            <button type="button" id="btn-aplicar-url-direta-unsplash" class="px-3 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-xl transition cursor-pointer shrink-0">
+              Aplicar Link
+            </button>
           </div>
         </div>
 
@@ -1559,6 +1574,17 @@ export class StudioPage {
       });
     });
 
+    // 5.1 Máscara de digitação de data brasileira (DD/MM/AAAA) nos inputs de data
+    this.container.querySelectorAll('.input-data-br').forEach(el => {
+      el.addEventListener('input', (e: any) => {
+        const valorDigitado = e.target.value;
+        const valorMascarado = applyDateMask(valorDigitado);
+        if (e.target.value !== valorMascarado) {
+          e.target.value = valorMascarado;
+        }
+      });
+    });
+
     // 6. Controles do Live Preview (Desktop vs Mobile)
     const btnDesktop = this.container.querySelector('#btn-preview-desktop');
     const btnMobile = this.container.querySelector('#btn-preview-mobile');
@@ -1601,11 +1627,17 @@ export class StudioPage {
     });
 
     this.container.querySelectorAll('.input-data-dia').forEach(el => {
-      el.addEventListener('change', (e: any) => {
+      el.addEventListener('input', (e: any) => {
+        const valorDigitado = e.target.value;
+        const valorMascarado = applyDateMask(valorDigitado);
+        if (e.target.value !== valorMascarado) {
+          e.target.value = valorMascarado;
+        }
         const dIdx = parseInt(el.getAttribute('data-dia-idx') || '0', 10);
         if (this.propostaAtual.itinerario_dias?.[dIdx]) {
-          this.propostaAtual.itinerario_dias[dIdx].dataStr = e.target.value;
-          this.propostaAtual.itinerario_dias[dIdx].data = e.target.value;
+          const iso = formatBrDateToIso(valorMascarado) || valorMascarado;
+          this.propostaAtual.itinerario_dias[dIdx].dataStr = iso;
+          this.propostaAtual.itinerario_dias[dIdx].data = iso;
           this.marcarAlteracaoPendente();
           this.atualizarLivePreview();
         }
@@ -2075,9 +2107,23 @@ export class StudioPage {
       }
     }
 
+    if (extraidos.cliente?.nome && (!this.propostaAtual.cliente_nome || this.propostaAtual.cliente_nome === '')) {
+      this.propostaAtual.cliente_nome = extraidos.cliente.nome;
+    }
+
+    if (extraidos.voos && extraidos.voos.length > 0) {
+      if (!this.propostaAtual.data_ida) {
+        this.propostaAtual.data_ida = extraidos.voos[0].dataIda;
+      }
+      const ultimoVoo = extraidos.voos[extraidos.voos.length - 1];
+      if (!this.propostaAtual.data_volta) {
+        this.propostaAtual.data_volta = ultimoVoo.dataVolta || ultimoVoo.dataIda;
+      }
+    }
+
     if (itensDiretos && itensDiretos.length > 0) {
       this.propostaAtual.itinerario_dias = StudioExtractionService.gerarItinerarioDiaADia(itensDiretos);
-    } else if (!this.propostaAtual.itinerario_dias || this.propostaAtual.itinerario_dias.length === 0) {
+    } else {
       this.propostaAtual.itinerario_dias = StudioExtractionService.gerarItinerarioDias(extraidos);
     }
 
@@ -2207,6 +2253,23 @@ export class StudioPage {
       });
     });
 
+    const inputUrlDireta = modalEl.querySelector('#input-url-direta-unsplash') as HTMLInputElement | null;
+    const btnAplicarUrlDireta = modalEl.querySelector('#btn-aplicar-url-direta-unsplash');
+    btnAplicarUrlDireta?.addEventListener('click', () => {
+      const url = (inputUrlDireta?.value || '').trim();
+      if (!url) {
+        alert('Por favor, informe um link de imagem válido.');
+        return;
+      }
+      this.propostaAtual.foto_capa_url = url;
+      const inputCustom = this.container.querySelector('#campo-foto-custom') as HTMLInputElement | null;
+      if (inputCustom) inputCustom.value = url;
+      this.fecharModalUnsplash();
+      this.marcarAlteracaoPendente();
+      this.render();
+      this.showToast('Foto de capa definida com sucesso via link direto!', 'success');
+    });
+
     this.setupCardsUnsplashListeners();
   }
 
@@ -2221,9 +2284,11 @@ export class StudioPage {
     this.propostaAtual.cliente_whatsapp = getVal('campo-whatsapp');
     this.propostaAtual.cliente_email = getVal('campo-email');
     this.propostaAtual.destino = getVal('campo-destino');
-    this.propostaAtual.data_ida = getVal('campo-data-ida') || undefined;
-    this.propostaAtual.data_volta = getVal('campo-data-volta') || undefined;
-    this.propostaAtual.valor_total = parseFloat(getVal('campo-valor-total')) || 0;
+    const dataIdaBr = getVal('campo-data-ida');
+    const dataVoltaBr = getVal('campo-data-volta');
+    this.propostaAtual.data_ida = dataIdaBr ? (formatBrDateToIso(dataIdaBr) || dataIdaBr) : undefined;
+    this.propostaAtual.data_volta = dataVoltaBr ? (formatBrDateToIso(dataVoltaBr) || dataVoltaBr) : undefined;
+    this.propostaAtual.valor_total = parseDoubleBr(getVal('campo-valor-total'));
     this.propostaAtual.moeda = getVal('campo-moeda') || 'BRL';
     this.propostaAtual.foto_capa_url = getVal('campo-foto-custom') || this.propostaAtual.foto_capa_url;
     this.propostaAtual.titulo_cabecalho = getVal('campo-titulo-cabecalho') || 'PAXFLOW LUXURY TRAVEL';

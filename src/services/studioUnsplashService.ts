@@ -291,6 +291,91 @@ export class StudioUnsplashService {
       url: 'https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&w=1400&q=80',
       thumb_url: 'https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&w=400&q=80',
       tags: ['cruzeiro', 'navio', 'mar', 'oceano', 'ferias', 'barco']
+    },
+    // Destinos Adicionais Muito Procurados em Agências
+    {
+      id: 'ny-times-square',
+      titulo: 'Times Square / Broadway (Nova York)',
+      url: 'https://images.unsplash.com/photo-1534430480872-3498386e7856?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1534430480872-3498386e7856?auto=format&fit=crop&w=400&q=80',
+      tags: ['nova york', 'new york', 'ny', 'jfk', 'manhattan', 'times square', 'broadway', 'eua', 'estados unidos']
+    },
+    {
+      id: 'ny-central-park',
+      titulo: 'Central Park (Nova York)',
+      url: 'https://images.unsplash.com/photo-1500916434205-0c77489c6cf7?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1500916434205-0c77489c6cf7?auto=format&fit=crop&w=400&q=80',
+      tags: ['nova york', 'new york', 'ny', 'central park', 'outono', 'manhattan', 'eua']
+    },
+    {
+      id: 'ny-brooklyn',
+      titulo: 'Ponte do Brooklyn (Nova York)',
+      url: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=400&q=80',
+      tags: ['nova york', 'new york', 'brooklyn', 'ponte', 'manhattan', 'eua']
+    },
+    {
+      id: 'las-vegas-1',
+      titulo: 'Las Vegas & Cassinos (EUA)',
+      url: 'https://images.unsplash.com/photo-1506059612708-99d6c258160e?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1506059612708-99d6c258160e?auto=format&fit=crop&w=400&q=80',
+      tags: ['las vegas', 'vegas', 'nevada', 'cassino', 'strip', 'eua']
+    },
+    {
+      id: 'california-1',
+      titulo: 'Los Angeles & Califórnia (EUA)',
+      url: 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?auto=format&fit=crop&w=400&q=80',
+      tags: ['los angeles', 'la', 'california', 'califórnia', 'hollywood', 'praia', 'eua']
+    },
+    {
+      id: 'buenos-aires-1',
+      titulo: 'Buenos Aires & Puerto Madero (Argentina)',
+      url: 'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?auto=format&fit=crop&w=400&q=80',
+      tags: ['buenos aires', 'argentina', 'puerto madero', 'tango', 'obelisco']
+    },
+    {
+      id: 'mendoza-1',
+      titulo: 'Mendoza & Vinhedos (Argentina)',
+      url: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=400&q=80',
+      tags: ['mendoza', 'argentina', 'vinho', 'vinhedo', 'andes', 'malbec']
+    },
+    {
+      id: 'cusco-1',
+      titulo: 'Machu Picchu & Cusco (Peru)',
+      url: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=400&q=80',
+      tags: ['machu picchu', 'cusco', 'peru', 'inca', 'andes', 'historia']
+    },
+    {
+      id: 'londres-eye',
+      titulo: 'London Eye & Tâmisa (Londres)',
+      url: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=400&q=80',
+      tags: ['londres', 'london', 'inglaterra', 'uk', 'reino unido', 'europa']
+    },
+    {
+      id: 'amsterdam-1',
+      titulo: 'Amsterdam & Canais (Holanda)',
+      url: 'https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?auto=format&fit=crop&w=400&q=80',
+      tags: ['amsterdam', 'holanda', 'paises baixos', 'canais', 'europa']
+    },
+    {
+      id: 'tokyo-1',
+      titulo: 'Tóquio & Shibuya (Japão)',
+      url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=400&q=80',
+      tags: ['toquio', 'tóquio', 'tokyo', 'japao', 'japão', 'shibuya', 'asia']
+    },
+    {
+      id: 'toscana-1',
+      titulo: 'Toscana & Colinas (Itália)',
+      url: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=400&q=80',
+      tags: ['toscana', 'italia', 'itália', 'florenca', 'vinho', 'europa']
     }
   ];
 
@@ -306,7 +391,7 @@ export class StudioUnsplashService {
     const termoNormalizado = termoLimpo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const tokens = termoNormalizado.split(/\s+/).filter(t => t.length > 1);
 
-    // 1. Tenta buscar diretamente via API pública do Unsplash caso disponível
+    // 1. Tenta buscar diretamente via API pública do Unsplash caso configurada/disponível
     try {
       const resp = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(termoLimpo)}&per_page=12&client_id=zM7H_tYh2Z0zQ_9oU3UqP4QyqK1J9A6wG2F5d8V9s4M`);
       if (resp.ok) {
@@ -324,7 +409,7 @@ export class StudioUnsplashService {
         }
       }
     } catch {
-      // Em caso de falha de rede/quota na API externa, utiliza o catálogo local direto
+      // Falha de rede ou chave revogada
     }
 
     // 2. Busca direta no catálogo por correspondência de título ou tags

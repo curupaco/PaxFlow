@@ -866,6 +866,21 @@ export interface StudioDadosExtraidos {
     fornecedor?: string;
     voucher?: string;
   }>;
+  cliente?: {
+    nome: string;
+    email?: string;
+    telefone?: string;
+  };
+  passageiros?: Array<{
+    nome: string;
+    tipo?: string;
+    nascimento?: string;
+  }>;
+  bilhetes?: Array<{
+    numero: string;
+    passageiro?: string;
+    localizador?: string;
+  }>;
   valores?: {
     total: number;
     moeda: string;
