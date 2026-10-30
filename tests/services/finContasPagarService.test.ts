@@ -427,6 +427,95 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     expect(res.sucesso).toBe(true);
     expect(res.afetadas).toBe(1);
   });
+
+  it('deve buscar todas as contas atrasadas históricas ignorando travas de mês quando status for atrasado', async () => {
+    // Setup
+    const gteMock = vi.fn();
+    const lteMock = vi.fn();
+    const inMock = vi.fn();
+
+    const contasMock = [
+      {
+        id: 'conta-passada-1',
+        favorecido: 'Fornecedor Antigo Jan',
+        data_vencimento: '2026-01-15',
+        valor_nominal: 1500,
+        status: 'pendente'
+      },
+      {
+        id: 'conta-passada-2',
+        favorecido: 'Fornecedor Antigo Fev',
+        data_vencimento: '2026-02-10',
+        valor_nominal: 2000,
+        status: 'atrasado'
+      }
+    ];
+
+    vi.mocked(supabase.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        gte: gteMock,
+        lte: lteMock,
+        in: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({
+            data: contasMock,
+            error: null
+          })
+        })
+      })
+    } as any);
+
+    // Action
+    const resultado = await FinContasPagarService.listarContas({
+      periodoTipo: 'mes',
+      mes: 10,
+      ano: 2026,
+      status: 'atrasado'
+    });
+
+    // Assert
+    // Não deve chamar gte ou lte de período
+    expect(gteMock).not.toHaveBeenCalled();
+    expect(lteMock).not.toHaveBeenCalled();
+    // Deve retornar ambas as contas com status atrasado
+    expect(resultado.length).toBe(2);
+    expect(resultado.every(c => c.status === 'atrasado')).toBe(true);
+  });
+
+  it('deve obter métricas globais de atraso consolidando passivo total da agência', async () => {
+    // Setup
+    const contasAtrasadasBanco = [
+      {
+        id: 'c-1',
+        valor_nominal: 3500,
+        data_vencimento: '2026-05-10',
+        status: 'atrasado',
+        descricao: 'Fatura Maio'
+      },
+      {
+        id: 'c-2',
+        valor_nominal: 2500,
+        data_vencimento: '2026-08-20',
+        status: 'pendente',
+        descricao: 'Aluguel Agosto'
+      }
+    ];
+
+    vi.mocked(supabase.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        in: vi.fn().mockResolvedValue({
+          data: contasAtrasadasBanco,
+          error: null
+        })
+      })
+    } as any);
+
+    // Action
+    const metricas = await FinContasPagarService.obterMetricasAtrasoGlobais();
+
+    // Assert
+    expect(metricas.qtdAtrasadas).toBe(2);
+    expect(metricas.totalAtrasadas).toBe(6000);
+  });
 });
 
 

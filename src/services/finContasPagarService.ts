@@ -99,7 +99,8 @@ export class FinContasPagarService {
   }
 
   /**
-   * Lista as contas a pagar com filtros combinados e cálculo em tempo real de status de atraso
+   * Lista as contas a pagar com filtros combinados e cálculo em tempo real de status de atraso.
+   * Quando o status for 'atrasado', ignora travas de mês/ano trazendo todas as atrasadas históricas.
    */
   public static async listarContas(filtros: FinFiltrosContas): Promise<FinContaPagar[]> {
     try {
@@ -114,19 +115,28 @@ export class FinContasPagarService {
           remessa:fin_remessas(*)
         `);
 
-      if (filtros.periodoTipo === 'mes' && filtros.mes && filtros.ano) {
-        const primeiroDia = `${filtros.ano}-${String(filtros.mes).padStart(2, '0')}-01`;
-        const ultimoDiaDate = new Date(filtros.ano, filtros.mes, 0);
-        const ultimoDia = `${filtros.ano}-${String(filtros.mes).padStart(2, '0')}-${String(ultimoDiaDate.getDate()).padStart(2, '0')}`;
-        query = query.gte('data_vencimento', primeiroDia).lte('data_vencimento', ultimoDia);
-      } else if (filtros.periodoTipo === 'personalizado') {
-        if (filtros.dataInicio) query = query.gte('data_vencimento', filtros.dataInicio);
-        if (filtros.dataFim) query = query.lte('data_vencimento', filtros.dataFim);
+      const ehBuscaAtrasadas = filtros.status === 'atrasado';
+
+      // Se for busca específica por atrasadas, não filtra por período (traz histórico completo de atraso)
+      if (!ehBuscaAtrasadas) {
+        if (filtros.periodoTipo === 'mes' && filtros.mes && filtros.ano) {
+          const primeiroDia = `${filtros.ano}-${String(filtros.mes).padStart(2, '0')}-01`;
+          const ultimoDiaDate = new Date(filtros.ano, filtros.mes, 0);
+          const ultimoDia = `${filtros.ano}-${String(filtros.mes).padStart(2, '0')}-${String(ultimoDiaDate.getDate()).padStart(2, '0')}`;
+          query = query.gte('data_vencimento', primeiroDia).lte('data_vencimento', ultimoDia);
+        } else if (filtros.periodoTipo === 'personalizado') {
+          if (filtros.dataInicio) query = query.gte('data_vencimento', filtros.dataInicio);
+          if (filtros.dataFim) query = query.lte('data_vencimento', filtros.dataFim);
+        }
       }
 
-      if (filtros.status && filtros.status !== 'todos') {
+      if (ehBuscaAtrasadas) {
+        // Busca tanto as marcadas explicitamente como 'atrasado' quanto 'pendente' (para conferir vencimento dinâmico)
+        query = query.in('status', ['pendente', 'atrasado']);
+      } else if (filtros.status && filtros.status !== 'todos') {
         query = query.eq('status', filtros.status);
       }
+
       if (filtros.tipoCustoId) {
         query = query.eq('tipo_custo_id', filtros.tipoCustoId);
       }
@@ -152,7 +162,7 @@ export class FinContasPagarService {
       const hojeIso = new Date().toISOString().split('T')[0];
 
       // Ajusta status de atraso dinamicamente caso a data de vencimento tenha passado
-      return (data || []).map(conta => {
+      const processadas = (data || []).map(conta => {
         const vencOperacional = conta.data_vencimento_operacional || this.calcularVencimentoOperacional(
           conta.data_vencimento,
           conta.categoria?.nome,
@@ -170,9 +180,56 @@ export class FinContasPagarService {
           status: statusFinal
         };
       });
+
+      if (ehBuscaAtrasadas) {
+        return processadas.filter(c => c.status === 'atrasado');
+      }
+
+      return processadas;
     } catch (err) {
       console.error('[FinContasPagarService] Erro ao listar contas a pagar:', err);
       return [];
+    }
+  }
+
+  /**
+   * Obtém métricas globais de atraso (passivo total acumulado da agência em atraso)
+   * independente de mês ou filtros temporais
+   */
+  public static async obterMetricasAtrasoGlobais(): Promise<{ totalAtrasadas: number; qtdAtrasadas: number }> {
+    try {
+      const hojeIso = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('fin_contas_pagar')
+        .select('id, valor_nominal, data_vencimento, data_vencimento_operacional, status, descricao, categoria:fin_categorias(nome)')
+        .in('status', ['pendente', 'atrasado']);
+
+      if (error) {
+        if (error.code === '42P01' || error.code === '42703') {
+          return { totalAtrasadas: 0, qtdAtrasadas: 0 };
+        }
+        throw error;
+      }
+
+      let totalAtrasadas = 0;
+      let qtdAtrasadas = 0;
+
+      for (const c of (data || [])) {
+        const vencOp = c.data_vencimento_operacional || this.calcularVencimentoOperacional(
+          c.data_vencimento,
+          (c.categoria as any)?.nome,
+          c.descricao
+        );
+        if (c.status === 'atrasado' || (c.status === 'pendente' && vencOp < hojeIso)) {
+          totalAtrasadas += Number(c.valor_nominal) || 0;
+          qtdAtrasadas++;
+        }
+      }
+
+      return { totalAtrasadas, qtdAtrasadas };
+    } catch (err) {
+      console.warn('[FinContasPagarService] Erro ao obter métricas de atraso globais:', err);
+      return { totalAtrasadas: 0, qtdAtrasadas: 0 };
     }
   }
 

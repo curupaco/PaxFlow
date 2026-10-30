@@ -18,6 +18,7 @@ import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { renderHelpIcon } from '../utils/helpHelper';
 import { ConciliacaoPage } from './Conciliacao';
 import { podeAcessarFinanceiro } from '../utils/permissaoFinanceiro';
+import { attachCurrencyMask, parsePastedCurrency } from '../utils/masks';
 
 export type FinSubView = 'contas' | 'fluxo' | 'conciliacao' | 'plano';
 
@@ -156,13 +157,17 @@ export class FinanceiroPage {
     this.carregando = true;
     try {
       if (this.activeTab === 'contas' || this.activeTab === 'fluxo') {
-        const [listaContas, listaRemessas] = await Promise.all([
+        const [listaContas, listaRemessas, metricasAtraso] = await Promise.all([
           FinContasPagarService.listarContas(this.filtros),
-          FinRemessasService.listarRemessas()
+          FinRemessasService.listarRemessas(),
+          FinContasPagarService.obterMetricasAtrasoGlobais()
         ]);
         this.contas = listaContas;
         this.remessas = listaRemessas;
         this.resumo = FinContasPagarService.calcularResumoLiquidez(listaContas);
+        // O card KPI de títulos em atraso reflete o passivo global acumulado da agência
+        this.resumo.totalAtrasadas = metricasAtraso.totalAtrasadas;
+        this.resumo.qtdAtrasadas = metricasAtraso.qtdAtrasadas;
       }
     } catch (err) {
       console.error('[FinanceiroPage] Erro ao carregar dados:', err);
@@ -342,10 +347,13 @@ export class FinanceiroPage {
             </div>
 
             <!-- Card 3: Títulos em Atraso -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between ${this.resumo.qtdAtrasadas > 0 ? 'ring-2 ring-rose-500/30' : ''}">
+            <div id="card-kpi-atrasadas" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between cursor-pointer hover:border-rose-400 hover:shadow-md transition active:scale-98 ${this.resumo.qtdAtrasadas > 0 ? 'ring-2 ring-rose-500/30' : ''}" title="Clique para filtrar todas as contas em atraso da história">
               <div class="absolute top-0 left-0 right-0 h-1 bg-rose-500"></div>
               <div class="flex items-center justify-between gap-2">
-                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Títulos em Atraso</span>
+                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <span>Títulos em Atraso</span>
+                  <span class="text-[9px] text-rose-500 dark:text-rose-400 font-extrabold uppercase">(Global)</span>
+                </span>
                 <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold ${this.resumo.qtdAtrasadas > 0 ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 animate-pulse' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200/60 dark:border-slate-700'} whitespace-nowrap">
                   ${this.resumo.qtdAtrasadas} contas
                 </span>
@@ -354,7 +362,9 @@ export class FinanceiroPage {
                 <span class="block text-2xl sm:text-3xl font-black ${this.resumo.qtdAtrasadas > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100'} tracking-tight">
                   ${formatarMoeda(this.resumo.totalAtrasadas)}
                 </span>
-                <span class="block text-[11px] text-slate-400 font-medium mt-1">${this.resumo.qtdAtrasadas > 0 ? 'Exige atenção financeira imediata' : 'Nenhuma conta em atraso'}</span>
+                <span class="block text-[11px] text-slate-400 font-medium mt-1">
+                  ${this.resumo.qtdAtrasadas > 0 ? 'Passivo global da agência • Clique para filtrar' : 'Nenhuma conta em atraso'}
+                </span>
               </div>
             </div>
 
@@ -501,10 +511,14 @@ export class FinanceiroPage {
           <!-- Campos de Filtro (Mês, Status, Tipo, Categoria, Busca) -->
           <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Mês de Referência</label>
-              <select id="filtro-mes" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+                <span>Mês de Referência</span>
+                ${this.filtros.status === 'atrasado' ? '<span class="text-rose-500 font-extrabold lowercase text-[9px]">(histórico global)</span>' : ''}
+              </label>
+              <select id="filtro-mes" ${this.filtros.status === 'atrasado' ? 'disabled title="Exibindo histórico de todos os meses"' : ''} class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 ${this.filtros.status === 'atrasado' ? 'opacity-80 bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : ''}">
+                ${this.filtros.status === 'atrasado' ? `<option value="" selected>📅 Todas em Atraso (Histórico)</option>` : ''}
                 ${meses.map(m => `
-                  <option value="${m.num}" ${this.filtros.mes === m.num ? 'selected' : ''}>${m.nome}</option>
+                  <option value="${m.num}" ${this.filtros.mes === m.num && this.filtros.status !== 'atrasado' ? 'selected' : ''}>${m.nome}</option>
                 `).join('')}
               </select>
             </div>
@@ -515,26 +529,26 @@ export class FinanceiroPage {
                 <option value="todos" ${this.filtros.status === 'todos' ? 'selected' : ''}>Todos os Status</option>
                 <option value="pendente" ${this.filtros.status === 'pendente' ? 'selected' : ''}>Pendentes</option>
                 <option value="pago" ${this.filtros.status === 'pago' ? 'selected' : ''}>Pagos / Baixados</option>
-                <option value="atrasado" ${this.filtros.status === 'atrasado' ? 'selected' : ''}>Em Atraso</option>
+                <option value="atrasado" ${this.filtros.status === 'atrasado' ? 'selected' : ''}>Em Atraso (Histórico)</option>
                 <option value="cancelado" ${this.filtros.status === 'cancelado' ? 'selected' : ''}>Cancelados</option>
               </select>
             </div>
 
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Tipo de Custo</label>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Tipo de Custo (A-Z)</label>
               <select id="filtro-tipo-custo" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
                 <option value="">Todos os Tipos</option>
-                ${this.tiposCusto.map(t => `
+                ${[...this.tiposCusto].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map(t => `
                   <option value="${t.id}" ${this.filtros.tipoCustoId === t.id ? 'selected' : ''}>${t.nome}</option>
                 `).join('')}
               </select>
             </div>
 
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Categoria</label>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Categoria (A-Z)</label>
               <select id="filtro-categoria" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
                 <option value="">Todas as Categorias</option>
-                ${this.categorias.map(c => `
+                ${[...this.categorias].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map(c => `
                   <option value="${c.id}" ${this.filtros.categoriaId === c.id ? 'selected' : ''}>${c.nome}</option>
                 `).join('')}
               </select>
@@ -1567,6 +1581,14 @@ export class FinanceiroPage {
       }, 350);
     });
 
+    // Clique no Card KPI de Atraso: ativa filtro global de atrasadas imediatamente
+    this.container.querySelector('#card-kpi-atrasadas')?.addEventListener('click', async () => {
+      this.filtros.status = 'atrasado';
+      await this.carregarDadosAbaAtiva();
+      this.render();
+      this.setupEventListeners();
+    });
+
     // Ações de Títulos (Baixar, Editar, Cancelar, Estornar)
     this.container.querySelectorAll('.btn-baixar-conta').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -2023,18 +2045,27 @@ export class FinanceiroPage {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Juros / Multa (+)</label>
-              <input type="number" step="0.01" min="0" id="input-baixa-juros" value="0" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">R$</span>
+                <input type="text" data-mask="currency" id="input-baixa-juros" value="0,00" class="w-full h-[42px] pl-9 pr-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+              </div>
             </div>
 
             <div>
               <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Desconto (-)</label>
-              <input type="number" step="0.01" min="0" id="input-baixa-desconto" value="0" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">R$</span>
+                <input type="text" data-mask="currency" id="input-baixa-desconto" value="0,00" class="w-full h-[42px] pl-9 pr-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+              </div>
             </div>
           </div>
 
           <div>
             <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Valor Efetivamente Pago (R$) *</label>
-            <input type="number" step="0.01" min="0.01" id="input-baixa-valor-pago" required value="${c.valor_nominal}" class="w-full h-[42px] px-3 border-2 border-indigo-600/40 bg-white dark:bg-slate-800 rounded-xl text-sm font-black text-indigo-600 dark:text-indigo-400" />
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-black text-indigo-500">R$</span>
+              <input type="text" data-mask="currency" id="input-baixa-valor-pago" required value="${(c.valor_nominal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" class="w-full h-[42px] pl-9 pr-3 border-2 border-indigo-600/40 bg-white dark:bg-slate-800 rounded-xl text-sm font-black text-indigo-600 dark:text-indigo-400" />
+            </div>
             <span class="text-[10px] text-slate-400 mt-1 block">Se valor pago for menor que o nominal líquido, será criada baixa parcial com resíduo.</span>
           </div>
 
@@ -2061,20 +2092,27 @@ export class FinanceiroPage {
     overlay.querySelector('#btn-fechar-modal-baixa')?.addEventListener('click', fechar);
     overlay.querySelector('#btn-cancelar-baixa')?.addEventListener('click', fechar);
 
-    // Recálculo dinâmico do valor sugerido ao alterar juros ou desconto
+    // Anexa máscaras monetárias aos campos da baixa
     const jurosInput = overlay.querySelector('#input-baixa-juros') as HTMLInputElement;
     const descInput = overlay.querySelector('#input-baixa-desconto') as HTMLInputElement;
     const pagoInput = overlay.querySelector('#input-baixa-valor-pago') as HTMLInputElement;
 
+    if (jurosInput) attachCurrencyMask(jurosInput);
+    if (descInput) attachCurrencyMask(descInput);
+    if (pagoInput) attachCurrencyMask(pagoInput);
+
+    // Recálculo dinâmico do valor sugerido ao alterar juros ou desconto
     const recalcularSugerido = () => {
-      const juros = Number(jurosInput.value || 0);
-      const desc = Number(descInput.value || 0);
+      const juros = parsePastedCurrency(jurosInput?.value || '0');
+      const desc = parsePastedCurrency(descInput?.value || '0');
       const sugerido = Math.max(0, c.valor_nominal + juros - desc);
-      pagoInput.value = sugerido.toFixed(2);
+      if (pagoInput) {
+        pagoInput.value = sugerido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
     };
 
-    jurosInput.addEventListener('input', recalcularSugerido);
-    descInput.addEventListener('input', recalcularSugerido);
+    jurosInput?.addEventListener('input', recalcularSugerido);
+    descInput?.addEventListener('input', recalcularSugerido);
 
     const form = overlay.querySelector('#form-baixa') as HTMLFormElement;
     form.addEventListener('submit', async (e) => {
@@ -2086,9 +2124,9 @@ export class FinanceiroPage {
       const dataPagamento = (overlay.querySelector('#input-baixa-data') as HTMLInputElement).value;
       const formaPagamento = (overlay.querySelector('#select-baixa-forma') as HTMLSelectElement).value as any;
       const contaBancariaId = (overlay.querySelector('#select-baixa-banco') as HTMLSelectElement).value || undefined;
-      const jurosMulta = Number(jurosInput.value || 0);
-      const desconto = Number(descInput.value || 0);
-      const valorPago = Number(pagoInput.value || 0);
+      const jurosMulta = parsePastedCurrency(jurosInput.value);
+      const desconto = parsePastedCurrency(descInput.value);
+      const valorPago = parsePastedCurrency(pagoInput.value);
       const comprovanteUrl = (overlay.querySelector('#input-baixa-comprovante') as HTMLInputElement).value || undefined;
 
       const res = await FinContasPagarService.baixarConta({
@@ -2127,6 +2165,8 @@ export class FinanceiroPage {
     overlay.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity';
     
     const hojeStr = new Date().toISOString().split('T')[0];
+    const tiposOrdenados = [...this.tiposCusto].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    const categoriasOrdenadas = [...this.categorias].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
     overlay.innerHTML = `
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
@@ -2141,18 +2181,22 @@ export class FinanceiroPage {
         <form id="form-nova-conta" class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Tipo de Custo *</label>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Tipo de Custo (A-Z) *</label>
               <select id="input-nova-tipo" required class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
                 <option value="">Selecione o tipo...</option>
-                ${this.tiposCusto.map(t => `<option value="${t.id}">${t.nome}</option>`).join('')}
+                ${tiposOrdenados.map(t => `<option value="${t.id}">${t.nome}</option>`).join('')}
               </select>
             </div>
 
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Categoria *</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400">Categoria (A-Z) *</label>
+                <span class="text-[9px] text-indigo-500 font-extrabold uppercase">Filtro rápido</span>
+              </div>
+              <input type="text" id="busca-categoria-nova" placeholder="🔍 Filtrar categoria..." class="w-full h-[32px] px-2.5 mb-1.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-lg text-xs placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               <select id="input-nova-categoria" required class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
                 <option value="">Selecione a categoria...</option>
-                ${this.categorias.map(c => `<option value="${c.id}" data-tipo="${c.tipo_custo_id}">${c.nome}</option>`).join('')}
+                ${categoriasOrdenadas.map(c => `<option value="${c.id}" data-tipo="${c.tipo_custo_id}">${c.nome}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -2170,7 +2214,10 @@ export class FinanceiroPage {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Valor Nominal (R$) *</label>
-              <input type="number" step="0.01" min="0.01" id="input-nova-valor" required placeholder="0,00" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-sm font-black text-slate-900 dark:text-slate-100" />
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">R$</span>
+                <input type="text" data-mask="currency" id="input-nova-valor" required placeholder="0,00" value="0,00" class="w-full h-[42px] pl-9 pr-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-sm font-black text-slate-900 dark:text-slate-100" />
+              </div>
             </div>
 
             <div>
@@ -2220,6 +2267,36 @@ export class FinanceiroPage {
     overlay.querySelector('#btn-fechar-modal-nova')?.addEventListener('click', fechar);
     overlay.querySelector('#btn-cancelar-nova')?.addEventListener('click', fechar);
 
+    // Anexa máscara monetária brasileira em tempo real no valor nominal
+    const inputValor = overlay.querySelector('#input-nova-valor') as HTMLInputElement;
+    if (inputValor) attachCurrencyMask(inputValor);
+
+    // Busca rápida e sincronização de categoria
+    const buscaCatInput = overlay.querySelector('#busca-categoria-nova') as HTMLInputElement;
+    const selectTipo = overlay.querySelector('#input-nova-tipo') as HTMLSelectElement;
+    const selectCat = overlay.querySelector('#input-nova-categoria') as HTMLSelectElement;
+
+    const filtrarCategorias = () => {
+      const termo = (buscaCatInput?.value || '').toLowerCase().trim();
+      const tipoId = selectTipo?.value;
+
+      Array.from(selectCat.options).forEach((opt, idx) => {
+        if (idx === 0) return; // Opção "Selecione..."
+        const matchTipo = !tipoId || opt.getAttribute('data-tipo') === tipoId;
+        const matchBusca = !termo || (opt.textContent || '').toLowerCase().includes(termo);
+        opt.hidden = !(matchTipo && matchBusca);
+      });
+    };
+
+    buscaCatInput?.addEventListener('input', filtrarCategorias);
+    selectTipo?.addEventListener('change', () => {
+      filtrarCategorias();
+      const optAtual = selectCat.selectedOptions[0];
+      if (optAtual && optAtual.hidden) {
+        selectCat.value = '';
+      }
+    });
+
     const selectRec = overlay.querySelector('#select-nova-recorrencia') as HTMLSelectElement;
     const boxParcelas = overlay.querySelector('#box-parcelas') as HTMLElement;
     selectRec.addEventListener('change', () => {
@@ -2241,7 +2318,7 @@ export class FinanceiroPage {
       const categoriaId = (overlay.querySelector('#input-nova-categoria') as HTMLSelectElement).value;
       const favorecido = (overlay.querySelector('#input-nova-favorecido') as HTMLInputElement).value;
       const descricao = (overlay.querySelector('#input-nova-descricao') as HTMLInputElement).value;
-      const valorNominal = Number((overlay.querySelector('#input-nova-valor') as HTMLInputElement).value);
+      const valorNominal = parsePastedCurrency(inputValor.value);
       const dataVencimento = (overlay.querySelector('#input-nova-vencimento') as HTMLInputElement).value;
       const valorEstimado = (overlay.querySelector('#input-nova-estimado') as HTMLInputElement).checked;
 
@@ -2295,6 +2372,10 @@ export class FinanceiroPage {
       (c.parcela_total && c.parcela_total > 1)
     );
 
+    const tiposOrdenados = [...this.tiposCusto].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    const categoriasOrdenadas = [...this.categorias].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    const valorInicialFormatado = (c.valor_nominal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
     overlay.innerHTML = `
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
         <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -2339,18 +2420,22 @@ export class FinanceiroPage {
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Tipo de Custo *</label>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Tipo de Custo (A-Z) *</label>
               <select id="input-edit-tipo" required class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
                 <option value="">Selecione o tipo...</option>
-                ${this.tiposCusto.map(t => `<option value="${t.id}" ${t.id === c.tipo_custo_id ? 'selected' : ''}>${t.nome}</option>`).join('')}
+                ${tiposOrdenados.map(t => `<option value="${t.id}" ${t.id === c.tipo_custo_id ? 'selected' : ''}>${t.nome}</option>`).join('')}
               </select>
             </div>
 
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Categoria *</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400">Categoria (A-Z) *</label>
+                <span class="text-[9px] text-indigo-500 font-extrabold uppercase">Filtro rápido</span>
+              </div>
+              <input type="text" id="busca-categoria-edit" placeholder="🔍 Filtrar categoria..." class="w-full h-[32px] px-2.5 mb-1.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-lg text-xs placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               <select id="input-edit-categoria" required class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
                 <option value="">Selecione a categoria...</option>
-                ${this.categorias.map(cat => `<option value="${cat.id}" data-tipo="${cat.tipo_custo_id}" ${cat.id === c.categoria_id ? 'selected' : ''}>${cat.nome}</option>`).join('')}
+                ${categoriasOrdenadas.map(cat => `<option value="${cat.id}" data-tipo="${cat.tipo_custo_id}" ${cat.id === c.categoria_id ? 'selected' : ''}>${cat.nome}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -2368,7 +2453,10 @@ export class FinanceiroPage {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Valor Nominal (R$) *</label>
-              <input type="number" step="0.01" min="0.01" id="input-edit-valor" required value="${c.valor_nominal || ''}" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-sm font-black text-slate-900 dark:text-slate-100" />
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">R$</span>
+                <input type="text" data-mask="currency" id="input-edit-valor" required value="${valorInicialFormatado}" class="w-full h-[42px] pl-9 pr-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-sm font-black text-slate-900 dark:text-slate-100" />
+              </div>
             </div>
 
             <div>
@@ -2426,6 +2514,36 @@ export class FinanceiroPage {
     overlay.querySelector('#btn-fechar-modal-editar')?.addEventListener('click', fechar);
     overlay.querySelector('#btn-cancelar-modal-editar')?.addEventListener('click', fechar);
 
+    // Anexa máscara monetária no valor nominal
+    const inputValor = overlay.querySelector('#input-edit-valor') as HTMLInputElement;
+    if (inputValor) attachCurrencyMask(inputValor);
+
+    // Busca rápida e sincronização de categoria na edição
+    const buscaCatInput = overlay.querySelector('#busca-categoria-edit') as HTMLInputElement;
+    const selectTipo = overlay.querySelector('#input-edit-tipo') as HTMLSelectElement;
+    const selectCat = overlay.querySelector('#input-edit-categoria') as HTMLSelectElement;
+
+    const filtrarCategoriasEdit = () => {
+      const termo = (buscaCatInput?.value || '').toLowerCase().trim();
+      const tipoId = selectTipo?.value;
+
+      Array.from(selectCat.options).forEach((opt, idx) => {
+        if (idx === 0) return; // Opção "Selecione..."
+        const matchTipo = !tipoId || opt.getAttribute('data-tipo') === tipoId;
+        const matchBusca = !termo || (opt.textContent || '').toLowerCase().includes(termo);
+        opt.hidden = !(matchTipo && matchBusca);
+      });
+    };
+
+    buscaCatInput?.addEventListener('input', filtrarCategoriasEdit);
+    selectTipo?.addEventListener('change', () => {
+      filtrarCategoriasEdit();
+      const optAtual = selectCat.selectedOptions[0];
+      if (optAtual && optAtual.hidden) {
+        selectCat.value = '';
+      }
+    });
+
     const form = overlay.querySelector('#form-editar-conta') as HTMLFormElement;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2434,12 +2552,11 @@ export class FinanceiroPage {
       submitBtn.textContent = 'Salvando...';
 
       const tipoCustoId = (overlay.querySelector('#input-edit-tipo') as HTMLSelectElement).value;
-      const selectCat = overlay.querySelector('#input-edit-categoria') as HTMLSelectElement;
       const categoriaId = selectCat.value;
       const categoriaNome = selectCat.selectedOptions[0]?.textContent || undefined;
       const favorecido = (overlay.querySelector('#input-edit-favorecido') as HTMLInputElement).value;
       const descricao = (overlay.querySelector('#input-edit-descricao') as HTMLInputElement).value;
-      const valorNominal = Number((overlay.querySelector('#input-edit-valor') as HTMLInputElement).value);
+      const valorNominal = parsePastedCurrency(inputValor.value);
       const dataVencimento = (overlay.querySelector('#input-edit-vencimento') as HTMLInputElement).value;
       const formaPagamento = (overlay.querySelector('#input-edit-forma') as HTMLSelectElement).value as any;
       const contaBancariaId = (overlay.querySelector('#input-edit-banco') as HTMLSelectElement).value || undefined;
@@ -2691,7 +2808,10 @@ export class FinanceiroPage {
 
             <div>
               <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Saldo Inicial (R$)</label>
-              <input type="number" step="0.01" id="input-banco-saldo" placeholder="0,00" value="${contaParaEditar?.saldo_inicial || 0}" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-black text-slate-900 dark:text-slate-100" />
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">R$</span>
+                <input type="text" data-mask="currency" id="input-banco-saldo" placeholder="0,00" value="${(contaParaEditar?.saldo_inicial || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" class="w-full h-[42px] pl-9 pr-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-black text-slate-900 dark:text-slate-100" />
+              </div>
             </div>
           </div>
 
@@ -2716,13 +2836,16 @@ export class FinanceiroPage {
     overlay.querySelector('#btn-fechar-modal-banco')?.addEventListener('click', fechar);
     overlay.querySelector('#btn-cancelar-banco')?.addEventListener('click', fechar);
 
+    const inputSaldo = overlay.querySelector('#input-banco-saldo') as HTMLInputElement;
+    if (inputSaldo) attachCurrencyMask(inputSaldo);
+
     const form = overlay.querySelector('#form-nova-conta-bancaria') as HTMLFormElement;
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const nomeBanco = (overlay.querySelector('#input-banco-nome') as HTMLInputElement).value.trim();
       const tipo = (overlay.querySelector('#input-banco-tipo') as HTMLSelectElement).value as any;
-      const saldo = Number((overlay.querySelector('#input-banco-saldo') as HTMLInputElement).value) || 0;
+      const saldo = parsePastedCurrency(inputSaldo.value);
 
       if (!nomeBanco) {
         await showCustomAlert('Por favor, informe o nome do banco ou caixa.', 'Atenção');

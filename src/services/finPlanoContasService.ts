@@ -70,65 +70,70 @@ export const CONTAS_BANCARIAS_FALLBACK: FinContaBancaria[] = [
 
 export class FinPlanoContasService {
   /**
-   * Busca todos os Tipos de Custo ativos
+   * Busca todos os Tipos de Custo ativos ordenados alfabeticamente
    */
   public static async listarTiposCusto(): Promise<FinTipoCusto[]> {
     try {
       const { data, error } = await supabase
         .from('fin_tipos_custo')
         .select('*')
-        .order('ordem', { ascending: true });
+        .order('nome', { ascending: true });
 
       if (error) {
         if (error.code === '42P01' || error.code === '42703') {
           console.warn('[FinPlanoContasService] Tabela fin_tipos_custo pendente no banco. Fallback ativado.');
-          return TIPOS_CUSTO_FALLBACK;
+          return [...TIPOS_CUSTO_FALLBACK].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
         }
         throw error;
       }
-      return data && data.length > 0 ? data : TIPOS_CUSTO_FALLBACK;
+      const lista = data && data.length > 0 ? data : TIPOS_CUSTO_FALLBACK;
+      return [...lista].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     } catch (err) {
       console.warn('[FinPlanoContasService] Erro ao carregar tipos de custo:', err);
-      return TIPOS_CUSTO_FALLBACK;
+      return [...TIPOS_CUSTO_FALLBACK].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     }
   }
 
   /**
-   * Busca todas as Categorias com seus Tipos de Custo
+   * Busca todas as Categorias com seus Tipos de Custo ordenadas alfabeticamente
    */
   public static async listarCategorias(tipoCustoId?: string): Promise<FinCategoria[]> {
     try {
       let query = supabase
         .from('fin_categorias')
-        .select('*, tipo_custo:fin_tipos_custo(*)');
+        .select('*, tipo_custo:fin_tipos_custo(*)')
+        .order('nome', { ascending: true });
 
       if (tipoCustoId) {
         query = query.eq('tipo_custo_id', tipoCustoId);
       }
 
-      const { data, error } = await query.order('ordem', { ascending: true });
+      const { data, error } = await query;
       if (error) {
         if (error.code === '42P01' || error.code === '42703') {
           console.warn('[FinPlanoContasService] Tabela fin_categorias pendente no banco. Fallback ativado.');
-          return tipoCustoId 
+          const base = tipoCustoId 
             ? CATEGORIAS_FALLBACK.filter(c => c.tipo_custo_id === tipoCustoId)
             : CATEGORIAS_FALLBACK;
+          return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
         }
         throw error;
       }
-      return data && data.length > 0 
+      const base = data && data.length > 0 
         ? data 
         : (tipoCustoId ? CATEGORIAS_FALLBACK.filter(c => c.tipo_custo_id === tipoCustoId) : CATEGORIAS_FALLBACK);
+      return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     } catch (err) {
       console.warn('[FinPlanoContasService] Erro ao carregar categorias:', err);
-      return tipoCustoId 
+      const base = tipoCustoId 
         ? CATEGORIAS_FALLBACK.filter(c => c.tipo_custo_id === tipoCustoId)
         : CATEGORIAS_FALLBACK;
+      return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     }
   }
 
   /**
-   * Busca Subcategorias de uma Categoria
+   * Busca Subcategorias de uma Categoria ordenadas alfabeticamente
    */
   public static async listarSubcategorias(categoriaId: string): Promise<FinSubcategoria[]> {
     try {
@@ -142,7 +147,7 @@ export class FinPlanoContasService {
         if (error.code === '42P01' || error.code === '42703') return [];
         throw error;
       }
-      return data || [];
+      return [...(data || [])].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     } catch (err) {
       console.warn('[FinPlanoContasService] Erro ao carregar subcategorias:', err);
       return [];

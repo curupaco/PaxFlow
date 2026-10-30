@@ -18,7 +18,13 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ---
 
-## Funcionalidades
+- **Gestão de Títulos em Atraso, Busca Rápida & Máscaras Financeiras [NEW]** — Refinamento completo da usabilidade, busca e precisão contábil no Contas a Pagar:
+  - **Filtro de Atrasadas Históricas (Sem Limitação de Mês)**: Ao filtrar por `Em Atraso (Histórico)`, o sistema ignora a trava de período mensal e traz **todas as contas atrasadas da história da agência**, sem que o operador precise adivinhar em qual mês a conta venceu.
+  - **Card KPI de Títulos em Atraso Global & Interativo**: O terceiro card superior exibe permanentemente o passivo real total acumulado da agência em atraso (independente do mês selecionado). Clicar sobre o card aplica o filtro de atrasadas imediatamente na tela.
+  - **Ordenação Alfabética Estrita (A-Z)**: Tipos de custo, categorias e subcategorias são ordenados alfabeticamente em todas as listagens, selects e modais via SQL e `localeCompare('pt-BR')`.
+  - **Mecanismo de Busca Rápida de Categorias**: Nos modais de Novo Lançamento e Edição de Conta, o campo `🔍 Filtrar categoria...` permite encontrar qualquer categoria em tempo real digitando apenas as primeiras letras, integrado ao tipo de custo selecionado.
+  - **Máscaras Monetárias em Tempo Real (`R$ 0,00`)**: Todos os inputs de valores (lançamento de conta, edição, baixa com juros/desconto/valor pago e saldo bancário) contam com formatação monetária progressiva em centavos, proteção contra caracteres inválidos e conversão matemática decimal segura para o Supabase.
+  - **Governança RBAC Estrita de Administradores no Financeiro**: Respeito estrito à flag `acesso_financeiro: false` para administradores, ocultando menus e bloqueando rotas para colaboradores sem permissão contábil.
 
 - **Unificação de Contas a Pagar, Remessas & Conciliação no Módulo Financeiro [NEW]** — Evolução estrutural da navegação e organização contábil do PaxFlow:
   - **Experiência Unificada em Contas a Pagar**: Eliminação de rotas fragmentadas. Todos os títulos — avulsos ou agrupados em lotes de remessa — agora residem exclusivamente na tela unificada de **Contas a Pagar**, dispondo de um alternador visual instantâneo (`📋 Todos os Títulos`, `📄 Apenas Avulsos` e `📦 Lotes de Remessa`), seleção múltipla via checkbox, barra de ação flutuante e modal de agrupamento em lote (`FinRemessasService`).

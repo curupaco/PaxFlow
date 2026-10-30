@@ -1573,6 +1573,13 @@ Para assegurar consistência estética absoluta com os Design Tokens do PaxFlow 
    - **Modal de Contas Bancárias (`FinPlanoContasService.salvarContaBancaria`)**: Cadastro e edição de bancos, caixas físicos e saldos iniciais.
    - **Correção da Query PostgREST**: Remoção da coluna inexistente `codigo` na relação `categoria:fin_categorias(id, nome)` e implementação de fallback defensivo de consulta direta em `obterContasCriticasAlerta`, eliminando retornos de status HTTP 400 Bad Request no console.
 
+9. **Gestão de Títulos em Atraso, Busca Rápida de Categorias & Máscaras Financeiras**:
+   - **Filtro de Atrasadas Históricas**: Ao selecionar o status `atrasado`, a consulta em `FinContasPagarService.listarContas` suspende as travas de primeiro e último dia do mês, trazendo todas as contas em atraso da história da agência. O seletor de mês é desabilitado temporariamente com a indicação `📅 Todas em Atraso (Histórico)`, eliminando a necessidade do gestor tentar adivinhar em qual mês a dívida foi contraída.
+   - **Card KPI de Títulos em Atraso Global e Interativo**: O terceiro card superior de Contas a Pagar exibe de forma permanente o passivo total acumulado da agência em atraso via `FinContasPagarService.obterMetricasAtrasoGlobais()`, independente do mês que estiver selecionado no filtro. Clicar sobre o card aplica imediatamente o filtro de atrasadas históricas.
+   - **Ordenação Alfabética Estrita (A-Z)**: Tipos de custo, categorias e subcategorias são ordenados alfabeticamente tanto no retorno das consultas (`FinPlanoContasService`) quanto nos fallbacks locais via `localeCompare('pt-BR')`.
+   - **Busca Rápida de Categorias**: Nos modais de Novo Lançamento e Edição de Contas a Pagar, o campo `🔍 Filtrar categoria...` permite filtrar instantaneamente as opções de categoria em tempo real conforme a digitação, integrado ao Tipo de Custo selecionado.
+   - **Máscaras Monetárias em Tempo Real**: Todos os formulários contábeis (lançamento, edição, liquidação na baixa com juros/desconto e saldo inicial de contas bancárias) contam com formatação assistida `R$ 0,00` via `attachCurrencyMask` e conversão decimal segura via `parsePastedCurrency`, prevenindo erros de digitação e inconsistências de ponto versus vírgula no Supabase.
+
 ---
 
 ## 4. Diferenciais Competitivos
