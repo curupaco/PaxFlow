@@ -758,7 +758,7 @@ export class EditTravelModal {
                           <p class="text-[10px] text-slate-600 dark:text-slate-300 font-medium">Oportunidades inteligentes para aumentar a margem e o conforto do cliente</p>
                         </div>
                       </div>
-                      <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30 shrink-0 font-sans">Preditivo IA</span>
+                      <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30 shrink-0 font-sans">Preditivo</span>
                     </div>
 
                     <div id="paxflow-upsell-cards-list" class="grid grid-cols-1 gap-2">

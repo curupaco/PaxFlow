@@ -44,10 +44,14 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
 
   it('deve calcular o resumo de liquidez e contadores de atraso com precisão', () => {
     // Setup
+    const dataFutura = new Date();
+    dataFutura.setDate(dataFutura.getDate() + 3);
+    const dataFuturaStr = dataFutura.toISOString().slice(0, 10);
+
     const contasMock: any[] = [
-      { id: '1', valor_nominal: 1000, status: 'pendente', data_vencimento: '2026-10-01', data_vencimento_operacional: '2026-10-01' }, // Atrasada
-      { id: '2', valor_nominal: 500, status: 'pago', valor_pago: 480, data_vencimento: '2026-10-05' },
-      { id: '3', valor_nominal: 2000, status: 'pendente', data_vencimento: '2026-10-29', data_vencimento_operacional: '2026-10-29' }
+      { id: '1', valor_nominal: 1000, status: 'pendente', data_vencimento: '2020-01-01', data_vencimento_operacional: '2020-01-01' }, // Atrasada
+      { id: '2', valor_nominal: 500, status: 'pago', valor_pago: 480, data_vencimento: '2020-01-05' },
+      { id: '3', valor_nominal: 2000, status: 'pendente', data_vencimento: dataFuturaStr, data_vencimento_operacional: dataFuturaStr }
     ];
 
     // Action

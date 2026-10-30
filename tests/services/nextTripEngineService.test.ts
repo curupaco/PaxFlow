@@ -464,5 +464,39 @@ describe('NextTripEngineService - Testes Subcutâneos', () => {
     expect(oportunidadesConsultor1).toHaveLength(1);
     expect(oportunidadesConsultor1[0].clienteId).toBe('cli-c1');
   });
+
+  it('deve fornecer auditoria detalhada dos 5 vetores para transparência operacional', () => {
+    // Setup
+    const umAnoAtras = new Date();
+    umAnoAtras.setFullYear(umAnoAtras.getFullYear() - 1);
+
+    const clientes = [
+      { id: 'cli-vetor', nome: 'Cliente Auditoria 5 Vetores', email: 'auditoria@paxflow.com' },
+    ];
+    const viagens = [
+      {
+        id: 'v-auditoria',
+        cliente_id: 'cli-vetor',
+        destino: 'Paris',
+        data_volta: umAnoAtras.toISOString(),
+        nps: 10,
+        consultor_id: 'c-admin',
+      },
+    ];
+
+    // Action
+    const oportunidades = NextTripEngineService.calculateOpportunities(clientes, viagens, [], undefined, undefined, 'admin');
+
+    // Assert
+    expect(oportunidades).toHaveLength(1);
+    const op = oportunidades[0];
+    expect(op.vetoresDetalhamento).toBeDefined();
+    expect(op.vetoresDetalhamento?.sazonalidade.score).toBeGreaterThan(0);
+    expect(op.vetoresDetalhamento?.sazonalidade.max).toBe(30);
+    expect(op.vetoresDetalhamento?.nps.score).toBe(25); // NPS 10 = Promotor
+    expect(op.vetoresDetalhamento?.perfil.score).toBe(20); // Europa
+    expect(op.vetoresDetalhamento?.mesHabitual.max).toBe(15);
+    expect(op.vetoresDetalhamento?.conformidadeSla.score).toBe(10);
+  });
 });
 

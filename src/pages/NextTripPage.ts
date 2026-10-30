@@ -77,7 +77,7 @@ export class NextTripPage {
         { data: settingsData }
       ] = await Promise.all([
         supabase.from('clientes').select('*'),
-        supabase.from('viagens').select('*, produtos:produtos_viagem(*)'),
+        supabase.from('viagens').select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)'),
         supabase.from('orcamentos').select('*'),
         supabase.from('profiles').select('*').eq('ativo', true),
         supabase.from('global_settings').select('*').limit(1).maybeSingle()
@@ -101,13 +101,14 @@ export class NextTripPage {
   }
 
   private calcularOportunidades(): void {
+    const userRole = this.perfil?.role || (this.user?.id === 'sandbox-user-id' ? 'admin' : 'consultor');
     const ops = NextTripEngineService.calculateOpportunities(
       this.clientes,
       this.viagens,
       this.orcamentos,
       this.settings,
       this.user?.id,
-      this.perfil?.role || 'consultor'
+      userRole
     );
 
     this.oportunidades = (ops || []).filter(op => op.statusAbordagem !== 'snoozed');
@@ -206,10 +207,13 @@ export class NextTripPage {
               <span class="text-[10px] text-slate-400 font-medium">Clientes em aquecimento gradual</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs border-l-4 border-l-indigo-500">
+            <div id="card-algoritmo-preditivo" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs border-l-4 border-l-indigo-500 cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-md transition group">
               <div class="flex items-center justify-between text-slate-400 mb-2">
-                <span class="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Algoritmo Preditivo</span>
-                <span class="text-lg">🧠</span>
+                <span class="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                  Algoritmo Preditivo
+                  <span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 group-hover:bg-indigo-600 group-hover:text-white transition">Clique para Ver Regras ➔</span>
+                </span>
+                <span class="text-lg group-hover:scale-110 transition-transform">🧠</span>
               </div>
               <div class="text-2xl font-black text-indigo-600 dark:text-indigo-400">5 Vetores</div>
               <span class="text-[10px] text-slate-400 font-medium">Sazonalidade + NPS + Perfil + Mês + SLA</span>
@@ -342,7 +346,7 @@ export class NextTripPage {
                 <span class="text-[10px] font-black uppercase text-purple-300 tracking-wider flex items-center gap-1">
                   <span>🚀</span> PaxFlow Upsell Engine™
                 </span>
-                <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">Preditivo IA</span>
+                <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">Preditivo</span>
               </div>
               <div class="space-y-1.5">
                 ${upsells.map(u => `
@@ -369,17 +373,25 @@ export class NextTripPage {
             <span>💬 WhatsApp</span>
           </button>
 
+          <button class="btn-next-trip-auditoria h-10 w-10 shrink-0 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold transition flex items-center justify-center border border-indigo-200/50 dark:border-slate-700" title="Ver auditoria detalhada dos 5 vetores deste cliente" data-cliente-id="${op.clienteId}">
+            <span>🧠</span>
+          </button>
+
           <button class="btn-next-trip-snooze h-10 w-10 shrink-0 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition flex items-center justify-center" title="Adiar abordagem por 30 dias" data-cliente-id="${op.clienteId}">
             <span>⏸️</span>
           </button>
         </div>
-
       </div>
     `;
   }
 
   private setupEventListeners(): void {
     if (!this.container) return;
+
+    // Clique no Card 4 do Algoritmo Preditivo (Transparência total)
+    this.container.querySelector('#card-algoritmo-preditivo')?.addEventListener('click', () => {
+      this.openAlgoritmoModal();
+    });
 
     // Busca textual
     const inputBusca = this.container.querySelector('#input-busca-next-trip') as HTMLInputElement;
@@ -411,6 +423,18 @@ export class NextTripPage {
       await this.loadData();
       this.render();
       this.setupEventListeners();
+    });
+
+    // Auditoria de cada cliente
+    this.container.querySelectorAll('.btn-next-trip-auditoria').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cId = btn.getAttribute('data-cliente-id');
+        const op = this.oportunidades.find(o => o.clienteId === cId);
+        if (op) {
+          this.openAuditoriaClienteModal(op);
+        }
+      });
     });
 
     // Eventos dos cards
@@ -474,6 +498,244 @@ export class NextTripPage {
           }
         }
       });
+    });
+  }
+
+  /**
+   * Abre o Modal Explicativo dos 5 Vetores (Auditoria e Transparência do Motor)
+   */
+  private openAlgoritmoModal(): void {
+    let portal = document.getElementById('next-trip-algoritmo-modal-portal');
+    if (!portal) {
+      portal = document.createElement('div');
+      portal.id = 'next-trip-algoritmo-modal-portal';
+      document.body.appendChild(portal);
+    }
+
+    portal.innerHTML = `
+      <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div class="w-full max-w-2xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
+          
+          <!-- Cabeçalho -->
+          <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+            <div class="flex items-center gap-3">
+              <span class="p-2.5 rounded-2xl bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xl font-bold">🧠</span>
+              <div>
+                <h3 class="text-lg font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                  Next Trip Engine™ &bull; 5 Vetores Preditivos
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Arquitetura Matemática e Regras de Negócio do Motor de Recompra</p>
+              </div>
+            </div>
+            <button id="btn-close-algoritmo-modal" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <!-- Corpo do Modal -->
+          <div class="p-6 overflow-y-auto space-y-4 custom-scrollbar text-xs">
+            
+            <div class="p-3.5 bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 rounded-2xl text-indigo-900 dark:text-indigo-200 leading-relaxed font-medium">
+              💡 <strong>Transparência Operacional:</strong> O PaxFlow calcula o <em>Score de Prontidão (0 a 100)</em> de forma 100% determinística através de 5 vetores estatísticos baseados nos registros reais de viagens, NPS e orçamentos do Supabase. Não há "caixa preta".
+            </div>
+
+            <div class="space-y-3">
+              <!-- Vetor 1 -->
+              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-1.5">
+                <div class="flex items-center justify-between font-black text-slate-800 dark:text-white">
+                  <span class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                    <span>📅</span> 1. Sazonalidade & Janela Temporal
+                  </span>
+                  <span class="px-2 py-0.5 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-[10px]">Até 30 pts</span>
+                </div>
+                <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Calcula o intervalo desde a última viagem ou orçamento do cliente. Clientes na janela de <strong>10 a 14 meses (~1 ano)</strong> recebem a pontuação máxima (30 pts), pois coincide com o ciclo anual de férias. Entre 5 a 9 meses ou 15 a 24 meses recebem pontuação intermediária (20 a 25 pts).
+                </p>
+              </div>
+
+              <!-- Vetor 2 -->
+              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-1.5">
+                <div class="flex items-center justify-between font-black text-slate-800 dark:text-white">
+                  <span class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                    <span>⭐</span> 2. Satisfação do Cliente (NPS)
+                  </span>
+                  <span class="px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px]">Até 25 pts</span>
+                </div>
+                <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Clientes <strong>Promotores (NPS 9 ou 10)</strong> somam 25 pts pela alta probabilidade de recompra. Clientes no patamar neutro (NPS &ge; 8 ou sem avaliação cadastrada) recebem 15 pts neutros de segurança. Clientes <em>Detratores (NPS &lt; 8)</em> são <strong>descartados preventivamente</strong> para que a agência faça recuperação prévia de relacionamento antes de ofertar vendas.
+                </p>
+              </div>
+
+              <!-- Vetor 3 -->
+              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-1.5">
+                <div class="flex items-center justify-between font-black text-slate-800 dark:text-white">
+                  <span class="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                    <span>🌍</span> 3. Perfil de Destino & Passageiros
+                  </span>
+                  <span class="px-2 py-0.5 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-[10px]">Até 20 pts</span>
+                </div>
+                <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Identifica afinidade temática baseada nos destinos cotados e emitidos (Europa, Resorts All-Inclusive, Cruzeiros, Disney/Orlando ou Nacional). Atribui até 20 pts e sugere automaticamente um roteiro compatível com a composição de passageiros.
+                </p>
+              </div>
+
+              <!-- Vetor 4 -->
+              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-1.5">
+                <div class="flex items-center justify-between font-black text-slate-800 dark:text-white">
+                  <span class="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                    <span>☀️</span> 4. Mês Habitual de Férias
+                  </span>
+                  <span class="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px]">Até 15 pts</span>
+                </div>
+                <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Compara o mês corrente e o mês subsequente com o mês em que o cliente tradicionalmente viaja. Se houver coincidência de calendário, concede <strong>15 pts de bônus</strong> (gatilho de antecipação comercial).
+                </p>
+              </div>
+
+              <!-- Vetor 5 -->
+              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-1.5">
+                <div class="flex items-center justify-between font-black text-slate-800 dark:text-white">
+                  <span class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                    <span>🛡️</span> 5. Conformidade Operacional & SLA
+                  </span>
+                  <span class="px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-[10px]">Até 10 pts</span>
+                </div>
+                <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Audita se o cliente possui reembolsos não finalizados ou pendências em aberto. Se estiver 100% regular, concede 10 pts. Se houver reembolso em aberto, o vetor é zerado para proteger a experiência do cliente.
+                </p>
+              </div>
+            </div>
+
+            <!-- Regras de Exclusão Defensiva -->
+            <div class="p-4 bg-slate-100 dark:bg-slate-800/80 rounded-2xl space-y-2 border border-slate-200 dark:border-slate-700">
+              <h4 class="font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <span>🚫</span> Regras Rígidas de Bloqueio (Governança)
+              </h4>
+              <ul class="space-y-1 text-slate-600 dark:text-slate-300 pl-4 list-disc font-medium">
+                <li><strong>Viagem Futura Ativa:</strong> Se o cliente já tem viagem agendada no sistema, ele NUNCA é abordado.</li>
+                <li><strong>Orçamento Ativo no Funil:</strong> Clientes com cotação em status SOLICITADO, EM_ANDAMENTO ou AGUARDANDO são protegidos para não gerar ruído no atendimento.</li>
+                <li><strong>Carência Mínima:</strong> Carência de 30 dias após retorno de viagem ou recusa de proposta.</li>
+                <li><strong>Snooze (Pausa):</strong> Ao clicar no botão de pausa (⏸️), a oportunidade fica oculta pelo período determinado via Supabase.</li>
+              </ul>
+            </div>
+
+          </div>
+
+          <!-- Rodapé do Modal -->
+          <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 flex justify-end">
+            <button id="btn-close-algoritmo-modal-footer" class="h-[42px] px-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wide transition shadow-md shadow-indigo-600/15">
+              Entendido
+            </button>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    const closeModal = () => {
+      if (portal) portal.innerHTML = '';
+    };
+
+    portal.querySelector('#btn-close-algoritmo-modal')?.addEventListener('click', closeModal);
+    portal.querySelector('#btn-close-algoritmo-modal-footer')?.addEventListener('click', closeModal);
+  }
+
+  /**
+   * Abre o Modal de Auditoria Específica de um Cliente
+   */
+  private openAuditoriaClienteModal(op: NextTripOpportunity): void {
+    let portal = document.getElementById('next-trip-auditoria-modal-portal');
+    if (!portal) {
+      portal = document.createElement('div');
+      portal.id = 'next-trip-auditoria-modal-portal';
+      document.body.appendChild(portal);
+    }
+
+    const det = op.vetoresDetalhamento;
+
+    portal.innerHTML = `
+      <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div class="w-full max-w-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
+          
+          <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+            <div>
+              <div class="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Auditoria Matemática</div>
+              <h3 class="text-base font-black text-slate-900 dark:text-white truncate">${op.clienteNome}</h3>
+            </div>
+            <span class="px-3 py-1 rounded-xl text-xs font-black bg-indigo-600 text-white shadow-sm">
+              🎯 ${op.scoreProntidao}/100
+            </span>
+          </div>
+
+          <div class="p-5 overflow-y-auto space-y-3.5 custom-scrollbar text-xs">
+            
+            ${det ? `
+              <!-- Vetor 1 -->
+              <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60 space-y-1">
+                <div class="flex items-center justify-between font-bold text-slate-800 dark:text-white">
+                  <span>📅 Sazonalidade & Janela</span>
+                  <span class="text-indigo-600 dark:text-indigo-400 font-black">${det.sazonalidade.score}/${det.sazonalidade.max} pts</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">${det.sazonalidade.detalhe}</p>
+              </div>
+
+              <!-- Vetor 2 -->
+              <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60 space-y-1">
+                <div class="flex items-center justify-between font-bold text-slate-800 dark:text-white">
+                  <span>⭐ Satisfação & NPS</span>
+                  <span class="text-emerald-600 dark:text-emerald-400 font-black">${det.nps.score}/${det.nps.max} pts</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">${det.nps.detalhe}</p>
+              </div>
+
+              <!-- Vetor 3 -->
+              <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60 space-y-1">
+                <div class="flex items-center justify-between font-bold text-slate-800 dark:text-white">
+                  <span>🌍 Perfil de Destino</span>
+                  <span class="text-purple-600 dark:text-purple-400 font-black">${det.perfil.score}/${det.perfil.max} pts</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">${det.perfil.detalhe}</p>
+              </div>
+
+              <!-- Vetor 4 -->
+              <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60 space-y-1">
+                <div class="flex items-center justify-between font-bold text-slate-800 dark:text-white">
+                  <span>☀️ Mês Habitual de Férias</span>
+                  <span class="text-amber-600 dark:text-amber-400 font-black">${det.mesHabitual.score}/${det.mesHabitual.max} pts</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">${det.mesHabitual.detalhe}</p>
+              </div>
+
+              <!-- Vetor 5 -->
+              <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60 space-y-1">
+                <div class="flex items-center justify-between font-bold text-slate-800 dark:text-white">
+                  <span>🛡️ Conformidade & SLA</span>
+                  <span class="text-blue-600 dark:text-blue-400 font-black">${det.conformidadeSla.score}/${det.conformidadeSla.max} pts</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">${det.conformidadeSla.detalhe}</p>
+              </div>
+            ` : `
+              <p class="text-slate-400">Score consolidado: <strong>${op.scoreProntidao}/100</strong>.</p>
+            `}
+
+            <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+              Última interação: <strong>${op.ultimoDestino}</strong> em ${op.ultimaViagemData}. Consultor responsável: <strong>${op.consultorNome}</strong>.
+            </div>
+
+          </div>
+
+          <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 flex justify-end">
+            <button id="btn-close-auditoria-modal" class="h-[42px] px-6 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-xl text-xs font-black uppercase tracking-wide transition">
+              Fechar
+            </button>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    portal.querySelector('#btn-close-auditoria-modal')?.addEventListener('click', () => {
+      if (portal) portal.innerHTML = '';
     });
   }
 

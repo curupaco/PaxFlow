@@ -137,6 +137,13 @@ export interface NextTripOpportunity {
   snoozeAte?: string;
   totalPassageirosGrupo?: number;
   origemOportunidade?: 'viagem' | 'orcamento_recusado';
+  vetoresDetalhamento?: {
+    sazonalidade: { score: number; max: number; detalhe: string };
+    nps: { score: number; max: number; detalhe: string };
+    perfil: { score: number; max: number; detalhe: string };
+    mesHabitual: { score: number; max: number; detalhe: string };
+    conformidadeSla: { score: number; max: number; detalhe: string };
+  };
 }
 
 /**

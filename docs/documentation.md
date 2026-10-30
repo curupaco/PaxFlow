@@ -48,21 +48,25 @@
    - 3.35 [Atalho Rápido e Modal de Cadastro do Cliente na Venda](#335-atalho-rápido-e-modal-de-cadastro-do-cliente-na-venda)
    - 3.36 [PaxFlow FinRecon™ (Módulo de Conciliação Bancária & Fechamento Contábil)](#336-paxflow-finrecon-módulo-de-conciliação-bancária--fechamento-contábil)
    - 3.37 [Design System de Tabelas, Proporções e Padronização Visual PaxFlow](#337-design-system-de-tabelas-proporções-e-padronização-visual-paxflow)
-   - 3.39 [Melhorias Estratégicas em Relatórios e Central de Lembretes](#339-melhorias-estratégicas-em-relatórios-e-central-de-lembretes)
-   - 3.40 [Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos](#340-governança-de-desistências-check-de-contato-do-gestor--reabertura-de-orçamentos)
-   - 3.41 [Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional](#341-arquitetura-de-web-push-server-side-exclusão-em-cascata--integridade-transacional)
-   - 3.42 [Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil](#342-agregação-segura-de-produtos--junção-de-viagens-com-proteção-contábil)
-   - 3.43 [Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique](#343-assistente-de-remarcação-de-viagens-com-blindagem-contábil-em-1-clique)
-   - 3.44 [Divisão de Viagens, Comissões e Parcerias entre Consultores (com Rateio de RAV Aérea)](#344-divisão-de-viagens-comissões-e-parcerias-entre-consultores-com-rateio-de-rav-aérea)
-   - 3.45 [Redesign e Organização em 5 Abas do Gerenciador de Viagens](#345-redesign-e-organização-em-5-abas-do-gerenciador-de-viagens)
-   - 3.46 [Ergonomia Visual, Barras de Rolagem de Alto Contraste & Indicador de Transbordo (Scroll Fade)](#346-ergonomia-visual-barras-de-rolagem-de-alto-contraste--indicador-de-transbordo-scroll-fade)
-   - 3.47 [Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial](#347-rateio-integral-de-parcerias-e-rav-no-módulo-de-relatórios-e-dashboard-comercial)
-   - 3.48 [Módulo de Campanhas & Segmentação Comercial de Base](#348-módulo-de-campanhas--segmentação-comercial-de-base)
-   - 3.49 [Painel Analítico de Pesquisa de Satisfação (NPS)](#349-painel-analítico-de-pesquisa-de-satisfação-nps)
-   - 3.50 [Ergonomia do Painel de Relatórios & Menu Lateral Retrátil](#350-ergonomia-do-painel-de-relatórios--menu-lateral-retrátil)
-   - 3.51 [Módulo Financeiro de Contas a Pagar, Remessas & Plano de Contas](#351-módulo-financeiro-de-contas-a-pagar-remessas--plano-de-contas)
-   - 3.52 [Identificação Visual de Participações & Módulos na Gestão de Equipe](#352-identificação-visual-de-participações--módulos-na-gestão-de-equipe)
-   - 3.53 [Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral](#353-unificação-do-módulo-financeiro--submenu-indentado-na-barra-lateral)
+   - 3.38 [Painel de Filtros Avançados Combináveis, Resumo Financeiro & Exportação CSV de Viagens](#338-painel-de-filtros-avançados-combináveis-resumo-financeiro--exportação-csv-de-viagens)
+   - 3.39 [Tabela Operacional Desktop, Cards Mobile & Gestos Swipe (ViagensTableView.ts)](#339-tabela-operacional-desktop-cards-mobile--gestos-swipe-viagenstableviewts)
+   - 3.40 [Transições de Status, Criação de Viagem & Modo Co-Piloto Balcão (NovaViagemModal, ViagensTransicaoManager, BalcaoCopilotoSection)](#340-transições-de-status-criação-de-viagem--modo-co-piloto-balcão-novaviagemmodal-viagenstransicaomanager-balcaocopilotosection)
+   - 3.41 [Melhorias Estratégicas em Relatórios e Central de Lembretes](#341-melhorias-estratégicas-em-relatórios-e-central-de-lembretes)
+   - 3.42 [Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos](#342-governança-de-desistências-check-de-contato-do-gestor--reabertura-de-orçamentos)
+   - 3.43 [Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional](#343-arquitetura-de-web-push-server-side-exclusão-em-cascata--integridade-transacional)
+   - 3.44 [Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil](#344-agregação-segura-de-produtos--junção-de-viagens-com-proteção-contábil)
+   - 3.45 [Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique](#345-assistente-de-remarcação-de-viagens-com-blindagem-contábil-em-1-clique)
+   - 3.46 [Divisão de Viagens, Comissões e Parcerias entre Consultores (com Rateio de RAV Aérea)](#346-divisão-de-viagens-comissões-e-parcerias-entre-consultores-com-rateio-de-rav-aérea)
+   - 3.47 [Redesign e Organização em 5 Abas do Gerenciador de Viagens](#347-redesign-e-organização-em-5-abas-do-gerenciador-de-viagens)
+   - 3.48 [Ergonomia Visual, Barras de Rolagem de Alto Contraste & Indicador de Transbordo (Scroll Fade)](#348-ergonomia-visual-barras-de-rolagem-de-alto-contraste--indicador-de-transbordo-scroll-fade)
+   - 3.49 [Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial](#349-rateio-integral-de-parcerias-e-rav-no-módulo-de-relatórios-e-dashboard-comercial)
+   - 3.50 [Módulo de Campanhas & Segmentação Comercial de Base](#350-módulo-de-campanhas--segmentação-comercial-de-base)
+   - 3.51 [Painel Analítico de Pesquisa de Satisfação (NPS)](#351-painel-analítico-de-pesquisa-de-satisfação-nps)
+   - 3.52 [Ergonomia do Painel de Relatórios & Menu Lateral Retrátil](#352-ergonomia-do-painel-de-relatórios--menu-lateral-retrátil)
+   - 3.53 [Módulo Financeiro de Contas a Pagar, Remessas & Plano de Contas](#353-módulo-financeiro-de-contas-a-pagar-remessas--plano-de-contas)
+   - 3.54 [Identificação Visual de Participações & Módulos na Gestão de Equipe](#354-identificação-visual-de-participações--módulos-na-gestão-de-equipe)
+   - 3.55 [Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral](#355-unificação-do-módulo-financeiro--submenu-indentado-na-barra-lateral)
+   - 3.56 [Polimento Visual, UX Responsiva Mobile-First & Scorecards do Financeiro](#356-polimento-visual-ux-responsiva-mobile-first--scorecards-do-financeiro)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -456,7 +460,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **7. Previsão de Fechamentos (Weighted Pipeline)**: Cálculo estatístico local que pondera o faturamento previsto do pipeline em aberto (solicitado = 15%, andamento = 45%, aguardando = 75%) e estima embarques iminentes.
   - **8. Qualidade de Fornecedores e Incidentes**: Tabulação de reembolsos, volume vendido e score de risco por fornecedor.
   - **9. Origem de Leads e Eficiência de Funil [UPDATED]**: Matriz analítica de canais de captação (WhatsApp, Instagram, Indicação, Google, Site, Outros) com gráfico de share percentual e tabela de desempenho:
-    - **Coluna de Rentabilidade Real**: Posicionada estrategicamente entre *Faturamento Realizado* e *Tíquete Médio*, permitindo visualizar a rentabilidade líquida total gerada por cada canal comercial (considerando comissão, markup e 88% da RAV dos produtos de viagens vinculadas).
+    - **Coluna de Rentabilidade Real**: Posicionada estrategicamente entre _Faturamento Realizado_ e _Tíquete Médio_, permitindo visualizar a rentabilidade líquida total gerada por cada canal comercial (considerando comissão, markup e 88% da RAV dos produtos de viagens vinculadas).
     - **Métricas Completas por Canal**: Origem, Total de Leads, Ganhos, Conversão %, Faturamento Realizado, Rentabilidade e Tíquete Médio.
     - **Exportação CSV Sincronizada**: O download de planilha (.csv compatível com Excel) exporta a coluna de Rentabilidade na mesma disposição tabular.
 - **Segurança de Acesso (RLS local)**: Consultores comuns têm visão bloqueada a seu próprio ID (o filtro é desativado). Apenas administradores auditam o consolidado e selecionam qualquer consultor da agência.
@@ -687,28 +691,30 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 ---
 
-### 3.28 Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)
+### 3.28 Next Trip Engine™ (Motor Heurístico & Estatístico de Recompra & Ciclo de Vida do Viajante)
 
-**Motor de inteligência comercial preditiva** que analisa o histórico transacional do cliente (_quem viajou, para onde, quando, com quem, quanto gastou, notas de NPS e preferências_) para responder dinamicamente: _"Quais clientes da agência estão no momento ideal para comprar uma nova viagem?"_. Acessível na tela dedicada **🎯 Next Trip Engine** no menu lateral (`#next-trip`) e em versão compacta nos Dashboards.
+**Motor determinístico de inteligência comercial preditiva** que analisa o histórico transacional do cliente no Supabase (_quem viajou, para onde, quando, com quem, quanto gastou, notas de NPS e preferências_) para responder dinamicamente: _"Quais clientes da agência estão no momento ideal para comprar uma nova viagem ou reativar propostas antigas?"_. Acessível na tela dedicada **🎯 Next Trip Engine** no menu lateral (`#next-trip`) e em versão de gaveta/widget na tela de Viagens.
 
-- **Score de Potencial de Recompra (0 a 100)**: Avaliação em tempo real combinando 5 vetores essenciais:
-  1. **Sazonalidade Temporal (30%)**: Ciclicidade decorrida desde o último retorno (> 90 dias pós-retorno).
-  2. **Satisfação (NPS 25%)**: Clientes Promotores (NPS 9-10) ganham impulso de potencial; clientes neutros/detratores possuem prioridade menor.
-  3. **Perfil de Destino & Ticket Médio (20%)**: Classificação por categorias de afinidade (Europa, Resorts/Praia, Disney/Família, Cruzeiros, Nacional).
-  4. **Mês Habitual de Viagem (15%)**: Períodos históricos recorrentes de férias (Julho, Réveillon, Carnaval).
-  5. **Conformidade Operacional (10%)**: Ausência de reembolsos pendentes ou disputas ativas.
+- **Transparência Absoluta (Zero Caixas Pretas & Zero Menções Enganosas a IA)**:
+  - O motor é 100% determinístico e auditável. O operador ou gestor pode clicar a qualquer momento no card superior **🧠 5 Vetores** ou no botão **🧠** em cada oportunidade para inspecionar exatamente a fórmula de cálculo e a decomposição de pontos do cliente.
+- **Score de Potencial de Recompra (0 a 100) — Composição dos 5 Vetores**:
+  1. **Sazonalidade & Janela Temporal (Até 30 pts)**: Avalia o tempo decorrido desde o retorno ou proposta. A janela de **10 a 14 meses (~1 ano)** confere pontuação máxima (30 pts), pois coincide com o ciclo anual de férias; 5 a 9 meses ou 15 a 24 meses conferem 20 a 25 pts.
+  2. **Histórico de Satisfação NPS (Até 25 pts)**: Clientes Promotores (NPS 9-10) recebem 25 pts; clientes com avaliação neutra ou sem NPS recebem 15 pts neutros de segurança. Clientes *Detratores (NPS < 8)* são descartados preventivamente para priorizar o pós-venda.
+  3. **Perfil de Destino & Passageiros (Até 20 pts)**: Afinidade temática baseada em reservas passadas (Europa, Resorts All-Inclusive, Cruzeiros, Disney ou Nacional).
+  4. **Mês Habitual de Viagem (Até 15 pts)**: Concede bônus de 15 pts quando o mês atual ou o próximo coincidem com o período histórico de embarque do cliente.
+  5. **Conformidade Operacional & SLA (Até 10 pts)**: Concede 10 pts para clientes sem pendências ou reembolsos abertos.
+- **Sincronização Total com a Tela de Viagens**:
+  - Resolução definitiva de discrepâncias: os mesmos dados relacionais de viagens e clientes consultados no Dashboard são sincronizados com a página dedicada `#next-trip`, garantindo consistência total entre o indicador do widget e a listagem completa.
 - **Visualização & Filtros na Central Preditiva**:
-  - Exibido na tela dedicada (`#next-trip`) com filtros por **Alto Potencial (>= 75)**, **Médio Potencial**, Categoria de Destino, Busca por Cliente/Destino e Filtro por Consultor Titular.
-  - Exibição de badge dinâmico (`🔥 Potencial: 88/100`) e estatísticas agregadas da carteira.
+  - Exibido na tela dedicada (`#next-trip`) com filtros por **Alto Potencial (>= 75)**, **Médio Potencial**, Categoria de Destino, Busca por Cliente/Destino e Filtro por Consultor Titular (para administradores).
 - **Ações Rápidas de 1-Clique**:
-  - `🎯 Criar Orçamento Preditivo`: Abre o formulário de novo orçamento com Cliente, Destino Recomendado e Temperatura _🔥 Quente_ pré-carregados.
-  - `💬 Disparar WhatsApp Personalizado`: Abre o modal de mensagens com variáveis dinâmicas (`{primeiro_nome}`, `{ultimo_destino}`, `{proximo_ano}`) para envio instantâneo via DigiSac/WhatsApp Web.
-- **Gestão de Abordagem & Snooze de 30 Dias**:
-  - Ao atuar sobre a oportunidade (disparo de WhatsApp ou criação de orçamento), o status muda para _"Em Abordagem"_ e entra em carência automática por 30 dias para evitar abordagens repetitivas. Se um novo orçamento for fechado, o ciclo de ciclo de vida é resetado para o novo embarque.
-- **Agrupamento Familiar**:
-  - Viagens anteriores com múltiplos passageiros (casais, famílias) são consolidadas no nome do **Titular/Comprador Principal** (_Família Silva — 4 passageiros_), evitando duplicidade de abordagens no mesmo núcleo familiar.
+  - `🎯 Criar Orçamento`: Abre o formulário de novo orçamento pré-preenchido com o cliente e destino recomendado.
+  - `💬 WhatsApp`: Abre o modal de templates com dados contextuais pré-carregados.
+  - `🧠 Auditoria`: Abre o modal de auditoria matemática do cliente com a discriminação dos pontos em cada um dos 5 vetores.
+  - `⏸️ Snooze (30 Dias)`: Adia temporariamente a abordagem comercial persistindo o limite de carência diretamente na tabela `clientes` do Supabase.
 - **Governança & Parâmetros Administrativos**:
-  - Consultores visualizam e atuam sobre as oportunidades dos seus próprios clientes titulares; Administradores possuem visão global de toda a agência.
+  - Regras rígidas de bloqueio automático para clientes com viagens futuras ativas ou orçamentos em andamento no funil (SOLICITADO, EM_ANDAMENTO, AGUARDANDO).
+  - Consultores visualizam clientes próprios; Administradores possuem visão global de toda a agência de forma irrestrita.
 
 ### 3.29 PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)
 
@@ -835,7 +841,7 @@ Módulo unificado de governança e custódia documental para agências de viagem
 
 - **Políticas de RLS para Storage (`documentos-clientes`) e Tabela (`documentos_anexos`)**:
   - Provisionamento das políticas completas de segurança em nível de linha (RLS) para o bucket de storage `documentos-clientes` (`storage.objects`) e para a tabela relacional `public.documentos_anexos`.
-  - Garante operações irrestritas de `SELECT`, `INSERT`, `UPDATE` e `DELETE` para todos os usuários com papel autenticado (`TO authenticated`), prevenindo o erro genérico de *"Acesso negado. Você não tem permissão para realizar esta operação."* durante o envio de comprovantes e documentos por consultores.
+  - Garante operações irrestritas de `SELECT`, `INSERT`, `UPDATE` e `DELETE` para todos os usuários com papel autenticado (`TO authenticated`), prevenindo o erro genérico de _"Acesso negado. Você não tem permissão para realizar esta operação."_ durante o envio de comprovantes e documentos por consultores.
   - No frontend, o `errorTranslator` e o serviço `AnexosService` contam com mensagens contextuais de apoio diagnóstico caso o bucket não tenha sido provisionado com as políticas no ambiente de banco de dados.
 
 - **Persistência Estrita em Tabela Relacional & Higienização de Observações**:
@@ -1209,7 +1215,7 @@ Para apoiar a retenção comercial, auditoria de perdas e recuperação de leads
    - **Garantia Ativa de `pointer-events-auto`**: Para eliminar o bloqueio de cliques quando o usuário navega entre o Dashboard e os Relatórios, o overlay sobreposto do portal (`orcamento-modal-portal`) remove explicitamente classes de bloqueio (`pointer-events-none`) e estabelece `pointer-events-auto`, permitindo clicar, rolar, selecionar e editar livremente todos os campos e notas sem travar a interface.
    - **Fechamento e Limpeza no Desmonte**: O método `destroy()` de `RelatoriosPage` e a rotina `fecharModalOrcamento` limpam ativamente o conteúdo do portal e desvinculam o ouvinte de tecla `Escape`, assegurando integridade total do ciclo de vida da SPA.
 
-### 3.41 Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional
+### 3.43 Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional
 
 Para consolidar as garantias de segurança cibernética, integridade referencial e confiabilidade do ecossistema:
 
@@ -1222,7 +1228,7 @@ Para consolidar as garantias de segurança cibernética, integridade referencial
    - **Motor `excluirViagemCascata`**: Implementado em `viagensController.ts` para coordenar a remoção ordenada e segura de todas as 11 entidades dependentes (comentários, notificações, pagamentos, conferências, lembretes, feedbacks NPS, reembolsos, tarefas, passageiros e produtos).
    - **Tratamento de Violações de Foreign Key (`23503`)**: Emissão de feedback amigável e explicativo na interface caso restrições de integridade bloqueiem a remoção, prevenindo falhas silenciosas e preservando a consistência dos dados contábeis.
 
-### 3.42 Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil
+### 3.44 Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil
 
 Para prevenir distorções no faturamento, fechamento de mês e estados de conferência ao agregar produtos ou converter propostas comerciais para um passageiro que já possui viagens cadastradas:
 
@@ -1239,7 +1245,7 @@ Para prevenir distorções no faturamento, fechamento de mês e estados de confe
    - O campo `valor_total` da viagem é recalculado de forma atômica pela soma real de seus produtos.
    - O sistema direciona o consultor para registrar a forma de pagamento e parcelamento referente ao valor adicional nos detalhes da viagem.
 
-### 3.43 Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique
+### 3.45 Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique
 
 Para solucionar o desafio operacional de passageiros que alteram as datas de suas viagens sem que isso gere discrepâncias fiscais e relatórios duplicados:
 
@@ -1258,7 +1264,7 @@ Para solucionar o desafio operacional de passageiros que alteram as datas de sua
 4. **Auditoria e Timeline da Viagem**:
    - Toda remarcação gera automaticamente um log de auditoria nos comentários da viagem com data/hora, identificação do operador, datas anteriores e novas datas de embarque.
 
-### 3.44 Divisão de Viagens, Comissões e Parcerias entre Consultores (com Rateio de RAV Aérea)
+### 3.46 Divisão de Viagens, Comissões e Parcerias entre Consultores (com Rateio de RAV Aérea)
 
 Para viabilizar o trabalho colaborativo entre membros da equipe da agência (prospecção compartilhada, atendimento conjunto ou emissão dividida) com rigor contábil e de governança:
 
@@ -1301,14 +1307,14 @@ Para viabilizar o trabalho colaborativo entre membros da equipe da agência (pro
 
 ---
 
-### 3.45 Redesign e Organização em 5 Abas do Gerenciador de Viagens
+### 3.47 Redesign e Organização em 5 Abas do Gerenciador de Viagens
 
 A tela de Gerenciar/Editar Viagem (`EditTravelModal` e `DashboardTemplates`) passou por uma reformulação completa de arquitetura de informação e usabilidade, eliminando o empilhamento desordenado de dezenas de campos simultâneos e estabelecendo um fluxo de trabalho focado e visualmente limpo:
 
 1. **Navegação em 5 Abas Especializadas (Desktop & Mobile)**:
    - **📝 Geral & Passageiro**: Concentra a governança cadastral da viagem (Passageiro, Destino, Datas de Ida/Volta/Financeiro, Status Operacional, Valor Total, Observações e Divisão de Vendas). Apresenta a barra de atalhos rápidos com WhatsApp, Remarcação de Viagem e Pós-Contato.
    - **🛍️ Produtos & Serviços**: Estruturada em layout de duas colunas balanceadas no desktop (`grid lg:grid-cols-12`):
-     - **Coluna Esquerda (`lg:col-span-7`)**: Visão financeira analítica (Venda, Total em Produtos, Alocação e Rentabilidade com detalhamento de MKP/RAV), lista de produtos cadastrados agrupada por Localizador (LOC) com menu de ações (`⋮`) e recomendações preditivas do *PaxFlow Upsell Engine™*.
+     - **Coluna Esquerda (`lg:col-span-7`)**: Visão financeira analítica (Venda, Total em Produtos, Alocação e Rentabilidade com detalhamento de MKP/RAV), lista de produtos cadastrados agrupada por Localizador (LOC) com menu de ações (`⋮`) e recomendações preditivas do _PaxFlow Upsell Engine™_.
      - **Coluna Direita (`lg:col-span-5` com posicionamento ergonômico sticky)**: Formulário dinâmico embutido (por padrão exibe o formulário de cadastro de novo serviço; ao clicar em Editar em qualquer produto da lista, alterna para o formulário de edição com botão de retorno).
    - **🎫 Vouchers & Documentos**: Módulo dedicado e isolado para upload, pré-visualização e download de bilhetes aéreos, vouchers de hotéis, apólices de seguro e vistos do passageiro.
    - **💬 Linha do Tempo & Comentários**: Histórico auditado em tempo real com todas as anotações da equipe, registros de alterações e auditoria de remarcações.
@@ -1333,7 +1339,7 @@ A tela de Gerenciar/Editar Viagem (`EditTravelModal` e `DashboardTemplates`) pas
 
 ---
 
-### 3.46 Ergonomia Visual, Barras de Rolagem de Alto Contraste & Indicador de Transbordo (Scroll Fade)
+### 3.48 Ergonomia Visual, Barras de Rolagem de Alto Contraste & Indicador de Transbordo (Scroll Fade)
 
 A experiência de navegação horizontal e vertical foi otimizada para eliminar problemas comuns em monitores Full HD (1920x1080) e telas de notebooks convencionais (1366x768), onde elementos com rolagem lateral frequentemente pareciam "cortados" sem que o usuário percebesse a existência de conteúdo adicional:
 
@@ -1352,7 +1358,7 @@ A experiência de navegação horizontal e vertical foi otimizada para eliminar 
 
 ---
 
-### 3.47 Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial
+### 3.49 Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial
 
 Expansão das regras de governança e cálculo proporcional de vendas divididas (`viagens_divisoes`) para todos os painéis analíticos e métricas comerciais da agência:
 
@@ -1371,12 +1377,12 @@ Expansão das regras de governança e cálculo proporcional de vendas divididas 
 4. **Metas de Vendas e Campanhas Fracionadas**:
    - No Dashboard Comercial, as metas brutas e líquidas utilizam as fatias ponderadas por consultor, permitindo que vendas em parceria contribuam com frações exatas para o atingimento das metas individuais.
 
-### 3.48 Módulo de Campanhas & Segmentação Comercial de Base
+### 3.50 Módulo de Campanhas & Segmentação Comercial de Base
 
 Ferramenta de inteligência relacional e prospecção ativa posicionada na aba `🚀 Campanhas & Segmentação` do módulo de Relatórios (`Relatorios.ts` e `campanhasService.ts`):
 
 1. **Matriz de Filtros Estratégicos Combinados**:
-   - **Origem da Base (Fonte)**: Permite alternar entre *Ambos Unificados* (Viagens Confirmadas + Orçamentos/Leads), *Apenas Viagens Confirmadas* ou *Apenas Orçamentos*.
+   - **Origem da Base (Fonte)**: Permite alternar entre _Ambos Unificados_ (Viagens Confirmadas + Orçamentos/Leads), _Apenas Viagens Confirmadas_ ou _Apenas Orçamentos_.
    - **Origem do Lead**: Segmentação por canal de captação e conversão do passageiro (ex: WhatsApp, Instagram, Google, Loja Física, Indicação, etc.), identificado dinamicamente no cadastro do lead/viagem.
    - **Destino e Internacionalidade**: Filtro por Tipo de Destino (Nacional vs Internacional via `classificarTipoDestino`) e multi-busca flexível por termos separados por vírgula (ex: "Cuba, Cancun, Miami").
    - **Janela de Tempo**: Seleção de janelas dinâmicas dos últimos 3, 6, 12, 24 meses ou histórico completo.
@@ -1401,7 +1407,7 @@ Ferramenta de inteligência relacional e prospecção ativa posicionada na aba `
    - Presets salvos pela gestão são gravados na tabela `campanhas_presets` no Supabase com identificador de autoria e payload JSONB de filtros.
    - Tratamento automático para erros `42P01` (tabela inexistente) ou `42703` (coluna inexistente), ativando modo virtual na sessão sem interromper o trabalho da agência.
 
-### 3.49 Painel Analítico de Pesquisa de Satisfação (NPS)
+### 3.51 Painel Analítico de Pesquisa de Satisfação (NPS)
 
 Módulo visual de governança de qualidade posicionado na aba `⭐ Pesquisa de Satisfação (NPS)` em `Relatorios.ts`, integrando o motor matemático de `satisfacaoService.ts` aos feedbacks respondidos pós-viagem:
 
@@ -1409,13 +1415,13 @@ Módulo visual de governança de qualidade posicionado na aba `⭐ Pesquisa de S
    - **Cálculo Oficial**: Índice NPS Score apurado por `% Promotores (notas 9-10) - % Detratores (notas 0-6)`, variando na escala clássica de -100 a +100.
    - **Média Geral**: Média simples das notas de 0 a 10 atribuídas pelos viajantes.
    - **Termômetro em Zonas de Mercado**:
-     - *Zona de Excelência 🌟*: Score $\ge 75$ (Padrão de referência internacional).
-     - *Zona de Qualidade 👍*: Score entre $50$ e $74$.
-     - *Zona de Aperfeiçoamento ⚠️*: Score entre $0$ e $49$.
-     - *Zona Crítica 🚨*: Score $< 0$ (Mais detratores que promotores).
+     - _Zona de Excelência 🌟_: Score $\ge 75$ (Padrão de referência internacional).
+     - _Zona de Qualidade 👍_: Score entre $50$ e $74$.
+     - _Zona de Aperfeiçoamento ⚠️_: Score entre $0$ e $49$.
+     - _Zona Crítica 🚨_: Score $< 0$ (Mais detratores que promotores).
 
 2. **Filtros e Segmentação Avançada**:
-   - Seletor de categorias para visualização instantânea de: *Todos*, *Promotores*, *Neutros*, *Detratores* ou *Com Depoimento*.
+   - Seletor de categorias para visualização instantânea de: _Todos_, _Promotores_, _Neutros_, _Detratores_ ou _Com Depoimento_.
    - Busca textual em tempo real cruzando nome do passageiro, destino, consultor ou palavras dentro do depoimento.
    - Filtro de período por datas e segregação por consultor responsável.
 
@@ -1426,13 +1432,13 @@ Módulo visual de governança de qualidade posicionado na aba `⭐ Pesquisa de S
    - Exibição de cards tabulares com o texto integral dos feedbacks e notas identificadas por emojis coloridos (`🟢`, `🟡`, `🔴`).
    - Botão direto `💬 Digisac` em cada linha da tabela para contato imediato e resolução ágil de pós-venda.
 
-### 3.50 Ergonomia do Painel de Relatórios & Menu Lateral Retrátil
+### 3.52 Ergonomia do Painel de Relatórios & Menu Lateral Retrátil
 
 Otimização ergonômica e de layout desenvolvida no módulo `Relatorios.ts` para resolver a limitação de espaço horizontal em monitores e telas de notebooks (Full HD e HD):
 
 1. **Menu Lateral Retrátil & Mini-Barra de Ícones**:
    - **Botão de Alternância `[ ❮ ]` / `[ ❯ ]`**: Presente no cabeçalho do menu de relatórios, permite ao usuário recolher a barra lateral para o modo compacto ou expandir de volta a qualquer momento.
-   - **Modo Expandido Padrão (`w-64`)**: Exibe as categorias completas com ícones e rótulos por extenso, organizado nos 4 grupos estratégicos (*Gestão Comercial*, *Financeiro & Auditoria*, *Operações & SLAs* e *Gestão de Equipe*).
+   - **Modo Expandido Padrão (`w-64`)**: Exibe as categorias completas com ícones e rótulos por extenso, organizado nos 4 grupos estratégicos (_Gestão Comercial_, _Financeiro & Auditoria_, _Operações & SLAs_ e _Gestão de Equipe_).
    - **Modo Mini-Barra Recolhida (`w-16`)**: Transforma a navegação lateral em uma barra vertical ultra-enxuta, contendo apenas os ícones destacados e linhas divisórias sutis entre os 4 grupos. Ao posicionar o cursor sobre qualquer botão, um tooltip exibe a categoria e o nome do relatório.
 
 2. **Área de Dados Expandida & Eliminação de Scroll Horizontal**:
@@ -1443,7 +1449,7 @@ Otimização ergonômica e de layout desenvolvida no módulo `Relatorios.ts` par
    - Em smartphones e telas menores (`< lg`), as barras laterais verticais são ocultadas (`hidden lg:flex`), eliminando o empilhamento vertical que criava faixas vazias e empurrava o conteúdo para fora da primeira dobra.
    - Um seletor nativo moderno (`#select-relatorio-mobile`) com altura padrão `h-[42px]` e bordas `rounded-xl` é posicionado no topo, estruturado com `<optgroup>` para as 4 categorias estratégicas, permitindo alternar qualquer relatório com 1 toque e mantendo os dados imediatamente visíveis na tela inicial.
 
-### 3.51 Módulo Financeiro de Contas a Pagar, Remessas & Plano de Contas
+### 3.53 Módulo Financeiro de Contas a Pagar, Remessas & Plano de Contas
 
 O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operando desacoplado da área operacional comum, com unidade corporativa consolidada e estritamente protegido por governança baseada em papéis (RBAC):
 
@@ -1455,11 +1461,11 @@ O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operan
 2. **As 4 Abas Especializadas**:
    - **📋 Contas a Pagar**: Painel de liquidez com KPIs imediatos (Total a Pagar no Mês, Total Pago, Contas em Atraso com indicador pulsante e Vencimentos dos Próximos 7 Dias). Barra de filtros por mês/ano, status, tipo de custo, categoria e busca de favorecido. Tabela rica de títulos com visualização de vencimento nominal vs operacional e suporte a despesas estimadas/variáveis.
    - **📦 Remessas Agrupadas (Mestre-Detalhe)**: Inspirada na visualização de viagens com produtos dentro. Permite selecionar múltiplos títulos pendentes do mesmo favorecido e consolidar em uma Remessa única, facilitando a liquidação conjunta com um só comprovante de transferência/Pix e controle de accordion expansível.
-   - **📈 Fluxo de Caixa & DRE**: Grade visual mensal (domingo a sábado) com distribuição temporal de todos os vencimentos operacionais do mês selecionado. Conta com identificador de maior desembolso do mês (`⚡ Maior Desembolso`), média diária por dia ativo e sinalização das datas com picos contratuais estratégicos (*dias 1, 5, 10, 15, 20 e 30*). Células interativas com abertura de modal detalhado com os títulos de cada data e ação de baixa imediata, além do demonstrativo gerencial consolidando os 5 macro grupos de custo (Custos Diretos, Despesas Fixas, Despesas Variáveis, Investimentos e Gastos Não Operacionais) e exportação em 1-clique para planilha CSV.
+   - **📈 Fluxo de Caixa & DRE**: Grade visual mensal (domingo a sábado) com distribuição temporal de todos os vencimentos operacionais do mês selecionado. Conta com identificador de maior desembolso do mês (`⚡ Maior Desembolso`), média diária por dia ativo e sinalização das datas com picos contratuais estratégicos (_dias 1, 5, 10, 15, 20 e 30_). Células interativas com abertura de modal detalhado com os títulos de cada data e ação de baixa imediata, além do demonstrativo gerencial consolidando os 5 macro grupos de custo (Custos Diretos, Despesas Fixas, Despesas Variáveis, Investimentos e Gastos Não Operacionais) e exportação em 1-clique para planilha CSV.
    - **⚙️ Plano de Contas & Bancos**: Gestão da árvore contábil de 3 níveis (`Tipo de Custo -> Categoria -> Subcategoria`), cadastro das contas bancárias e caixas da agência com seus saldos iniciais.
 
 3. **Motor de Vencimentos em Dias Úteis & Regra Tributária Diferenciada**:
-   - **Para Tributos e Impostos** (ex: *Imposto, IPTU, INSS/IRPF, FGTS*): Qualquer vencimento nominal que recaia em finais de semana ou feriados nacionais é **antecipado para o dia útil anterior**, evitando multas e encargos fiscais.
+   - **Para Tributos e Impostos** (ex: _Imposto, IPTU, INSS/IRPF, FGTS_): Qualquer vencimento nominal que recaia em finais de semana ou feriados nacionais é **antecipado para o dia útil anterior**, evitando multas e encargos fiscais.
    - **Para Todos os Demais Títulos**: O vencimento operacional é **postergado para o próximo dia útil**, respeitando o calendário bancário padrão.
 
 4. **Baixa Inteligente com Suporte a Resíduo Parcial**:
@@ -1480,7 +1486,7 @@ O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operan
    - **Recálculo Inteligente de Datas e Prazos Úteis**: A alteração do dia de vencimento nominal atualiza o dia em todos os meses futuros pendentes, reavaliando individualmente cada data com o motor de antecipação tributária ou postergação bancária.
    - **Trilha de Auditoria Granular**: Cada alteração em cascata registra na tabela `fin_auditoria` a quantidade total de títulos afetados, payload de alterações e identificador do usuário responsável.
 
-### 3.52 Identificação Visual de Participações & Módulos na Gestão de Equipe
+### 3.54 Identificação Visual de Participações & Módulos na Gestão de Equipe
 
 A gestão de colaboradores e consultores em **Configurações -> Equipe de Consultores** adota um padrão de alta densidade informativa e ergonomia sem esticar a altura vertical das linhas da tabela:
 
@@ -1493,7 +1499,7 @@ A gestão de colaboradores e consultores em **Configurações -> Equipe de Consu
 3. **Persistência Completa no Cadastro e Edição**:
    - Checkboxes de ativação/desativação sincronizados em tempo real no Supabase (`profiles`), disponíveis tanto no formulário de cadastro de novos consultores quanto no modal de edição de agentes existentes.
 
-### 3.53 Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral
+### 3.55 Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral
 
 Com o crescimento das rotinas contábeis da agência, o módulo de **Conciliação Bancária** foi oficialmente integrado ao **Financeiro**, unificando sob uma mesma arquitetura os 4 submódulos contábeis essenciais do PaxFlow e substituindo a antiga organização por abas horizontais internas por um menu expansível (accordion) com indentação elegante na Sidebar:
 
@@ -1522,26 +1528,8 @@ Com o crescimento das rotinas contábeis da agência, o módulo de **Conciliaç�
 4. **Sincronização de Rotas na SPA & Retrocompatibilidade Total**:
    - A barra de endereços reflete o submódulo ativo via querystring (ex: `#financeiro?sub=conciliacao`).
    - Requisições legadas para `#conciliacao` ou `#financeiro?sub=remessas` são automaticamente redirecionadas para seus destinos unificados (`#financeiro?sub=conciliacao` e `#financeiro?sub=contas-pagar`) sem qualquer quebra de fluxo.
-   - **Submenu Indentado com Borda Conectora**: Contêiner visualmente conectado pela margem esquerda (`border-l-2 border-indigo-200/80 dark:border-indigo-900/60 ml-5`), agrupando os 4 submódulos objetivos:
-     - `📋 Contas a Pagar` (`#financeiro?sub=contas-pagar`): Tela única e central de liquidez, englobando títulos avulsos, parcelamentos e remessas agrupadas em lote via alternador visual (`Todos`, `Apenas Avulsos` e `Lotes de Remessa`).
-     - `📈 Fluxo de Caixa & DRE` (`#financeiro?sub=fluxo-caixa`)
-     - `🪙 Conciliação` (`#financeiro?sub=conciliacao`)
-     - `⚙️ Plano de Contas` (`#financeiro?sub=plano-contas`)
-   - **Interação Inteligente**:
-     - Clicar no botão pai quando a página atual já for Financeiro alterna o estado de abertura/fechamento do accordion e memoriza a preferência no `localStorage`.
-     - Clicar no botão pai vindo de outra tela expande o accordion automaticamente e abre o último submódulo selecionado.
-     - Clicar com a barra lateral em modo colapsado (mini-barra) expande a sidebar e navega diretamente para o financeiro.
-     - Cada subitem ativo é destacado com fundo suave e borda semântica em tom índigo (`bg-indigo-50 dark:bg-indigo-950/60`).
 
-3. **Matriz de Governança & Controle de Acesso (RBAC)**:
-   - **Acesso Unificado**: Administradores (`admin`), consultores com papel `financeiro` e consultores com a permissão `acesso_financeiro: true` possuem acesso irrestrito a todos os 4 submódulos do Financeiro (incluindo a Conciliação).
-   - **Ação Exclusiva de Administrador**: A operação crítica de **Fechar Mês** (trancamento de competências contábeis na Conciliação) e as ações de **Estornar Pagamento** e **Cancelar Título** continuam estritamente restritas a administradores (`role === 'admin'`), apresentando bloqueio imediato e orientações amigáveis caso outro perfil tente acioná-las.
-
-4. **Sincronização de Rotas na SPA & Retrocompatibilidade Total**:
-   - A barra de endereços reflete o submódulo ativo via querystring (ex: `#financeiro?sub=conciliacao`).
-   - Requisições legadas para `#conciliacao` ou `#financeiro?sub=remessas` são automaticamente redirecionadas para seus destinos unificados (`#financeiro?sub=conciliacao` e `#financeiro?sub=contas-pagar`) sem qualquer quebra de fluxo.
-
-### 3.54 Polimento Visual, UX Responsiva Mobile-First & Scorecards do Financeiro
+### 3.56 Polimento Visual, UX Responsiva Mobile-First & Scorecards do Financeiro
 
 Para assegurar consistência estética absoluta com os Design Tokens do PaxFlow e garantir usabilidade fluida tanto em notebooks quanto em tablets e smartphones:
 
@@ -1564,7 +1552,7 @@ Para assegurar consistência estética absoluta com os Design Tokens do PaxFlow 
    - Inclusão da coluna `% Executado` na tabela do DRE gerencial com barra de progresso horizontal semântica (verde se dentro da margem, âmbar entre 85% e 100%, e vermelha se estourado).
 
 6. **Scorecards Executivos em Remessas Agrupadas**:
-   - 3 cartões no topo da visão de remessas: *Lotes Pendentes*, *Total Liquidado* e *Média por Lote*.
+   - 3 cartões no topo da visão de remessas: _Lotes Pendentes_, _Total Liquidado_ e _Média por Lote_.
    - Inclusão da ação de **Desfazer / Desagrupar Lote** (`FinRemessasService.desagruparRemessa`), permitindo devolver contas ao estado avulso pendente com segurança e resiliência a schema drift (`42703`).
 
 7. **Reset Rápido de Filtros e Exportação de Contas a Pagar**:

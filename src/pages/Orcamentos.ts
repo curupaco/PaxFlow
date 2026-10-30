@@ -1954,7 +1954,7 @@ export class OrcamentosPage {
                 <span class="text-base">💡</span>
                 <h4 class="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200">PaxFlow Upsell Engine™ — Upgrades & Experiências Recomendadas</h4>
               </div>
-              <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30">Preditivo IA</span>
+              <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30">Preditivo</span>
             </div>
 
             <div class="grid grid-cols-1 gap-2.5">

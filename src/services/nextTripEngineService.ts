@@ -328,6 +328,37 @@ export class NextTripEngineService {
 
       const dataStr = dataReferencia.toLocaleDateString('pt-BR');
 
+      // Detalhamento dos 5 vetores para transparência auditável
+      const vetoresDetalhamento = {
+        sazonalidade: {
+          score: scoreSazonalidade,
+          max: 30,
+          detalhe: origemOportunidade === 'viagem'
+            ? `${diffMesesGeral} meses decorridos (${scoreSazonalidade === 30 ? 'Janela ideal de ~1 ano' : scoreSazonalidade >= 20 ? 'Excelente momento de abordagem' : 'Janela secundária'})`
+            : `Orçamento anterior há ${diffDiasGeral} dias (${scoreSazonalidade === 25 ? 'Momento ideal de resgate comercial' : 'Resgate de oportunidade fria'})`
+        },
+        nps: {
+          score: scoreNps,
+          max: 25,
+          detalhe: npsNota !== null ? `Nota NPS ${npsNota} (${npsNota >= 9 ? 'Promotor Apaixonado' : 'Neutro Aprovado'})` : 'Sem avaliação prévia (pontuação neutra de segurança 15 pts)'
+        },
+        perfil: {
+          score: scorePerfil,
+          max: 20,
+          detalhe: `Afinidade com ${categoriaDestino.toUpperCase()} baseada no histórico de reservas e cotações (${scorePerfil} pts)`
+        },
+        mesHabitual: {
+          score: scoreMes,
+          max: 15,
+          detalhe: scoreMes === 15 ? 'Mês atual ou subsequente coincide com o padrão habitual de férias do cliente' : 'Mês fora do pico habitual de férias'
+        },
+        conformidadeSla: {
+          score: scoreConformidade,
+          max: 10,
+          detalhe: scoreConformidade === 10 ? 'Cliente 100% elegível: sem contestações, sem reembolsos pendentes e sem viagem futura' : 'Penalizado por pendência financeira/operacional aberta'
+        }
+      };
+
       oportunidades.push({
         clienteId: cliente.id,
         clienteNome: cliente.nome || 'Cliente',
@@ -346,7 +377,8 @@ export class NextTripEngineService {
         statusAbordagem: isSnoozed ? 'snoozed' : 'pendente',
         snoozeAte: snoozeUntilStr || undefined,
         totalPassageirosGrupo: totalPax,
-        origemOportunidade
+        origemOportunidade,
+        vetoresDetalhamento
       });
     });
 

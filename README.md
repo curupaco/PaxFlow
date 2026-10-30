@@ -18,6 +18,18 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ---
 
+- **Next Trip Engine™: Sincronização Total, Transparência Matemática dos 5 Vetores & Alcance Comercial [NEW]** — Evolução do motor preditivo de recompra e reativação de clientes:
+  - **Sincronização Absoluta entre Dashboard e Tela Completa**: Correção de discrepância na listagem de oportunidades entre o widget de Viagens e a tela dedicada (`#next-trip`), garantindo paridade de queries relacionais com o Supabase e visão irrestrita para administradores.
+  - **Eliminação de Jargões Enganosos**: Substituição honesta de menções a "IA" por terminologia determinística e profissional (*Motor Heurístico & Estatístico*), com base em dados concretos de histórico da agência.
+  - **Transparência Auditável do Algoritmo (Modal dos 5 Vetores)**: Clicar sobre o card superior do motor (`🧠 5 Vetores`) exibe um modal completo revelando a pontuação e pesos de cada dimensão:
+    1. *Sazonalidade & Janela Temporal* (Até 30 pts — pico ideal em 10 a 14 meses).
+    2. *Satisfação & NPS* (Até 25 pts — Promotores somam 25 pts, detratores descartados preventivamente).
+    3. *Perfil de Destino & Passageiros* (Até 20 pts — Europa, Resorts, Cruzeiros, Disney ou Nacional).
+    4. *Mês Habitual de Férias* (Até 15 pts — coincidência de mês corrente ou subsequente).
+    5. *Conformidade Operacional & SLA* (Até 10 pts — sem reembolsos pendentes e sem viagem futura).
+  - **Auditoria Individual por Cliente (1-Clique)**: Novo botão `🧠` em cada oportunidade permitindo ao consultor inspecionar a composição matemática exata do score do cliente antes de abordá-lo.
+  - **Governança Defensiva**: Regras de bloqueio automático para clientes com viagens futuras ativas ou orçamentos em andamento no pipeline, prevenindo abordagens indesejadas.
+
 - **PaxFlow Studio™: Ingestão Inteligente de PDFs, Máscaras Brasileiras e Unsplash Flexível [NEW]** — Experiência completa e sem atritos para montagem de propostas e cadernos de viagem:
   - **Ingestão Nativa de PDFs de Operadoras com `pdfjs-dist`**: Resolução definitiva da extração de documentos PDF (Agaxtur, LATAM NDC, GDS). Suporte total a múltiplos trechos aéreos (ida e volta), passageiros, bilhetes eletrônicos e localizadores PNR reais, alimentando o itinerário dia a dia de forma precisa.
   - **Máscaras e Padrão Brasileiro (`DD/MM/AAAA` e `R$ 0,00`)**: Substituição de campos nativos em formato americano por inputs com máscara brasileira estrita para datas de embarque/retorno e valores monetários com suporte a vírgula para centavos (`parseDoubleBr` e `formatCurrencyValue`).
