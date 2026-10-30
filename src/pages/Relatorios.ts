@@ -637,6 +637,7 @@ export class RelatoriosPage {
   }
 
   private getOperacoesContext(): RelatoriosOperacoesContext {
+    const self = this;
     return {
       user: this.user,
       perfil: this.perfil,
@@ -649,10 +650,30 @@ export class RelatoriosPage {
       tiposProduto: this.tiposProduto,
       dataInicio: this.dataInicio,
       dataFim: this.dataFim,
-      consultorIdFilter: this.consultorIdFilter,
-      filtroContatoEmbarque: this.filtroContatoEmbarque,
-      satisfacaoFiltroCategoria: this.satisfacaoFiltroCategoria,
-      satisfacaoBuscaTexto: this.satisfacaoBuscaTexto,
+      get consultorIdFilter() {
+        return self.consultorIdFilter;
+      },
+      set consultorIdFilter(val: string) {
+        self.consultorIdFilter = val;
+      },
+      get filtroContatoEmbarque() {
+        return self.filtroContatoEmbarque;
+      },
+      set filtroContatoEmbarque(val: 'todos' | 'feitos' | 'pendentes') {
+        self.filtroContatoEmbarque = val;
+      },
+      get satisfacaoFiltroCategoria() {
+        return self.satisfacaoFiltroCategoria;
+      },
+      set satisfacaoFiltroCategoria(val: 'todos' | 'promotores' | 'neutros' | 'detratores' | 'com_comentario') {
+        self.satisfacaoFiltroCategoria = val;
+      },
+      get satisfacaoBuscaTexto() {
+        return self.satisfacaoBuscaTexto;
+      },
+      set satisfacaoBuscaTexto(val: string) {
+        self.satisfacaoBuscaTexto = val;
+      },
       showToast: (msg: string, type?: 'success' | 'error', err?: any) => this.showToast(msg, type, err),
       openTravelModal: async (tripId: string) => {
         const modal = new EditTravelModal({
@@ -722,6 +743,7 @@ export class RelatoriosPage {
   }
 
   private getFinanceiroContext(): RelatoriosFinanceiroContext {
+    const self = this;
     return {
       viagens: this.viagens,
       orcamentos: this.orcamentos,
@@ -731,8 +753,18 @@ export class RelatoriosPage {
       tiposProduto: this.tiposProduto,
       perfil: this.perfil,
       user: this.user,
-      filtroFaturamentoProduto: this.filtroFaturamentoProduto,
-      filtroFaturamentoRav: this.filtroFaturamentoRav,
+      get filtroFaturamentoProduto() {
+        return self.filtroFaturamentoProduto;
+      },
+      set filtroFaturamentoProduto(val: string) {
+        self.filtroFaturamentoProduto = val;
+      },
+      get filtroFaturamentoRav() {
+        return self.filtroFaturamentoRav;
+      },
+      set filtroFaturamentoRav(val: 'todos' | 'com_rav' | 'sem_rav') {
+        self.filtroFaturamentoRav = val;
+      },
       activeTab: this.activeTab,
       showToast: (m, t, err) => this.showToast(m, t, err),
       onStateChange: () => {
@@ -759,6 +791,7 @@ export class RelatoriosPage {
   }
 
   private getComercialContext(): RelatoriosComercialContext {
+    const self = this;
     return {
       viagens: this.viagens,
       orcamentos: this.orcamentos,
@@ -769,9 +802,24 @@ export class RelatoriosPage {
       metas: this.metas,
       feedbacksNps: this.feedbacksNps,
       campanhasPresets: this.campanhasPresets,
-      campanhasFiltros: this.campanhasFiltros,
-      selectedMetaId: this.selectedMetaId,
-      consultorIdFilter: this.consultorIdFilter,
+      get campanhasFiltros() {
+        return self.campanhasFiltros;
+      },
+      set campanhasFiltros(val: FiltrosCampanha) {
+        self.campanhasFiltros = { ...val };
+      },
+      get selectedMetaId() {
+        return self.selectedMetaId;
+      },
+      set selectedMetaId(val: string | null) {
+        self.selectedMetaId = val || '';
+      },
+      get consultorIdFilter() {
+        return self.consultorIdFilter;
+      },
+      set consultorIdFilter(val: string) {
+        self.consultorIdFilter = val;
+      },
       perfil: this.perfil,
       user: this.user,
       activeTab: this.activeTab,

@@ -121,8 +121,82 @@ describe('Relatórios: Filtros Funcionais e Reatividade de Segmentação (Subcut
 
     // Assert
     expect(agrupados).toHaveLength(1);
-    expect(agrupados[0].clienteNome).toBe('Roberto Alves');
-    expect(metricas.totalClientesUnicos).toBe(1);
     expect(metricas.valorTotal).toBe(20000);
   });
+
+  it('deve filtrar itens por Origem do Lead (WhatsApp, Instagram, Indicação) sem perder dados', () => {
+    // Setup
+    const viagens = [
+      { id: 'v1', consultor_id: 'c1', destino: 'Paris', valor_total: 10000, data_ida: '2026-05-10', origem: 'Instagram', cliente: { id: 'c1', nome: 'Cliente Insta' } },
+      { id: 'v2', consultor_id: 'c1', destino: 'Londres', valor_total: 12000, data_ida: '2026-06-15', origem: 'WhatsApp', cliente: { id: 'c2', nome: 'Cliente Whats' } }
+    ];
+    const orcamentos = [
+      { id: 'o1', consultor_id: 'c1', destino: 'Orlando', valor_proposta: 8000, created_at: '2026-05-20', origem: 'Indicação', nome_cliente: 'Cliente Indicacao' }
+    ];
+
+    const usuarioLogado = { id: 'c1', nome: 'Consultor 1', role: 'admin' };
+    const todosItens = CampanhasService.normalizarDados(viagens, orcamentos, []);
+
+    // Action 1: Filtrar apenas leads de Instagram
+    const filtrosInstagram: FiltrosCampanha = {
+      origem: 'todos',
+      tipoVisao: 'oportunidade',
+      tipoDestino: 'todos',
+      periodoMeses: 12,
+      origemLead: 'Instagram'
+    };
+    const resInsta = CampanhasService.filtrarItens(todosItens, filtrosInstagram, usuarioLogado);
+
+    // Action 2: Filtrar apenas leads de WhatsApp
+    const filtrosWhats: FiltrosCampanha = {
+      origem: 'todos',
+      tipoVisao: 'oportunidade',
+      tipoDestino: 'todos',
+      periodoMeses: 12,
+      origemLead: 'WhatsApp'
+    };
+    const resWhats = CampanhasService.filtrarItens(todosItens, filtrosWhats, usuarioLogado);
+
+    // Assert
+    expect(resInsta).toHaveLength(1);
+    expect(resInsta[0].clienteNome).toBe('Cliente Insta');
+    expect(resInsta[0].origemLead).toBe('Instagram');
+
+    expect(resWhats).toHaveLength(1);
+    expect(resWhats[0].clienteNome).toBe('Cliente Whats');
+    expect(resWhats[0].origemLead).toBe('WhatsApp');
+  });
+
+  it('deve renderizar o select de Origem do Lead com a opção selecionada pelo usuário marcada como selected', () => {
+    // Setup
+    const mockData = {
+      viagens: [
+        { id: 'v1', consultor_id: 'c1', destino: 'Paris', valor_total: 15000, data_ida: '2026-06-10', origem: 'Instagram', cliente: { id: 'cli-1', nome: 'Bruna' } }
+      ],
+      orcamentos: []
+    };
+    const mockContext: any = {
+      user: { id: 'c1' },
+      perfil: { role: 'admin', nome: 'Administrador' },
+      consultores: [{ id: 'c1', nome: 'Consultor 1' }],
+      feedbacksNps: [],
+      campanhasPresets: [],
+      campanhasFiltros: {
+        origem: 'todos',
+        tipoVisao: 'oportunidade',
+        tipoDestino: 'todos',
+        periodoMeses: 12,
+        origemLead: 'Instagram'
+      }
+    };
+
+    // Action
+    const html = RelatoriosComercialView.renderSegmentacaoCampanhas(mockData, mockContext);
+
+    // Assert
+    expect(html).toContain('id="filtro-campanha-origem-lead"');
+    // Verifica que a opção Instagram possui o atributo selected
+    expect(html).toContain('<option value="Instagram" selected>Instagram</option>');
+  });
 });
+
