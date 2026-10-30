@@ -138,6 +138,11 @@ class App {
     window.addEventListener('paxflow-financeiro-updated', () => {
       this.atualizarFinanceiroBadge();
     });
+
+    // Ouvinte para reatividade de viagens atualizadas
+    window.addEventListener('paxflow-viagens-updated', () => {
+      this.atualizarViagensRiscoBadge();
+    });
   }
 
   /**
@@ -610,11 +615,12 @@ class App {
               })()}
 
               <!-- Link: Dashboard Kanban -->
-              <button id="nav-dashboard" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-dashboard" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative">
                 <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
                 <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Viagens</span>
+                <span id="nav-viagens-badge" class="hidden"></span>
               </button>
 
               <!-- Link: Reembolsos -->
@@ -780,6 +786,7 @@ class App {
     this.setupNavigationListeners();
     this.atualizarInboxBadge();
     this.atualizarFinanceiroBadge();
+    this.atualizarViagensRiscoBadge();
 
     // Event listener para sair do modo Sandbox no banner
     document.getElementById('btn-sair-demo-banner')?.addEventListener('click', async () => {
@@ -1692,6 +1699,7 @@ class App {
     this.atualizarSidebarProfileFooter();
     this.atualizarInboxBadge();
     this.atualizarFinanceiroBadge();
+    this.atualizarViagensRiscoBadge();
   }
 
   /**
@@ -1787,6 +1795,65 @@ class App {
       }
     } catch (err) {
       console.warn('Erro ao atualizar badge do financeiro:', err);
+    }
+  }
+
+  /**
+   * Busca e atualiza o badge de viagens em risco operacional crítico (< 15 dias e score < 60) no menu lateral
+   */
+  private async atualizarViagensRiscoBadge(): Promise<void> {
+    if (!this.user) return;
+    try {
+      const { supabase } = await import('./services/supabase');
+      const hoje = new Date();
+      const limite15d = new Date();
+      limite15d.setDate(limite15d.getDate() + 15);
+
+      const hojeStr = hoje.toISOString().split('T')[0];
+      const limiteStr = limite15d.toISOString().split('T')[0];
+
+      // Busca viagens ativas com embarque entre hoje e 15 dias
+      const { data: viagens, error } = await supabase
+        .from('viagens')
+        .select('id, destino, data_ida, status, passageiro, cliente:clientes(*), produtos:produtos_viagem(*)')
+        .gte('data_ida', hojeStr)
+        .lte('data_ida', limiteStr)
+        .neq('status', 'CANCELADA');
+
+      if (error || !viagens) {
+        return;
+      }
+
+      const { RiskScoreService } = await import('./services/riskScoreService');
+      let viagensCriticasCount = 0;
+
+      for (const v of viagens) {
+        const diag = RiskScoreService.calculateTripRiskScore(v as any, v.cliente as any, (v.produtos as any) || []);
+        if (diag.score < 60) {
+          viagensCriticasCount++;
+        }
+      }
+
+      const badge = document.getElementById('nav-viagens-badge');
+      if (badge) {
+        if (viagensCriticasCount > 0) {
+          badge.textContent = String(viagensCriticasCount);
+          badge.classList.remove('hidden');
+
+          const isCollapsed = this.sidebarCollapsed;
+          if (isCollapsed) {
+            badge.className = "absolute top-2.5 right-2.5 px-1 py-0.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-black bg-rose-600 text-white animate-pulse shadow-sm";
+          } else {
+            badge.className = "ml-auto px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-600 text-white animate-pulse shadow-sm";
+          }
+          badge.title = `${viagensCriticasCount} viagem(ns) em risco crítico nos próximos 15 dias!`;
+        } else {
+          badge.classList.add('hidden');
+          badge.textContent = '';
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao atualizar badge de viagens em risco:', err);
     }
   }
 }

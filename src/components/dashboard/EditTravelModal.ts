@@ -768,6 +768,12 @@ export class EditTravelModal {
                             <div class="flex items-center gap-2 flex-wrap">
                               <span class="text-xs font-black text-slate-900 dark:text-indigo-100 font-sans">${u.titulo}</span>
                               <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge} font-sans">${u.badgeTexto}</span>
+                              ${u.comissaoEstimada ? `
+                                <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-sans flex items-center gap-1 shadow-2xs" title="Ganhos estimados de comissão para a equipe comercial nesta venda">
+                                  <span>💰 + R$ ${u.comissaoEstimada.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                  <span class="text-[8px] opacity-75 font-normal">comissão</span>
+                                </span>
+                              ` : ''}
                             </div>
                             <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed">${u.descricao}</p>
                             <span class="text-[10px] text-emerald-700 dark:text-emerald-300 font-extrabold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &bull; Sugestão: ${u.produtoSugerido}</span>
@@ -777,8 +783,8 @@ export class EditTravelModal {
                               <button type="button" 
                                 data-upsell-wa="${encodeURIComponent(u.mensagemWhatsApp)}" 
                                 class="btn-whatsapp-upsell px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-700/50 rounded-lg text-[10px] font-black uppercase transition flex items-center gap-1 font-sans shadow-xs cursor-pointer" 
-                                title="Enviar proposta comercial pré-formatada via WhatsApp">
-                                <span>📲 WhatsApp</span>
+                                title="Enviar script comercial persuasivo via WhatsApp ou Digisac">
+                                <span>💬 WhatsApp</span>
                               </button>
                             ` : ''}
                             <button type="button" 

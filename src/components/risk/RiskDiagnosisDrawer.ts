@@ -125,6 +125,51 @@ export class RiskDiagnosisDrawer {
           </button>
         </div>
 
+        <!-- Guia Inteligente de Exigências Sanitárias, Vacinas e Vistos por Destino -->
+        ${diagnosis.exigenciasDestino ? `
+          <div class="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-3 shadow-xs">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-base">🛡️</span>
+                <h4 class="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  Guia Sanitário & Vistos (${escapeHtml(diagnosis.exigenciasDestino.destinoDetectado)})
+                </h4>
+              </div>
+              <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${diagnosis.exigenciasDestino.seguroObrigatorio || diagnosis.exigenciasDestino.vacinaObrigatoria ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}">
+                ${diagnosis.exigenciasDestino.categoria.toUpperCase()}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">🛂 Documento / Visto</span>
+                <p class="font-bold text-slate-700 dark:text-slate-200 leading-snug">${escapeHtml(diagnosis.exigenciasDestino.docExigido)}</p>
+                ${diagnosis.exigenciasDestino.vistoExigido ? `<span class="inline-block mt-1 text-[10px] text-rose-600 dark:text-rose-400 font-black">⚠️ Visto Obrigatório</span>` : ''}
+              </div>
+
+              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">🏥 Seguro Viagem</span>
+                <p class="font-bold text-slate-700 dark:text-slate-200 leading-snug">
+                  ${diagnosis.exigenciasDestino.seguroObrigatorio ? '🚨 Obrigatório Schengen (30.000€)' : '🛡️ Altamente Recomendado'}
+                </p>
+              </div>
+
+              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 sm:col-span-2">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">💉 Vacinas & Requisitos Sanitários</span>
+                <p class="font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
+                  ${diagnosis.exigenciasDestino.vacinaObrigatoria 
+                    ? `🚨 <strong class="text-rose-600 dark:text-rose-400">${escapeHtml(diagnosis.exigenciasDestino.vacinaDescricao || 'Vacina Febre Amarela')}</strong> (CIVP Anvisa)` 
+                    : 'Sem vacinas obrigatórias exigidas pelas autoridades de imigração.'}
+                </p>
+              </div>
+            </div>
+
+            <div class="p-2.5 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/80 dark:border-indigo-900/40 rounded-xl text-[10.5px] text-indigo-950 dark:text-indigo-200 leading-relaxed font-medium">
+              💡 ${escapeHtml(diagnosis.exigenciasDestino.orientacaoGeral)}
+            </div>
+          </div>
+        ` : ''}
+
         <!-- Lista de Pendências Detectadas -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
@@ -156,8 +201,17 @@ export class RiskDiagnosisDrawer {
                 ${escapeHtml(item.descricaoHumana)}
               </p>
 
-              <div class="pt-2 flex justify-end">
-                <button data-action="${item.acaoTipo}" data-item-id="${item.id}" class="btn-resolve-risk-item px-3.5 py-1.5 bg-slate-900 dark:bg-slate-700 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-white font-extrabold text-[11px] rounded-xl transition shadow-sm flex items-center gap-1.5">
+              <div class="pt-2 flex items-center justify-end gap-2 flex-wrap">
+                ${item.acaoWhatsAppTexto ? `
+                  <button type="button" 
+                    data-wa-text="${encodeURIComponent(item.acaoWhatsAppTexto)}"
+                    data-cliente-tel="${escapeHtml(cliente?.telefone || '')}"
+                    class="btn-whatsapp-risk-item px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-700/60 font-black text-[11px] rounded-xl transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    title="Enviar cobrança pré-formatada para o cliente via WhatsApp">
+                    <span>💬 Cobrar no WhatsApp</span>
+                  </button>
+                ` : ''}
+                <button data-action="${item.acaoTipo}" data-item-id="${item.id}" class="btn-resolve-risk-item px-3.5 py-1.5 bg-slate-900 dark:bg-slate-700 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-white font-extrabold text-[11px] rounded-xl transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                   ${escapeHtml(item.acaoRotulo)}
                 </button>
               </div>
@@ -282,8 +336,39 @@ export class RiskDiagnosisDrawer {
             checkSLA: () => ({ alert: false, type: null, text: '' })
           });
           await editModal.open(viagemId);
+        } else if (action === 'orientar_visto_vacina') {
+          const itemEl = btn.closest('.p-4');
+          const btnWa = itemEl?.querySelector('.btn-whatsapp-risk-item') as HTMLElement | null;
+          if (btnWa) {
+            btnWa.click();
+          } else {
+            showCustomAlert('Oriente o passageiro quanto à documentação e vacinas obrigatórias para este destino.', 'Orientação de Viagem');
+          }
+        }
+      });
+    });
+
+    // Handler de cobrança pré-formatada via WhatsApp / Digisac em 1-clique
+    drawer.querySelectorAll('.btn-whatsapp-risk-item').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const rawMsg = btn.getAttribute('data-wa-text') || '';
+        const msg = decodeURIComponent(rawMsg);
+        const tel = (btn.getAttribute('data-cliente-tel') || '').replace(/\D/g, '');
+
+        try {
+          if (navigator.clipboard) {
+            await navigator.clipboard.writeText(msg);
+          }
+        } catch (_) {}
+
+        let url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+        if (tel) {
+          const numFinal = tel.startsWith('55') ? tel : `55${tel}`;
+          url = `https://wa.me/${numFinal}?text=` + encodeURIComponent(msg);
         }
 
+        window.open(url, '_blank');
+        showCustomAlert('Mensagem de cobrança copiada para a área de transferência e WhatsApp aberto!', 'Cobrança em 1-Clique');
       });
     });
 

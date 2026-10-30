@@ -5,7 +5,7 @@ import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMe
 import { renderHelpIcon } from '../utils/helpHelper';
 import { UpsellEngineService } from '../services/upsellEngineService';
 import { isNextTripEnabled } from '../utils/featureFlags';
-import { showCustomAlert } from '../services/dialog';
+import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { debounce } from '../utils/textHelper';
 
 export class NextTripPage {
@@ -25,6 +25,9 @@ export class NextTripPage {
   private filterCategoria: string = 'todos';
   private filterBusca: string = '';
   private debouncedSearch: (val: string) => void;
+
+  // Seleção e Ações em Lote
+  private oportunidadesSelecionadas: Set<string> = new Set();
 
 
   constructor(container: HTMLElement) {
@@ -143,6 +146,8 @@ export class NextTripPage {
     const altaProntidaoCount = opsConsultor.filter(o => o.nivelProntidao === 'alto').length;
     const mediaProntidaoCount = opsConsultor.filter(o => o.nivelProntidao === 'medio').length;
 
+    const todasSelecionadas = filtradas.length > 0 && filtradas.every(op => this.oportunidadesSelecionadas.has(op.clienteId));
+
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
@@ -225,6 +230,14 @@ export class NextTripPage {
             
             <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
               
+              <!-- Checkbox Selecionar Todos -->
+              <div class="flex items-center gap-2 pr-2 border-r border-slate-200 dark:border-slate-700">
+                <input type="checkbox" id="chk-selecionar-todas-next-trip" class="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${todasSelecionadas ? 'checked' : ''} />
+                <label for="chk-selecionar-todas-next-trip" class="text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                  Selecionar Todos
+                </label>
+              </div>
+
               <!-- Busca por Texto -->
               <div class="relative flex-1 min-w-[200px]">
                 <input id="input-busca-next-trip" type="text" placeholder="Buscar cliente, destino ou observação..." value="${this.filterBusca}" class="h-10 w-full pl-9 pr-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center" />
@@ -263,6 +276,43 @@ export class NextTripPage {
             </span>
           </div>
 
+          <!-- BARRA DE AÇÕES EM LOTE COM PRESETS (QUANDO HOUVER SELECIONADOS) -->
+          ${this.oportunidadesSelecionadas.size > 0 ? `
+            <div class="p-4 bg-indigo-50/90 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-md">
+              <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm font-black shadow-xs">⚡</span>
+                <div>
+                  <h4 class="text-xs font-black text-indigo-950 dark:text-indigo-200 uppercase tracking-wide">
+                    ${this.oportunidadesSelecionadas.size} oportunidades selecionadas
+                  </h4>
+                  <p class="text-[10.5px] text-indigo-700/80 dark:text-indigo-400 font-medium">Dispare ações comerciais ou aplique snooze em bloco diretamente no banco.</p>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" id="btn-lote-exportar-texto" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                  <span>💬</span> Roteiro WhatsApp (Texto)
+                </button>
+
+                <button type="button" id="btn-lote-exportar-csv" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                  <span>📊</span> Exportar CSV
+                </button>
+
+                <button type="button" id="btn-lote-copiar-telefones" class="px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-indigo-500 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                  <span>📋</span> Copiar Telefones
+                </button>
+
+                <button type="button" id="btn-lote-snooze-30" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                  <span>⏸️</span> Snooze em Bloco (30D)
+                </button>
+
+                <button type="button" id="btn-lote-limpar-selecao" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold transition cursor-pointer" title="Desmarcar todos">
+                  ✕
+                </button>
+              </div>
+            </div>
+          ` : ''}
+
           <!-- LISTAGEM DE CARDS DE OPORTUNIDADES -->
           ${filtradas.length === 0 ? `
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4">
@@ -283,6 +333,7 @@ export class NextTripPage {
 
   private renderOpportunityCard(op: NextTripOpportunity): string {
     const isHigh = op.nivelProntidao === 'alto';
+    const isSelected = this.oportunidadesSelecionadas.has(op.clienteId);
     const badgeColor = isHigh
       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
       : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
@@ -295,17 +346,20 @@ export class NextTripPage {
     const labelUltimaInteracao = isOrcamento ? 'Último orçamento' : 'Última viagem';
 
     return `
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-indigo-500/50 transition duration-200 flex flex-col justify-between space-y-4 relative overflow-hidden group">
+      <div class="bg-white dark:bg-slate-900 border ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/10' : 'border-slate-200 dark:border-slate-800'} rounded-2xl p-5 shadow-xs hover:border-indigo-500/50 transition duration-200 flex flex-col justify-between space-y-4 relative overflow-hidden group">
         
-        <!-- Faixa superior de prioridade -->
+        <!-- Faixa superior de prioridade com Checkbox de seleção -->
         <div class="flex items-center justify-between gap-3">
-          <div class="truncate space-y-1">
-            <div class="flex items-center gap-2">
-              <h4 class="font-black text-slate-900 dark:text-white text-base truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">${op.clienteNome}</h4>
-            </div>
-            <div class="flex items-center gap-2 flex-wrap">
-              ${tagOrigemHtml}
-              <span class="text-[10px] text-slate-400 font-mono block">Consultor: ${op.consultorNome}</span>
+          <div class="truncate space-y-1 flex items-start gap-2.5">
+            <input type="checkbox" class="chk-next-trip-item h-4 w-4 mt-0.5 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0" data-cliente-id="${op.clienteId}" ${isSelected ? 'checked' : ''} />
+            <div class="truncate">
+              <div class="flex items-center gap-2">
+                <h4 class="font-black text-slate-900 dark:text-white text-base truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">${op.clienteNome}</h4>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                ${tagOrigemHtml}
+                <span class="text-[10px] text-slate-400 font-mono block">Consultor: ${op.consultorNome}</span>
+              </div>
             </div>
           </div>
 
@@ -326,6 +380,24 @@ export class NextTripPage {
             ${labelUltimaInteracao}: <strong>${op.ultimoDestino}</strong> (${op.ultimaViagemData})
           </div>
         </div>
+
+        <!-- BLOCO RADAR HEURÍSTICO: PRÓXIMO PASSO NATURAL -->
+        ${op.destinoComplementarSugerido ? `
+          <div class="p-3 bg-gradient-to-r from-sky-950/70 via-indigo-950/70 to-slate-900/70 border border-sky-500/30 rounded-xl space-y-1.5 text-white">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black uppercase text-sky-300 tracking-wider flex items-center gap-1">
+                <span>🧭</span> Radar de Destinos Complementares
+              </span>
+              <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-sky-500/20 text-sky-300 border border-sky-500/30">Próximo Passo</span>
+            </div>
+            <div class="text-xs font-bold text-sky-100 flex items-center gap-1.5">
+              <span>📍 Sugestão:</span> <span class="text-white">${op.destinoComplementarSugerido}</span>
+            </div>
+            <p class="text-[10px] text-slate-300 font-medium leading-relaxed">
+              ${op.motivoComplementar || ''}
+            </p>
+          </div>
+        ` : ''}
 
         ${(() => {
           const upsells = UpsellEngineService.calculateUpsellOpportunities(
@@ -416,6 +488,135 @@ export class NextTripPage {
       this.filterConsultor = e.target.value;
       this.render();
       this.setupEventListeners();
+    });
+
+    // Checkbox Selecionar Todos
+    const chkTodos = this.container.querySelector('#chk-selecionar-todas-next-trip') as HTMLInputElement | null;
+    chkTodos?.addEventListener('change', (e: any) => {
+      const filtradas = this.getFilteredOportunidades();
+      if (e.target.checked) {
+        filtradas.forEach(op => this.oportunidadesSelecionadas.add(op.clienteId));
+      } else {
+        filtradas.forEach(op => this.oportunidadesSelecionadas.delete(op.clienteId));
+      }
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // Checkbox Individual de Cada Oportunidade
+    this.container.querySelectorAll('.chk-next-trip-item').forEach(chk => {
+      chk.addEventListener('change', (e: any) => {
+        const cId = chk.getAttribute('data-cliente-id');
+        if (!cId) return;
+        if (e.target.checked) {
+          this.oportunidadesSelecionadas.add(cId);
+        } else {
+          this.oportunidadesSelecionadas.delete(cId);
+        }
+        this.render();
+        this.setupEventListeners();
+      });
+    });
+
+    // Ações em Lote: Limpar Seleção
+    this.container.querySelector('#btn-lote-limpar-selecao')?.addEventListener('click', () => {
+      this.oportunidadesSelecionadas.clear();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // Ações em Lote: Exportar Roteiro WhatsApp (Texto)
+    this.container.querySelector('#btn-lote-exportar-texto')?.addEventListener('click', async () => {
+      const opsSelecionadas = this.oportunidades.filter(op => this.oportunidadesSelecionadas.has(op.clienteId));
+      if (opsSelecionadas.length === 0) return;
+
+      const textoLote = NextTripEngineService.gerarLoteAbordagemTexto(opsSelecionadas);
+      try {
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(textoLote);
+        }
+      } catch (_) {}
+
+      // Dispara download do arquivo .txt
+      const blob = new Blob([textoLote], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `next-trip-roteiros-whatsapp-${new Date().toISOString().slice(0, 10)}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showCustomAlert(`Roteiro comercial de ${opsSelecionadas.length} clientes gerado e baixado! O conteúdo também foi copiado para sua área de transferência.`, 'Roteiros WhatsApp Exportados');
+    });
+
+    // Ações em Lote: Exportar Planilha CSV
+    this.container.querySelector('#btn-lote-exportar-csv')?.addEventListener('click', () => {
+      const opsSelecionadas = this.oportunidades.filter(op => this.oportunidadesSelecionadas.has(op.clienteId));
+      if (opsSelecionadas.length === 0) return;
+
+      const csvContent = NextTripEngineService.gerarCsvAbordagem(opsSelecionadas);
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `next-trip-oportunidades-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showCustomAlert(`Planilha CSV com ${opsSelecionadas.length} oportunidades exportada com sucesso!`, 'Exportação CSV Concluída');
+    });
+
+    // Ações em Lote: Copiar Telefones
+    this.container.querySelector('#btn-lote-copiar-telefones')?.addEventListener('click', async () => {
+      const opsSelecionadas = this.oportunidades.filter(op => this.oportunidadesSelecionadas.has(op.clienteId));
+      const telefones = opsSelecionadas
+        .map(o => o.clienteTelefone ? o.clienteTelefone.replace(/\D/g, '') : '')
+        .filter(t => t.length >= 8);
+
+      if (telefones.length === 0) {
+        showCustomAlert('Nenhum telefone válido encontrado entre as oportunidades selecionadas.', 'Aviso');
+        return;
+      }
+
+      const listaStr = telefones.join(', ');
+      try {
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(listaStr);
+        }
+      } catch (_) {}
+
+      showCustomAlert(`${telefones.length} número(s) de WhatsApp copiados para a área de transferência!`, 'Telefones Copiados');
+    });
+
+    // Ações em Lote: Snooze em Bloco (30 Dias)
+    this.container.querySelector('#btn-lote-snooze-30')?.addEventListener('click', async () => {
+      const ids = Array.from(this.oportunidadesSelecionadas);
+      if (ids.length === 0) return;
+
+      const confirmou = await showCustomConfirm(
+        `Tem certeza de que deseja pausar (snooze de 30 dias) a abordagem para as ${ids.length} oportunidades selecionadas?`,
+        'Confirmar Snooze em Lote'
+      );
+      if (!confirmou) return;
+
+      try {
+        const res = await NextTripEngineService.aplicarSnoozeEmLote(ids, 30);
+        this.clientes.forEach(c => {
+          if (this.oportunidadesSelecionadas.has(c.id)) {
+            c.next_trip_snooze_until = res.dataLimiteIso;
+          }
+        });
+
+        this.oportunidadesSelecionadas.clear();
+        this.calcularOportunidades();
+        this.render();
+        this.setupEventListeners();
+
+        showCustomAlert(`Snooze de 30 dias aplicado com sucesso no Supabase para ${res.sucesso} oportunidades!`, 'Snooze em Bloco Concluído');
+      } catch (err) {
+        console.error('Falha ao aplicar snooze em lote:', err);
+        showCustomAlert('Ocorreu um erro ao persistir o snooze em lote no banco. Verifique sua conexão.', 'Erro no Snooze');
+      }
     });
 
     // Botão recarregar

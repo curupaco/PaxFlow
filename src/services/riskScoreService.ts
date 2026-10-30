@@ -1,4 +1,4 @@
-import { Viagem, Cliente, GlobalSettings, RiskScoreResult, RiskItem, RiskTimelineEntry, ProdutoViagem, PerfilConsultor } from '../types';
+import { Viagem, Cliente, GlobalSettings, RiskScoreResult, RiskItem, RiskTimelineEntry, ProdutoViagem, PerfilConsultor, ExigenciaDestinoViagem } from '../types';
 import { supabase } from './supabase';
 import { isRiskScoreEnabled } from '../utils/featureFlags';
 import { ContatosEmbarqueService } from './contatosEmbarqueService';
@@ -7,6 +7,122 @@ import { ContatosEmbarqueService } from './contatosEmbarqueService';
  * Serviço responsável pela inteligência do PaxFlow Risk Score™
  */
 export class RiskScoreService {
+  /**
+   * Identifica e mapeia heurísticamente as regras de entrada, sanitárias, vacinas e vistos por país/destino.
+   */
+  public static obterExigenciasDestino(destino: string): ExigenciaDestinoViagem {
+    const dest = (destino || '').toLowerCase().trim();
+    const destNorm = dest.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    // 1. Destino Doméstico / Nacional
+    const termosNacionais = [
+      'brasil', 'br', 'sao paulo', 'rio de janeiro', 'gramado', 'caldas novas', 'salvador', 'fortaleza',
+      'recife', 'florianopolis', 'maceio', 'natal', 'porto seguro', 'curitiba', 'belo horizonte',
+      'manaus', 'foz do iguacu', 'bonito', 'noronha', 'porto de galinhas', 'maragogi', 'campos do jordao'
+    ];
+    const isNacional = termosNacionais.some(t => destNorm.includes(t));
+
+    if (isNacional && !destNorm.includes('internacional') && !destNorm.includes('exterior')) {
+      return {
+        destinoDetectado: destino || 'Brasil (Nacional)',
+        categoria: 'nacional',
+        vistoExigido: false,
+        vistoDescricao: 'Não aplicável para voos domésticos',
+        seguroObrigatorio: false,
+        vacinaObrigatoria: false,
+        docExigido: 'Documento original com foto (RG, CNH física ou via app Gov.br)',
+        orientacaoGeral: 'Embarques nacionais exigem documento com foto em bom estado e emitido há menos de 10 anos ou CNH digital válida.'
+      };
+    }
+
+    // 2. Estados Unidos da América (EUA)
+    const termosEua = ['eua', 'usa', 'estados unidos', 'orlando', 'miami', 'new york', 'nova york', 'ny', 'disney', 'california', 'los angeles', 'las vegas', 'chicago', 'texas'];
+    if (termosEua.some(t => destNorm.includes(t))) {
+      return {
+        destinoDetectado: destino || 'Estados Unidos (EUA)',
+        categoria: 'eua',
+        vistoExigido: true,
+        vistoDescricao: 'Visto Americano de Turismo (B1/B2) válido ou Autorização ESTA (dupla cidadania)',
+        seguroObrigatorio: false,
+        vacinaObrigatoria: false,
+        docExigido: 'Passaporte válido para o período de estadia + Visto consular ou ESTA',
+        orientacaoGeral: 'Custos hospitalares nos EUA são os mais altos do mundo. Embora o seguro não seja exigido por lei na imigração americana, uma apólice médica é crítica para proteção financeira da família.'
+      };
+    }
+
+    // 3. Europa / Espaço Schengen
+    const termosSchengen = [
+      'europa', 'schengen', 'franca', 'paris', 'italia', 'roma', 'espanha', 'madrid', 'barcelona',
+      'portugal', 'lisboa', 'porto', 'alemanha', 'berlim', 'frankfurt', 'suica', 'zurique', 'genebra',
+      'holanda', 'amsterda', 'amsterdam', 'grecia', 'atenas', 'santorini', 'austria', 'viena',
+      'belgica', 'bruxelas', 'noruega', 'suecia', 'finlandia', 'dinamarca', 'londres', 'reino unido'
+    ];
+    if (termosSchengen.some(t => destNorm.includes(t))) {
+      return {
+        destinoDetectado: destino || 'Europa (Espaço Schengen)',
+        categoria: 'schengen',
+        vistoExigido: false,
+        vistoDescricao: 'Isenção de visto para brasileiros para estadias de turismo de até 90 dias',
+        seguroObrigatorio: true,
+        seguroMinimoEur: 30000,
+        seguroMinimoDescricao: 'Tratado de Schengen: Cobertura médica e hospitalar mínima de 30.000 Euros',
+        vacinaObrigatoria: false,
+        docExigido: 'Passaporte com validade mínima de 180 dias (6 meses) a contar da data de retorno',
+        orientacaoGeral: 'O Tratado de Schengen EXIGE por lei apólice de seguro viagem com assistência médica de no mínimo 30.000 Euros. A imigração de fronteira pode barrar passageiros desprovidos do voucher de seguro.'
+      };
+    }
+
+    // 4. Países com Exigência Obrigatória de Febre Amarela (CIVP Anvisa)
+    const termosFebreAmarela = [
+      'tailandia', 'bangkok', 'phuket', 'africa do sul', 'johannesburg', 'cidade do cabo',
+      'colombia', 'bogota', 'cartagena', 'san andres', 'costa rica', 'panama', 'australia',
+      'egito', 'cairo', 'india', 'nova deli', 'kenya', 'quenia', 'tanzania', 'zanzibar'
+    ];
+    if (termosFebreAmarela.some(t => destNorm.includes(t))) {
+      return {
+        destinoDetectado: destino || 'Destino com Exigência Sanitária',
+        categoria: 'febre_amarela',
+        vistoExigido: destNorm.includes('australia') || destNorm.includes('egito') || destNorm.includes('india'),
+        vistoDescricao: (destNorm.includes('australia') || destNorm.includes('egito') || destNorm.includes('india')) ? 'Visto Eletrônico (eVisa) obrigatório' : 'Isenção de visto para fins turísticos de curta permanência',
+        seguroObrigatorio: false,
+        vacinaObrigatoria: true,
+        vacinaDescricao: 'Certificado Internacional de Vacinação (CIVP) contra Febre Amarela da Anvisa (dose tomada há >= 10 dias)',
+        docExigido: 'Passaporte válido por no mínimo 6 meses + Certificado CIVP Anvisa',
+        orientacaoGeral: 'Embarque condicionado à apresentação do Certificado Internacional de Febre Amarela (CIVP). A vacina precisa ter sido aplicada há pelo menos 10 dias antes do embarque.'
+      };
+    }
+
+    // 5. Mercosul / América do Sul
+    const termosMercosul = [
+      'argentina', 'buenos aires', 'bariloche', 'mendoza', 'chile', 'santiago', 'atacama',
+      'uruguai', 'montevideu', 'punta del este', 'paraguai', 'assuncao', 'peru', 'lima', 'cusco', 'machu picchu'
+    ];
+    if (termosMercosul.some(t => destNorm.includes(t))) {
+      return {
+        destinoDetectado: destino || 'América do Sul (Mercosul)',
+        categoria: 'mercosul',
+        vistoExigido: false,
+        vistoDescricao: 'Dispensado para turismo de cidadãos brasileiros',
+        seguroObrigatorio: false,
+        vacinaObrigatoria: false,
+        docExigido: 'RG Original emitido há menos de 10 anos em ótimo estado OU Passaporte válido (CNH NÃO é aceita)',
+        orientacaoGeral: 'Brasileiros podem viajar apenas com a Carteira de Identidade (RG), desde que emitida há menos de 10 anos e legível. A CNH não é reconhecida pelas polícias federais de fronteira.'
+      };
+    }
+
+    // 6. Internacional Geral
+    return {
+      destinoDetectado: destino || 'Viagem Internacional',
+      categoria: 'internacional_geral',
+      vistoExigido: false,
+      vistoDescricao: 'Verificar exigência consular específica para o país de destino',
+      seguroObrigatorio: false,
+      vacinaObrigatoria: false,
+      docExigido: 'Passaporte válido por no mínimo 180 dias a contar do regresso',
+      orientacaoGeral: 'Recomenda-se manter passaporte com 6 meses de vigência além da data de retorno e contratar seguro viagem internacional com cobertura para emergências médicas.'
+    };
+  }
+
   /**
    * Calcula a nota de Saúde Operacional (0 a 100) e diagnostica pendências de uma viagem.
    */
@@ -47,25 +163,9 @@ export class RiskScoreService {
     const isGracePeriod = daysToDeparture > carenciaDias;
     const itens: RiskItem[] = [];
 
-    // Isenções Inteligentes por Categoria
-    const destinoNome = (viagem.destino || '').toLowerCase().trim();
-    const termosInternacionais = [
-      'orlando', 'miami', 'paris', 'roma', 'cancun', 'lisboa', 'madrid', 'londres', 
-      'ny', 'new york', 'tulum', 'bariloche', 'santiago', 'buenos aires', 'disney',
-      'eua', 'usa', 'europa', 'tokyo', 'toquio', 'japao', 'japan', 'italia', 'franca', 'grécia', 'grecia',
-      'espanha', 'portugal', 'argentina', 'chile', 'uruguay', 'uruguai', 'colombia', 'peru',
-      'mexico', 'dubai', 'emirados', 'inglaterra', 'canada', 'australia', 'internacional', 'exterior'
-    ];
-    const termosNacionais = [
-      'brasil', 'br', 'são paulo', 'sao paulo', 'rio de janeiro', 'gramado', 'caldas novas', 'salvador', 'fortaleza',
-      'recife', 'florianopolis', 'maceio', 'natal', 'porto seguro', 'curitiba', 'belo horizonte',
-      'manaus', 'foz do iguacu', 'bonito', 'noronha', 'porto de galinhas', 'maragogi', 'campos do jordao'
-    ];
-
-    const temTermoInternacional = termosInternacionais.some(d => destinoNome.includes(d));
-    const temTermoNacional = termosNacionais.some(d => destinoNome.includes(d));
-
-    const isNacional = temTermoInternacional ? false : Boolean(temTermoNacional && destinoNome.length > 0);
+    // Identificação de Exigências Internacionais, Sanitárias e Vistos por Destino
+    const exigenciasDestino = RiskScoreService.obterExigenciasDestino(viagem.destino || '');
+    const isNacional = exigenciasDestino.categoria === 'nacional';
 
     
     const temVoo = produtos.some(p => (p.tipo || '').toLowerCase().includes('voo') || (p.tipo || '').toLowerCase().includes('aéreo'));
@@ -150,7 +250,8 @@ export class RiskScoreService {
           penalidadePontos: pen,
           resolvido: false,
           acaoTipo: 'preencher_passaporte',
-          acaoRotulo: '🛂 Completar Passaportes da Família'
+          acaoRotulo: '🛂 Completar Passaportes da Família',
+          acaoWhatsAppTexto: `Olá, ${cliente?.nome ? cliente.nome.split(' ')[0] : 'Passageiro'}! Tudo bem? ✈️ Para a emissão segura da viagem para ${viagem.destino || 'seu destino'}, precisamos anexar os passaportes de todos os passageiros. Você poderia nos enviar foto da página de identificação dos viajantes? Muito obrigado!`
         });
       } else if (passaportesCadastrados.length === 0 && !isGracePeriod) {
         // Nenhuma informação de passaporte cadastrada
@@ -165,7 +266,8 @@ export class RiskScoreService {
           penalidadePontos: pen,
           resolvido: false,
           acaoTipo: 'preencher_passaporte',
-          acaoRotulo: '🛂 Preencher Passaporte'
+          acaoRotulo: '🛂 Preencher Passaporte',
+          acaoWhatsAppTexto: `Olá, ${cliente?.nome ? cliente.nome.split(' ')[0] : 'Passageiro'}! Tudo bem? ✈️ Estamos finalizando os preparativos para ${viagem.destino || 'sua viagem'}. Para a conferência documental e emissão obrigatória, precisamos que nos envie uma foto da página com foto e validade do seu passaporte. Pode nos enviar por aqui? Obrigado!`
         });
       }
 
@@ -192,9 +294,44 @@ export class RiskScoreService {
               penalidadePontos: pen,
               resolvido: false,
               acaoTipo: 'preencher_passaporte',
-              acaoRotulo: '🛂 Atualizar Passaporte'
+              acaoRotulo: '🛂 Atualizar Passaporte',
+              acaoWhatsAppTexto: `Olá, ${cliente?.nome ? cliente.nome.split(' ')[0] : 'Passageiro'}! Revisando a documentação da viagem para ${viagem.destino || 'seu destino'}, identificamos que o passaporte de ${paxPass.nome || nomeExibicao} está próximo de vencer. Muitos destinos exigem no mínimo 6 meses de validade no desembarque. Recomendamos agendar a renovação na Polícia Federal o quanto antes para viajar com total tranquilidade!`
             });
           }
+        });
+      }
+
+      // 4. Verificação de Vacinas Obrigatórias (Febre Amarela / CIVP Anvisa)
+      if (exigenciasDestino.vacinaObrigatoria) {
+        const pen = isGracePeriod ? 0 : 15;
+        if (pen > 0) score -= pen;
+        itens.push({
+          id: 'p1-civp-febre-amarela',
+          pilar: 1,
+          pilarNome: 'Documental & Vistos',
+          titulo: 'Vacina Febre Amarela / CIVP Obrigatório',
+          descricaoHumana: `${exigenciasDestino.destinoDetectado} exige o Certificado Internacional de Vacinação (CIVP) contra Febre Amarela emitido pela Anvisa, aplicado há pelo menos 10 dias do embarque.`,
+          penalidadePontos: pen,
+          resolvido: false,
+          acaoTipo: 'orientar_visto_vacina',
+          acaoRotulo: '💉 Orientar CIVP Anvisa',
+          acaoWhatsAppTexto: `Olá, ${cliente?.nome ? cliente.nome.split(' ')[0] : 'Passageiro'}! Lembramos que para a entrada em ${viagem.destino || 'seu destino'}, é obrigatório apresentar o Certificado Internacional de Vacinação (CIVP) contra Febre Amarela emitido pela Anvisa. A vacina deve ser tomada no mínimo 10 dias antes do embarque. Qualquer dúvida para emitir no portal Gov.br, estamos à disposição!`
+        });
+      }
+
+      // 5. Verificação Informativa Mercosul (RG < 10 anos)
+      if (exigenciasDestino.categoria === 'mercosul' && passaportesCadastrados.length === 0) {
+        itens.push({
+          id: 'p1-mercosul-rg-10anos',
+          pilar: 1,
+          pilarNome: 'Documental & Vistos',
+          titulo: 'Alerta Mercosul: RG < 10 anos (CNH Não Aceita)',
+          descricaoHumana: 'Viagem para o Mercosul: a imigração de fronteira exige RG original expedido há menos de 10 anos e legível OU Passaporte válido. CNH não é aceita para cruzar a fronteira.',
+          penalidadePontos: 0,
+          resolvido: false,
+          acaoTipo: 'orientar_visto_vacina',
+          acaoRotulo: '🛂 Instruir Documentação Mercosul',
+          acaoWhatsAppTexto: `Olá, ${cliente?.nome ? cliente.nome.split(' ')[0] : 'Passageiro'}! Lembramos que para viagens aos países do Mercosul (${viagem.destino || 'América do Sul'}), as polícias federais de fronteira exigem RG original emitido há menos de 10 anos em ótimo estado ou passaporte válido. A CNH não é aceita para ingressar no país!`
         });
       }
     }
@@ -321,7 +458,8 @@ export class RiskScoreService {
         penalidadePontos: pen,
         resolvido: false,
         acaoTipo: 'abrir_pre_embarque',
-        acaoRotulo: '✈️ Realizar Contato Pré-Embarque'
+        acaoRotulo: '✈️ Realizar Contato Pré-Embarque',
+        acaoWhatsAppTexto: `Olá, ${cliente?.nome ? cliente.nome.split(' ')[0] : 'Passageiro'}! Falta muito pouco para o seu embarque rumo a ${viagem.destino || 'seu destino'}! ✈️ Passando para desejar uma excelente viagem e confirmar se está tudo certo com seus vouchers, check-in e malas. Qualquer dúvida de última hora, conte com o nosso suporte!`
       });
     }
 
@@ -347,19 +485,37 @@ export class RiskScoreService {
 
       const temSeguro = temAnexoSeguro || produtos.some(p => (p.tipo || '').toLowerCase().includes('seguro'));
       if (!isNacional && !temSeguro) {
-        const pen = 10;
-        score -= pen;
-        itens.push({
-          id: 'p4-seguro-ausente',
-          pilar: 4,
-          pilarNome: 'Cobertura de Roteiro',
-          titulo: 'Sem Seguro Viagem Internacional',
-          descricaoHumana: 'Viagem internacional sem apólice de seguro viagem contratada ou anexada.',
-          penalidadePontos: pen,
-          resolvido: false,
-          acaoTipo: 'anexar_voucher',
-          acaoRotulo: '🛡️ Vincular Seguro Viagem'
-        });
+        if (exigenciasDestino.seguroObrigatorio) {
+          // Espaço Schengen: Seguro médico de 30.000€ exigido por lei
+          const pen = 25;
+          score -= pen;
+          itens.push({
+            id: 'p4-seguro-schengen-ausente',
+            pilar: 4,
+            pilarNome: 'Cobertura de Roteiro',
+            titulo: 'Seguro Obrigatório Espaço Schengen Ausente (30.000€)',
+            descricaoHumana: 'Viagem para a Europa sem apólice emitida. O Tratado de Schengen exige seguro viagem com assistência médica de no mínimo 30.000 Euros sob pena de recusa na imigração.',
+            penalidadePontos: pen,
+            resolvido: false,
+            acaoTipo: 'anexar_voucher',
+            acaoRotulo: '🛡️ Emitir Seguro Obrigatório (30k€)',
+            acaoWhatsAppTexto: `Olá, ${cliente?.nome ? cliente.nome.split(' ')[0] : 'Passageiro'}! Lembramos que para a entrada no Espaço Schengen (${viagem.destino || 'Europa'}), as autoridades de fronteira exigem seguro viagem internacional com cobertura médica mínima de 30.000 Euros. Vamos providenciar a sua emissão para viajar 100% blindado?`
+          });
+        } else {
+          const pen = 10;
+          score -= pen;
+          itens.push({
+            id: 'p4-seguro-ausente',
+            pilar: 4,
+            pilarNome: 'Cobertura de Roteiro',
+            titulo: 'Sem Seguro Viagem Internacional',
+            descricaoHumana: 'Viagem internacional sem apólice de seguro viagem contratada ou anexada.',
+            penalidadePontos: pen,
+            resolvido: false,
+            acaoTipo: 'anexar_voucher',
+            acaoRotulo: '🛡️ Vincular Seguro Viagem'
+          });
+        }
       }
     }
 
@@ -377,7 +533,8 @@ export class RiskScoreService {
         penalidadePontos: pen,
         resolvido: false,
         acaoTipo: 'preencher_passaporte',
-        acaoRotulo: '👤 Completar Perfil do Cliente'
+        acaoRotulo: '👤 Completar Perfil do Cliente',
+        acaoWhatsAppTexto: `Olá, ${cliente?.nome ? cliente.nome.split(' ')[0] : 'Passageiro'}! Tudo bem? Estamos atualizando os cadastros da agência para a emissão segura dos vouchers da sua viagem para ${viagem.destino || 'seu destino'}. Poderia nos confirmar seu CPF/RG e e-mail para envio da documentação? Obrigado!`
       });
     }
 
@@ -422,8 +579,10 @@ export class RiskScoreService {
       isGracePeriod,
       gracePeriodMensagem: isGracePeriod ? `Faltam ${daysToDeparture} dias para o embarque. A cobrança fina de vouchers inicia nos últimos ${carenciaDias} dias.` : undefined,
       itens,
-      historico: []
+      historico: [],
+      exigenciasDestino
     };
+
   }
 
   /**

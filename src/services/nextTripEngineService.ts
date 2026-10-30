@@ -1,6 +1,8 @@
 import { GlobalSettings, NextTripOpportunity } from '../types';
 import { supabase } from './supabase';
 
+export type { NextTripOpportunity };
+
 export class NextTripEngineService {
   /**
    * Converte strings de datas nos formatos BR (DD/MM/AAAA) ou ISO para um objeto Date válido.
@@ -359,6 +361,8 @@ export class NextTripEngineService {
         }
       };
 
+      const complemento = NextTripEngineService.calcularDestinoComplementar(ultimoDestinoTexto, categoriaDestino, cliente.nome);
+
       oportunidades.push({
         clienteId: cliente.id,
         clienteNome: cliente.nome || 'Cliente',
@@ -378,6 +382,9 @@ export class NextTripEngineService {
         snoozeAte: snoozeUntilStr || undefined,
         totalPassageirosGrupo: totalPax,
         origemOportunidade,
+        destinoComplementarSugerido: complemento.destinoComplementarSugerido,
+        motivoComplementar: complemento.motivoComplementar,
+        scriptAbordagemComplementar: complemento.scriptAbordagemComplementar,
         vetoresDetalhamento
       });
     });
@@ -405,5 +412,178 @@ export class NextTripEngineService {
     }
 
     return isoString;
+  }
+
+  /**
+   * Aplica snooze em lote para múltiplos clientes selecionados diretamente no Supabase.
+   */
+  public static async aplicarSnoozeEmLote(clienteIds: string[], dias: number = 30): Promise<{ sucesso: number; total: number; dataLimiteIso: string }> {
+    if (!clienteIds || clienteIds.length === 0) {
+      return { sucesso: 0, total: 0, dataLimiteIso: '' };
+    }
+
+    const dataLimite = new Date();
+    dataLimite.setDate(dataLimite.getDate() + dias);
+    const isoString = dataLimite.toISOString();
+
+    const { error } = await supabase
+      .from('clientes')
+      .update({ next_trip_snooze_until: isoString })
+      .in('id', clienteIds);
+
+    if (error) {
+      console.error('Erro ao aplicar snooze em lote no Supabase:', error);
+      throw error;
+    }
+
+    return {
+      sucesso: clienteIds.length,
+      total: clienteIds.length,
+      dataLimiteIso: isoString
+    };
+  }
+
+  /**
+   * Gera um roteiro consolidado em texto das abordagens comerciais para os clientes selecionados.
+   */
+  public static gerarLoteAbordagemTexto(oportunidades: NextTripOpportunity[]): string {
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    let texto = `====================================================\n`;
+    texto += `PAXFLOW NEXT TRIP ENGINE™ - LOTE DE ABORDAGEM COMERCIAL\n`;
+    texto += `Gerado em: ${dataHoje} | Total de Contatos: ${oportunidades.length}\n`;
+    texto += `====================================================\n\n`;
+
+    oportunidades.forEach((op, idx) => {
+      texto += `----------------------------------------------------\n`;
+      texto += `CLIENTE #${idx + 1}: ${op.clienteNome.toUpperCase()}\n`;
+      texto += `Telefone: ${op.clienteTelefone || 'Não informado'} | E-mail: ${op.clienteEmail || 'Não informado'}\n`;
+      texto += `Destino Recomendado: ${op.destinoRecomendado}\n`;
+      texto += `Motivo Estratégico: ${op.motivoSugestao}\n`;
+      texto += `Score de Prontidão: ${op.scoreProntidao}/100 (${op.nivelProntidao.toUpperCase()})\n`;
+      const script = op.scriptAbordagemComplementar || `Olá ${op.clienteNome.split(' ')[0]}! Tudo bem? Temos novidades para seu próximo destino: ${op.destinoRecomendado}!`;
+      texto += `\n[SCRIPT DE ABORDAGEM WHATSAPP]:\n${script}\n`;
+      texto += `----------------------------------------------------\n\n`;
+    });
+
+    return texto;
+  }
+
+  /**
+   * Gera arquivo CSV com os dados das oportunidades selecionadas para importação comercial.
+   */
+  public static gerarCsvAbordagem(oportunidades: NextTripOpportunity[]): string {
+    const cabecalho = ['Nome', 'Telefone', 'Email', 'Destino Recomendado', 'Categoria', 'Score', 'Classificacao', 'Motivo', 'Script Abordagem'];
+
+    const linhas = oportunidades.map(op => {
+      const escapeCsv = (val: any) => `"${String(val || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+      const script = op.scriptAbordagemComplementar || `Olá ${op.clienteNome.split(' ')[0]}! Temos novidades para ${op.destinoRecomendado}!`;
+      return [
+        escapeCsv(op.clienteNome),
+        escapeCsv(op.clienteTelefone),
+        escapeCsv(op.clienteEmail),
+        escapeCsv(op.destinoRecomendado),
+        escapeCsv(op.categoriaDestino),
+        op.scoreProntidao,
+        escapeCsv(op.nivelProntidao),
+        escapeCsv(op.motivoSugestao),
+        escapeCsv(script)
+      ].join(';');
+    });
+
+    return [cabecalho.join(';'), ...linhas].join('\r\n');
+  }
+
+  /**
+   * Radar Heurístico de Destinos Complementares ("Próximo Passo Natural").
+   * Mapeia a evolução natural do viajante com base no histórico de destinos e composição familiar.
+   */
+  public static calcularDestinoComplementar(
+    ultimoDestino: string,
+    categoria: NextTripOpportunity['categoriaDestino'],
+    clienteNome: string = 'Cliente'
+  ): {
+    destinoComplementarSugerido: string;
+    motivoComplementar: string;
+    scriptAbordagemComplementar: string;
+  } {
+    const dest = (ultimoDestino || '').toLowerCase();
+    const primeiroNome = (clienteNome || 'Cliente').split(' ')[0];
+
+    // 1. Orlando / Disney -> Universal Studios & Epic Universe
+    if (dest.includes('disney') || dest.includes('orlando') || categoria === 'disney') {
+      return {
+        destinoComplementarSugerido: 'Universal Studios & Epic Universe (Flórida)',
+        motivoComplementar: 'Evolução natural após os parques Disney: atrações imersivas e nova área temática.',
+        scriptAbordagemComplementar: `Olá ${primeiroNome}, tudo bem? Lembrei de você hoje planejando os roteiros da temporada! Como vocês curtiram muito a viagem para Orlando, o próximo passo natural que famílias com o perfil de vocês amam é focar nos parques da Universal e no novo Epic Universe. Já temos condições especiais abertas para o período de vocês!`
+      };
+    }
+
+    // 2. Europa (Paris, Roma, Lisboa, etc.)
+    if (dest.includes('paris') || dest.includes('frança')) {
+      return {
+        destinoComplementarSugerido: 'Itália Clássica (Roma, Florença & Costa Amalfitana)',
+        motivoComplementar: 'Sequência cultural e gastronômica perfeita após a experiência em Paris.',
+        scriptAbordagemComplementar: `Olá ${primeiroNome}! Tudo bem? Pensando na viagem maravilhosa que você fez para Paris, o próximo destino dos sonhos na Europa que encaixa perfeitamente no seu perfil é a Itália, combinando a história de Roma com a gastronomia da Toscana. Quer que eu separe uma prévia de roteiro para o seu próximo período de férias?`
+      };
+    }
+
+    if (dest.includes('itália') || dest.includes('italia') || dest.includes('roma')) {
+      return {
+        destinoComplementarSugerido: 'Espanha & Portugal (Madri, Sevilha & Lisboa)',
+        motivoComplementar: 'Clima ameno, riqueza histórica e gastronomia que complementam a experiência italiana.',
+        scriptAbordagemComplementar: `Olá ${primeiroNome}! Como você aproveitou muito a Itália, o roteiro mais pedido pelos nossos clientes premium na sequência é a combinação de Espanha e Portugal, com cultura vibrante e excelente custo-benefício em solo europeu. Podemos montar uma cotação exclusiva!`
+      };
+    }
+
+    if (dest.includes('portugal') || dest.includes('lisboa')) {
+      return {
+        destinoComplementarSugerido: 'Andaluzia & Madri (Espanha)',
+        motivoComplementar: 'Extensão ibérica natural com trens de alta velocidade e hospedagens de charme.',
+        scriptAbordagemComplementar: `Olá ${primeiroNome}! Quem se apaixona por Portugal invariavelmente tem como próximo passo natural conhecer a Espanha — Sevilha, Granada e Madri. Selecionei algumas opções especiais que coincidem com sua época de férias!`
+      };
+    }
+
+    // 3. Caribe / México (Cancún, Punta Cana, etc.)
+    if (dest.includes('cancún') || dest.includes('cancun') || dest.includes('riviera')) {
+      return {
+        destinoComplementarSugerido: 'Punta Cana ou Aruba (Caribe Exclusivo)',
+        motivoComplementar: 'Mar calmo azul-turquesa e serviço all-inclusive superior sem a agitação de Cancún.',
+        scriptAbordagemComplementar: `Olá ${primeiroNome}! Após a viagem para Cancún, o destino que os nossos clientes mais elogiam para relaxar com pé na areia e serviço all-inclusive cinco estrelas é Punta Cana ou Aruba. Preparei uma seleção de resorts boutique para você!`
+      };
+    }
+
+    // 4. Serras e Vinhos (Gramado, Bento, etc.)
+    if (dest.includes('gramado') || dest.includes('canela') || dest.includes('serra gaúcha') || dest.includes('bento')) {
+      return {
+        destinoComplementarSugerido: 'Mendoza & Bariloche (Patagônia Argentina)',
+        motivoComplementar: 'Upgrade internacional do turismo de serra, vinhos premium e paisagens andinas.',
+        scriptAbordagemComplementar: `Olá ${primeiroNome}! Sei o quanto você curtiu o clima acolhedor e a gastronomia de Gramado. O próximo passo que você vai se encantar é Mendoza e Bariloche na Argentina: vinícolas de classe mundial aos pés da Cordilheira com tarifas aéreas excelentes!`
+      };
+    }
+
+    // 5. Resorts Nordeste (Porto de Galinhas, Maragogi, Bahia, etc.)
+    if (dest.includes('maragogi') || dest.includes('porto de galinhas') || dest.includes('maceió') || dest.includes('maceio') || categoria === 'resort') {
+      return {
+        destinoComplementarSugerido: 'Tivoli Ecoresort Praia do Forte ou Trancoso (Bahia)',
+        motivoComplementar: 'Elevação de categoria em resort com preservação ambiental e gastronomia assinada.',
+        scriptAbordagemComplementar: `Olá ${primeiroNome}! Para manter a tradição das suas férias em resorts com praia paradisíaca, a recomendação de ouro para o seu próximo descanso é o Tivoli Ecoresort ou os resorts de Trancoso. Quer dar uma olhada nas opções de datas?`
+      };
+    }
+
+    // 6. Cruzeiro
+    if (dest.includes('cruzeiro') || dest.includes('navio') || categoria === 'cruzeiro') {
+      return {
+        destinoComplementarSugerido: 'Cruzeiro no Mediterrâneo ou Caribe com Ilha Privativa',
+        motivoComplementar: 'Passo seguinte a cruzeiros de cabotagem nacional: roteiros marítimos internacionais.',
+        scriptAbordagemComplementar: `Olá ${primeiroNome}! Quem navega uma vez quer navegar sempre! O próximo nível que indicamos é um cruzeiro pelas ilhas gregas ou Caribe com parada exclusiva em ilha privativa. As cabines com varanda estão com promoções antecipadas!`
+      };
+    }
+
+    // 7. Geral / Nacional
+    return {
+      destinoComplementarSugerido: 'Lençóis Maranhenses & Rota das Emoções',
+      motivoComplementar: 'Uma das experiências ecológicas mais exclusivas e bem avaliadas do turismo nacional.',
+      scriptAbordagemComplementar: `Olá ${primeiroNome}! Pensando no padrão das suas últimas viagens, um roteiro exclusivo que você vai amar vivenciar na sua próxima folga são os Lençóis Maranhenses na época cheia das lagoas. Posso te enviar um itinerário personalizado?`
+    };
   }
 }

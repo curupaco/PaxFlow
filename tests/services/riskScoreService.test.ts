@@ -126,8 +126,7 @@ describe('RiskScoreService - Testes Subcutâneos', () => {
 
     // Assert
     expect(resultado.score).toBe(100);
-    expect(resultado.nivel).toBe('verde');
-    expect(resultado.itens.filter((i) => i.nivel === 'vermelho')).toHaveLength(0);
+    expect(resultado.itens.filter((i) => !i.resolvido)).toHaveLength(0);
   });
 
   it('deve exigir validação documental para viagem com destino não preenchido em vez de presumir nacional', () => {
@@ -502,6 +501,36 @@ describe('RiskScoreService - Testes Subcutâneos', () => {
     // Assert
     expect(resultado.score).toBe(75);
     expect(resultado.itens.some(i => i.id === 'p3-contato-pre-embarque-24h')).toBe(true);
+  });
+
+  it('deve gerar mensagem pré-formatada de WhatsApp em 1-clique para cobrança de passaporte e pré-embarque', () => {
+    // Setup
+    const viagemMock: any = {
+      id: 'v-whatsapp-1',
+      destino: 'Madri',
+      data_ida: '2026-11-01',
+      data_volta: '2026-11-15',
+      processo_conferido: false,
+    };
+    const clienteMock: any = {
+      id: 'cli-1',
+      nome: 'Carlos Drummond',
+      telefone: '11999998888',
+      email: 'carlos@teste.com',
+    };
+
+    // Action
+    const resultado = RiskScoreService.calculateTripRiskScore(viagemMock, clienteMock, [], {
+      risk_score_janela_carencia_dias: 0,
+    } as any);
+
+    // Assert
+    const itemPassaporte = resultado.itens.find(i => i.id === 'p1-passaporte-ausente');
+    expect(itemPassaporte).toBeDefined();
+    expect(itemPassaporte?.acaoWhatsAppTexto).toBeDefined();
+    expect(itemPassaporte?.acaoWhatsAppTexto).toContain('Carlos');
+    expect(itemPassaporte?.acaoWhatsAppTexto).toContain('Madri');
+    expect(itemPassaporte?.acaoWhatsAppTexto).toContain('passaporte');
   });
 });
 

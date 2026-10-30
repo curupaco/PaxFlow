@@ -362,4 +362,34 @@ describe('UpsellEngineService - Testes Subcutâneos', () => {
     // Mas oportunidades remanescentes (ex: Passeios/Transfer) continuam disponíveis
     expect(opsEtapa2.some(o => o.id === 'upsell-passes-experiencias')).toBe(true);
   });
+
+  it('deve calcular comissaoEstimada positiva e gerar script persuasivo de WhatsApp para cada oportunidade', () => {
+    // Setup
+    const produtos = [{ tipo: 'Aéreo', nome: 'Voo GRU - Orlando' }];
+    const destino = 'Orlando';
+
+    // Action
+    const ops = UpsellEngineService.calculateUpsellOpportunities({
+      produtos,
+      destino,
+      totalPax: 3,
+      valorTotal: 15000,
+      clienteNome: 'Fernanda Lima'
+    });
+
+    // Assert
+    expect(ops.length).toBeGreaterThan(0);
+    ops.forEach(op => {
+      // Setup / Assert: cada oportunidade deve ter estimativa de ganho para o consultor
+      expect(op.comissaoEstimada).toBeDefined();
+      expect(op.comissaoEstimada).toBeGreaterThan(0);
+      expect(op.percentualComissao).toBeGreaterThanOrEqual(10);
+      expect(op.percentualComissao).toBeLessThanOrEqual(20);
+
+      // Script persuasivo com o nome do cliente e destino
+      expect(op.mensagemWhatsApp).toBeDefined();
+      expect(op.mensagemWhatsApp).toContain('Fernanda');
+      expect(op.mensagemWhatsApp).toContain('Orlando');
+    });
+  });
 });

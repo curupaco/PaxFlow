@@ -258,6 +258,7 @@ export class InboxService {
           readIds.add(`manual-${n.item_id}`);
           readIds.add(`pre-embarque-${n.item_id}`);
           readIds.add(`pos-viagem-nps-${n.item_id}`);
+          readIds.add(`risk-alerta-${n.item_id}`);
         }
         if (n.parent_id) {
           readIds.add(`dm-direct-${n.parent_id}`);
@@ -308,6 +309,7 @@ export class InboxService {
           archivedIds.add(`manual-${n.item_id}`);
           archivedIds.add(`pre-embarque-${n.item_id}`);
           archivedIds.add(`pos-viagem-nps-${n.item_id}`);
+          archivedIds.add(`risk-alerta-${n.item_id}`);
           archivedIds.add(`atendimento-balcao-${n.item_id}`);
           archivedIds.add(`sent-${n.item_id}`);
           archivedIds.add(`sent-mention-${n.item_id}`);
@@ -321,6 +323,7 @@ export class InboxService {
           archivedIds.add(`sent-${n.parent_id}`);
           archivedIds.add(`pre-embarque-${n.parent_id}`);
           archivedIds.add(`pos-viagem-nps-${n.parent_id}`);
+          archivedIds.add(`risk-alerta-${n.parent_id}`);
         }
       });
 
@@ -1432,6 +1435,50 @@ export class InboxService {
             });
           }
         }
+
+        // 3. Alerta Proativo de Risco Operacional Crítico (Embarque em até 15 dias e score < 60)
+        if (v.data_ida && (v.status === 'CONFIRMADA' || !v.status || v.status === 'EM_ANDAMENTO')) {
+          const dataIda = new Date(v.data_ida + 'T00:00:00');
+          const diffMs = dataIda.getTime() - hoje.getTime();
+          const diasAteIda = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+          if (diasAteIda >= 0 && diasAteIda <= 15) {
+            let scoreViagem = v.score_risco !== undefined && v.score_risco !== null 
+              ? Number(v.score_risco) 
+              : (v.risk_score !== undefined && v.risk_score !== null ? Number(v.risk_score) : null);
+
+            if (scoreViagem === null) {
+              try {
+                let sc = 100;
+                if (!v.cliente?.passaporte_numero) sc -= 30;
+                if (!v.produtos || v.produtos.length === 0) sc -= 25;
+                scoreViagem = sc;
+              } catch (_) {
+                scoreViagem = 100;
+              }
+            }
+
+            if (scoreViagem < 60) {
+              const uniqueId = `risk-alerta-${v.id}`;
+              list.push({
+                id: uniqueId,
+                type: 'risk_alerta',
+                title: '🛡️ Alerta Crítico - PaxFlow Risk Score™',
+                sender: 'Auditoria de Risco',
+                senderAvatar: 'paxflow',
+                dateStr: dataIda.toLocaleDateString('pt-BR'),
+                subject: `🚨 RISCO CRÍTICO (${scoreViagem}/100): ${clienteNome} viaja para ${destino} em ${diasAteIda} dia(s)!`,
+                body: `A auditoria operacional do PaxFlow Risk Score detectou vulnerabilidades críticas na viagem de <strong>${clienteNome}</strong> (${destino}), com embarque agendado para <strong>${dataIda.toLocaleDateString('pt-BR')}</strong> (${diasAteIda} dia(s) restante(s)).<br><br>• <strong>Score Operacional:</strong> <span style="color:#ef4444; font-weight:800;">${scoreViagem}/100 (Risco Elevado)</span><br>• <strong>Embarque:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br><br><strong>Ação Mandatória:</strong> Acesse o gerenciador da viagem para conferir passaportes, anexar vouchers e confirmar o contato pré-embarque imediatamente.`,
+                targetId: v.id,
+                arquivado: archivedSet.has(uniqueId),
+                consultorId: v.consultor_id || '',
+                consultorNome: 'PaxFlow Risk Score',
+                createdAt: v.created_at || new Date().toISOString(),
+                eventDate: v.data_ida
+              });
+            }
+          }
+        }
       });
 
       // --- PART 7: SOLICITAÇÕES DE ESCALA (TROCAS, FOLGAS E FÉRIAS) ---
@@ -1817,7 +1864,7 @@ export class InboxService {
     // 3. Filtrar por Categoria
     if (categoryFilter !== 'todos') {
       if (categoryFilter === 'alertas') {
-        result = result.filter(a => a.type === 'passport' || a.type === 'refund' || a.type === 'pre-embarque' || a.type === 'pos-viagem-nps' || a.type === 'campaign_notification' || a.type === 'atendimento_balcao' || (isUserAdmin && a.type === 'escala_solicitacao' && !a.isSent));
+        result = result.filter(a => a.type === 'passport' || a.type === 'refund' || a.type === 'pre-embarque' || a.type === 'pos-viagem-nps' || a.type === 'risk_alerta' || a.type === 'campaign_notification' || a.type === 'atendimento_balcao' || (isUserAdmin && a.type === 'escala_solicitacao' && !a.isSent));
       } else if (categoryFilter === 'depois') {
         result = result.filter(a => a.type === 'manual');
       } else if (categoryFilter === 'passaporte') {

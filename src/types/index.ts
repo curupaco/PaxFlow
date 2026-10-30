@@ -137,6 +137,9 @@ export interface NextTripOpportunity {
   snoozeAte?: string;
   totalPassageirosGrupo?: number;
   origemOportunidade?: 'viagem' | 'orcamento_recusado';
+  destinoComplementarSugerido?: string;
+  motivoComplementar?: string;
+  scriptAbordagemComplementar?: string;
   vetoresDetalhamento?: {
     sazonalidade: { score: number; max: number; detalhe: string };
     nps: { score: number; max: number; detalhe: string };
@@ -160,6 +163,8 @@ export interface UpsellOpportunity {
   badgeTexto: string;
   corBadge: string;
   mensagemWhatsApp?: string;
+  comissaoEstimada?: number;
+  percentualComissao?: number;
 }
 
 /**
@@ -188,10 +193,28 @@ export interface RiskItem {
   descricaoHumana: string;
   penalidadePontos: number;
   resolvido: boolean;
-  acaoTipo: 'anexar_voucher' | 'anexar_voucher_geral' | 'preencher_passaporte' | 'preencher_visto' | 'vincular_loc' | 'conferir_operacional' | 'notificar_consultor' | 'justificar_risco' | 'abrir_pre_embarque';
+  acaoTipo: 'anexar_voucher' | 'anexar_voucher_geral' | 'preencher_passaporte' | 'preencher_visto' | 'vincular_loc' | 'conferir_operacional' | 'notificar_consultor' | 'justificar_risco' | 'abrir_pre_embarque' | 'cobrar_passaporte_whatsapp' | 'cobrar_voucher_whatsapp' | 'lembrete_embarque_whatsapp' | 'orientar_visto_vacina';
   acaoRotulo: string;
+  acaoWhatsAppTexto?: string;
   produtoId?: string;
   justificativa?: string;
+}
+
+/**
+ * Exigências Sanitárias, Vacinas e Vistos mapeadas para o destino da viagem.
+ */
+export interface ExigenciaDestinoViagem {
+  destinoDetectado: string;
+  categoria: 'eua' | 'schengen' | 'mercosul' | 'febre_amarela' | 'internacional_geral' | 'nacional';
+  vistoExigido: boolean;
+  vistoDescricao: string;
+  seguroObrigatorio: boolean;
+  seguroMinimoEur?: number;
+  seguroMinimoDescricao?: string;
+  vacinaObrigatoria: boolean;
+  vacinaDescricao?: string;
+  docExigido: string;
+  orientacaoGeral: string;
 }
 
 /**
@@ -207,6 +230,7 @@ export interface RiskScoreResult {
   gracePeriodMensagem?: string;
   itens: RiskItem[];
   historico: RiskTimelineEntry[];
+  exigenciasDestino?: ExigenciaDestinoViagem;
 }
 export interface ClientePassaporte {
   id?: string;
@@ -573,7 +597,7 @@ export interface Notificacao {
  */
 export interface AlertItem {
   id: string; // Chave combinada única
-  type: 'manual' | 'passport' | 'refund' | 'mention' | 'direct_message' | 'campaign_notification' | 'pre-embarque' | 'pos-viagem-nps' | 'escala_solicitacao' | 'escala_lembrete' | 'atendimento_balcao' | 'financeiro';
+  type: 'manual' | 'passport' | 'refund' | 'mention' | 'direct_message' | 'campaign_notification' | 'pre-embarque' | 'pos-viagem-nps' | 'escala_solicitacao' | 'escala_lembrete' | 'atendimento_balcao' | 'financeiro' | 'risk_alerta';
   title: string;
   sender: string;
   senderAvatar?: string;
@@ -918,6 +942,9 @@ export interface StudioProposta {
   itinerario_dias: StudioDiaItinerario[];
   status: 'RASCUNHO' | 'ENVIADO' | 'APROVADO' | 'EFETIVADO' | 'EFETIVADA';
   aceite_formal?: StudioAceiteFormal | null;
+  visualizacoes_count?: number;
+  ultima_visualizacao_em?: string;
+  orcamento_origem_id?: string;
   created_at?: string;
   updated_at?: string;
 }

@@ -28,6 +28,9 @@ export class StudioPropostasService {
       itinerario_dias: proposta.itinerario_dias || [],
       status: proposta.status || 'RASCUNHO',
       aceite_formal: proposta.aceite_formal || null,
+      visualizacoes_count: proposta.visualizacoes_count !== undefined ? proposta.visualizacoes_count : 0,
+      ultima_visualizacao_em: proposta.ultima_visualizacao_em || null,
+      orcamento_origem_id: proposta.orcamento_origem_id || null,
       consultor_id: proposta.consultor_id || null,
       consultor_nome: proposta.consultor_nome || null,
       consultor_avatar: proposta.consultor_avatar || null,
@@ -50,7 +53,25 @@ export class StudioPropostasService {
         .single();
 
       if (error) {
-        // Fallback para schema drift: coluna inexistente (42703), cache desatualizado (PGRST204) ou tabela ainda não migrada (42P01 / PGRST200)
+        // Fallback defensivo para colunas novas inexistentes (42703)
+        if (error.code === '42703') {
+          const payloadSanitizado = { ...payload };
+          delete payloadSanitizado.visualizacoes_count;
+          delete payloadSanitizado.ultima_visualizacao_em;
+          delete payloadSanitizado.orcamento_origem_id;
+
+          const { data: dRetry, error: errRetry } = await supabase
+            .from(this.TABELA)
+            .upsert(payloadSanitizado)
+            .select()
+            .single();
+
+          if (!errRetry && dRetry) {
+            return { ...dRetry, ...payload } as StudioProposta;
+          }
+        }
+
+        // Fallback para schema drift geral (42P01, PGRST204, PGRST200)
         if (
           error.code === '42703' ||
           error.code === '42P01' ||
@@ -238,6 +259,97 @@ export class StudioPropostasService {
     });
 
     return { viagemId: viagem.id };
+  }
+
+  /**
+   * Registra a visualização da proposta digital pelo viajante em tempo real (Viewer Analytics).
+   * Incrementa visualizacoes_count e atualiza ultima_visualizacao_em de forma não-bloqueante.
+   */
+  public static async registrarAcessoLeitura(propostaId: string): Promise<StudioProposta | null> {
+    if (!propostaId) return null;
+    try {
+      const proposta = await this.buscarPorId(propostaId);
+      if (!proposta) return null;
+
+      const visualizacoes = (proposta.visualizacoes_count || 0) + 1;
+      const agoraIso = new Date().toISOString();
+
+      const atualizada = await this.salvarProposta({
+        ...proposta,
+        visualizacoes_count: visualizacoes,
+        ultima_visualizacao_em: agoraIso
+      });
+
+      return atualizada;
+    } catch (err) {
+      console.warn('[StudioPropostasService] Falha não impeditiva ao registrar leitura de proposta:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Gera uma proposta visual de luxo no Studio em 1-clique a partir de um Orçamento existente.
+   * Seleciona fotografia cinematográfica automática para o destino e inicializa a timeline.
+   */
+  public static async criarPropostaFromOrcamento(orcamento: any, consultorInfo?: any): Promise<StudioProposta> {
+    if (!orcamento) throw new Error('Dados do orçamento são obrigatórios para gerar proposta.');
+
+    const destino = orcamento.destino || 'Destino Exclusivo';
+    const clienteNome = orcamento.nomeCliente || orcamento.nome_cliente || 'Viajante';
+    const contato = orcamento.contato || orcamento.telefone || null;
+    const email = orcamento.email || null;
+    const valor = Number(orcamento.valorProposta || orcamento.valor_proposta || 0);
+
+    // Busca foto automática de alta resolução com base no destino
+    let fotoCapa = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1400&q=80';
+    try {
+      const { StudioUnsplashService } = await import('./studioUnsplashService');
+      const resultado = await StudioUnsplashService.buscarFotos(destino);
+      if (resultado && resultado.fotos && resultado.fotos.length > 0) {
+        fotoCapa = resultado.fotos[0].url;
+      }
+    } catch (_) {}
+
+    // Converte data da viagem para ISO se necessário
+    let dataIda: string | null = null;
+    if (orcamento.dataViagem) {
+      const dv = String(orcamento.dataViagem).trim();
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(dv)) {
+        const parts = dv.split('/');
+        dataIda = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      } else if (/^\d{4}-\d{2}-\d{2}/.test(dv)) {
+        dataIda = dv.substring(0, 10);
+      }
+    }
+
+    const propostaPayload: Partial<StudioProposta> = {
+      cliente_nome: clienteNome,
+      cliente_whatsapp: contato,
+      cliente_email: email,
+      destino: destino,
+      data_ida: dataIda || new Date().toISOString().split('T')[0],
+      valor_total: valor,
+      moeda: 'BRL',
+      foto_capa_url: fotoCapa,
+      status: 'RASCUNHO',
+      orcamento_origem_id: orcamento.id,
+      consultor_id: orcamento.consultorId || orcamento.consultor_id || consultorInfo?.id || null,
+      consultor_nome: consultorInfo?.nome || null,
+      consultor_avatar: consultorInfo?.avatar_url || null,
+      consultor_whatsapp: consultorInfo?.whatsapp || consultorInfo?.telefone || null,
+      consultor_email: consultorInfo?.email || null,
+      titulo_cabecalho: 'PAXFLOW LUXURY TRAVEL',
+      itinerario_dias: [
+        {
+          diaNumero: 1,
+          dataStr: dataIda || new Date().toISOString().split('T')[0],
+          tituloDia: `Boas-vindas a ${destino}`,
+          itens: []
+        }
+      ]
+    };
+
+    return await this.salvarProposta(propostaPayload);
   }
 
   // ==========================================================================

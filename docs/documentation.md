@@ -38,7 +38,7 @@
    - 3.25 [Redesenho de Usabilidade Mobile da Gestão de Viagens](#325-redesenho-de-usabilidade-mobile-da-gestão-de-viagens)
    - 3.26 [PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100)](#326-paxflow-risk-score-diagnóstico-preditivo-de-saúde-operacional-0-a-100)
    - 3.27 [Relatório de Embarque e Rastreamento de Contato Pré-Embarque](#327-relatório-de-embarque-e-rastreamento-de-contato-pré-embarque)
-   - 3.28 [Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)](#328-next-trip-engine-motor-preditivo-de-recompra--ciclo-de-vida-do-viajante)
+   - 3.28 [Next Trip Engine™ (Motor Heurístico & Estatístico de Recompra & Ciclo de Vida do Viajante)](#328-next-trip-engine-motor-heurístico--estatístico-de-recompra--ciclo-de-vida-do-viajante)
    - 3.29 [PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)](#329-paxflow-upsell-engine-motor-preditivo-de-oportunidades--ticket-médio)
    - 3.30 [PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem)](#330-paxflow-studio-criação-de-propostas-digitais-de-luxo--cadernos-de-viagem)
    - 3.31 [Gestão Inteligente de Anexos e Documentos (Clientes e Viagens)](#331-gestão-inteligente-de-anexos-e-documentos-clientes-e-viagens)
@@ -646,12 +646,24 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Viagens Nacionais**: Isentas de passaporte e visto.
   - **Passeios / Bate-Volta (duração <= 1 dia)**: Isentos de exigência de vouchers de hospedagem.
   - **Vouchers Unificados**: Reconhecimento automático de vouchers gerais de pacote anexados à viagem.
-- **Gaveta Lateral de Diagnóstico (`RiskDiagnosisDrawer.ts`)**:
+- **Gaveta Lateral de Diagnóstico (`RiskDiagnosisDrawer.ts`) & Plano de Ação Corretivo em 1-Clique**:
   - Ao clicar no badge 🛡️ da viagem, abre-se uma gaveta lateral animada detalhando o diagnóstico, os pontos perdidos por pilar e botões de ação rápida de 1-Clique para resolver cada pendência (ex: _🛂 Preencher Passaporte_, _💳 Conferir Recebimentos_, _📎 Anexar Voucher_, _✈️ Realizar Contato Pré-Embarque_).
-- **Visibilidade Unificada**:
+  - **Cobrança Rápida de WhatsApp (`💬 Cobrar no WhatsApp`)**: Cada item de risco crítico com pendência documental ou operacional gera automaticamente uma mensagem pré-formatada de alta persuasão (`acaoWhatsAppTexto`). Ao clicar no botão, o texto é copiado para a área de transferência com feedback tátil e o WhatsApp Web/App é acionado diretamente no número do cliente (com DDI 55) para cobrança imediata de passaporte vencendo (< 180 dias), passaportes ausentes de acompanhantes ou confirmação pré-embarque de última hora.
+- **Visibilidade Unificada & Alertas Proativos na Barra Lateral e Inbox**:
   - Exibido nos cards do Kanban do Dashboard, na tabela do Dashboard e no topo do modal **Gerenciar Viagem** (`EditTravelModal.ts`).
+  - **Badge Pulsante no Menu Lateral (`#nav-viagens-badge`)**: Viagens ativas com partida nos próximos 15 dias que atingirem pontuação crítica (< 60 pontos) disparam automaticamente um badge vermelho pulsante no botão _Viagens_ da barra lateral, alertando a equipe de plantão sem necessidade de abrir relatórios.
+  - **Notificações Críticas no Inbox**: O motor gera alertas operacionais automáticos no Inbox (`risk-alerta-${viagem.id}`) com a discriminação dos pontos perdidos e checklist imediato de regularização de passaportes, vouchers e contatos pré-embarque.
 - **Controle Administrativo Global**:
   - Administradores podem ativar/desativar o recurso (`habilitar_risk_score`), ajustar a janela de carência pré-embarque (padrão 60 dias) e o limite crítico de risco (padrão < 50 pontos) na aba _Automações_ das Configurações.
+- **Validador Inteligente de Exigências Sanitárias, Vacinas e Vistos por Destino [ONDA 3]**:
+  - **Mapeamento Heurístico Oficial de Entrada**: O motor cruza o destino informado com os requisitos consulares e de imigração internacionais vigentes:
+    - **Estados Unidos & Territórios Americanos**: Exigência de Visto Consular B1/B2 válido ou autorização eletrônica ESTA para portadores de passaporte europeu elegível.
+    - **Europa & Espaço Schengen (Tratado de Schengen)**: Obrigatoriedade estrita de Seguro Viagem Internacional com cobertura médico-hospitalar mínima de **€ 30.000 (ou equivalente em USD)**. A ausência de apólice de seguro anexada aplica penalidade crítica de **25 pontos** (`p4-seguro-obrigatorio-schengen`), alertando o consultor para blindar o passageiro contra deportação na fronteira europeia.
+    - **Tailândia, África do Sul, Colômbia & Destinos Endêmicos**: Exigência mandatória de Certificado Internacional de Vacinação ou Profilaxia (CIVP) emitido pela Anvisa comprovando a vacina contra a Febre Amarela tomada com no mínimo 10 dias de antecedência.
+    - **América do Sul / Mercosul (Argentina, Chile, Uruguai, Peru, Paraguai, Bolívia)**: Aceitação de RG original em excelente estado com menos de 10 anos de emissão ou Passaporte válido. **Alerta explícito de recusa de CNH**: o sistema adverte que a Carteira Nacional de Habilitação brasileira (física ou digital) é sumariamente recusada na imigração de fronteira dos países vizinhos.
+  - **Cartão Visual na Gaveta de Risco (`RiskDiagnosisDrawer.ts`)**:
+    - Exibição de bloco temático `🛡️ Guia Sanitário & Vistos` destacando o país/região auditada, badges de nível de rigor (`OBRIGATÓRIO`, `RECOMENDADO`) e a lista detalhada de documentos exigidos, vacinas requeridas e seguro viagem.
+    - **Ação Resolutiva de 1-Clique (`💬 Enviar Guia no WhatsApp`)**: Gera mensagem executiva de alta persuasão contendo as exigências sanitárias do destino, instruções de emissão do CIVP Anvisa ou agendamento de visto, disparando o WhatsApp do titular da viagem com um único clique.
 
 ---
 
@@ -699,10 +711,13 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - O motor é 100% determinístico e auditável. O operador ou gestor pode clicar a qualquer momento no card superior **🧠 5 Vetores** ou no botão **🧠** em cada oportunidade para inspecionar exatamente a fórmula de cálculo e a decomposição de pontos do cliente.
 - **Score de Potencial de Recompra (0 a 100) — Composição dos 5 Vetores**:
   1. **Sazonalidade & Janela Temporal (Até 30 pts)**: Avalia o tempo decorrido desde o retorno ou proposta. A janela de **10 a 14 meses (~1 ano)** confere pontuação máxima (30 pts), pois coincide com o ciclo anual de férias; 5 a 9 meses ou 15 a 24 meses conferem 20 a 25 pts.
-  2. **Histórico de Satisfação NPS (Até 25 pts)**: Clientes Promotores (NPS 9-10) recebem 25 pts; clientes com avaliação neutra ou sem NPS recebem 15 pts neutros de segurança. Clientes *Detratores (NPS < 8)* são descartados preventivamente para priorizar o pós-venda.
+  2. **Histórico de Satisfação NPS (Até 25 pts)**: Clientes Promotores (NPS 9-10) recebem 25 pts; clientes com avaliação neutra ou sem NPS recebem 15 pts neutros de segurança. Clientes _Detratores (NPS < 8)_ são descartados preventivamente para priorizar o pós-venda.
   3. **Perfil de Destino & Passageiros (Até 20 pts)**: Afinidade temática baseada em reservas passadas (Europa, Resorts All-Inclusive, Cruzeiros, Disney ou Nacional).
   4. **Mês Habitual de Viagem (Até 15 pts)**: Concede bônus de 15 pts quando o mês atual ou o próximo coincidem com o período histórico de embarque do cliente.
   5. **Conformidade Operacional & SLA (Até 10 pts)**: Concede 10 pts para clientes sem pendências ou reembolsos abertos.
+- **Radar Heurístico de Destinos Complementares ("Próximo Passo Natural")**:
+  - Motor determinístico que correlaciona o destino da viagem anterior com a evolução natural das preferências da família (ex: Disney → Universal Studios & Epic Universe; Paris → Itália Clássica; Cancún → Punta Cana/Aruba; Gramado → Mendoza/Bariloche; Resorts → Tivoli Ecoresort/Trancoso).
+  - Cada oportunidade exibe um bloco visual dedicado com a sugestão do destino complementar (`destinoComplementarSugerido`), a justificativa da evolução (`motivoComplementar`) e um roteiro consultivo personalizado pronto para disparo no WhatsApp.
 - **Sincronização Total com a Tela de Viagens**:
   - Resolução definitiva de discrepâncias: os mesmos dados relacionais de viagens e clientes consultados no Dashboard são sincronizados com a página dedicada `#next-trip`, garantindo consistência total entre o indicador do widget e a listagem completa.
 - **Visualização & Filtros na Central Preditiva**:
@@ -712,6 +727,13 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - `💬 WhatsApp`: Abre o modal de templates com dados contextuais pré-carregados.
   - `🧠 Auditoria`: Abre o modal de auditoria matemática do cliente com a discriminação dos pontos em cada um dos 5 vetores.
   - `⏸️ Snooze (30 Dias)`: Adia temporariamente a abordagem comercial persistindo o limite de carência diretamente na tabela `clientes` do Supabase.
+- **Ações Comerciais em Lote com Presets [ONDA 3]**:
+  - **Seleção Individual e Mestre**: Checkbox contextual em cada oportunidade e seletor mestre no cabeçalho dos filtros (`Selecionar Todas as Visíveis (N)`), permitindo selecionar múltiplos clientes simultaneamente.
+  - **Barra de Ações em Lote Flutuante**: Fixada na parte inferior da tela (`fixed bottom-6 z-40`), exibindo contador em tempo real (`X oportunidades selecionadas`) e 4 ações operacionais:
+    - **📄 Gerar Lote WhatsApp (.txt)**: Compila e faz download de arquivo de texto estruturado contendo o roteiro de abordagem completo, sugestão de destino e link direto de WhatsApp para cada um dos clientes selecionados, pronto para disparo ágil da equipe comercial.
+    - **📊 Exportar Planilha (.csv)**: Exporta arquivo CSV sanitizado contendo colunas comerciais completas (Cliente, Telefone formatado com DDI 55, Destino Recomendado, Motivo/Gatilho e Pontuação).
+    - **📋 Copiar Telefones**: Higieniza e copia para a área de transferência todos os números de telefone do lote separados por vírgula para disparo em ferramentas de mensageria da agência.
+    - **⏸️ Snooze em Lote (30 dias)**: Aplica carência de 30 dias em lote diretamente na coluna `next_trip_snooze_until` da tabela `clientes` do Supabase com diálogo de confirmação defensivo, removendo as oportunidades da esteira imediata.
 - **Governança & Parâmetros Administrativos**:
   - Regras rígidas de bloqueio automático para clientes com viagens futuras ativas ou orçamentos em andamento no funil (SOLICITADO, EM_ANDAMENTO, AGUARDANDO).
   - Consultores visualizam clientes próprios; Administradores possuem visão global de toda a agência de forma irrestrita.
@@ -726,6 +748,11 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   3. **🚘 Transfer Privativo Aeroporto-Hotel**: Recomendação ativada para grupos de 3+ passageiros, viagens internacionais ou cotações acima de R$ 8.000,00 sem traslado cadastrado.
   4. **🏨 Upgrade de Categoria de Hotelaria / All-Inclusive**: Identifica pacotes com hospedagem padrão e sugere acréscimo de meia pensão ou categoria luxo com margem estimada de +18%.
   5. **📋 Seguro Cancel Flex (Reembolso 100%)**: Recomendação para cotações acima de R$ 10.000,00 que diminui a hesitação do cliente e acelera o fechamento do contrato.
+- **Simulador de Comissão & Ganho Imediato para o Consultor**:
+  - Para cada oportunidade identificada, o motor calcula automaticamente a **comissão estimada** (`comissaoEstimada`) e o percentual de margem comercial (`percentualComissao`, variando entre 10% e 15%), exibindo um badge chamativo de incentivo (`💰 + R$ XX,XX comissão`) diretamente nas cotações de orçamentos e no modal Gerenciar Viagem.
+- **Scripts Comerciais Persuasivos de WhatsApp em 1-Clique**:
+  - Geração dinâmica de mensagens consultivas e altamente persuasivas para cada gatilho, incluindo saudação personalizada com o primeiro nome do viajante, menção contextual ao destino cotado, benefícios concretos do adicional e chamada para fechamento imediato.
+  - Botão direto `💬 WhatsApp` para disparo ou cópia do roteiro comercial com um único clique.
 - **Inclusão em 1-Clique nas Notas de Orçamento**:
   - No modal de envio de proposta, o consultor pode clicar em `+ Incluir` para injetar o texto da sugestão diretamente na proposta comercial.
 - **Controle de Ativação Global**:
@@ -740,6 +767,15 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 Módulo avançado de orquestração visual e documental da agência, permitindo consolidar múltiplos vouchers, bilhetes e cotações em propostas visuais cinematográficas e cadernos de viagem prontos para impressão.
 
+- **Geração de Proposta em 1-Clique a partir de Orçamento (`Orcamentos.ts`)**:
+  - No Kanban de Orçamentos, o consultor pode clicar em _✨ Criar Proposta no Studio_ (no menu de ações rápidas ou na barra secundária do card) para converter qualquer cotação em proposta cinematográfica de luxo.
+  - O motor mapeia dados de cliente, datas, valor total, consultor e busca automaticamente fotografias de alta resolução para o destino no catálogo Unsplash, inicializando a timeline sem digitação repetitiva.
+- **Rastreamento de Leitura em Tempo Real (Viewer Analytics)**:
+  - Ao carregar a página pública da proposta (`/proposta/:id`), o sistema incrementa o contador `visualizacoes_count` e registra o timestamp exato em `ultima_visualizacao_em` de forma não-bloqueante e resiliente a schema drift.
+  - Permite aos consultores e à liderança monitorar o momento exato em que o passageiro está interagindo com a proposta para timing perfeito de fechamento.
+- **Experiência Pública Interativa do Viajante (`PublicViews.ts`)**:
+  - **Aprovação Formal & Conversão no WhatsApp**: A página pública da proposta (`/proposta/:id`) disponibiliza no card de status a ação de aprovação interativa pelo passageiro e o botão direto _Conversar com o Consultor no WhatsApp_, direcionando para a central de atendimento oficial da loja.
+  - **Dúvidas Contextuais por Dia do Itinerário**: Cada dia sequencial da programação possui o botão `💬 Dúvida sobre o Dia X`, que gera um link inteligente de WhatsApp contendo a identificação do dia e da atividade para o viajante tirar dúvidas operacionais ou solicitar personalizações pontuais diretamente com o consultor.
 - **Arquitetura Split Screen (Tela Dividida)**:
   - **Coluna da Esquerda (Editor Estruturado)**:
     - **1. Ingestão de Documentos com pdfjs-dist**:
@@ -747,7 +783,12 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
       - Extração inteligente de múltiplos trechos aéreos (ida e volta independentes), códigos de voo, horários de decolagem/pouso, passageiros, bilhetes eletrônicos e localizadores de reserva (PNR), integrando-os de forma instantânea na linha do tempo dia a dia da proposta.
     - **2. Dados do Passageiro, Capa & Consultor**:
       - **Branding / Tagline da Capa**: Campo editável para personalizar o título de marca (padrão _"PAXFLOW LUXURY TRAVEL"_) para o nome da agência ou slogan da proposta.
-      - **Galeria Unsplash™ Resiliente**: Motor de busca de alta fidelidade com catálogo de destinos mundiais e nacionais (ex: Nova York, Paris, Pantanal, Bonito, Toscana, Maldivas, Dubai, etc.), suporte a tags semânticas e **campo para aplicação direta de URL de foto do Unsplash ou da web**, eliminando dependência estrita de chaves de API externas.
+      - **Galeria Unsplash™ & Acervo Próprio da Agência [ONDA 3]**:
+        - O modal de seleção de foto de capa conta com sistema de abas duplas:
+          - `🌐 Catálogo Unsplash™`: Busca de alta fidelidade com catálogo de destinos mundiais e nacionais (ex: Nova York, Paris, Pantanal, Bonito, Toscana, Maldivas, Dubai, etc.), busca por tags semânticas e campo para aplicação direta de URL da web.
+          - `📁 Minha Galeria & Upload`: Acervo institucional compartilhado da própria agência com fotos de hotéis parceiros, aeronaves executivas, receptivos e eventos.
+        - **Upload Direto do Computador com Compressão Client-Side**: O consultor pode selecionar qualquer foto do seu computador (`.jpg`, `.jpeg`, `.png`, `.webp`). O arquivo é processado na hora pelo navegador via Canvas API, sofrendo redimensionamento proporcional e compressão inteligente para ficar com menos de 250 KB sem perda perceptível de nitidez, evitando estouro de cota e garantindo carregamento instantâneo.
+        - **Persistência Segura com Fallback Zero-Break**: Salvo no bucket `studio-propostas` do Supabase Storage ou armazenado como Data URI base64 no banco relacional (`studio_fotos_agencia`), garantindo operação 100% resiliente mesmo em agências sem bucket configurado.
       - **Governança de Canais de Atendimento**: O telefone fixo e WhatsApp vinculados à proposta são **estritamente institucionais e padronizados da agência / loja** (campos travados para leitura), garantindo que nenhum consultor informe números pessoais aos clientes. O e-mail profissional de atendimento é sempre o do consultor atribuído.
       - **Consultor Dedicado**: Seletor integrado à equipe cadastrada com auto-preenchimento de foto/avatar via `getAvatarSvg` (suporte a animais do PaxFlow, fotos de perfil ou iniciais estilizadas), nome, e-mail profissional e preview visual imediato.
       - **Máscaras e Padrão Brasileiro**: Todos os campos de data utilizam formato nacional `DD/MM/AAAA` com conversão bidirecional transparente para ISO (`YYYY-MM-DD`), e o campo de valor total adota separador decimal por vírgula no padrão brasileiro (`R$ 1.234,56`), prevenindo erros de digitação.
@@ -1611,7 +1652,7 @@ O PaxFlow adota testes **subcutâneos** rigorosos para garantir integridade cont
 - **Zero DOM**: Não são executados testes de renderização de interface visual (DOM), concentrando a validação nas regras de negócio, persistência, cálculos de SLA, filtragens e fluxos de dados.
 - **Estrutura Padronizada**: Testes organizados nos blocos `// Setup`, `// Action` e `// Assert`.
 - **Regressão Zero & Execução Automática**: Toda alteração em componentes, regras de negócio ou serviços dispara obrigatoriamente a execução dos testes subcutâneos correspondentes via Vitest antes de ser considerada concluída. Nenhuma alteração é entregue sem validação automatizada prévia.
-- **Cobertura Integral (14 Módulos)**: 100% dos serviços de lógica de negócio e motores analíticos cobertos (`inbox`, `escala`, `orcamentos`, `balcao`, `riskScore`, `metas`, `gamification`, `nextTrip`, `comments`, `upsell`, `pushNotification`, `csvImporter`, `googleDrive` e `versionChecker`), totalizando 90 testes subcutâneos de alta confiabilidade (~5s) cobrindo casos de borda, resiliência de schema do Supabase e build 100% validado.
+- **Cobertura Integral & Blindagem Operacional**: 100% dos serviços de lógica de negócio e motores analíticos cobertos (`inbox`, `escala`, `orcamentos`, `balcao`, `riskScore`, `metas`, `gamification`, `nextTrip`, `comments`, `upsell`, `pushNotification`, `csvImporter`, `googleDrive`, `studioGaleria`, `versionChecker` e `anexos`), totalizando mais de 640 testes subcutâneos de alta confiabilidade em 84 suítes cobrindo casos de borda, resiliência de schema do Supabase (Zero-Break) e build 100% validado.
 
 ### Por que Supabase?
 

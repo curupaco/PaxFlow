@@ -1,6 +1,7 @@
 import { StudioExtractionService, CATALOGO_CIAS_AEREAS } from '../services/studioExtractionService';
 import { StudioPropostasService } from '../services/studioPropostasService';
 import { StudioUnsplashService, UnsplashFoto } from '../services/studioUnsplashService';
+import { StudioGaleriaService, FotoAgencia } from '../services/studioGaleriaService';
 import { StudioPdfGenerator } from '../components/studio/StudioPdfGenerator';
 import { supabase } from '../services/supabase';
 import { getAvatarSvg } from '../services/avatars';
@@ -33,11 +34,14 @@ export class StudioPage {
   private secaoIngestaoAberta: boolean = true;
   private syncScrollHandler: any = null;
 
-  // Estado para a Busca no Unsplash
+  // Estado para a Busca no Unsplash e Galeria Própria da Agência
   private modalUnsplashAberto: boolean = false;
+  private abaModalFotos: 'unsplash' | 'galeria' = 'unsplash';
   private termoBuscaUnsplash: string = '';
   private fotosUnsplashResultado: UnsplashFoto[] = [];
+  private fotosAgencia: FotoAgencia[] = [];
   private buscandoUnsplash: boolean = false;
+  private enviandoFotoAgencia: boolean = false;
   private debounceTimerUnsplash: any = null;
 
   // Lista de Consultores da Agência & Dados Padrão de Contato
@@ -1026,7 +1030,7 @@ export class StudioPage {
   }
 
   // ==========================================================================
-  // MODAL DA GALERIA UNSPLASH COM TRADUÇÃO PT-BR -> EN
+  // MODAL DA GALERIA UNSPLASH & GALERIA PRÓPRIA DA AGÊNCIA COM UPLOAD
   // ==========================================================================
 
   private renderGridFotosUnsplash(): string {
@@ -1069,6 +1073,53 @@ export class StudioPage {
     `;
   }
 
+  private renderGridFotosGaleria(): string {
+    if (this.enviandoFotoAgencia) {
+      return `
+        <div class="flex flex-col items-center justify-center py-16 text-xs text-indigo-600 dark:text-indigo-400 font-bold gap-2">
+          <span class="text-2xl animate-spin">🔄</span>
+          <span>Comprimindo e salvando imagem na galeria da agência...</span>
+        </div>
+      `;
+    }
+
+    if (this.fotosAgencia.length === 0) {
+      return `
+        <div class="text-center py-16 text-xs text-slate-400">
+          Nenhuma foto na galeria da agência. Clique em "Enviar Foto do Computador" acima para começar!
+        </div>
+      `;
+    }
+
+    return `
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        ${this.fotosAgencia.map(foto => `
+          <div class="group relative rounded-2xl overflow-hidden border-2 ${this.propostaAtual.foto_capa_url === foto.url ? 'border-indigo-600 ring-2 ring-indigo-500/30' : 'border-slate-200 dark:border-slate-800'} bg-slate-100 dark:bg-slate-800 aspect-video transition hover:shadow-lg hover:border-indigo-400" data-url="${foto.url}">
+            <img src="${foto.thumb_url || foto.url}" alt="${foto.titulo}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-85 group-hover:opacity-95 transition flex flex-col justify-between p-2.5">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${foto.origem === 'upload' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-200'}">
+                  ${foto.origem === 'upload' ? 'Upload Agência' : 'Institucional'}
+                </span>
+                ${foto.origem === 'upload' ? `
+                  <button type="button" class="btn-excluir-foto-galeria p-1 rounded-lg bg-black/40 hover:bg-rose-600 text-white text-xs transition cursor-pointer" data-id="${foto.id}" title="Excluir da galeria">
+                    🗑️
+                  </button>
+                ` : ''}
+              </div>
+              <div>
+                <div class="text-white font-bold text-xs truncate drop-shadow-sm">${foto.titulo}</div>
+                <button type="button" class="mt-1 w-full py-1 bg-white/20 hover:bg-indigo-600 text-white font-bold text-[10px] rounded-lg transition cursor-pointer btn-selecionar-foto-unsplash" data-url="${foto.url}">
+                  ${this.propostaAtual.foto_capa_url === foto.url ? '✓ Capa Ativa' : 'Usar na Proposta'}
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   private renderModalUnsplash(): string {
     const sugestoesTemas = [
       { label: '🏝️ Praias', termo: 'praias' },
@@ -1081,6 +1132,8 @@ export class StudioPage {
       { label: '🇧🇷 Brasil & Ilhas', termo: 'fernando de noronha' }
     ];
 
+    const isGaleria = this.abaModalFotos === 'galeria';
+
     return `
       <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-3xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
         <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 shrink-0">
@@ -1088,51 +1141,80 @@ export class StudioPage {
             <span class="text-xl">📸</span>
             <div>
               <h3 class="text-sm font-black text-slate-900 dark:text-white">
-                Galeria Unsplash™ - Fotos de Capa
+                Galeria de Fotos do Studio™
               </h3>
               <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                Busca direta de fotos de alta resolução para seu caderno de viagem.
+                Imagens em alta resolução para capa e itinerários personalizados.
               </p>
             </div>
           </div>
           <button id="btn-fechar-modal-unsplash" type="button" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
         </div>
 
-        <!-- CAMPO DE BUSCA -->
-        <div class="space-y-2 shrink-0">
-          <div class="flex gap-2">
-            <input type="text" id="input-busca-unsplash" value="${this.termoBuscaUnsplash}" placeholder="Digite um destino ou tema (Ex: Pantanal, Mato Grosso, Maldivas, Paris)..." class="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium" autocomplete="off" />
-            <button type="button" id="btn-executar-busca-unsplash" class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5 shrink-0">
-              <span>🔍</span> Buscar
-            </button>
-          </div>
+        <!-- SELETOR DE ABAS: UNSPLASH vs GALERIA PRÓPRIA -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button type="button" id="tab-modal-unsplash" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${!isGaleria ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600'}">
+            <span>🌐</span> Catálogo Unsplash™
+          </button>
+          <button type="button" id="tab-modal-galeria" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${isGaleria ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600'}">
+            <span>📁</span> Minha Galeria & Upload (${this.fotosAgencia.length})
+          </button>
+        </div>
 
-          <!-- SUGESTÕES RÁPIDAS EM PILLS -->
-          <div class="flex flex-wrap gap-1.5 items-center">
-            <span class="text-[10px] font-bold text-slate-400 mr-1">Sugestões:</span>
-            ${sugestoesTemas.map(s => `
-              <button type="button" class="btn-sugestao-unsplash px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-slate-700 transition cursor-pointer" data-termo="${s.termo}">
-                ${s.label}
+        ${!isGaleria ? `
+          <!-- CONTEÚDO ABA UNSPLASH -->
+          <div class="space-y-2 shrink-0">
+            <div class="flex gap-2">
+              <input type="text" id="input-busca-unsplash" value="${this.termoBuscaUnsplash}" placeholder="Digite um destino ou tema (Ex: Pantanal, Mato Grosso, Maldivas, Paris)..." class="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium" autocomplete="off" />
+              <button type="button" id="btn-executar-busca-unsplash" class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5 shrink-0">
+                <span>🔍</span> Buscar
               </button>
-            `).join('')}
+            </div>
+
+            <!-- SUGESTÕES RÁPIDAS EM PILLS -->
+            <div class="flex flex-wrap gap-1.5 items-center">
+              <span class="text-[10px] font-bold text-slate-400 mr-1">Sugestões:</span>
+              ${sugestoesTemas.map(s => `
+                <button type="button" class="btn-sugestao-unsplash px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-slate-700 transition cursor-pointer" data-termo="${s.termo}">
+                  ${s.label}
+                </button>
+              `).join('')}
+            </div>
+
+            <!-- OPÇÃO DE COLAR URL DIRETA DO UNSPLASH / WEB -->
+            <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+              <input type="text" id="input-url-direta-unsplash" placeholder="Ou cole aqui o link direto de qualquer foto do Unsplash ou da web..." class="flex-1 px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium" />
+              <button type="button" id="btn-aplicar-url-direta-unsplash" class="px-3 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-xl transition cursor-pointer shrink-0">
+                Aplicar Link
+              </button>
+            </div>
           </div>
 
-          <!-- OPÇÃO DE COLAR URL DIRETA DO UNSPLASH / WEB -->
-          <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-            <input type="text" id="input-url-direta-unsplash" placeholder="Ou cole aqui o link direto de qualquer foto do Unsplash ou da web..." class="flex-1 px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium" />
-            <button type="button" id="btn-aplicar-url-direta-unsplash" class="px-3 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-xl transition cursor-pointer shrink-0">
-              Aplicar Link
+          <!-- GRID RESPONSIVO DE IMAGENS UNSPLASH -->
+          <div id="container-grid-unsplash" class="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-[260px]">
+            ${this.renderGridFotosUnsplash()}
+          </div>
+        ` : `
+          <!-- CONTEÚDO ABA MINHA GALERIA & UPLOAD -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            <div>
+              <span class="block text-xs font-black text-slate-800 dark:text-white">Fotos Institucionais & Próprias</span>
+              <p class="text-[10.5px] text-slate-500 dark:text-slate-400">Envie imagens locais (com compressão automática) para salvar na agência.</p>
+            </div>
+            <input type="file" id="input-upload-foto-agencia" accept="image/*" class="hidden" />
+            <button type="button" id="btn-abrir-upload-foto-agencia" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5 shrink-0 cursor-pointer">
+              <span>📤</span> Enviar Foto do Computador
             </button>
           </div>
-        </div>
 
-        <!-- GRID RESPONSIVO DE IMAGENS -->
-        <div id="container-grid-unsplash" class="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-[260px]">
-          ${this.renderGridFotosUnsplash()}
-        </div>
+          <!-- GRID RESPONSIVO DE FOTOS DA AGÊNCIA -->
+          <div id="container-grid-unsplash" class="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-[260px]">
+            ${this.renderGridFotosGaleria()}
+          </div>
+        `}
 
         <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-          <span class="text-[10px] text-slate-400">Fotos de alta resolução indexadas para viagens de luxo</span>
+          <span class="text-[10px] text-slate-400">Fotos salvas ficam disponíveis para todas as propostas da agência</span>
           <button id="btn-fechar-modal-unsplash-rodape" type="button" class="px-4 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer">
             Fechar Galeria
           </button>
@@ -2136,19 +2218,27 @@ export class StudioPage {
 
   private async abrirModalUnsplash(): Promise<void> {
     this.modalUnsplashAberto = true;
+    try {
+      this.fotosAgencia = await StudioGaleriaService.listarFotosAgencia();
+    } catch (err) {
+      console.warn('[StudioPage] Falha ao listar fotos da agência:', err);
+    }
+
     const modalEl = this.container.querySelector('#modal-unsplash');
     if (modalEl) {
       modalEl.classList.remove('hidden');
       modalEl.innerHTML = this.renderModalUnsplash();
       this.setupModalUnsplashListeners();
 
-      const termoInicial = this.termoBuscaUnsplash || this.propostaAtual.destino || 'luxo';
-      const inputBusca = modalEl.querySelector('#input-busca-unsplash') as HTMLInputElement | null;
-      if (inputBusca) {
-        inputBusca.value = termoInicial;
-        inputBusca.focus();
+      if (this.abaModalFotos === 'unsplash') {
+        const termoInicial = this.termoBuscaUnsplash || this.propostaAtual.destino || 'luxo';
+        const inputBusca = modalEl.querySelector('#input-busca-unsplash') as HTMLInputElement | null;
+        if (inputBusca) {
+          inputBusca.value = termoInicial;
+          inputBusca.focus();
+        }
+        await this.executarBuscaUnsplash(termoInicial);
       }
-      await this.executarBuscaUnsplash(termoInicial);
     }
   }
 
@@ -2212,6 +2302,26 @@ export class StudioPage {
         }
       });
     });
+
+    // Listener para exclusão de foto da galeria
+    modalEl.querySelectorAll('.btn-excluir-foto-galeria').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        if (!id) return;
+        if (!confirm('Deseja excluir esta foto da galeria institucional?')) return;
+        const ok = await StudioGaleriaService.excluirFotoAgencia(id);
+        if (ok) {
+          this.fotosAgencia = this.fotosAgencia.filter(f => f.id !== id);
+          const gridEl = this.container.querySelector('#container-grid-unsplash');
+          if (gridEl) {
+            gridEl.innerHTML = this.renderGridFotosGaleria();
+            this.setupCardsUnsplashListeners();
+          }
+          this.showToast('Foto removida da galeria com sucesso.', 'success');
+        }
+      });
+    });
   }
 
   private setupModalUnsplashListeners(): void {
@@ -2220,6 +2330,52 @@ export class StudioPage {
 
     modalEl.querySelector('#btn-fechar-modal-unsplash')?.addEventListener('click', () => this.fecharModalUnsplash());
     modalEl.querySelector('#btn-fechar-modal-unsplash-rodape')?.addEventListener('click', () => this.fecharModalUnsplash());
+
+    // Alternância de Abas: Unsplash vs Galeria Própria
+    modalEl.querySelector('#tab-modal-unsplash')?.addEventListener('click', async () => {
+      this.abaModalFotos = 'unsplash';
+      modalEl.innerHTML = this.renderModalUnsplash();
+      this.setupModalUnsplashListeners();
+      const termoInicial = this.termoBuscaUnsplash || this.propostaAtual.destino || 'luxo';
+      await this.executarBuscaUnsplash(termoInicial);
+    });
+
+    modalEl.querySelector('#tab-modal-galeria')?.addEventListener('click', () => {
+      this.abaModalFotos = 'galeria';
+      modalEl.innerHTML = this.renderModalUnsplash();
+      this.setupModalUnsplashListeners();
+    });
+
+    // Upload de Foto Local do Computador
+    const inputUpload = modalEl.querySelector('#input-upload-foto-agencia') as HTMLInputElement | null;
+    modalEl.querySelector('#btn-abrir-upload-foto-agencia')?.addEventListener('click', () => {
+      inputUpload?.click();
+    });
+
+    inputUpload?.addEventListener('change', async (e: any) => {
+      const file = e.target?.files?.[0];
+      if (!file) return;
+
+      this.enviandoFotoAgencia = true;
+      const gridEl = modalEl.querySelector('#container-grid-unsplash');
+      if (gridEl) {
+        gridEl.innerHTML = this.renderGridFotosGaleria();
+      }
+
+      try {
+        const salva = await StudioGaleriaService.comprimirEUploadFoto(file);
+        this.fotosAgencia.unshift(salva);
+        this.showToast('Foto salva na galeria da agência com sucesso!', 'success');
+      } catch (err: any) {
+        this.showToast('Falha no upload da foto: ' + err.message, 'error');
+      } finally {
+        this.enviandoFotoAgencia = false;
+        if (gridEl) {
+          gridEl.innerHTML = this.renderGridFotosGaleria();
+          this.setupCardsUnsplashListeners();
+        }
+      }
+    });
 
     const inputBusca = modalEl.querySelector('#input-busca-unsplash') as HTMLInputElement | null;
     const btnBusca = modalEl.querySelector('#btn-executar-busca-unsplash');

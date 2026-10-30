@@ -594,6 +594,31 @@ export class OrcamentosPage {
       });
     });
 
+    // Botão Criar Proposta de Luxo no Studio (✨)
+    this.container.querySelectorAll('[data-action="criar-proposta-studio"]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = (btn as HTMLElement).dataset.id;
+        if (!id) return;
+        const orc = this.orcamentos.find(o => o.id === id);
+        if (!orc) return;
+
+        try {
+          const donoId = orc.consultorId || (orc as any).consultor_id;
+          const dono = this.consultores.find(c => c.id === donoId) || this.perfil;
+          const { StudioPropostasService } = await import('../services/studioPropostasService');
+          const proposta = await StudioPropostasService.criarPropostaFromOrcamento(orc, dono);
+          
+          this.showToast('✨ Proposta criada no Studio com sucesso!', 'success');
+          window.location.hash = `#studio?id=${proposta.id}`;
+        } catch (err: any) {
+          console.error('Erro ao gerar proposta no Studio a partir do orçamento:', err);
+          this.showToast('Erro ao criar proposta: ' + (err.message || 'Falha inesperada'), 'error');
+        }
+      });
+    });
+
     // Botão Excluir (Disponível apenas para ADMIN)
     this.container.querySelectorAll('[data-action="excluir"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -1158,6 +1183,9 @@ export class OrcamentosPage {
                   <button type="button" data-action="quick-lembrete-2d" data-id="${o.id}" class="w-full text-left px-3 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer">
                     ⏰ Lembrar em 2 dias
                   </button>
+                  <button type="button" data-action="criar-proposta-studio" data-id="${o.id}" class="w-full text-left px-3 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer">
+                    ✨ Criar Proposta no Studio
+                  </button>
                   <button type="button" data-action="ver-notas" data-id="${o.id}" class="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-600 dark:text-slate-300 font-semibold cursor-pointer">
                     👁️ Ver Detalhes / Notas
                   </button>
@@ -1261,6 +1289,9 @@ export class OrcamentosPage {
 
             <!-- Direita: Ações Secundárias Rápidas -->
             <div class="inline-flex items-center gap-0.5">
+              <button data-action="criar-proposta-studio" data-id="${o.id}" title="Criar Proposta de Luxo no PaxFlow Studio (1-Clique)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition shrink-0">
+                <span class="text-xs">✨</span>
+              </button>
               <button data-action="editar-orcamento" data-id="${o.id}" title="Editar Orçamento (Data da Viagem, Destino, Cliente, Contato, Tags)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition shrink-0">
                 <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -1964,6 +1995,12 @@ export class OrcamentosPage {
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="text-xs font-black text-slate-900 dark:text-indigo-100">${u.titulo}</span>
                       <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge}">${u.badgeTexto}</span>
+                      ${u.comissaoEstimada ? `
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 shadow-2xs" title="Ganhos estimados de comissão para a equipe comercial nesta venda">
+                          <span>💰 + R$ ${u.comissaoEstimada.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          <span class="text-[8px] opacity-75 font-normal">comissão</span>
+                        </span>
+                      ` : ''}
                     </div>
                     <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium">${u.descricao}</p>
                     <span class="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Sugestão: ${u.produtoSugerido})</span>
@@ -1973,8 +2010,8 @@ export class OrcamentosPage {
                       <button type="button" 
                         data-upsell-wa="${encodeURIComponent(u.mensagemWhatsApp)}" 
                         class="btn-orc-whatsapp-upsell px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-700/50 rounded-lg text-[10px] font-black uppercase transition flex items-center gap-1 shadow-xs cursor-pointer" 
-                        title="Enviar proposta comercial pré-formatada via WhatsApp">
-                        <span>📲 WhatsApp</span>
+                        title="Enviar script comercial persuasivo via WhatsApp ou Digisac">
+                        <span>💬 WhatsApp</span>
                       </button>
                     ` : ''}
                     <button type="button" data-upsell-text="${u.produtoSugerido} - R$ ${u.valorEstimado}" class="btn-add-upsell-to-notes px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 dark:hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition shadow-xs cursor-pointer">

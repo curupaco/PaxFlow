@@ -317,7 +317,7 @@ export class UpsellEngineService {
         valorEstimado: valor,
         badgeTexto: 'Fechamento Rápido',
         corBadge: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30',
-        mensagemWhatsApp: `Olá, ${primeiroNome}! Sabendo que imprevistos acontecem, temos a opção do Cancel Flex: uma garantia especial que permite remarcar ou cancelar sua viagem recuperando o valor pago caso surja qualquer imprevisto pessoal ou profissional. Para o seu pacote, fica apenas R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Quer que eu inclua essa tranquilidade no contrato?`
+        mensagemWhatsApp: `Olá, ${primeiroNome}! Sabendo que imprevistos acontecem em viagens para ${destDisplay}, temos a opção do Cancel Flex: uma garantia especial que permite remarcar ou cancelar sua viagem recuperando o valor pago caso surja qualquer imprevisto pessoal ou profissional. Para o seu pacote, fica apenas R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Quer que eu inclua essa tranquilidade no contrato?`
       });
     }
 
@@ -354,6 +354,20 @@ export class UpsellEngineService {
         mensagemWhatsApp: `Olá, ${primeiroNome}! Mesmo em viagens nacionais, os planos de saúde regionais muitas vezes não dão cobertura fora do estado. Recomendo adicionarmos o Seguro Viagem Nacional com telemedicina e proteção de bagagem por apenas R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Posso incluir para você viajar 100% seguro(a)?`
       });
     }
+
+    // Pós-processamento do Simulador de Ganhos: Calcula a comissão direta para o consultor
+    oportunidades.forEach(op => {
+      if (!op.comissaoEstimada) {
+        let perc = 12;
+        if (op.tipo === 'seguro_saude' || op.tipo === 'transfer_privativo' || op.tipo === 'cancel_flex' || op.tipo === 'esim_internacional') {
+          perc = 15;
+        } else if (op.tipo === 'bagagem_assento') {
+          perc = 10;
+        }
+        op.percentualComissao = perc;
+        op.comissaoEstimada = Math.max(25, Math.round(op.valorEstimado * (perc / 100)));
+      }
+    });
 
     // FILTRO DE OPORTUNIDADES DISPENSADAS
     // Se o consultor já dispensou a oportunidade para esta viagem, não exibe novamente

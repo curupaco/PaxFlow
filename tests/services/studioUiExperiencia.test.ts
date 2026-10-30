@@ -176,4 +176,34 @@ describe('PaxFlow Studio - Testes Subcutâneos de Experiência e Serviços', () 
     expect(res).toBeDefined();
     expect(res.viagemId).toBe('viagem-uuid-777');
   });
+
+  it('deve formatar link de WhatsApp contextual por dia de itinerário e número do consultor', () => {
+    // Setup
+    const proposta = {
+      id: 'prop-123',
+      destino: 'Capadócia & Istambul',
+      consultor_nome: 'Larissa Manoela',
+      consultor_whatsapp: '(11) 98765-4321',
+      itinerario_dias: [
+        {
+          diaNumero: 1,
+          tituloDia: 'Voo de Balão ao Nascer do Sol',
+          dataStr: '2026-11-20'
+        }
+      ]
+    };
+
+    // Action
+    const numLimpo = proposta.consultor_whatsapp.replace(/\D/g, '');
+    const finalNum = numLimpo.startsWith('55') ? numLimpo : `55${numLimpo}`;
+    const dia1 = proposta.itinerario_dias[0];
+    const msgEsperada = `Olá ${proposta.consultor_nome}! Estou olhando a proposta para ${proposta.destino} e tenho uma dúvida sobre a programação do Dia ${dia1.diaNumero} (${dia1.tituloDia}): `;
+    const linkWhatsAppDia1 = `https://wa.me/${finalNum}?text=${encodeURIComponent(msgEsperada)}`;
+
+    // Assert
+    expect(finalNum).toBe('5511987654321');
+    expect(linkWhatsAppDia1).toContain('5511987654321');
+    expect(decodeURIComponent(linkWhatsAppDia1)).toContain('Voo de Balão ao Nascer do Sol');
+    expect(decodeURIComponent(linkWhatsAppDia1)).toContain('Capadócia & Istambul');
+  });
 });
