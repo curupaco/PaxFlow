@@ -345,4 +345,124 @@ describe('NextTripEngineService - Testes Subcutâneos', () => {
     expect(oportunidades).toHaveLength(1);
     expect(oportunidades[0].statusAbordagem).toBe('pendente');
   });
+
+  it('deve gerar oportunidade para cliente com orçamento anterior encerrado/recusado há mais de 30 dias', () => {
+    // Setup
+    const quarentaDiasAtras = new Date();
+    quarentaDiasAtras.setDate(quarentaDiasAtras.getDate() - 40);
+
+    const clientes = [
+      { id: 'cli-lead-antigo', nome: 'Lead Recusado', email: 'lead@teste.com' },
+    ];
+    const viagens: any[] = [];
+    const orcamentosEncerrados = [
+      {
+        id: 'orc-1',
+        cliente_id: 'cli-lead-antigo',
+        destino: 'Paris',
+        status: 'CONCLUIDO',
+        sub_status: 'DESISTENCIA',
+        updated_at: quarentaDiasAtras.toISOString(),
+        consultor_id: 'consultor-2',
+      },
+    ];
+
+    // Action
+    const oportunidades = NextTripEngineService.calculateOpportunities(
+      clientes,
+      viagens,
+      orcamentosEncerrados,
+      undefined,
+      'consultor-2',
+      'consultor'
+    );
+
+    // Assert
+    expect(oportunidades).toHaveLength(1);
+    expect(oportunidades[0].clienteId).toBe('cli-lead-antigo');
+    expect(oportunidades[0].origemOportunidade).toBe('orcamento_recusado');
+    expect(oportunidades[0].ultimoDestino).toBe('Paris');
+  });
+
+  it('deve permitir que QUALQUER ADMIN veja oportunidades de todos os consultores irrestritamente', () => {
+    // Setup
+    const sessentaDiasAtras = new Date();
+    sessentaDiasAtras.setDate(sessentaDiasAtras.getDate() - 60);
+
+    const clientes = [
+      { id: 'cli-c1', nome: 'Cliente do Consultor 1' },
+      { id: 'cli-c2', nome: 'Cliente do Consultor 2' },
+    ];
+    const viagens = [
+      {
+        id: 'v1',
+        cliente_id: 'cli-c1',
+        destino: 'Roma',
+        data_volta: sessentaDiasAtras.toISOString(),
+        consultor_id: 'consultor-1',
+      },
+      {
+        id: 'v2',
+        cliente_id: 'cli-c2',
+        destino: 'Orlando',
+        data_volta: sessentaDiasAtras.toISOString(),
+        consultor_id: 'consultor-2',
+      },
+    ];
+
+    // Action: Admin (qualquer admin, inclusive sem ID correspondente aos consultores)
+    const oportunidadesAdmin = NextTripEngineService.calculateOpportunities(
+      clientes,
+      viagens,
+      [],
+      undefined,
+      'admin-eduardo-ou-thiago',
+      'admin'
+    );
+
+    // Assert
+    expect(oportunidadesAdmin).toHaveLength(2);
+  });
+
+  it('deve restringir oportunidades para consultores comuns exibindo apenas clientes próprios', () => {
+    // Setup
+    const sessentaDiasAtras = new Date();
+    sessentaDiasAtras.setDate(sessentaDiasAtras.getDate() - 60);
+
+    const clientes = [
+      { id: 'cli-c1', nome: 'Cliente do Consultor 1' },
+      { id: 'cli-c2', nome: 'Cliente do Consultor 2' },
+    ];
+    const viagens = [
+      {
+        id: 'v1',
+        cliente_id: 'cli-c1',
+        destino: 'Roma',
+        data_volta: sessentaDiasAtras.toISOString(),
+        consultor_id: 'consultor-1',
+      },
+      {
+        id: 'v2',
+        cliente_id: 'cli-c2',
+        destino: 'Orlando',
+        data_volta: sessentaDiasAtras.toISOString(),
+        consultor_id: 'consultor-2',
+      },
+    ];
+
+    // Action: Consultor 1
+    const oportunidadesConsultor1 = NextTripEngineService.calculateOpportunities(
+      clientes,
+      viagens,
+      [],
+      undefined,
+      'consultor-1',
+      'consultor'
+    );
+
+    // Assert
+    expect(oportunidadesConsultor1).toHaveLength(1);
+    expect(oportunidadesConsultor1[0].clienteId).toBe('cli-c1');
+  });
 });
+

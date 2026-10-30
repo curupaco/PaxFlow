@@ -136,6 +136,7 @@ export interface NextTripOpportunity {
   statusAbordagem: 'pendente' | 'em_abordagem' | 'snoozed';
   snoozeAte?: string;
   totalPassageirosGrupo?: number;
+  origemOportunidade?: 'viagem' | 'orcamento_recusado';
 }
 
 /**

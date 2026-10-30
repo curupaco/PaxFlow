@@ -39,27 +39,26 @@ export class NextTripEngineService {
    */
   public static calculateOpportunities(
     clientes: any[],
-    viagens: any[],
-    orcamentos: any[],
+    viagens: any[] = [],
+    orcamentos: any[] = [],
     settings?: GlobalSettings,
     currentUserId?: string,
     userRole: string = 'consultor'
   ): NextTripOpportunity[] {
-    if (!clientes || clientes.length === 0 || !viagens || viagens.length === 0) return [];
+    if (!clientes || clientes.length === 0) return [];
     if (settings && (settings.habilitar_next_trip_engine === false || settings.habilitarNextTripEngine === false)) {
       return [];
     }
 
     const npsMinimo = settings?.next_trip_nps_minimo ?? settings?.nextTripNpsMinimo ?? 8;
     const corteAltaProntidao = settings?.next_trip_corte_prontidao_alta ?? settings?.nextTripCorteProntidaoAlta ?? 75;
-    const snoozeDias = settings?.next_trip_snooze_dias ?? settings?.nextTripSnoozeDias ?? 30;
 
     const agora = new Date();
     const oportunidades: NextTripOpportunity[] = [];
 
     // Agrupa viagens por cliente_id, clienteId, e-mail ou CPF do cliente
     const viagensPorCliente = new Map<string, any[]>();
-    viagens.forEach(v => {
+    (viagens || []).forEach(v => {
       const cId = v.cliente_id || v.clienteId || (v.cliente && (v.cliente.id || v.cliente.cliente_id));
       const cEmail = (v.cliente_email || v.clienteEmail || (v.cliente && v.cliente.email) || '').toLowerCase().trim();
       const cCpf = (v.cliente_cpf || v.clienteCpf || (v.cliente && v.cliente.cpf) || '').replace(/\D/g, '');
@@ -78,19 +77,30 @@ export class NextTripEngineService {
       }
     });
 
-    // Agrupa orçamentos abertos por cliente
+    // Mapeia orçamentos em aberto vs encerrados/recusados por cliente
     const orcamentosAbertosPorCliente = new Set<string>();
-    if (orcamentos && orcamentos.length > 0) {
-      orcamentos.forEach(o => {
-        const cId = o.cliente_id || o.clienteId;
-        const cEmail = (o.cliente_email || o.clienteEmail || (o.cliente && o.cliente.email) || '').toLowerCase().trim();
-        const st = (o.status || '').toUpperCase();
-        if (st === 'SOLICITADO' || st === 'EM_ANDAMENTO' || st === 'AGUARDANDO') {
-          if (cId) orcamentosAbertosPorCliente.add(cId);
-          if (cEmail) orcamentosAbertosPorCliente.add(`email:${cEmail}`);
+    const orcamentosEncerradosPorCliente = new Map<string, any[]>();
+
+    (orcamentos || []).forEach(o => {
+      const cId = o.cliente_id || o.clienteId;
+      const cEmail = (o.cliente_email || o.clienteEmail || (o.cliente && o.cliente.email) || '').toLowerCase().trim();
+      const st = (o.status || '').toUpperCase();
+
+      if (st === 'SOLICITADO' || st === 'EM_ANDAMENTO' || st === 'AGUARDANDO') {
+        if (cId) orcamentosAbertosPorCliente.add(cId);
+        if (cEmail) orcamentosAbertosPorCliente.add(`email:${cEmail}`);
+      } else {
+        // Encerrados, concluídos, desistência ou recusados
+        if (cId) {
+          if (!orcamentosEncerradosPorCliente.has(cId)) orcamentosEncerradosPorCliente.set(cId, []);
+          orcamentosEncerradosPorCliente.get(cId)!.push(o);
         }
-      });
-    }
+        if (cEmail) {
+          if (!orcamentosEncerradosPorCliente.has(`email:${cEmail}`)) orcamentosEncerradosPorCliente.set(`email:${cEmail}`, []);
+          orcamentosEncerradosPorCliente.get(`email:${cEmail}`)!.push(o);
+        }
+      }
+    });
 
     clientes.forEach(cliente => {
       const clienteEmailKey = cliente.email ? `email:${cliente.email.toLowerCase().trim()}` : '';
@@ -100,9 +110,27 @@ export class NextTripEngineService {
                        (clienteEmailKey ? viagensPorCliente.get(clienteEmailKey) : undefined) ||
                        (clienteCpfKey ? viagensPorCliente.get(clienteCpfKey) : undefined) || [];
 
-      if (cViagens.length === 0) return;
+      const cOrcEncerrados = orcamentosEncerradosPorCliente.get(cliente.id) ||
+                             (clienteEmailKey ? orcamentosEncerradosPorCliente.get(clienteEmailKey) : undefined) || [];
 
-      // Ordena viagens da mais recente para a mais antiga usando parsing de data seguro
+      // Se o cliente não tem nem viagens nem orçamentos antigos, não há histórico para recompra/reativação
+      if (cViagens.length === 0 && cOrcEncerrados.length === 0) return;
+
+      // 1. Regra de Bloqueio: Se já tem orçamento em aberto no funil ativo, não abordar
+      const temOrcamentoAberto = orcamentosAbertosPorCliente.has(cliente.id) ||
+                                (clienteEmailKey && orcamentosAbertosPorCliente.has(clienteEmailKey));
+      if (temOrcamentoAberto) return;
+
+      // 2. Regra de Bloqueio: Se o cliente tem viagem agendada para o futuro
+      const temViagemFutura = cViagens.some(v => {
+        const dIda = v.data_ida || v.dataIda;
+        if (!dIda) return false;
+        const parsedIda = NextTripEngineService.parseDataSegura(dIda);
+        return parsedIda ? parsedIda.getTime() > agora.getTime() : false;
+      });
+      if (temViagemFutura) return;
+
+      // Ordena viagens da mais recente para a mais antiga
       cViagens.sort((a, b) => {
         const dateA = NextTripEngineService.parseDataSegura(a.data_volta || a.dataVolta || a.data_ida || a.dataIda || a.created_at || a.createdAt);
         const dateB = NextTripEngineService.parseDataSegura(b.data_volta || b.dataVolta || b.data_ida || b.dataIda || b.created_at || b.createdAt);
@@ -111,31 +139,40 @@ export class NextTripEngineService {
         return tB - tA;
       });
 
-      const ultimaViagem = cViagens[0];
-      const consultorTitularId = ultimaViagem.consultor_id || ultimaViagem.consultorId || cliente.consultor_id || cliente.consultorId || '';
-      const consultorTitularNome = ultimaViagem.consultor_nome || ultimaViagem.consultorNome || cliente.consultor_nome || cliente.consultorNome || 'Agência';
-
-      const isSandbox = typeof window !== 'undefined' && (window as any).paxflowSandbox === true;
-      if (!isSandbox && userRole !== 'admin' && currentUserId && consultorTitularId && consultorTitularId !== currentUserId) {
-        return;
-      }
-
-      // Se o cliente já tem orçamento em aberto ou viagem agendada no futuro, pular
-      const temViagemFutura = cViagens.some(v => {
-        const dIda = v.data_ida || v.dataIda;
-        if (!dIda) return false;
-        const parsedIda = NextTripEngineService.parseDataSegura(dIda);
-        return parsedIda ? parsedIda.getTime() > agora.getTime() : false;
+      // Ordena orçamentos encerrados do mais recente para o mais antigo
+      cOrcEncerrados.sort((a, b) => {
+        const dateA = NextTripEngineService.parseDataSegura(a.updated_at || a.updatedAt || a.created_at || a.createdAt);
+        const dateB = NextTripEngineService.parseDataSegura(b.updated_at || b.updatedAt || b.created_at || b.createdAt);
+        const tA = dateA ? dateA.getTime() : 0;
+        const tB = dateB ? dateB.getTime() : 0;
+        return tB - tA;
       });
 
-      const temOrcamentoAberto = orcamentosAbertosPorCliente.has(cliente.id) ||
-                                (clienteEmailKey && orcamentosAbertosPorCliente.has(clienteEmailKey));
+      const ultimaViagem = cViagens.length > 0 ? cViagens[0] : null;
+      const ultimoOrcamento = cOrcEncerrados.length > 0 ? cOrcEncerrados[0] : null;
 
-      if (temViagemFutura || temOrcamentoAberto) {
+      // Determina a origem primária da oportunidade
+      const temViagemPassada = !!ultimaViagem;
+      const origemOportunidade: 'viagem' | 'orcamento_recusado' = temViagemPassada ? 'viagem' : 'orcamento_recusado';
+
+      // Consultor Titular (Qualquer ADMIN vê tudo irrestrito)
+      const consultorTitularId = (ultimaViagem && (ultimaViagem.consultor_id || ultimaViagem.consultorId)) ||
+                                 (ultimoOrcamento && (ultimoOrcamento.consultor_id || ultimoOrcamento.consultorId)) ||
+                                 cliente.consultor_id || cliente.consultorId || '';
+
+      const consultorTitularNome = (ultimaViagem && (ultimaViagem.consultor_nome || ultimaViagem.consultorNome)) ||
+                                   (ultimoOrcamento && (ultimoOrcamento.consultor_nome || ultimoOrcamento.consultorNome)) ||
+                                   cliente.consultor_nome || cliente.consultorNome || 'Agência';
+
+      const isSandbox = typeof window !== 'undefined' && (window as any).paxflowSandbox === true;
+      const isAdmin = userRole === 'admin';
+
+      // Se não for admin nem sandbox, consultor só vê os próprios clientes
+      if (!isSandbox && !isAdmin && currentUserId && consultorTitularId && consultorTitularId !== currentUserId) {
         return;
       }
 
-      // Verificação de Snooze (Zero LocalStorage: Fonte da Verdade é o Supabase)
+      // Verificação de Snooze
       const rawSnooze = cliente.next_trip_snooze_until || cliente.nextTripSnoozeUntil;
       let isSnoozed = false;
       let snoozeUntilStr: string | null = null;
@@ -147,59 +184,104 @@ export class NextTripEngineService {
         }
       }
 
-      // --- CÁLCULO DOS 5 VETORES DE RECOMPRA ---
+      // --- CÁLCULO DOS 5 VETORES DE RECOMPRA / REATIVAÇÃO ---
       let scoreSazonalidade = 0;
       let scoreNps = 0;
       let scorePerfil = 0;
       let scoreMes = 0;
       let scoreConformidade = 10;
 
-      // 1. Sazonalidade (30 pontos max)
-      const rawDate = ultimaViagem.data_volta || ultimaViagem.dataVolta || ultimaViagem.data_ida || ultimaViagem.dataIda || ultimaViagem.created_at || ultimaViagem.createdAt;
-      const dataVolta = NextTripEngineService.parseDataSegura(rawDate);
-      if (!dataVolta) return;
-
-      const diffMs = agora.getTime() - dataVolta.getTime();
-      // Se a data de volta é no futuro ou ocorreu há menos de 90 dias (3 meses), ignora (não é janela de recompra)
-      if (diffMs < 0) return;
-
-      const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      if (diffDias < 90) return; // Menos de 3 meses pós-viagem
-
-      const diffMeses = Math.floor(diffDias / 30.43);
-
-      if (diffMeses >= 10 && diffMeses <= 14) {
-        scoreSazonalidade = 30; // Janela ideal de ~1 ano
-      } else if (diffMeses >= 5 && diffMeses <= 9) {
-        scoreSazonalidade = 20;
-      } else if (diffMeses >= 15 && diffMeses <= 24) {
-        scoreSazonalidade = 25;
-      } else {
-        scoreSazonalidade = 15;
-      }
-
-      // 2. NPS (25 pontos max)
+      let dataReferencia: Date | null = null;
+      let ultimoDestinoTexto = '';
       let npsNota: number | null = null;
-      const rawNps = ultimaViagem.nps_nota ?? ultimaViagem.npsNota ?? (ultimaViagem as any).nps ?? cliente.nps_nota ?? cliente.npsNota;
-      if (rawNps !== undefined && rawNps !== null && rawNps !== '') {
-        npsNota = Number(rawNps);
-        if (npsNota >= 9) {
-          scoreNps = 25;
-        } else if (npsNota >= npsMinimo) {
-          scoreNps = 15;
+      let totalPax = 1;
+
+      if (origemOportunidade === 'viagem' && ultimaViagem) {
+        const rawDate = ultimaViagem.data_volta || ultimaViagem.dataVolta || ultimaViagem.data_ida || ultimaViagem.dataIda || ultimaViagem.created_at || ultimaViagem.createdAt;
+        dataReferencia = NextTripEngineService.parseDataSegura(rawDate);
+        ultimoDestinoTexto = ultimaViagem.destino || 'Destino Anterior';
+        totalPax = (ultimaViagem.passageiros && Array.isArray(ultimaViagem.passageiros)) ? ultimaViagem.passageiros.length : 1;
+
+        if (!dataReferencia) return;
+
+        const diffMs = agora.getTime() - dataReferencia.getTime();
+        if (diffMs < 0) return; // Data no futuro tratada acima
+
+        const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        // Carência mínima de 30 dias para recompra pós-viagem
+        if (diffDias < 30) return;
+
+        const diffMeses = Math.floor(diffDias / 30.43);
+        if (diffMeses >= 10 && diffMeses <= 14) {
+          scoreSazonalidade = 30; // Janela ideal de ~1 ano
+        } else if (diffMeses >= 5 && diffMeses <= 9) {
+          scoreSazonalidade = 20;
+        } else if (diffMeses >= 15 && diffMeses <= 24) {
+          scoreSazonalidade = 25;
         } else {
-          scoreNps = 0;
-          return; // Não sugere recompra para detratores
+          scoreSazonalidade = 15;
         }
-      } else {
-        // NPS ausente: pontuação neutra sem descartar nem inflar como promotor
-        scoreNps = 15;
+
+        // NPS
+        const rawNps = ultimaViagem.nps_nota ?? ultimaViagem.npsNota ?? (ultimaViagem as any).nps ?? cliente.nps_nota ?? cliente.npsNota;
+        if (rawNps !== undefined && rawNps !== null && rawNps !== '') {
+          npsNota = Number(rawNps);
+          if (npsNota >= 9) scoreNps = 25;
+          else if (npsNota >= npsMinimo) scoreNps = 15;
+          else {
+            scoreNps = 0;
+            return; // Não sugere recompra para detratores
+          }
+        } else {
+          scoreNps = 15;
+        }
+
+        // Mês habitual
+        const mesVolta = dataReferencia.getMonth();
+        const mesAtual = agora.getMonth();
+        if (mesVolta === mesAtual || mesVolta === (mesAtual + 1) % 12) {
+          scoreMes = 15;
+        } else {
+          scoreMes = 5;
+        }
+
+        // Reembolso pendente
+        const temReembolsoPendente = ultimaViagem.reembolsos && ultimaViagem.reembolsos.some((r: any) => r.status !== 'pago' && r.status !== 'concluido');
+        if (temReembolsoPendente) scoreConformidade = 0;
+
+      } else if (ultimoOrcamento) {
+        // Origem Orçamento Recusado / Antigo
+        const rawDate = ultimoOrcamento.updated_at || ultimoOrcamento.updatedAt || ultimoOrcamento.created_at || ultimoOrcamento.createdAt;
+        dataReferencia = NextTripEngineService.parseDataSegura(rawDate);
+        ultimoDestinoTexto = ultimoOrcamento.destino || 'Destino Cotado';
+
+        if (!dataReferencia) return;
+
+        const diffMs = agora.getTime() - dataReferencia.getTime();
+        if (diffMs < 0) return;
+
+        const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        // Carência mínima de 30 dias após recusa/inatividade do orçamento
+        if (diffDias < 30) return;
+
+        const diffMeses = Math.floor(diffDias / 30.43);
+        if (diffMeses >= 1 && diffMeses <= 6) {
+          scoreSazonalidade = 25; // Momento quente para resgatar proposta
+        } else {
+          scoreSazonalidade = 15;
+        }
+
+        scoreNps = 15; // Neutro
+        scoreMes = 10;
+        scoreConformidade = 10;
       }
 
-      // 3. Perfil de Destino (20 pontos max)
-      const destLower = (ultimaViagem.destino || ultimaViagem.titulo || '').toLowerCase();
+      if (!dataReferencia) return;
+
+      // Perfil de Destino
+      const destLower = ultimoDestinoTexto.toLowerCase();
       let categoriaDestino: NextTripOpportunity['categoriaDestino'] = 'geral';
-      let destinoSugerido = ultimaViagem.destino || 'Novo Destino';
+      let destinoSugerido = ultimoDestinoTexto || 'Novo Roteiro';
 
       if (destLower.includes('europa') || destLower.includes('paris') || destLower.includes('itália') || destLower.includes('portugal') || destLower.includes('espanha')) {
         categoriaDestino = 'europa';
@@ -220,22 +302,7 @@ export class NextTripEngineService {
       } else {
         categoriaDestino = 'nacional';
         scorePerfil = 15;
-        destinoSugerido = `Novo Roteiro (${ultimaViagem.destino || 'Nacional'})`;
-      }
-
-      // 4. Mês Habitual de Viagem (15 pontos max)
-      const mesVolta = dataVolta.getMonth();
-      const mesAtual = agora.getMonth();
-      if (mesVolta === mesAtual || mesVolta === (mesAtual + 1) % 12) {
-        scoreMes = 15;
-      } else {
-        scoreMes = 5;
-      }
-
-      // 5. Conformidade (10 pontos max)
-      const temReembolsoPendente = ultimaViagem.reembolsos && ultimaViagem.reembolsos.some((r: any) => r.status !== 'pago' && r.status !== 'concluido');
-      if (temReembolsoPendente) {
-        scoreConformidade = 0;
+        destinoSugerido = `Novo Roteiro (${ultimoDestinoTexto || 'Nacional'})`;
       }
 
       const totalScore = Math.min(100, Math.max(0, scoreSazonalidade + scoreNps + scorePerfil + scoreMes + scoreConformidade));
@@ -247,11 +314,19 @@ export class NextTripEngineService {
         nivelProntidao = 'medio';
       }
 
-      let motivoSugestao = `Viajou para ${ultimaViagem.destino || 'último destino'} há ${diffMeses} meses.`;
-      if (npsNota !== null && npsNota >= 9) motivoSugestao += ` (Promotor NPS ${npsNota})`;
-      if (scoreMes === 15) motivoSugestao += ` • Período habitual de férias`;
+      const diffDiasGeral = Math.floor((agora.getTime() - dataReferencia.getTime()) / (1000 * 60 * 60 * 24));
+      const diffMesesGeral = Math.floor(diffDiasGeral / 30.43);
 
-      const dataStr = dataVolta.toLocaleDateString('pt-BR');
+      let motivoSugestao = '';
+      if (origemOportunidade === 'viagem') {
+        motivoSugestao = `Viajou para ${ultimoDestinoTexto} há ${diffMesesGeral} meses.`;
+        if (npsNota !== null && npsNota >= 9) motivoSugestao += ` (Promotor NPS ${npsNota})`;
+        if (scoreMes === 15) motivoSugestao += ` • Período habitual de férias`;
+      } else {
+        motivoSugestao = `Orçamento anterior para ${ultimoDestinoTexto} (${diffDiasGeral} dias atrás). Excelente janela para reativação.`;
+      }
+
+      const dataStr = dataReferencia.toLocaleDateString('pt-BR');
 
       oportunidades.push({
         clienteId: cliente.id,
@@ -265,12 +340,13 @@ export class NextTripEngineService {
         destinoRecomendado: destinoSugerido,
         categoriaDestino,
         ultimaViagemData: dataStr,
-        ultimoDestino: ultimaViagem.destino || 'Destino Anterior',
+        ultimoDestino: ultimoDestinoTexto,
         npsNota: npsNota ?? undefined,
         motivoSugestao,
         statusAbordagem: isSnoozed ? 'snoozed' : 'pendente',
         snoozeAte: snoozeUntilStr || undefined,
-        totalPassageirosGrupo: (ultimaViagem.passageiros && Array.isArray(ultimaViagem.passageiros)) ? ultimaViagem.passageiros.length : 1
+        totalPassageirosGrupo: totalPax,
+        origemOportunidade
       });
     });
 

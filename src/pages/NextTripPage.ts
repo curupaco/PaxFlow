@@ -264,7 +264,7 @@ export class NextTripPage {
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4">
               <div class="text-slate-300 dark:text-slate-700 text-5xl">🎯</div>
               <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">Nenhuma oportunidade localizada</h3>
-              <p class="text-xs text-slate-400 font-medium max-w-sm">Nenhum cliente atendeu aos filtros selecionados ou ainda não há viagens elegíveis (> 3 meses pós-volta).</p>
+              <p class="text-xs text-slate-400 font-medium max-w-sm">Nenhum cliente atendeu aos filtros selecionados ou ainda não há viagens ou orçamentos elegíveis (> 30 dias de inatividade).</p>
             </div>
           ` : `
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -283,14 +283,26 @@ export class NextTripPage {
       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
       : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
 
+    const isOrcamento = op.origemOportunidade === 'orcamento_recusado';
+    const tagOrigemHtml = isOrcamento
+      ? `<span class="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 inline-flex items-center gap-1">🎯 Orçamento Reativado</span>`
+      : `<span class="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 inline-flex items-center gap-1">✈️ Viagem Concluída</span>`;
+
+    const labelUltimaInteracao = isOrcamento ? 'Último orçamento' : 'Última viagem';
+
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-indigo-500/50 transition duration-200 flex flex-col justify-between space-y-4 relative overflow-hidden group">
         
         <!-- Faixa superior de prioridade -->
         <div class="flex items-center justify-between gap-3">
-          <div class="truncate">
-            <h4 class="font-black text-slate-900 dark:text-white text-base truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">${op.clienteNome}</h4>
-            <span class="text-[10px] text-slate-400 font-mono block">Consultor: ${op.consultorNome}</span>
+          <div class="truncate space-y-1">
+            <div class="flex items-center gap-2">
+              <h4 class="font-black text-slate-900 dark:text-white text-base truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">${op.clienteNome}</h4>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              ${tagOrigemHtml}
+              <span class="text-[10px] text-slate-400 font-mono block">Consultor: ${op.consultorNome}</span>
+            </div>
           </div>
 
           <span class="px-2.5 py-1 rounded-xl text-xs font-black border ${badgeColor} shrink-0">
@@ -307,7 +319,7 @@ export class NextTripPage {
             ${op.motivoSugestao}
           </p>
           <div class="text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
-            Última viagem: <strong>${op.ultimoDestino}</strong> (${op.ultimaViagemData})
+            ${labelUltimaInteracao}: <strong>${op.ultimoDestino}</strong> (${op.ultimaViagemData})
           </div>
         </div>
 
