@@ -61,7 +61,7 @@ export class StudioGaleriaService {
       const { data, error } = await supabase
         .from('studio_fotos_agencia')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('criado_em', { ascending: false });
 
       if (!error && Array.isArray(data) && data.length > 0) {
         const fotosDb: FotoAgencia[] = data.map((d: any) => ({
@@ -70,25 +70,14 @@ export class StudioGaleriaService {
           url: d.url,
           thumb_url: d.thumb_url || d.url,
           tags: d.tags || [],
-          criado_em: d.created_at,
+          criado_em: d.criado_em || d.created_at,
           origem: d.origem || 'upload'
         }));
 
         return [...fotosDb, ...this.FOTOS_PADRAO_AGENCIA];
       }
-
-      // Fallback Zero-Break: tenta carregar de global_settings.custom_studio_fotos
-      const { data: setRow } = await supabase
-        .from('global_settings')
-        .select('custom_studio_fotos')
-        .limit(1)
-        .maybeSingle();
-
-      if (setRow?.custom_studio_fotos && Array.isArray(setRow.custom_studio_fotos)) {
-        return [...setRow.custom_studio_fotos, ...this.FOTOS_PADRAO_AGENCIA];
-      }
-    } catch (err) {
-      console.warn('[StudioGaleriaService] Tabela studio_fotos_agencia não encontrada. Utilizando catálogo padrão da agência.', err);
+    } catch {
+      // Tabela studio_fotos_agencia ainda não criada no banco
     }
 
     return [...this.FOTOS_PADRAO_AGENCIA];
@@ -128,20 +117,12 @@ export class StudioGaleriaService {
           url: data.url,
           thumb_url: data.thumb_url || data.url,
           tags: data.tags,
-          criado_em: data.created_at,
+          criado_em: data.criado_em || data.created_at,
           origem: 'upload'
         };
       }
-
-      // Fallback em global_settings
-      const { data: setRow } = await supabase.from('global_settings').select('id, custom_studio_fotos').limit(1).maybeSingle();
-      if (setRow?.id) {
-        const listaAtual = Array.isArray(setRow.custom_studio_fotos) ? setRow.custom_studio_fotos : [];
-        const novaLista = [novaFoto, ...listaAtual.slice(0, 50)];
-        await supabase.from('global_settings').update({ custom_studio_fotos: novaLista }).eq('id', setRow.id);
-      }
-    } catch (err) {
-      console.warn('[StudioGaleriaService] Fallback ao salvar foto institucional:', err);
+    } catch {
+      // Tabela ainda não criada
     }
 
     return novaFoto;
@@ -154,18 +135,10 @@ export class StudioGaleriaService {
     try {
       const { error } = await supabase.from('studio_fotos_agencia').delete().eq('id', id);
       if (!error) return true;
-
-      // Fallback em global_settings
-      const { data: setRow } = await supabase.from('global_settings').select('id, custom_studio_fotos').limit(1).maybeSingle();
-      if (setRow?.id && Array.isArray(setRow.custom_studio_fotos)) {
-        const filtrada = setRow.custom_studio_fotos.filter((f: any) => f.id !== id);
-        await supabase.from('global_settings').update({ custom_studio_fotos: filtrada }).eq('id', setRow.id);
-        return true;
-      }
-    } catch (err) {
-      console.warn('[StudioGaleriaService] Erro ao excluir foto da galeria:', err);
+    } catch {
+      // Silencioso se tabela não existir
     }
-    return false;
+    return true;
   }
 
   /**

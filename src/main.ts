@@ -1815,7 +1815,7 @@ class App {
       // Busca viagens ativas com embarque entre hoje e 15 dias
       const { data: viagens, error } = await supabase
         .from('viagens')
-        .select('id, destino, data_ida, status, passageiro, cliente:clientes(*), produtos:produtos_viagem(*)')
+        .select('id, destino, data_ida, status, cliente:clientes(*), produtos:produtos_viagem(*)')
         .gte('data_ida', hojeStr)
         .lte('data_ida', limiteStr)
         .neq('status', 'CANCELADA');

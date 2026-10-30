@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.studio_fotos_agencia (
     tags TEXT[] DEFAULT '{}',
     criado_por UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     criado_em TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

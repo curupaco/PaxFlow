@@ -391,25 +391,28 @@ export class StudioUnsplashService {
     const termoNormalizado = termoLimpo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const tokens = termoNormalizado.split(/\s+/).filter(t => t.length > 1);
 
-    // 1. Tenta buscar diretamente via API pública do Unsplash caso configurada/disponível
-    try {
-      const resp = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(termoLimpo)}&per_page=12&client_id=zM7H_tYh2Z0zQ_9oU3UqP4QyqK1J9A6wG2F5d8V9s4M`);
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data && data.results && data.results.length > 0) {
-          const fotosApi: UnsplashFoto[] = data.results.map((item: any) => ({
-            id: item.id,
-            titulo: item.description || item.alt_description || termoLimpo,
-            url: item.urls?.regular || item.urls?.full || item.urls?.small,
-            thumb_url: item.urls?.small || item.urls?.thumb || item.urls?.regular,
-            fotografo_nome: item.user?.name,
-            fotografo_url: item.user?.links?.html
-          }));
-          return { fotos: fotosApi };
+    // 1. Tenta buscar via API do Unsplash apenas se houver chave de acesso configurada
+    const unsplashKey = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
+    if (unsplashKey && unsplashKey.trim() !== '' && !unsplashKey.includes('zM7H_tYh2Z0zQ')) {
+      try {
+        const resp = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(termoLimpo)}&per_page=12&client_id=${encodeURIComponent(unsplashKey.trim())}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.results && data.results.length > 0) {
+            const fotosApi: UnsplashFoto[] = data.results.map((item: any) => ({
+              id: item.id,
+              titulo: item.description || item.alt_description || termoLimpo,
+              url: item.urls?.regular || item.urls?.full || item.urls?.small,
+              thumb_url: item.urls?.small || item.urls?.thumb || item.urls?.regular,
+              fotografo_nome: item.user?.name,
+              fotografo_url: item.user?.links?.html
+            }));
+            return { fotos: fotosApi };
+          }
         }
+      } catch {
+        // Silencioso em caso de falha de rede
       }
-    } catch {
-      // Falha de rede ou chave revogada
     }
 
     // 2. Busca direta no catálogo por correspondência de título ou tags
