@@ -111,6 +111,12 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
       - Fallback resiliente contra erro 400 e ausência de colunas legadas no PostgREST, garantindo carregamento instantâneo e estável do painel e do badge de alertas.
   - **Governança e RBAC Integrados**: Acesso unificado a todo o Financeiro e Conciliação liberado para a equipe financeira (`admin`, `financeiro` e flag `acesso_financeiro: true`), mantendo a operação crítica de Fechamento de Mês e trancamento de competências estritamente restrita a administradores.
 
+- **Robustez Zero-Break no Studio & Experiência Mobile de Propostas Públicas [NEW]**:
+  - **Blindagem na Galeria da Agência (`studioGaleriaService.ts`)**: Persistência de fotos da agência com tratamento proativo de Schema Drift (código `42703`), garantindo salvamento e fallback transparente caso colunas estendidas (`thumb_url` ou `tags`) ainda não tenham sido migradas no Supabase.
+  - **Barra Sticky Mobile de Alta Conversão na Proposta Pública**: Inclusão de barra flutuante inferior fixa exclusiva para smartphones na proposta pública interativa (`PublicViews.ts`), exibindo o valor total consolidado e botões de ação imediata com 1-toque ("Conversar no WhatsApp" e "Aprovar").
+  - **Reatividade Bidirecional nos Filtros de Relatórios**: Substituição de contextos temporários por Getters e Setters reativos em `Relatorios.ts`, preservando a seleção do usuário em todos os 15 filtros (incluindo *Origem do Lead*, *Metas*, *Embarques*, *NPS* e *Rentabilidade RAV*) sem recarregar nem resetar a tela.
+  - **Ativação Completa dos Botões de WhatsApp/Digisac nas Abas Operacionais**: Vinculação universal de eventos em `RelatoriosOperacoesView.ts` nas abas de Prazos, Pós-Venda e Embarques, permitindo abrir mensagens contextuais com 1-toque em qualquer registro.
+
 - **Identificação Visual Unificada de Participações & Módulos na Gestão de Equipe [NEW]** — Painel de auditoria visual imediata na tabela de usuários (`Configuracoes.ts` -> Aba Equipe de Consultores):
   - **Coluna Unificada `Participações & Módulos`**: Substituição da antiga coluna isolada de Metas por uma coluna compacta de alta densidade sem alterar a altura das linhas da tabela.
   - **Trio de Tags Semânticas por Usuário**:
