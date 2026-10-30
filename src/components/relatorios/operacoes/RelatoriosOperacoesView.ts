@@ -10,6 +10,7 @@
 import { ContatosEmbarqueService } from '../../../services/contatosEmbarqueService';
 import { SatisfacaoService, FeedbackNpsItem } from '../../../services/satisfacaoService';
 import { CommentsService } from '../../../services/comments';
+import { SendTemplateMessageModal } from '../../dashboard/SendTemplateMessageModal';
 
 export interface RelatoriosOperacoesContext {
   user: any;
@@ -1075,6 +1076,35 @@ export class RelatoriosOperacoesView {
         ctx.exportToCSV();
       });
     }
+
+    // Botão de WhatsApp / Visualização de Conversa no Digisac em todas as abas operacionais
+    document.querySelectorAll('.btn-chat-digisac').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const clienteNome = btn.getAttribute('data-cliente-nome') || '';
+        const clienteTelefone = btn.getAttribute('data-cliente-telefone') || '';
+        const consultorNome = btn.getAttribute('data-consultor-nome') || (ctx.perfil?.nome || ctx.user?.email || 'Consultor');
+        const destino = btn.getAttribute('data-destino') || undefined;
+        const localizador = btn.getAttribute('data-loc') || undefined;
+        const viagemId = btn.getAttribute('data-trip-id') || undefined;
+
+        if (!clienteTelefone) {
+          ctx.showToast('Cliente sem telefone cadastrado para WhatsApp.', 'error');
+          return;
+        }
+
+        SendTemplateMessageModal.open({
+          clienteNome,
+          clienteTelefone,
+          consultorNome,
+          destino,
+          localizador,
+          viagemId,
+          focusChatHistory: true,
+          showToast: (msg, type) => ctx.showToast(msg, type)
+        });
+      });
+    });
   }
 
   // ==========================================

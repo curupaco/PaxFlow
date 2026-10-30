@@ -1197,16 +1197,41 @@ export class PublicViews {
           ` : ''}
 
           <!-- FOOTER -->
-          <div class="text-center text-xs text-slate-400 py-6">
-            ${proposta.titulo_cabecalho || 'PaxFlow Studio™'} · Proposta personalizada · Todos os direitos reservados.
+          <div class="text-center text-xs text-slate-400 py-6 pb-24 md:pb-6">
+            ${escapeHtml(proposta.titulo_cabecalho || 'PaxFlow Studio™')} · Proposta personalizada · Todos os direitos reservados.
           </div>
         </div>
+
+        ${!isAprovada ? `
+          <!-- BARRA FLUTUANTE INFERIOR EXCLUSIVA PARA SMARTPHONE (STICKY CONVERSION BAR) -->
+          <div class="fixed bottom-0 inset-x-0 z-40 p-3 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-2xl flex items-center justify-between gap-2.5 sm:hidden">
+            <div class="min-w-0 flex-1">
+              <span class="text-[10px] text-slate-400 block font-semibold leading-tight uppercase tracking-wider">Total</span>
+              <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 truncate block">${formatarMoeda(proposta.valor_total)}</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              ${whatsappConsultorUrl ? `
+                <a href="${whatsappConsultorUrl}&text=${encodeURIComponent(`Olá${proposta.consultor_nome ? ' ' + proposta.consultor_nome : ''}! Gostei muito da proposta para ${proposta.destino} e gostaria de tirar algumas dúvidas antes de aprovar.`)}" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-600 flex items-center justify-center transition active:scale-95 shadow-sm" title="WhatsApp">
+                  <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                </a>
+              ` : ''}
+              <button id="btn-aprovar-proposta-publica-mobile" class="px-4 py-2.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-600/30 transition transform active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                <span>✍️</span> Aprovar
+              </button>
+            </div>
+          </div>
+        ` : ''}
       </div>
     `;
 
-    // Modal de Aceite Formal
+    // Modal de Aceite Formal (tanto pelo card quanto pela barra mobile)
     const btnAprovar = this.container.querySelector('#btn-aprovar-proposta-publica');
     btnAprovar?.addEventListener('click', () => {
+      this.abrirModalAceiteFormal(proposta);
+    });
+
+    const btnAprovarMobile = this.container.querySelector('#btn-aprovar-proposta-publica-mobile');
+    btnAprovarMobile?.addEventListener('click', () => {
       this.abrirModalAceiteFormal(proposta);
     });
   }
@@ -1217,17 +1242,17 @@ export class PublicViews {
   private abrirModalAceiteFormal(proposta: any): void {
     const modalEl = document.createElement('div');
     modalEl.id = 'modal-aceite-formal';
-    modalEl.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in';
+    modalEl.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto';
 
     modalEl.innerHTML = `
-      <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 text-left">
+      <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto custom-scrollbar border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 text-left my-auto">
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-black text-slate-900 dark:text-white">Aprovação Formal da Viagem</h3>
           <button id="btn-fechar-modal-aceite" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
         </div>
 
         <p class="text-xs text-slate-500 dark:text-slate-400">
-          Ao confirmar abaixo, você valida os serviços, voos, hospedagens e valores descritos na proposta para <strong>${proposta.destino}</strong>.
+          Ao confirmar abaixo, você valida os serviços, voos, hospedagens e valores descritos na proposta para <strong>${escapeHtml(proposta.destino)}</strong>.
         </p>
 
         <div class="space-y-3">

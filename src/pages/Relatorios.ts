@@ -1004,7 +1004,7 @@ export class RelatoriosPage {
       RelatoriosFinanceiroView.attachEvents(this.activeTab, this.getFinanceiroContext());
     }
 
-    if (['embarques', 'satisfacao'].includes(this.activeTab)) {
+    if (['embarques', 'satisfacao', 'prazos', 'posvenda'].includes(this.activeTab)) {
       RelatoriosOperacoesView.attachEvents(this.activeTab, this.getOperacoesContext());
     }
 

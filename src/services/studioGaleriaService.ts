@@ -98,15 +98,18 @@ export class StudioGaleriaService {
     };
 
     try {
+      // 1. Tenta salvar na tabela dedicada studio_fotos_agencia com payload completo
+      const payloadCompleto: any = {
+        titulo: novaFoto.titulo,
+        url: novaFoto.url,
+        thumb_url: novaFoto.thumb_url,
+        tags: novaFoto.tags,
+        origem: 'upload'
+      };
+
       const { data, error } = await supabase
         .from('studio_fotos_agencia')
-        .insert([{
-          titulo: novaFoto.titulo,
-          url: novaFoto.url,
-          thumb_url: novaFoto.thumb_url,
-          tags: novaFoto.tags,
-          origem: 'upload'
-        }])
+        .insert([payloadCompleto])
         .select()
         .single();
 
@@ -121,18 +124,45 @@ export class StudioGaleriaService {
           origem: 'upload'
         };
       }
+
+      // Se der erro 42703 (coluna inexistente como thumb_url ou tags), tenta fallback minimalista
+      if (error && (error.code === '42703' || error.message?.includes('column'))) {
+        const { data: fallbackData, error: fallbackErr } = await supabase
+          .from('studio_fotos_agencia')
+          .insert([{
+            titulo: novaFoto.titulo,
+            url: novaFoto.url
+          }])
+          .select()
+          .single();
+
+        if (!fallbackErr && fallbackData) {
+          return {
+            id: fallbackData.id,
+            titulo: fallbackData.titulo,
+            url: fallbackData.url,
+            thumb_url: fallbackData.url,
+            tags: novaFoto.tags,
+            criado_em: fallbackData.criado_em || fallbackData.created_at,
+            origem: 'upload'
+          };
+        }
+      }
     } catch {
-      // Tabela ainda não criada
+      // Tabela ainda não criada no banco (42P01 ou ausente): retorna novaFoto sem quebrar
     }
 
     return novaFoto;
   }
 
   /**
-   * Remove uma foto da galeria da agência.
+   * Remove uma foto da galeria da agência com resiliência Zero-Break.
    */
   public static async excluirFotoAgencia(id: string): Promise<boolean> {
     try {
+      if (id.startsWith('ag-')) {
+        return true;
+      }
       const { error } = await supabase.from('studio_fotos_agencia').delete().eq('id', id);
       if (!error) return true;
     } catch {

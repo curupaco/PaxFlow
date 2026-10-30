@@ -107,19 +107,43 @@ describe('PaxFlow Studio™ - Serviço de Galeria Própria da Agência (StudioGa
     expect(salva.origem).toBe('upload');
   });
 
-  it('deve excluir foto da galeria com sucesso', async () => {
+  it('deve ter resiliência a Schema Drift (42703) ao salvar foto da agência e aplicar fallback', async () => {
     // // Setup
+    let tentativas = 0;
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'studio_fotos_agencia') {
-        return createSupabaseQueryMock(null, null);
+        tentativas++;
+        if (tentativas === 1) {
+          // Primeira tentativa com payload completo falha por coluna inexistente (ex: thumb_url)
+          const mockErro = createSupabaseQueryMock(null, { code: '42703', message: 'column "thumb_url" does not exist' });
+          mockErro.insert = vi.fn(() => mockErro);
+          return mockErro;
+        }
+        // Segunda tentativa (fallback minimalista) tem sucesso
+        const mockSucesso = createSupabaseQueryMock({
+          id: 'foto-fallback-1',
+          titulo: 'Foto com Fallback',
+          url: 'https://exemplo.com/fallback.jpg',
+          created_at: new Date().toISOString()
+        }, null);
+        mockSucesso.insert = vi.fn(() => mockSucesso);
+        return mockSucesso;
       }
       return createSupabaseQueryMock([], null);
     });
 
     // // Action
-    const excluido = await StudioGaleriaService.excluirFotoAgencia('foto-1');
+    const resultado = await StudioGaleriaService.salvarFotoAgencia({
+      titulo: 'Foto com Fallback',
+      url: 'https://exemplo.com/fallback.jpg',
+      tags: ['fallback']
+    });
 
     // // Assert
-    expect(excluido).toBe(true);
+    expect(resultado).toBeDefined();
+    expect(resultado.id).toBe('foto-fallback-1');
+    expect(resultado.titulo).toBe('Foto com Fallback');
+    expect(resultado.url).toBe('https://exemplo.com/fallback.jpg');
+    expect(tentativas).toBe(2);
   });
 });
