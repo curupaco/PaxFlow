@@ -377,7 +377,9 @@ export class CampanhasService {
 
     for (const item of itens) {
       // Chave baseada em clienteId ou telefone ou nome limpo
-      const chave = item.clienteId || item.clienteTelefone.replace(/\D/g, '') || item.clienteNome.toLowerCase().trim();
+      const telLimpo = item.clienteTelefone ? item.clienteTelefone.replace(/\D/g, '') : '';
+      const nomeLimpo = (item.clienteNome || '').toLowerCase().trim();
+      const chave = item.clienteId || telLimpo || nomeLimpo;
       if (!mapaClientes.has(chave)) {
         mapaClientes.set(chave, []);
       }
@@ -432,7 +434,9 @@ export class CampanhasService {
     let detratoresCount = 0;
 
     for (const it of itens) {
-      const cId = it.clienteId || it.clienteTelefone.replace(/\D/g, '') || it.clienteNome.toLowerCase();
+      const telLimpo = it.clienteTelefone ? it.clienteTelefone.replace(/\D/g, '') : '';
+      const nomeLimpo = (it.clienteNome || '').toLowerCase().trim();
+      const cId = it.clienteId || telLimpo || nomeLimpo;
       if (cId) clientesSet.add(cId);
 
       valorTotal += it.valor;

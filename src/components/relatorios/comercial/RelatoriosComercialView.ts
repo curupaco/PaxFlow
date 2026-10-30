@@ -610,12 +610,21 @@ export class RelatoriosComercialView {
         ` : ''}
 
         <!-- Painel Expansível de Filtros de Segmentação -->
-        <div class="bg-slate-50/70 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 p-5 rounded-2xl space-y-4">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-              <span>🔍</span> Matriz de Filtros de Segmentação
-            </span>
-            <span class="text-[11px] text-slate-400 font-semibold">Refine seu público-alvo</span>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+            <div>
+              <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🔍</span> Matriz de Filtros de Segmentação
+              </span>
+              <p class="text-[11px] text-slate-400 font-semibold mt-0.5">Refine seu público-alvo (filtros reativos ou via Enter)</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button id="btn-campanha-limpar-filtros-topo" type="button" class="px-3.5 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer">
+                Restaurar Padrão
+              </button>
+              <button id="btn-campanha-aplicar-filtros-topo" type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-md transition uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
+                <span>🔍</span> Aplicar Segmentação
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -762,11 +771,11 @@ export class RelatoriosComercialView {
               ⚡ Segmentação calculada: <strong class="text-slate-800 dark:text-slate-100">${itensFiltrados.length}</strong> itens encontrados
             </span>
             <div class="flex items-center gap-2">
-              <button id="btn-campanha-limpar-filtros" type="button" class="px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition">
+              <button id="btn-campanha-limpar-filtros" type="button" class="px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer">
                 Restaurar Padrão
               </button>
-              <button id="btn-campanha-aplicar-filtros" type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-md transition uppercase tracking-wider">
-                Atualizar Segmentação
+              <button id="btn-campanha-aplicar-filtros" type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-md transition uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
+                <span>🔍</span> Aplicar Segmentação
               </button>
             </div>
           </div>
@@ -1044,10 +1053,9 @@ export class RelatoriosComercialView {
         });
       });
     }
-
+ 
     if (activeTab === 'segmentacao_campanhas') {
-      // Atualizar Filtros ao clicar no botão
-      document.getElementById('btn-campanha-aplicar-filtros')?.addEventListener('click', () => {
+      const aplicarFiltrosCampanhas = (showToast = true) => {
         const origem = (document.getElementById('filtro-campanha-origem') as HTMLSelectElement)?.value as any || 'todos';
         const tipoVisao = (document.getElementById('filtro-campanha-visao') as HTMLSelectElement)?.value as any || 'oportunidade';
         const tipoDestino = (document.getElementById('filtro-campanha-tipo-destino') as HTMLSelectElement)?.value as any || 'todos';
@@ -1087,12 +1095,13 @@ export class RelatoriosComercialView {
           origemLead: origemLead
         };
 
-        ctx.showToast('Segmentação atualizada com sucesso!', 'success');
+        if (showToast) {
+          ctx.showToast('Segmentação atualizada com sucesso!', 'success');
+        }
         ctx.onStateChange();
-      });
+      };
 
-      // Restaurar filtros padrão
-      document.getElementById('btn-campanha-limpar-filtros')?.addEventListener('click', () => {
+      const restaurarFiltrosCampanhas = () => {
         const isAdmin = (ctx.perfil?.role || '').toLowerCase() === 'admin';
         ctx.campanhasFiltros = {
           origem: 'todos',
@@ -1112,6 +1121,45 @@ export class RelatoriosComercialView {
         };
         ctx.showToast('Filtros restaurados para o padrão.', 'success');
         ctx.onStateChange();
+      };
+
+      // Botões aplicar (topo e rodapé)
+      document.getElementById('btn-campanha-aplicar-filtros-topo')?.addEventListener('click', () => aplicarFiltrosCampanhas(true));
+      document.getElementById('btn-campanha-aplicar-filtros')?.addEventListener('click', () => aplicarFiltrosCampanhas(true));
+
+      // Botões restaurar (topo e rodapé)
+      document.getElementById('btn-campanha-limpar-filtros-topo')?.addEventListener('click', restaurarFiltrosCampanhas);
+      document.getElementById('btn-campanha-limpar-filtros')?.addEventListener('click', restaurarFiltrosCampanhas);
+
+      // Reatividade nos 9 selects de segmentação (trocou, filtra imediatamente!)
+      const selectsIds = [
+        'filtro-campanha-visao',
+        'filtro-campanha-origem',
+        'filtro-campanha-origem-lead',
+        'filtro-campanha-periodo-meses',
+        'filtro-campanha-tipo-destino',
+        'filtro-campanha-mes-embarque',
+        'filtro-campanha-status-orcamento',
+        'filtro-campanha-nps',
+        'filtro-campanha-consultor'
+      ];
+      selectsIds.forEach(id => {
+        document.getElementById(id)?.addEventListener('change', () => aplicarFiltrosCampanhas(false));
+      });
+
+      // Tecla Enter nos inputs de busca e valores
+      const inputsIds = [
+        'filtro-campanha-destino-busca',
+        'filtro-campanha-valor-min',
+        'filtro-campanha-valor-max',
+        'filtro-campanha-fornecedor'
+      ];
+      inputsIds.forEach(id => {
+        document.getElementById(id)?.addEventListener('keydown', (e: KeyboardEvent) => {
+          if (e.key === 'Enter') {
+            aplicarFiltrosCampanhas(true);
+          }
+        });
       });
 
       // Exportar CSV

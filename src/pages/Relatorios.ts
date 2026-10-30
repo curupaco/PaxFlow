@@ -849,8 +849,29 @@ export class RelatoriosPage {
         return RelatoriosInteligenciaView.renderGamificacao(data, this.getInteligenciaContext());
       case 'metas_campanhas':
         return RelatoriosComercialView.renderMetasCampanhas(data, this.getComercialContext());
-      case 'segmentacao_campanhas':
-        return RelatoriosComercialView.renderSegmentacaoCampanhas(data, this.getComercialContext());
+      case 'segmentacao_campanhas': {
+        const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+        const effectiveConsultorFilter = isAdmin ? this.consultorIdFilter : (this.user?.id || '');
+        const matchViagemConsultant = (v: any) => {
+          const cId = v.consultor_id || v.consultorId;
+          if (!isAdmin) {
+            return cId === effectiveConsultorFilter || ViagensDivisoesService.calcularParticipacaoConsultor(v, effectiveConsultorFilter) > 0;
+          }
+          if (effectiveConsultorFilter === 'todos') return true;
+          return cId === effectiveConsultorFilter || ViagensDivisoesService.calcularParticipacaoConsultor(v, effectiveConsultorFilter) > 0;
+        };
+        const matchConsultant = (id: string) => {
+          if (!isAdmin) return id === effectiveConsultorFilter;
+          if (effectiveConsultorFilter === 'todos') return true;
+          return id === effectiveConsultorFilter;
+        };
+        const dataCampanhas = {
+          ...data,
+          viagens: this.viagens.filter(v => matchViagemConsultant(v)),
+          orcamentos: this.orcamentos.filter(o => matchConsultant(o.consultor_id || o.consultorId))
+        };
+        return RelatoriosComercialView.renderSegmentacaoCampanhas(dataCampanhas, this.getComercialContext());
+      }
       case 'riscopreditivo':
         return RelatoriosInteligenciaView.renderRiscoPreditivo(data, this.getInteligenciaContext());
       default:

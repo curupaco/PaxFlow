@@ -404,8 +404,8 @@ export class RelatoriosShellView {
       }
     });
 
-    // 3. Apply filters button
-    document.getElementById('btn-aplicar-filtros')?.addEventListener('click', () => {
+    // 3. Apply filters logic
+    const executarAplicarFiltros = () => {
       const inputInicioEl = document.getElementById('filter-data-inicio') as HTMLInputElement;
       const inputFimEl = document.getElementById('filter-data-fim') as HTMLInputElement;
       const selectConsultorVal = (document.getElementById('filter-consultores') as HTMLInputElement)?.value;
@@ -452,7 +452,22 @@ export class RelatoriosShellView {
       const consultorId = selectConsultorVal || '';
 
       handlers.onApplyFilters(dataInicioIso, dataFimIso, consultorId);
-    });
+    };
+
+    // 3.1 Botão Aplicar
+    document.getElementById('btn-aplicar-filtros')?.addEventListener('click', executarAplicarFiltros);
+
+    // 3.2 Reatividade instantânea no seletor de consultor (trocou, filtra na hora!)
+    document.getElementById('filter-consultores')?.addEventListener('change', executarAplicarFiltros);
+
+    // 3.3 Suporte a tecla Enter nos campos de data
+    const handleDateEnterKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        executarAplicarFiltros();
+      }
+    };
+    document.getElementById('filter-data-inicio')?.addEventListener('keydown', handleDateEnterKey);
+    document.getElementById('filter-data-fim')?.addEventListener('keydown', handleDateEnterKey);
 
     // 4. Clear filters
     document.getElementById('btn-limpar-filtros')?.addEventListener('click', () => {
