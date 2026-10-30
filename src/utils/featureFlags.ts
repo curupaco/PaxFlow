@@ -32,7 +32,7 @@ export function isUserTsCosta(user: any, perfil?: PerfilConsultor | null): boole
  */
 export function isNextTripEnabled(user: any, perfil?: PerfilConsultor | null, settings?: any): boolean {
   if (isUserTsCosta(user, perfil)) return true;
-  if (!settings) return true; // Valor padrão ativo se configurações ainda não carregaram
+  if (!settings) return false;
   return settings.habilitar_next_trip_engine !== false && settings.habilitarNextTripEngine !== false;
 }
 
@@ -42,18 +42,17 @@ export function isNextTripEnabled(user: any, perfil?: PerfilConsultor | null, se
  */
 export function isRiskScoreEnabled(user: any, perfil?: PerfilConsultor | null, settings?: any): boolean {
   if (isUserTsCosta(user, perfil)) return true;
-  if (!settings) return true;
+  if (!settings) return false;
   return settings.habilitar_risk_score !== false && settings.habilitarRiskScore !== false;
 }
 
 /**
  * Retorna se o Upsell Engine está ativado para o usuário atual.
- * É SEMPRE true para tscosta; para os demais, depende de global_settings.
+ * ESTRITAMENTE restrito ao usuário Thiago (tscosta) durante fase de desenvolvimento e validação.
+ * Demais usuários (admins ou consultores) NUNCA recebem true.
  */
-export function isUpsellEnabled(user: any, perfil?: PerfilConsultor | null, settings?: any): boolean {
-  if (isUserTsCosta(user, perfil)) return true;
-  if (!settings) return true;
-  return settings.habilitar_upsell_preditivo !== false && settings.habilitarUpsellPreditivo !== false;
+export function isUpsellEnabled(user: any, perfil?: PerfilConsultor | null, _settings?: any): boolean {
+  return isUserTsCosta(user, perfil);
 }
 
 /**
@@ -62,6 +61,7 @@ export function isUpsellEnabled(user: any, perfil?: PerfilConsultor | null, sett
  */
 export function isStudioEnabled(user: any, perfil?: PerfilConsultor | null, settings?: any): boolean {
   if (isUserTsCosta(user, perfil)) return true;
-  if (!settings) return true;
+  if (!settings) return false;
   return settings.habilitar_studio_pro !== false && settings.habilitarStudioPro !== false;
 }
+

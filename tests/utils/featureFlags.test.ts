@@ -137,13 +137,13 @@ describe('FeatureFlags - Testes Subcutâneos de Permissão e Acesso', () => {
     expect(resultado).toBe(true);
   });
 
-  it('deve respeitar a desativação do Upsell Engine nas configurações para consultores comuns', () => {
+  it('deve bloquear o Upsell Engine para consultores ou admins comuns mesmo se as settings estiverem ativadas', () => {
     // Setup
-    const consultorUser = { id: 'c1', email: 'consultor@agencia.com' };
-    const settingsDesativadas = { habilitar_upsell_preditivo: false };
+    const consultorUser = { id: 'c1', email: 'consultor-teste@empresa.com' };
+    const settingsAtivadas = { habilitar_upsell_preditivo: true };
 
     // Action
-    const resultado = isUpsellEnabled(consultorUser, null, settingsDesativadas);
+    const resultado = isUpsellEnabled(consultorUser, null, settingsAtivadas);
 
     // Assert
     expect(resultado).toBe(false);
@@ -176,7 +176,7 @@ describe('FeatureFlags - Testes Subcutâneos de Permissão e Acesso', () => {
     expect(resAtivado).toBe(true);
   });
 
-  it('deve manter o Studio habilitado por padrão caso a coluna ainda não exista nas settings', () => {
+  it('deve manter o Studio habilitado por padrão caso a coluna ainda não exista nas settings (objeto presente)', () => {
     // Setup
     const consultorUser = { id: 'c1', email: 'consultor@agencia.com' };
     const settingsVazias = {};
@@ -187,4 +187,15 @@ describe('FeatureFlags - Testes Subcutâneos de Permissão e Acesso', () => {
     // Assert
     expect(resultado).toBe(true);
   });
+
+  it('deve adotar fail-close (retornar false) para consultores se as settings forem nulas ou indefinidas', () => {
+    // Setup
+    const consultorUser = { id: 'c1', email: 'consultor@agencia.com' };
+
+    // Action & Assert
+    expect(isNextTripEnabled(consultorUser, null, null)).toBe(false);
+    expect(isRiskScoreEnabled(consultorUser, null, null)).toBe(false);
+    expect(isStudioEnabled(consultorUser, null, null)).toBe(false);
+  });
 });
+
