@@ -1863,7 +1863,7 @@ export class ClientesPage {
 
             <!-- Listagem Container -->
             <div>
-              <label class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-2">Clientes Ativos</label>
+              <label class="block text-[9px] uppercase tracking-widest font-black text-slate-400 dark:text-slate-500 mb-2">Clientes Ativos</label>
               <div id="lista-clientes-container" class="max-h-[600px] overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
                 <!-- Injetado via JS -->
               </div>

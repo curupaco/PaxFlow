@@ -536,7 +536,7 @@ class App {
         <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-40 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
         
         <!-- Sidebar Menu (Drawer no mobile, fixo na lateral no desktop) -->
-        <aside id="app-sidebar" class="fixed inset-y-0 left-0 h-screen w-64 md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-2xl md:shadow-xl z-50 md:z-50 transition-all duration-300 transform -translate-x-full md:translate-x-0 pt-safe pb-safe">
+        <aside id="app-sidebar" class="fixed inset-y-0 left-0 h-screen w-64 md:${this.sidebarCollapsed ? 'w-20 sidebar-collapsed' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-2xl md:shadow-xl z-50 md:z-50 transition-all duration-300 transform -translate-x-full md:translate-x-0 pt-safe pb-safe">
           
           <!-- Logo & Título -->
           <div id="sidebar-header" class="border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5 relative transition-all duration-200 ${this.sidebarCollapsed ? 'p-3.5 justify-center' : 'px-5 py-4'}">
@@ -559,6 +559,7 @@ class App {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2" />
                 </svg>
                 <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Dashboard</span>
+                <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Dashboard</span>
               </button>
               
               <!-- Link: Inbox de Alertas -->
@@ -569,6 +570,7 @@ class App {
                 </svg>
                 <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Inbox &amp; Escala</span>
                 <span id="nav-inbox-badge" class="hidden"></span>
+                <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Inbox &amp; Escala</span>
               </button>
 
               <!-- Link: Kanban de Orçamentos -->
@@ -577,6 +579,7 @@ class App {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
                 <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Orçamentos</span>
+                <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Orçamentos</span>
               </button>
 
               <!-- Link: PaxFlow Studio™ -->
@@ -590,6 +593,7 @@ class App {
                       </svg>
                       <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">PaxFlow Studio</span>
                       <span class="sidebar-label ml-auto px-1.5 py-0.5 rounded text-[8px] font-black bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-xs ${this.sidebarCollapsed ? 'hidden' : ''}">PRO</span>
+                      <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">PaxFlow Studio™</span>
                     </button>
                   `;
                 } else {
@@ -600,6 +604,7 @@ class App {
                       </svg>
                       <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">PaxFlow Studio</span>
                       <span class="sidebar-label ml-auto text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 font-bold uppercase ${this.sidebarCollapsed ? 'hidden' : ''}">Off</span>
+                      <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">PaxFlow Studio (Off)</span>
                     </button>
                   `;
                 }
@@ -612,6 +617,7 @@ class App {
                 </svg>
                 <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Viagens</span>
                 <span id="nav-viagens-badge" class="hidden"></span>
+                <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Viagens</span>
               </button>
 
               <!-- Link: Reembolsos -->
@@ -620,6 +626,7 @@ class App {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Reembolsos</span>
+                <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Reembolsos</span>
               </button>
 
               <!-- Link: Financeiro Expansível com Submenu Indentado -->
@@ -642,6 +649,7 @@ class App {
                           </svg>
                         </div>
                         <span id="nav-financeiro-badge" class="hidden"></span>
+                        <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Financeiro</span>
                       </button>
 
                       <!-- Submenu Indentado (4 Submódulos Unificados) -->
@@ -678,6 +686,7 @@ class App {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Clientes</span>
+                <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Clientes</span>
               </button>
 
               <!-- Link: Next Trip Engine -->
@@ -692,6 +701,7 @@ class App {
                         <circle cx="12" cy="12" r="1.5" fill="currentColor" />
                       </svg>
                       <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Next Trip Engine</span>
+                      <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Next Trip Engine™</span>
                     </button>
                   `;
                 } else {
@@ -704,6 +714,7 @@ class App {
                       </svg>
                       <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Next Trip Engine</span>
                       <span class="sidebar-label ml-auto text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 font-bold uppercase ${this.sidebarCollapsed ? 'hidden' : ''}">Off</span>
+                      <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Next Trip Engine (Off)</span>
                     </button>
                   `;
                 }
@@ -716,6 +727,7 @@ class App {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
                 </svg>
                 <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Relatórios</span>
+                <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Relatórios</span>
               </button>
 
               <!-- Link: Cadastros (Somente ADMIN) -->
@@ -725,6 +737,7 @@ class App {
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                   <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Cadastros</span>
+                  <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Cadastros</span>
                 </button>
               ` : ''}
 
@@ -736,6 +749,7 @@ class App {
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Configurações</span>
+                  <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Configurações</span>
                 </button>
               ` : ''}
 
@@ -745,8 +759,8 @@ class App {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span class="sidebar-label ${this.sidebarCollapsed ? 'hidden' : ''}">Central de Ajuda</span>
+                <span class="sidebar-floating-tooltip absolute left-full ml-3 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none items-center gap-1.5 border border-slate-700/60">Central de Ajuda</span>
               </button>
-
 
             </div>
 
@@ -1358,7 +1372,7 @@ class App {
 
     if (this.sidebarCollapsed) {
       aside.classList.remove('md:w-64');
-      aside.classList.add('md:w-20');
+      aside.classList.add('md:w-20', 'sidebar-collapsed');
       if (mainContent) {
         mainContent.classList.remove('md:pl-64');
         mainContent.classList.add('md:pl-20');
@@ -1369,7 +1383,7 @@ class App {
         header.classList.add('p-5', 'justify-center');
       }
     } else {
-      aside.classList.remove('md:w-20');
+      aside.classList.remove('md:w-20', 'sidebar-collapsed');
       aside.classList.add('md:w-64');
       if (mainContent) {
         mainContent.classList.remove('md:pl-20');

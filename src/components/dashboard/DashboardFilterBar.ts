@@ -264,7 +264,7 @@ export class DashboardFilterBar {
 
         <!-- Botão Criar Card / Nova Viagem -->
         ${canCreateTrip ? `
-          <button id="btn-nova-viagem" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase shrink-0">
+          <button id="btn-nova-viagem" class="h-[42px] px-5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md shadow-indigo-600/15 flex items-center justify-center gap-1.5 transition uppercase shrink-0 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>

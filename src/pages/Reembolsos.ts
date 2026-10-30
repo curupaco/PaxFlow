@@ -210,21 +210,25 @@ export class ReembolsosPage {
         const createdAtStr = el.getAttribute('data-created-at');
         if (!createdAtStr) return;
 
-        const diffString = this.calculateElapsedTime(createdAtStr);
-        el.textContent = diffString;
+        const info = this.calculateElapsedTimeInfo(createdAtStr);
+        el.textContent = info.diffString;
+        if (info.dias >= 30) {
+          el.classList.add('animate-pulse', 'border-rose-400', 'font-black', 'text-rose-600', 'bg-rose-100/90', 'dark:bg-rose-950/70');
+          el.setAttribute('title', '🚨 Atenção: Processo aguardando há mais de 30 dias!');
+        }
       });
     }, 1000);
   }
 
   /**
-   * Calcula o tempo decorrido formatado em dias, horas, minutos e segundos
+   * Calcula o tempo decorrido formatado e quantidade de dias decorridos
    */
-  private calculateElapsedTime(createdAtStr: string): string {
+  private calculateElapsedTimeInfo(createdAtStr: string): { diffString: string; dias: number } {
     const dataAbertura = new Date(createdAtStr);
     const agora = new Date();
 
     const diffMs = agora.getTime() - dataAbertura.getTime();
-    if (diffMs < 0) return '0d 0h 0m 0s';
+    if (diffMs < 0) return { diffString: '0d 0h 0m 0s', dias: 0 };
 
     const totalSegundos = Math.floor(diffMs / 1000);
     const dias = Math.floor(totalSegundos / 86400);
@@ -232,7 +236,14 @@ export class ReembolsosPage {
     const minutos = Math.floor((totalSegundos % 3600) / 60);
     const segundos = totalSegundos % 60;
 
-    return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+    return {
+      diffString: `${dias}d ${horas}h ${minutos}m ${segundos}s`,
+      dias
+    };
+  }
+
+  private calculateElapsedTime(createdAtStr: string): string {
+    return this.calculateElapsedTimeInfo(createdAtStr).diffString;
   }
 
   /**
@@ -625,38 +636,38 @@ export class ReembolsosPage {
           ` : ''}
 
           <!-- Cards de Métricas Premium -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm flex items-center justify-between">
               <div>
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Total de Processos</span>
                 <span class="text-2xl font-black text-slate-800 dark:text-slate-200">${totalReembolsos}</span>
               </div>
-              <span class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 dark:text-indigo-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">📋</span>
+              <span class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 dark:text-indigo-400 rounded-2xl text-base font-extrabold flex items-center justify-center shrink-0">📋</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm flex items-center justify-between">
               <div>
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Pendente Ação Agência</span>
                 <span class="text-2xl font-black text-amber-600 dark:text-amber-400">${agenciaCount}</span>
               </div>
-              <span class="w-10 h-10 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">🏢</span>
+              <span class="w-10 h-10 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-400 rounded-2xl text-base font-extrabold flex items-center justify-center shrink-0">🏢</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm flex items-center justify-between">
               <div>
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Fornecedor / Agaxtur</span>
                 <span class="text-2xl font-black text-blue-600 dark:text-blue-400">${fornecedorCount + agaxturCount}</span>
               </div>
-              <span class="w-10 h-10 bg-blue-50 dark:bg-blue-950/45 text-blue-500 dark:text-blue-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">✈️</span>
+              <span class="w-10 h-10 bg-blue-50 dark:bg-blue-950/45 text-blue-500 dark:text-blue-400 rounded-2xl text-base font-extrabold flex items-center justify-center shrink-0">✈️</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm flex items-center justify-between">
               <div>
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Valor Aprovado Total</span>
                 <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">R$ ${somaTotalAprovado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 <span class="block text-[9px] text-slate-400 font-semibold mt-0.5">Utilizado: R$ ${somaTotalUtilizado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <span class="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-600 dark:text-emerald-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">💰</span>
+              <span class="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-600 dark:text-emerald-400 rounded-2xl text-base font-extrabold flex items-center justify-center shrink-0">💰</span>
             </div>
           </div>
 
@@ -753,7 +764,7 @@ export class ReembolsosPage {
                       <th class="py-3 px-4">Valores (Sol. / Aprov. / Util.)</th>
                       <th class="py-3 px-4">SLA Cronômetro</th>
                       <th class="py-3 px-4 text-center whitespace-nowrap">Status da Tratativa</th>
-                      <th class="py-3 px-4 text-center whitespace-nowrap">Ações</th>
+                      <th class="py-3 px-4 w-32 text-center whitespace-nowrap">Ações</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
@@ -762,6 +773,8 @@ export class ReembolsosPage {
                       const dataAberturaStr = r.created_at || r.created_at_time;
                       const tratativaInfo = formatStatusTratativa(r.status_tratativa || r.status);
                       const isConcluido = tratativaInfo.key === 'concluido';
+                      const diasPassados = dataAberturaStr ? Math.floor((Date.now() - new Date(dataAberturaStr).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                      const ehSlaCritico = !isConcluido && diasPassados >= 30;
 
                       const valorProduto = Number(r.valor_produto || r.produto?.valor || r.produto?.valor_venda || 0);
                       const valorSol = Number(r.valor_solicitado || 0);
@@ -845,15 +858,19 @@ export class ReembolsosPage {
                                 ✅ Concluído em ${formatarData(r.data_resolucao)}
                               </span>
                             ` : `
-                              <span class="sla-active-timer text-xs font-black font-mono tabular-nums text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 px-2.5 py-1 rounded-lg inline-flex items-center" data-created-at="${dataAberturaStr}">
-                                Calculando...
+                              <span class="sla-active-timer text-xs font-mono tabular-nums px-2.5 py-1 rounded-xl inline-flex items-center gap-1 ${
+                                ehSlaCritico 
+                                  ? 'animate-pulse font-black text-rose-600 dark:text-rose-400 bg-rose-100/90 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-700 shadow-2xs' 
+                                  : 'font-extrabold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60'
+                              }" data-created-at="${dataAberturaStr}">
+                                ${ehSlaCritico ? '🚨 ' : ''}Calculando...
                               </span>
                             `}
                           </td>
 
                           <!-- Status da Tratativa -->
                           <td class="py-3 px-4 text-center whitespace-nowrap">
-                            <select data-reembolso-id="${r.id}" class="select-status-reembolso h-8 px-2.5 py-1 border border-slate-200/80 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer shadow-xs">
+                            <select data-reembolso-id="${r.id}" class="select-status-reembolso h-[38px] px-3 py-1 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 cursor-pointer shadow-xs min-w-[210px]">
                               <option value="pendente_agencia" ${tratativaInfo.key === 'pendente_agencia' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🏢 Reembolso pendente ação agência</option>
                               <option value="pendente_fornecedor" ${tratativaInfo.key === 'pendente_fornecedor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">✈️ Reembolso pendente ação fornecedor</option>
                               <option value="pendente_agaxtur" ${tratativaInfo.key === 'pendente_agaxtur' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🌐 Reembolso pendente ação Agaxtur</option>
@@ -862,13 +879,13 @@ export class ReembolsosPage {
                           </td>
 
                           <!-- Ações -->
-                          <td class="py-3 px-4 text-center whitespace-nowrap">
-                            <div class="inline-flex items-center justify-center gap-1.5">
-                              <button data-edit-reembolso-id="${r.id}" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 rounded-lg border border-indigo-200/80 dark:border-indigo-800/60 transition text-xs font-bold shadow-xs cursor-pointer" title="Editar Valores e Detalhes">
+                          <td class="py-3 px-4 w-32 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center gap-1">
+                              <button data-edit-reembolso-id="${r.id}" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 rounded-xl border border-indigo-200/80 dark:border-indigo-800/60 transition text-xs font-bold shadow-xs cursor-pointer" title="Editar Valores e Detalhes">
                                 ✏️ Valores
                               </button>
                               ${this.perfil?.role === 'admin' ? `
-                                <button data-delete-reembolso-id="${r.id}" class="h-7 w-7 inline-flex items-center justify-center bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg border border-slate-200/60 dark:border-slate-700/60 transition text-xs shadow-xs cursor-pointer" title="Excluir Reembolso">
+                                <button data-delete-reembolso-id="${r.id}" class="h-7 w-7 inline-flex items-center justify-center bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-xl border border-slate-200/60 dark:border-slate-700/60 transition text-xs shadow-xs cursor-pointer" title="Excluir Reembolso">
                                   🗑️
                                 </button>
                               ` : ''}

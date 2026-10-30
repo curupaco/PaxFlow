@@ -192,18 +192,16 @@ export class NextTripPage {
               </div>
               <div class="text-2xl font-black text-slate-800 dark:text-white">${totalOps}</div>
               <span class="text-[10px] text-slate-400 font-medium">Clientes monitorados na janela de recompra</span>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs border-l-4 border-l-emerald-500">
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm border-l-4 border-l-emerald-500">
               <div class="flex items-center justify-between text-slate-400 mb-2">
-                <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Alto Potencial (>= 75)</span>
+                <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Alto Potencial</span>
                 <span class="text-lg">🔥</span>
               </div>
               <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400">${altaProntidaoCount}</div>
               <span class="text-[10px] text-slate-400 font-medium">Prioridade máxima de abordagem comercial</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs border-l-4 border-l-amber-500">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm border-l-4 border-l-amber-500">
               <div class="flex items-center justify-between text-slate-400 mb-2">
                 <span class="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">Médio Potencial</span>
                 <span class="text-lg">⏳</span>
@@ -212,7 +210,7 @@ export class NextTripPage {
               <span class="text-[10px] text-slate-400 font-medium">Clientes em aquecimento gradual</span>
             </div>
 
-            <div id="card-algoritmo-preditivo" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs border-l-4 border-l-indigo-500 cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-md transition group">
+            <div id="card-algoritmo-preditivo" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm border-l-4 border-l-indigo-500 cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-md transition group">
               <div class="flex items-center justify-between text-slate-400 mb-2">
                 <span class="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
                   Algoritmo Preditivo
@@ -226,7 +224,7 @@ export class NextTripPage {
           </section>
 
           <!-- BARRA DE FILTROS E BUSCA -->
-          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-xs flex flex-wrap items-center justify-between gap-4">
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-3xl shadow-sm flex flex-wrap items-center justify-between gap-4">
             
             <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
               
@@ -240,19 +238,19 @@ export class NextTripPage {
 
               <!-- Busca por Texto -->
               <div class="relative flex-1 min-w-[200px]">
-                <input id="input-busca-next-trip" type="text" placeholder="Buscar cliente, destino ou observação..." value="${this.filterBusca}" class="h-10 w-full pl-9 pr-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center" />
-                <span class="absolute left-3 top-3 text-slate-400 text-xs">🔍</span>
+                <input id="input-busca-next-trip" type="text" placeholder="Buscar cliente, destino ou observação..." value="${this.filterBusca}" class="h-[42px] w-full pl-9 pr-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center" />
+                <span class="absolute left-3 top-3.5 text-slate-400 text-xs">🔍</span>
               </div>
 
               <!-- Filtro de Potencial -->
-              <select id="select-filter-prontidao" class="h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer">
+              <select id="select-filter-prontidao" class="h-[42px] px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer">
                 <option value="todos" ${this.filterProntidao === 'todos' ? 'selected' : ''}>Todos os Potenciais</option>
                 <option value="alto" ${this.filterProntidao === 'alto' ? 'selected' : ''}>🔥 Alto Potencial (>= 75)</option>
                 <option value="medio" ${this.filterProntidao === 'medio' ? 'selected' : ''}>⏳ Médio Potencial</option>
               </select>
 
               <!-- Filtro de Categoria -->
-              <select id="select-filter-categoria" class="h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer">
+              <select id="select-filter-categoria" class="h-[42px] px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer">
                 <option value="todos" ${this.filterCategoria === 'todos' ? 'selected' : ''}>Todas as Categorias</option>
                 <option value="europa" ${this.filterCategoria === 'europa' ? 'selected' : ''}>🇪🇺 Europa</option>
                 <option value="resort" ${this.filterCategoria === 'resort' ? 'selected' : ''}>🏖️ Resort All-Inclusive</option>
@@ -263,7 +261,7 @@ export class NextTripPage {
 
               <!-- Filtro de Consultores (Admins) -->
               ${isAdmin ? `
-                <select id="select-filter-consultor" class="h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[160px]">
+                <select id="select-filter-consultor" class="h-[42px] px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[160px]">
                   <option value="todos" ${this.filterConsultor === 'todos' ? 'selected' : ''}>Todos Consultores</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.filterConsultor === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
                 </select>
@@ -278,7 +276,7 @@ export class NextTripPage {
 
           <!-- BARRA DE AÇÕES EM LOTE COM PRESETS (QUANDO HOUVER SELECIONADOS) -->
           ${this.oportunidadesSelecionadas.size > 0 ? `
-            <div class="p-4 bg-indigo-50/90 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-md">
+            <div class="p-4 bg-indigo-50/90 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 rounded-3xl flex flex-wrap items-center justify-between gap-3 shadow-lg animate-fade-in">
               <div class="flex items-center gap-2.5">
                 <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm font-black shadow-xs">⚡</span>
                 <div>
@@ -290,27 +288,26 @@ export class NextTripPage {
               </div>
 
               <div class="flex flex-wrap items-center gap-2">
-                <button type="button" id="btn-lote-exportar-texto" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <button type="button" id="btn-lote-exportar-texto" class="h-[42px] px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
                   <span>💬</span> Roteiro WhatsApp (Texto)
                 </button>
 
-                <button type="button" id="btn-lote-exportar-csv" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <button type="button" id="btn-lote-exportar-csv" class="h-[42px] px-3.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
                   <span>📊</span> Exportar CSV
                 </button>
 
-                <button type="button" id="btn-lote-copiar-telefones" class="px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-indigo-500 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <button type="button" id="btn-lote-copiar-telefones" class="h-[42px] px-3.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-indigo-500 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
                   <span>📋</span> Copiar Telefones
                 </button>
 
-                <button type="button" id="btn-lote-snooze-30" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <button type="button" id="btn-lote-snooze-30" class="h-[42px] px-3.5 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
                   <span>⏸️</span> Snooze em Bloco (30D)
                 </button>
 
-                <button type="button" id="btn-lote-limpar-selecao" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold transition cursor-pointer" title="Desmarcar todos">
+                <button type="button" id="btn-lote-limpar-selecao" class="h-[42px] px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold transition cursor-pointer flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" title="Desmarcar todos">
                   ✕
                 </button>
               </div>
-            </div>
           ` : ''}
 
           <!-- LISTAGEM DE CARDS DE OPORTUNIDADES -->

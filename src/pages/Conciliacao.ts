@@ -194,6 +194,12 @@ export class ConciliacaoPage {
               </span>
               <span class="text-[11px] text-slate-500 font-medium">(${this.resumo.qtdConciliado} itens)</span>
             </div>
+            <!-- Barra de Progresso Visual do Fechamento -->
+            <div class="mt-2.5">
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.max(0, this.resumo.taxaConciliacao))}%"></div>
+              </div>
+            </div>
           </div>
 
           <!-- Card 3: Pendente no Extrato -->
@@ -326,8 +332,8 @@ export class ConciliacaoPage {
               <div class="p-3.5 bg-white dark:bg-slate-900 rounded-2xl border ${isContaPagar ? 'border-rose-200/60 dark:border-rose-900/40' : 'border-teal-200/60 dark:border-teal-900/40'} shadow-sm flex flex-col justify-between gap-3">
                 <div>
                   <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-black ${badgeCor} px-2 py-0.5 rounded">
-                      ${s.score}% Confiança • ${isContaPagar ? 'Débito' : 'Crédito'}
+                    <span class="text-[10px] font-black ${badgeCor} px-2 py-0.5 rounded inline-flex items-center gap-1 cursor-help" title="Índice de acerto calculado com base no valor idêntico, proximidade temporal e favorecido do lançamento">
+                      🎯 ${s.score}% Confiança • ${isContaPagar ? 'Débito' : 'Crédito'}
                     </span>
                     <span class="text-[10px] font-bold text-slate-400">
                       ${new Date(transacao.data_transacao + 'T12:00:00').toLocaleDateString('pt-BR')}

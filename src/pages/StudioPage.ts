@@ -223,13 +223,13 @@ export class StudioPage {
 
           <!-- AÇÕES RÁPIDAS DO TOPO -->
           <div class="flex flex-wrap items-center gap-2">
-            <button id="btn-abrir-drawer" type="button" class="px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 cursor-pointer">
+            <button id="btn-abrir-drawer" type="button" class="h-[42px] px-4 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 cursor-pointer shadow-xs">
               <span>📂</span> Minhas Propostas
               <span class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-indigo-600 text-white">
                 ${this.propostasSalvas.length}
               </span>
             </button>
-            <button id="btn-nova-proposta" type="button" class="px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl transition flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800 cursor-pointer">
+            <button id="btn-nova-proposta" type="button" class="h-[42px] px-4 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl transition flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800 cursor-pointer shadow-xs">
               <span>➕</span> Nova Proposta
             </button>
           </div>
@@ -537,17 +537,17 @@ export class StudioPage {
             <span class="text-[11px] text-slate-400 font-mono hidden md:inline mr-1" title="Atalho de teclado">
               [Ctrl+S]
             </span>
-            <button id="btn-salvar-proposta" type="button" class="px-4 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer">
+            <button id="btn-salvar-proposta" type="button" class="h-[42px] px-4 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer">
               <span>💾</span> Salvar Proposta
             </button>
-            <button id="btn-imprimir-pdf" type="button" class="px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-indigo-500 rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+            <button id="btn-imprimir-pdf" type="button" class="h-[42px] px-4 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-indigo-500 rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
               <span>📄</span> Caderno PDF
             </button>
-            <button id="btn-link-publico" type="button" class="px-3.5 py-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+            <button id="btn-link-publico" type="button" class="h-[42px] px-4 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
               <span>🔗</span> Link do Cliente
             </button>
             ${this.propostaAtual.id ? `
-              <button id="btn-efetivar-viagem" type="button" class="px-3.5 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+              <button id="btn-efetivar-viagem" type="button" class="h-[42px] px-4 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
                 <span>🚀</span> Efetivar Viagem
               </button>
             ` : ''}

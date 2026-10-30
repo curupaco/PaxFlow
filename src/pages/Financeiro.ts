@@ -498,11 +498,11 @@ export class FinanceiroPage {
 
             <div class="flex items-center gap-2 self-end sm:self-auto">
               ${temFiltroAtivo ? `
-                <button id="btn-limpar-filtros" class="h-[36px] px-3 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer flex items-center gap-1 border border-rose-200/60 dark:border-rose-900/40">
+                <button id="btn-limpar-filtros" class="h-[42px] px-3.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer flex items-center gap-1 border border-rose-200/60 dark:border-rose-900/40">
                   ✕ Limpar Filtros
                 </button>
               ` : ''}
-              <button id="btn-exportar-csv-tabela" class="h-[36px] px-3 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1 border border-slate-200/60 dark:border-slate-700">
+              <button id="btn-exportar-csv-tabela" class="h-[42px] px-3.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1 border border-slate-200/60 dark:border-slate-700">
                 📥 Exportar CSV
               </button>
             </div>
@@ -828,6 +828,22 @@ export class FinanceiroPage {
                     const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
                     const podeSelecionar = !c.remessa_id && (c.status === 'pendente' || c.status === 'atrasado');
 
+                    const hojeIso = new Date().toISOString().split('T')[0];
+                    const dataVencIso = (c.data_vencimento_operacional || c.data_vencimento || '').split('T')[0];
+                    let chipVencimento = '';
+                    if (c.status !== 'pago' && c.status !== 'cancelado' && dataVencIso) {
+                      const diffTime = new Date(dataVencIso + 'T12:00:00').getTime() - new Date(hojeIso + 'T12:00:00').getTime();
+                      const diffDias = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                      if (diffDias < 0) {
+                        const atraso = Math.abs(diffDias);
+                        chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 inline-flex items-center gap-1 shadow-2xs">🔴 ${atraso}d em atraso</span>`;
+                      } else if (diffDias === 0) {
+                        chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1 animate-pulse shadow-2xs">🚨 Vence Hoje</span>`;
+                      } else if (diffDias <= 3) {
+                        chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 inline-flex items-center gap-1">⏳ Vence em ${diffDias}d</span>`;
+                      }
+                    }
+
                     return `
                       <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                         <td class="py-3 px-3 text-center">
@@ -838,8 +854,9 @@ export class FinanceiroPage {
 
                         <td class="py-3 px-4 whitespace-nowrap">
                           <span class="font-extrabold text-slate-900 dark:text-slate-100 block">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                          ${chipVencimento ? `<div class="block">${chipVencimento}</div>` : ''}
                           ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
-                            <span class="text-[9px] text-slate-400 block font-semibold" title="Vencimento nominal no final de semana / feriado">Nominal: ${formatarData(c.data_vencimento)}</span>
+                            <span class="text-[9px] text-slate-400 block font-semibold mt-0.5" title="Vencimento nominal no final de semana / feriado">Nominal: ${formatarData(c.data_vencimento)}</span>
                           ` : ''}
                         </td>
 
@@ -929,14 +946,31 @@ export class FinanceiroPage {
               const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
               const podeSelecionar = !c.remessa_id && (c.status === 'pendente' || c.status === 'atrasado');
 
+              const hojeIsoMobile = new Date().toISOString().split('T')[0];
+              const dataVencIsoMobile = (c.data_vencimento_operacional || c.data_vencimento || '').split('T')[0];
+              let chipVencimentoMobile = '';
+              if (c.status !== 'pago' && c.status !== 'cancelado' && dataVencIsoMobile) {
+                const diffTime = new Date(dataVencIsoMobile + 'T12:00:00').getTime() - new Date(hojeIsoMobile + 'T12:00:00').getTime();
+                const diffDias = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDias < 0) {
+                  const atraso = Math.abs(diffDias);
+                  chipVencimentoMobile = `<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 inline-flex items-center gap-1 shadow-2xs">🔴 ${atraso}d em atraso</span>`;
+                } else if (diffDias === 0) {
+                  chipVencimentoMobile = `<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1 animate-pulse shadow-2xs">🚨 Vence Hoje</span>`;
+                } else if (diffDias <= 3) {
+                  chipVencimentoMobile = `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 inline-flex items-center gap-1">⏳ Vence em ${diffDias}d</span>`;
+                }
+              }
+
               return `
                 <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
                   <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                       ${podeSelecionar ? `
                         <input type="checkbox" data-id="${c.id}" class="check-selecionar-conta h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${this.titulosSelecionados.has(c.id) ? 'checked' : ''} />
                       ` : ''}
                       <span class="text-xs font-black text-slate-900 dark:text-slate-100">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                      ${chipVencimentoMobile}
                       ${c.remessa_id ? `
                         <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/40 inline-flex items-center gap-0.5">
                           📦 Lote
@@ -1363,7 +1397,7 @@ export class FinanceiroPage {
               <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">Demonstrativo por Tipos de Custo (DRE)</h3>
               <p class="text-xs text-slate-500 dark:text-slate-400">Consolidação orçada vs desembolsada no mês de referência com taxa de realização.</p>
             </div>
-            <button id="btn-exportar-csv" class="h-[38px] px-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5">
+            <button id="btn-exportar-csv" class="h-[42px] px-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5">
               <span>📥</span> Exportar CSV
             </button>
           </div>

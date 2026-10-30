@@ -480,7 +480,7 @@ export class LandingPage {
               <button id="tab-btn-dashboard" class="shrink-0 whitespace-nowrap px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl flex items-center gap-1.5 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow cursor-pointer">Painel Comercial</button>
               <button id="tab-btn-risk" class="shrink-0 whitespace-nowrap px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl flex items-center gap-1.5 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-emerald-300 hover:border-emerald-500/40 transition cursor-pointer">
                 <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                Risk Score™ (Onda 3)
+                Risk Score™
               </button>
               <button id="tab-btn-nexttrip" class="shrink-0 whitespace-nowrap px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl flex items-center gap-1.5 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-indigo-300 hover:border-indigo-500/40 transition cursor-pointer">
                 <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
@@ -560,12 +560,12 @@ export class LandingPage {
                 </div>
               </div>
 
-              <!-- Painel 2: Risk Score (Onda 3) -->
+              <!-- Painel 2: Risk Score -->
               <div id="panel-risk" class="space-y-4 tab-pane-transition hidden text-xs">
                 <div class="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/80 border border-emerald-500/30 flex items-center justify-between flex-wrap gap-2">
                   <div class="flex items-center gap-2">
                     <span class="text-emerald-400 text-base font-black">🛡️</span>
-                    <span><strong>Risk Score™ (Onda 3):</strong> Auditoria de regras sanitárias (Schengen 30k€, CIVP Febre Amarela Anvisa, Visto EUA), prazos de passaporte e ações em lote para 100% da carteira.</span>
+                    <span><strong>Risk Score™:</strong> Auditoria de regras sanitárias (Schengen 30k€, CIVP Febre Amarela Anvisa, Visto EUA), prazos de passaporte e ações em lote para 100% da carteira.</span>
                   </div>
                   <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/40">Saúde: 92/100 • Blindada</span>
                 </div>
@@ -1016,7 +1016,7 @@ export class LandingPage {
                 🛡️ Blindagem Operacional Exclusiva
               </span>
               <h2 class="text-2xl sm:text-4xl font-black tracking-tight text-white">
-                PaxFlow Risk Score™ (Onda 3)
+                PaxFlow Risk Score™
               </h2>
               <p class="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
                 Nunca mais seja surpreendido com clientes no aeroporto sem vouchers ou com passaportes vencidos. O motor de auditoria analisa continuamente de 0 a 100 o risco de cada viagem da sua carteira e dispara alertas para você e sua equipe agirem com ampla antecedência.
@@ -1508,7 +1508,7 @@ export class LandingPage {
     const tabs = ['dashboard', 'risk', 'nexttrip', 'studio', 'financeiro', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
     const pathTexts: Record<string, string> = {
       dashboard: 'PaxFlow - Painel de Controle Comercial',
-      risk: 'PaxFlow - Risk Score™ (Diagnóstico de Saúde Operacional Onda 3)',
+      risk: 'PaxFlow - Risk Score™ (Diagnóstico de Saúde Operacional)',
       nexttrip: 'PaxFlow - Next Trip Engine™ (Motor Preditivo de Recompra)',
       studio: 'PaxFlow Studio™ - Propostas de Luxo & Live Preview',
       financeiro: 'PaxFlow - Financeiro & Conciliação Bancária FinRecon™',

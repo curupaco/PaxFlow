@@ -61,6 +61,20 @@ html.dark body {
   animation: fadeInCard 0.25s ease-out forwards;
 }
 
+/* Tooltips flutuantes imediatos da Sidebar Colapsada */
+.sidebar-floating-tooltip {
+  display: none !important;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+#app-sidebar.sidebar-collapsed button:hover > .sidebar-floating-tooltip {
+  display: flex !important;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+
 /* Scrollbars customizadas visíveis e ergonômicas (Fim da rolagem invisível em telas convencionais) */
 .custom-scrollbar {
   -webkit-overflow-scrolling: touch;

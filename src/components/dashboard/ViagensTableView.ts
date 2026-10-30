@@ -71,15 +71,15 @@ export class ViagensTableView {
         <div class="overflow-auto flex-1 min-h-0 custom-scrollbar pb-1">
           <table class="w-full text-left border-collapse min-w-[1000px]">
             <thead>
-              <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-                <th class="px-5 py-3 w-[80px] text-center">${this.renderSortHeader('SLA', 'sla', ctx)}</th>
+              <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] uppercase tracking-widest font-black text-slate-400 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
+                <th class="px-4 py-3 w-[80px] text-center">${this.renderSortHeader('SLA', 'sla', ctx)}</th>
                 <th class="px-5 py-3">${this.renderSortHeader('Cliente', 'cliente', ctx)}</th>
                 <th class="px-5 py-3">${this.renderSortHeader('Destino / Produtos', 'destino', ctx)}</th>
                 <th class="px-5 py-3">${this.renderSortHeader('Data Fin.', 'data_financeiro', ctx)}</th>
                 <th class="px-5 py-3">${this.renderSortHeader('Financeiro', 'financeiro', ctx)}</th>
                 <th class="px-5 py-3">${this.renderSortHeader('Consultor', 'consultor', ctx)}</th>
-                <th class="px-5 py-3 w-[200px]">${this.renderSortHeader('Fase / Status', 'status', ctx)}</th>
-                <th class="px-5 py-3 w-[160px] text-center text-slate-400 dark:text-slate-400 tracking-widest text-[9px] font-black uppercase">Ações</th>
+                <th class="px-5 py-3 w-[180px]">${this.renderSortHeader('Fase / Status', 'status', ctx)}</th>
+                <th class="px-2 py-3 w-32 text-center text-slate-400 tracking-widest text-[9px] font-black uppercase">Ações</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -292,8 +292,8 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
         </td>
 
         <!-- Dropdown Fase/Status -->
-        <td class="px-5 py-4">
-          <select class="select-status-inline w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 font-semibold text-xs cursor-pointer" data-trip-id="${v.id}" data-old-value="${v.status}">
+        <td class="px-5 py-3.5">
+          <select class="select-status-inline w-full h-[36px] px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-xs cursor-pointer shadow-xs transition" data-trip-id="${v.id}" data-old-value="${v.status}">
             <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Fechado</option>
             <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Venda</option>
             <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pré-Embarque</option>
@@ -302,17 +302,18 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
           </select>
         </td>
 
-        <!-- Ações -->
-        <td class="px-5 py-4 text-center whitespace-nowrap">
-          <div class="flex items-center justify-center gap-2">
-            <button class="btn-action-view px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 transition text-[10px] uppercase" data-trip-id="${v.id}">
-              🔍 Ver Detalhes
+        <!-- Ações (Travada em w-32 centralizada, sem efeito serrote) -->
+        <td class="px-2 py-3.5 text-center w-32 whitespace-nowrap">
+          <div class="flex items-center justify-center gap-1">
+            <button class="btn-action-view h-[32px] px-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 transition active:scale-95 text-[10px] uppercase shadow-xs flex items-center gap-1 cursor-pointer" data-trip-id="${v.id}" title="Ver detalhes completos da viagem">
+              <span>🔍</span>
+              <span>Ver</span>
             </button>
-            <button class="btn-action-whatsapp p-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/45 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-100/30 dark:border-emerald-900/30 transition flex items-center justify-center" data-trip-id="${v.id}" title="Enviar Mensagem de WhatsApp">
+            <button class="btn-action-whatsapp w-8 h-8 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/45 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100/30 dark:border-emerald-900/30 transition active:scale-95 flex items-center justify-center shadow-xs cursor-pointer" data-trip-id="${v.id}" title="Enviar Mensagem de WhatsApp">
               <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
             </button>
             ${v.status === 'pos_viagem' ? `
-              <button class="btn-action-copiar-nps p-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/45 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 transition flex items-center justify-center font-bold text-xs" data-trip-id="${v.id}" title="Copiar link da pesquisa de NPS">
+              <button class="btn-action-copiar-nps w-8 h-8 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/45 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 transition active:scale-95 flex items-center justify-center font-bold text-xs shadow-xs cursor-pointer" data-trip-id="${v.id}" title="Copiar link da pesquisa de NPS">
                 📋
               </button>
             ` : ''}

@@ -72,17 +72,17 @@ export class RelatoriosShellView {
           </div>
           
           <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
-            <button id="btn-export-csv" class="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+            <button id="btn-export-csv" class="w-full sm:w-auto px-4 h-[42px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
               📥 Exportar Excel (CSV)
             </button>
-            <button id="btn-print-pdf" class="w-full sm:w-auto px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10 cursor-pointer">
+            <button id="btn-print-pdf" class="w-full sm:w-auto px-4 h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10 cursor-pointer">
               🖨️ Imprimir PDF
             </button>
           </div>
         </div>
 
         <!-- Global Filters Bar (sticky/sticky-top) -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-end gap-4 global-filters-bar no-print">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-4 shadow-sm flex flex-col md:flex-row items-end gap-4 global-filters-bar no-print">
           
           <div class="grid grid-cols-1 sm:grid-cols-2 md:flex items-end gap-4 flex-grow w-full md:w-auto">
             <!-- Date range start -->

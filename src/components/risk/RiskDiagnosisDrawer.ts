@@ -67,6 +67,9 @@ export class RiskDiagnosisDrawer {
 
     const isGreen = diagnosis.nivel === 'verde';
     const isRed = diagnosis.nivel === 'vermelho';
+    const gaugeRadius = 42;
+    const gaugeCircumference = 2 * Math.PI * gaugeRadius;
+    const strokeOffset = gaugeCircumference - (Math.max(0, Math.min(100, diagnosis.score)) / 100) * gaugeCircumference;
 
     drawer.innerHTML = `
       <!-- Cabeçalho com Safe Area -->
@@ -80,7 +83,7 @@ export class RiskDiagnosisDrawer {
             <p class="text-xs text-slate-400 font-semibold">${escapeHtml(viagem.destino)} — ${cliente ? escapeHtml(cliente.nome) : 'Cliente Sem Perfil'}</p>
           </div>
         </div>
-        <button id="btn-close-risk-drawer" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+        <button id="btn-close-risk-drawer" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer">
           ✕
         </button>
       </div>
@@ -88,18 +91,27 @@ export class RiskDiagnosisDrawer {
       <!-- Conteúdo Rolável -->
       <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
         
-        <!-- Big Score Card -->
+        <!-- Big Score Card com Gauge Circular Animado -->
         <div class="p-6 rounded-3xl border ${isRed ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40' : isGreen ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40' : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40'} flex flex-col items-center text-center relative overflow-hidden shadow-sm">
           
-          <div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider mb-3 ${diagnosis.badgeClass}">
+          <div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider mb-4 ${diagnosis.badgeClass}">
             ${diagnosis.isGracePeriod ? '🟢 Dentro do Prazo Operacional' : diagnosis.nivel.toUpperCase() + ' RISCO'}
           </div>
 
-          <div class="relative mb-2">
-            <span class="text-5xl font-black tracking-tight" style="color: ${diagnosis.corHex};">
-              ${diagnosis.score}
-            </span>
-            <span class="text-xs font-bold text-slate-400 tracking-wider">/100</span>
+          <!-- Circular SVG Gauge -->
+          <div class="relative w-32 h-32 flex items-center justify-center mb-2">
+            <svg class="w-32 h-32 transform -rotate-90 select-none pointer-events-none" viewBox="0 0 100 100">
+              <!-- Background Track -->
+              <circle cx="50" cy="50" r="${gaugeRadius}" stroke-width="7.5" class="text-slate-200 dark:text-slate-800" stroke="currentColor" fill="none" />
+              <!-- Progress Arc -->
+              <circle cx="50" cy="50" r="${gaugeRadius}" stroke-width="7.5" stroke="${diagnosis.corHex}" fill="none" stroke-linecap="round" stroke-dasharray="${gaugeCircumference}" stroke-dashoffset="${strokeOffset}" class="transition-all duration-1000 ease-out" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center select-none">
+              <span class="text-4xl font-black tracking-tight" style="color: ${diagnosis.corHex};">
+                ${diagnosis.score}
+              </span>
+              <span class="text-[9px] font-black text-slate-400 tracking-widest uppercase">/ 100</span>
+            </div>
           </div>
 
           <p class="text-xs font-bold text-slate-600 dark:text-slate-300 max-w-sm leading-relaxed mt-1">
@@ -114,57 +126,63 @@ export class RiskDiagnosisDrawer {
         </div>
 
         <!-- Botão Ação Rápida: Voucher Geral da Operadora (Pacote Completo) -->
-        <div class="p-4 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl flex items-center justify-between gap-3">
+        <div class="p-4 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
           <div class="pr-2">
             <strong class="block text-xs font-black text-indigo-900 dark:text-indigo-200">Voucher Geral da Operadora (PDF Único)</strong>
             <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Anexe o PDF com Voo, Hotel e Transfer juntos para validar tudo em 1-clique.</p>
           </div>
           <input id="input-upload-voucher-geral" type="file" accept=".pdf,image/*" class="hidden" />
-          <button id="btn-upload-voucher-geral" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition shrink-0 uppercase tracking-wider">
+          <button id="btn-upload-voucher-geral" class="h-[40px] px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/15 transition shrink-0 uppercase tracking-wider cursor-pointer">
             ${viagem.voucher_geral_anexado ? '✅ Anexado' : '📁 Anexar PDF'}
           </button>
         </div>
 
-        <!-- Guia Inteligente de Exigências Sanitárias, Vacinas e Vistos por Destino -->
+        <!-- Guia Inteligente de Exigências Sanitárias, Vacinas e Vistos por Destino (Passaporte Seguro) -->
         ${diagnosis.exigenciasDestino ? `
-          <div class="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-3 shadow-xs">
-            <div class="flex items-center justify-between">
+          <div class="p-4 bg-gradient-to-br from-slate-50 to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/20 border-2 border-indigo-200/60 dark:border-indigo-900/50 rounded-3xl space-y-3.5 shadow-sm relative overflow-hidden">
+            <div class="absolute -right-3 -top-3 w-16 h-16 opacity-10 font-mono text-5xl select-none pointer-events-none">🛂</div>
+            <div class="flex items-center justify-between relative z-10">
               <div class="flex items-center gap-2">
-                <span class="text-base">🛡️</span>
-                <h4 class="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
-                  Guia Sanitário & Vistos (${escapeHtml(diagnosis.exigenciasDestino.destinoDetectado)})
-                </h4>
+                <span class="text-lg">🛂</span>
+                <div>
+                  <h4 class="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                    Passaporte Seguro • Guia Sanitário & Vistos
+                  </h4>
+                  <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                    Destino: ${escapeHtml(diagnosis.exigenciasDestino.destinoDetectado)}
+                  </span>
+                </div>
               </div>
-              <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${diagnosis.exigenciasDestino.seguroObrigatorio || diagnosis.exigenciasDestino.vacinaObrigatoria ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}">
+              <span class="text-[9px] font-black uppercase px-2.5 py-1 rounded-full border shadow-xs ${diagnosis.exigenciasDestino.seguroObrigatorio || diagnosis.exigenciasDestino.vacinaObrigatoria ? 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800' : 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800'}">
                 ${diagnosis.exigenciasDestino.categoria.toUpperCase()}
               </span>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
-                <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">🛂 Documento / Visto</span>
-                <p class="font-bold text-slate-700 dark:text-slate-200 leading-snug">${escapeHtml(diagnosis.exigenciasDestino.docExigido)}</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px] relative z-10">
+              <div class="p-3 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/70 dark:border-slate-800 shadow-xs">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1">🛂 Documento / Visto</span>
+                <p class="font-extrabold text-slate-800 dark:text-slate-100 leading-snug">${escapeHtml(diagnosis.exigenciasDestino.docExigido)}</p>
                 ${diagnosis.exigenciasDestino.vistoExigido ? `<span class="inline-block mt-1 text-[10px] text-rose-600 dark:text-rose-400 font-black">⚠️ Visto Obrigatório</span>` : ''}
               </div>
 
-              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
-                <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">🏥 Seguro Viagem</span>
-                <p class="font-bold text-slate-700 dark:text-slate-200 leading-snug">
+              <div class="p-3 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/70 dark:border-slate-800 shadow-xs">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1">🏥 Seguro Viagem</span>
+                <p class="font-extrabold text-slate-800 dark:text-slate-100 leading-snug">
                   ${diagnosis.exigenciasDestino.seguroObrigatorio ? '🚨 Obrigatório Schengen (30.000€)' : '🛡️ Altamente Recomendado'}
                 </p>
               </div>
 
-              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 sm:col-span-2">
-                <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">💉 Vacinas & Requisitos Sanitários</span>
-                <p class="font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
+              <div class="p-3 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/70 dark:border-slate-800 shadow-xs sm:col-span-2">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1">💉 Vacinas & Requisitos Sanitários</span>
+                <p class="font-bold text-slate-700 dark:text-slate-200 leading-relaxed">
                   ${diagnosis.exigenciasDestino.vacinaObrigatoria 
-                    ? `🚨 <strong class="text-rose-600 dark:text-rose-400">${escapeHtml(diagnosis.exigenciasDestino.vacinaDescricao || 'Vacina Febre Amarela')}</strong> (CIVP Anvisa)` 
+                    ? `🚨 <strong class="text-rose-600 dark:text-rose-400">${escapeHtml(diagnosis.exigenciasDestino.vacinaDescricao || 'Vacina Febre Amarela')}</strong> (CIVP Anvisa obrigatório)` 
                     : 'Sem vacinas obrigatórias exigidas pelas autoridades de imigração.'}
                 </p>
               </div>
             </div>
 
-            <div class="p-2.5 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/80 dark:border-indigo-900/40 rounded-xl text-[10.5px] text-indigo-950 dark:text-indigo-200 leading-relaxed font-medium">
+            <div class="p-3 bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100/90 dark:border-indigo-900/50 rounded-2xl text-[11px] text-indigo-950 dark:text-indigo-200 leading-relaxed font-semibold">
               💡 ${escapeHtml(diagnosis.exigenciasDestino.orientacaoGeral)}
             </div>
           </div>
@@ -360,6 +378,15 @@ export class RiskDiagnosisDrawer {
             await navigator.clipboard.writeText(msg);
           }
         } catch (_) {}
+
+        // Feedback tátil imediato no botão
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<span>✅ Copiado!</span>';
+        btn.classList.add('bg-emerald-600', 'text-white', 'scale-105');
+        setTimeout(() => {
+          btn.innerHTML = originalContent;
+          btn.classList.remove('bg-emerald-600', 'text-white', 'scale-105');
+        }, 1800);
 
         let url = 'https://wa.me/?text=' + encodeURIComponent(msg);
         if (tel) {

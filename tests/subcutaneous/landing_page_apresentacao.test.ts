@@ -27,7 +27,8 @@ describe('Subcutaneous: Landing Page - Apresentação Comercial Oficial Completa
 
     expect(html).toContain('id="tab-btn-risk"');
     expect(html).toContain('id="panel-risk"');
-    expect(html).toContain('Risk Score™ (Onda 3)');
+    expect(html).toContain('Risk Score™');
+    expect(html).not.toContain('Onda 3');
 
     expect(html).toContain('id="tab-btn-nexttrip"');
     expect(html).toContain('id="panel-nexttrip"');
@@ -63,7 +64,7 @@ describe('Subcutaneous: Landing Page - Apresentação Comercial Oficial Completa
     expect(html).toContain('id="panel-publicas"');
   });
 
-  it('deve conter as seções profundas dos motores: Studio, Risk Score Onda 3, Next Trip e Financeiro', () => {
+  it('deve conter as seções profundas dos motores: Studio, Risk Score, Next Trip e Financeiro', () => {
     // Setup & Action
     const html = LandingPage.renderHtml();
 

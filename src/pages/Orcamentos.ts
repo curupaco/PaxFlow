@@ -317,24 +317,24 @@ export class OrcamentosPage {
     if (isNaN(criado)) return { dias: 0, badgeHtml: '', nivel: 'recente' };
     const diffDias = Math.floor((Date.now() - criado) / (1000 * 60 * 60 * 24));
 
-    if (diffDias <= 2) {
+    if (diffDias < 3) {
       const texto = diffDias === 0 ? 'Hoje' : `${diffDias}d na etapa`;
       return {
         dias: diffDias,
         nivel: 'recente',
-        badgeHtml: `<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40" title="Lead recente na etapa (${diffDias}d)">🟢 ${texto}</span>`
+        badgeHtml: `<span class="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40 shadow-xs" title="Lead recente na etapa (${diffDias}d)">🟢 ${texto}</span>`
       };
     } else if (diffDias <= 5) {
       return {
         dias: diffDias,
         nivel: 'moderado',
-        badgeHtml: `<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40" title="Atenção: ${diffDias} dias nesta etapa">🟡 ${diffDias}d na etapa</span>`
+        badgeHtml: `<span class="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60 shadow-xs ring-1 ring-amber-400/30" title="Atenção: ${diffDias} dias sem contato nesta etapa">⚠️ ${diffDias}d sem contato</span>`
       };
     } else {
       return {
         dias: diffDias,
         nivel: 'critico',
-        badgeHtml: `<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/40 animate-pulse" title="Crítico: parado há ${diffDias} dias">🔴 ${diffDias}d na etapa</span>`
+        badgeHtml: `<span class="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-300 dark:border-rose-800/60 shadow-xs ring-1 ring-rose-400/40 animate-pulse" title="Crítico: parado há ${diffDias} dias sem contato">🚨 ${diffDias}d sem contato</span>`
       };
     }
   }
@@ -999,9 +999,12 @@ export class OrcamentosPage {
                   </svg>
                 </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Solicitado</span>
-                <span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-black">${solicitado.length}</span>
               </div>
-              <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400">R$ ${solicitado.reduce((acc, curr) => acc + (curr.valorProposta || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/50 shadow-xs">
+                <span class="text-[10px] font-black text-indigo-700 dark:text-indigo-300">${solicitado.length}</span>
+                <span class="text-[9px] text-indigo-400">•</span>
+                <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400">R$ ${solicitado.reduce((acc, curr) => acc + (curr.valorProposta || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+              </div>
             </div>
             ${this.renderSortControls('SOLICITADO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -1021,9 +1024,12 @@ export class OrcamentosPage {
                   </svg>
                 </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Em Andamento</span>
-                <span class="px-2 py-0.5 bg-amber-100 dark:bg-indigo-950/80 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-black">${emAndamento.length}</span>
               </div>
-              <span class="text-[10px] font-black text-amber-600 dark:text-amber-400">R$ ${emAndamento.reduce((acc, curr) => acc + (curr.valorProposta || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/50 shadow-xs">
+                <span class="text-[10px] font-black text-amber-700 dark:text-amber-300">${emAndamento.length}</span>
+                <span class="text-[9px] text-amber-400">•</span>
+                <span class="text-[10px] font-black text-amber-600 dark:text-amber-400">R$ ${emAndamento.reduce((acc, curr) => acc + (curr.valorProposta || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+              </div>
             </div>
             ${this.renderSortControls('EM_ANDAMENTO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -1042,9 +1048,12 @@ export class OrcamentosPage {
                   </svg>
                 </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Aguardando</span>
-                <span class="px-2 py-0.5 bg-rose-100 dark:bg-indigo-950/80 text-rose-600 dark:text-rose-400 rounded-full text-[10px] font-black">${aguardando.length}</span>
               </div>
-              <span class="text-[10px] font-black text-rose-600 dark:text-rose-400">R$ ${aguardando.reduce((acc, curr) => acc + (curr.valorProposta || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 border border-rose-200/60 dark:border-rose-800/50 shadow-xs">
+                <span class="text-[10px] font-black text-rose-700 dark:text-rose-300">${aguardando.length}</span>
+                <span class="text-[9px] text-rose-400">•</span>
+                <span class="text-[10px] font-black text-rose-600 dark:text-rose-400">R$ ${aguardando.reduce((acc, curr) => acc + (curr.valorProposta || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+              </div>
             </div>
             ${this.renderSortControls('AGUARDANDO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -1063,7 +1072,7 @@ export class OrcamentosPage {
                   </svg>
                 </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Concluído</span>
-                <span class="px-2 py-0.5 bg-emerald-100 dark:bg-indigo-950/80 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black">${concluido.length}</span>
+                <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 rounded-full text-[10px] font-black border border-emerald-200/60 dark:border-emerald-800/50 shadow-xs">${concluido.length}</span>
               </div>
               <div class="flex items-center gap-1.5">
                 <button id="btn-toggle-concluidos-mes" class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition text-xs shrink-0 focus:outline-none" title="${this.showAllConcluded ? 'Mostrar apenas mês corrente' : 'Mostrar todos históricos'}">
@@ -1288,9 +1297,10 @@ export class OrcamentosPage {
             </button>
 
             <!-- Direita: Ações Secundárias Rápidas -->
-            <div class="inline-flex items-center gap-0.5">
-              <button data-action="criar-proposta-studio" data-id="${o.id}" title="Criar Proposta de Luxo no PaxFlow Studio (1-Clique)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition shrink-0">
-                <span class="text-xs">✨</span>
+            <div class="inline-flex items-center gap-1">
+              <button data-action="criar-proposta-studio" data-id="${o.id}" title="Gerar Proposta no Studio™ (1-Clique)" class="px-2 py-0.5 inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 font-black text-[9px] uppercase tracking-wider rounded-lg border border-indigo-200/50 dark:border-indigo-800/50 shadow-xs transition active:scale-95 shrink-0 cursor-pointer">
+                <span class="text-[10px]">✨</span>
+                <span>Studio™</span>
               </button>
               <button data-action="editar-orcamento" data-id="${o.id}" title="Editar Orçamento (Data da Viagem, Destino, Cliente, Contato, Tags)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition shrink-0">
                 <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

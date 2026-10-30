@@ -43,7 +43,7 @@ export class HelpModal {
                 id="input-ajuda-busca" 
                 type="text" 
                 placeholder="Buscar termo, recurso ou conceito..." 
-                class="w-full pl-9 pr-8 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition"
+                class="w-full h-[42px] pl-9 pr-8 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition"
               />
               <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400 text-xs">🔍</span>
               <span id="ajuda-search-count" class="hidden absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-extrabold text-[9px]"></span>

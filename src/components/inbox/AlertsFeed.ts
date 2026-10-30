@@ -160,10 +160,21 @@ export class AlertsFeed {
             badgeText = 'Financeiro 💰';
           }
 
+          let borderAccent = 'border-l-4 border-l-indigo-500';
+          if (a.type === 'refund' || a.isDecision) {
+            borderAccent = 'border-l-4 border-l-rose-500';
+          } else if (a.type === 'passport' || a.type === 'atendimento_balcao') {
+            borderAccent = 'border-l-4 border-l-amber-500';
+          } else if (a.type === 'financeiro') {
+            borderAccent = 'border-l-4 border-l-emerald-500';
+          } else if (a.type === 'pre-embarque' || a.type === 'pos-viagem-nps' || a.type === 'campaign_notification') {
+            borderAccent = 'border-l-4 border-l-sky-500';
+          }
+
           const isUnread = !a.arquivado && !a.isSent && !a.isDecision && !this.readList.includes(a.id);
 
           return `
-            <div class="inbox-card inbox-glass p-5 rounded-2xl border ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/5 dark:bg-indigo-950/5' : 'border-white/60 dark:border-slate-900/60'} shadow-sm flex items-start gap-3 cursor-pointer relative" data-alert-id="${a.id}">
+            <div class="inbox-card inbox-glass p-5 rounded-2xl border ${borderAccent} ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/10 dark:bg-indigo-950/20' : 'border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70'} shadow-sm flex items-start gap-3 cursor-pointer relative transition hover:shadow-md" data-alert-id="${a.id}">
               
               <!-- Checkbox de Seleção em Massa -->
               <div class="pt-0.5" onclick="event.stopPropagation()">
