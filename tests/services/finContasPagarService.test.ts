@@ -520,6 +520,70 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     expect(metricas.qtdAtrasadas).toBe(2);
     expect(metricas.totalAtrasadas).toBe(6000);
   });
+
+  it('deve permitir converter título avulso em recorrente na edição gerando as parcelas futuras até o fim do ano', async () => {
+    // // Setup
+    const contaOriginal = {
+      id: 'conta-avulsa-1',
+      favorecido: 'Leady',
+      descricao: 'Assinatura',
+      valor_nominal: 180,
+      data_vencimento: '2026-10-30',
+      tipo_custo_id: 'tipo-fixo',
+      categoria_id: 'cat-sistema',
+      recorrente: false,
+      parcela_total: 1
+    };
+
+    let updateChamado = false;
+    let insertsFuturosRecebidos: any[] = [];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: contaOriginal, error: null })
+            })
+          }),
+          update: vi.fn().mockImplementation(() => {
+            updateChamado = true;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null })
+            };
+          }),
+          insert: vi.fn().mockImplementation((payload) => {
+            insertsFuturosRecebidos = payload;
+            return Promise.resolve({ data: payload, error: null });
+          })
+        } as any;
+      }
+      if (table === 'fin_auditoria') {
+        return {
+          insert: vi.fn().mockResolvedValue({ error: null })
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // // Action
+    const res = await FinContasPagarService.editarConta({
+      contaId: 'conta-avulsa-1',
+      novoTipoLancamento: 'recorrente',
+      dataVencimento: '2026-10-30',
+      valorNominal: 180,
+      favorecido: 'Leady'
+    });
+
+    // // Assert
+    expect(res.sucesso).toBe(true);
+    expect(updateChamado).toBe(true);
+    // Vencimento base em Outubro (10): projeta Novembro (11) e Dezembro (12) -> 2 parcelas futuras
+    expect(insertsFuturosRecebidos.length).toBe(2);
+    expect(insertsFuturosRecebidos[0].data_vencimento).toBe('2026-11-30');
+    expect(insertsFuturosRecebidos[1].data_vencimento).toBe('2026-12-30');
+    expect(res.afetadas).toBe(3); // 1 atualizada + 2 criadas
+  });
 });
 
 

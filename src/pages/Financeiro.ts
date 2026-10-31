@@ -2527,6 +2527,26 @@ export class FinanceiroPage {
             </label>
           </div>
 
+          ${!ehRecorrenteOuParcelado ? `
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <span>🔁</span> Repetição / Recorrência
+                </span>
+                <select id="select-edit-recorrencia" class="h-[36px] px-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200">
+                  <option value="unica">Título Único / Esporádico</option>
+                  <option value="recorrente">Tornar Mensal Recorrente (Até o fim do ano)</option>
+                  <option value="parcelado">Tornar Parcelado (Quantidade fixa)</option>
+                </select>
+              </div>
+
+              <div id="box-edit-parcelas" class="hidden">
+                <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Quantidade Total de Parcelas</label>
+                <input type="number" min="2" max="120" id="input-edit-qtd-parcelas" value="10" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold" />
+              </div>
+            </div>
+          ` : ''}
+
           <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <button type="button" id="btn-cancelar-modal-editar" class="h-[42px] px-4 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
               Cancelar
@@ -2578,6 +2598,16 @@ export class FinanceiroPage {
       }
     });
 
+    const selectEditRec = overlay.querySelector('#select-edit-recorrencia') as HTMLSelectElement | null;
+    const boxEditParcelas = overlay.querySelector('#box-edit-parcelas') as HTMLElement | null;
+    selectEditRec?.addEventListener('change', () => {
+      if (selectEditRec.value === 'parcelado') {
+        boxEditParcelas?.classList.remove('hidden');
+      } else {
+        boxEditParcelas?.classList.add('hidden');
+      }
+    });
+
     const form = overlay.querySelector('#form-editar-conta') as HTMLFormElement;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2597,6 +2627,12 @@ export class FinanceiroPage {
       const valorEstimado = (overlay.querySelector('#input-edit-estimado') as HTMLInputElement).checked;
 
       const modoCascata = (overlay.querySelector('input[name="modo-cascata"]:checked') as HTMLInputElement)?.value as 'apenas_esta' | 'esta_e_futuras' || 'apenas_esta';
+
+      // Conversão de título avulso em recorrente/parcelado
+      const editRecTipo = selectEditRec?.value || 'unica';
+      const novoTipoLancamento: 'avulso' | 'recorrente' | 'parcelado' | undefined = 
+        editRecTipo === 'recorrente' ? 'recorrente' : (editRecTipo === 'parcelado' ? 'parcelado' : undefined);
+      const totalParcelas = editRecTipo === 'parcelado' ? Number((overlay.querySelector('#input-edit-qtd-parcelas') as HTMLInputElement)?.value || 2) : undefined;
 
       if (modoCascata === 'esta_e_futuras') {
         const confirmouCascata = await showCustomConfirm(
@@ -2623,6 +2659,8 @@ export class FinanceiroPage {
         valorEstimado,
         dataVencimento,
         formaPagamento,
+        novoTipoLancamento,
+        totalParcelas,
         usuarioId: this.user.id,
         usuarioNome: this.perfil?.nome
       });

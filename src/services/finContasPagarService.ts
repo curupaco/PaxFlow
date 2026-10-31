@@ -380,6 +380,8 @@ export class FinContasPagarService {
     usuarioId?: string;
     usuarioNome?: string;
     categoriaNome?: string;
+    novoTipoLancamento?: 'avulso' | 'recorrente' | 'parcelado';
+    totalParcelas?: number;
   }): Promise<{ sucesso: boolean; afetadas?: number; erro?: string }> {
     try {
       // 1. Localiza a conta atual
@@ -425,6 +427,126 @@ export class FinContasPagarService {
       if (params.valorNominal !== undefined) camposBaseUpdate.valor_nominal = params.valorNominal;
       if (params.valorEstimado !== undefined) camposBaseUpdate.valor_estimado = params.valorEstimado;
       if (params.formaPagamento) camposBaseUpdate.forma_pagamento = params.formaPagamento;
+
+      // 1.1 Se o usuário está convertendo um título avulso em recorrente ou parcelado
+      if (!ehRecorrenteOuParcelado && params.novoTipoLancamento && params.novoTipoLancamento !== 'avulso') {
+        const contratoId = crypto.randomUUID();
+        const [anoBase, mesBase, diaBase] = novaDataVenc.split('-').map(Number);
+        let novasParcelasCriadas = 0;
+
+        if (params.novoTipoLancamento === 'recorrente') {
+          // Atualiza a parcela atual para ser a parcela 1 da série recorrente
+          camposBaseUpdate.contrato_recorrente_id = contratoId;
+          camposBaseUpdate.recorrente = true;
+          camposBaseUpdate.periodicidade = 'mensal';
+          camposBaseUpdate.parcela_numero = 1;
+          camposBaseUpdate.parcela_total = 1;
+          if (params.descricao !== undefined) camposBaseUpdate.descricao = params.descricao.trim() || null;
+          camposBaseUpdate.data_vencimento = novaDataVenc;
+          camposBaseUpdate.data_vencimento_operacional = novoVencOp;
+
+          await supabase.from('fin_contas_pagar').update(camposBaseUpdate).eq('id', params.contaId);
+
+          // Projeta os meses seguintes até o fim do ano corrente
+          const insertsFuturos: any[] = [];
+          let mes = mesBase + 1;
+          let pNum = 2;
+          while (mes <= 12) {
+            const dt = new Date(Date.UTC(anoBase, mes - 1, diaBase, 12, 0, 0));
+            const vencIso = dt.toISOString().split('T')[0];
+            const vencOp = this.calcularVencimentoOperacional(vencIso, params.categoriaNome, camposBaseUpdate.descricao);
+
+            insertsFuturos.push({
+              contrato_recorrente_id: contratoId,
+              tipo_custo_id: camposBaseUpdate.tipo_custo_id || contaAtual.tipo_custo_id,
+              categoria_id: camposBaseUpdate.categoria_id || contaAtual.categoria_id,
+              subcategoria_id: camposBaseUpdate.subcategoria_id || contaAtual.subcategoria_id || null,
+              conta_bancaria_id: camposBaseUpdate.conta_bancaria_id || contaAtual.conta_bancaria_id || null,
+              viagem_id: contaAtual.viagem_id || null,
+              favorecido: camposBaseUpdate.favorecido || contaAtual.favorecido,
+              descricao: camposBaseUpdate.descricao || contaAtual.descricao || null,
+              valor_nominal: camposBaseUpdate.valor_nominal !== undefined ? camposBaseUpdate.valor_nominal : contaAtual.valor_nominal,
+              valor_estimado: camposBaseUpdate.valor_estimado !== undefined ? camposBaseUpdate.valor_estimado : (contaAtual.valor_estimado || false),
+              data_vencimento: vencIso,
+              data_vencimento_operacional: vencOp,
+              forma_pagamento: camposBaseUpdate.forma_pagamento || contaAtual.forma_pagamento || 'pix',
+              status: 'pendente',
+              parcela_numero: pNum++,
+              recorrente: true,
+              periodicidade: 'mensal',
+              criado_por: params.usuarioId || contaAtual.criado_por || null
+            });
+            mes++;
+          }
+
+          if (insertsFuturos.length > 0) {
+            const { error: insErr } = await supabase.from('fin_contas_pagar').insert(insertsFuturos);
+            if (!insErr) novasParcelasCriadas = insertsFuturos.length;
+          }
+        } else if (params.novoTipoLancamento === 'parcelado') {
+          const totalParcelas = params.totalParcelas && params.totalParcelas > 1 ? params.totalParcelas : 2;
+          const descBase = (params.descricao !== undefined ? params.descricao : (contaAtual.descricao || '')).replace(/\(\d+\/\d+\)/, '').trim();
+
+          camposBaseUpdate.contrato_recorrente_id = contratoId;
+          camposBaseUpdate.recorrente = false;
+          camposBaseUpdate.parcela_numero = 1;
+          camposBaseUpdate.parcela_total = totalParcelas;
+          camposBaseUpdate.descricao = `${descBase ? descBase + ' ' : ''}(1/${totalParcelas})`.trim();
+          camposBaseUpdate.data_vencimento = novaDataVenc;
+          camposBaseUpdate.data_vencimento_operacional = novoVencOp;
+
+          await supabase.from('fin_contas_pagar').update(camposBaseUpdate).eq('id', params.contaId);
+
+          const insertsFuturos: any[] = [];
+          for (let p = 2; p <= totalParcelas; p++) {
+            const dt = new Date(Date.UTC(anoBase, (mesBase - 1) + (p - 1), diaBase, 12, 0, 0));
+            const vencIso = dt.toISOString().split('T')[0];
+            const descParcela = `${descBase ? descBase + ' ' : ''}(${p}/${totalParcelas})`.trim();
+            const vencOp = this.calcularVencimentoOperacional(vencIso, params.categoriaNome, descParcela);
+
+            insertsFuturos.push({
+              contrato_recorrente_id: contratoId,
+              tipo_custo_id: camposBaseUpdate.tipo_custo_id || contaAtual.tipo_custo_id,
+              categoria_id: camposBaseUpdate.categoria_id || contaAtual.categoria_id,
+              subcategoria_id: camposBaseUpdate.subcategoria_id || contaAtual.subcategoria_id || null,
+              conta_bancaria_id: camposBaseUpdate.conta_bancaria_id || contaAtual.conta_bancaria_id || null,
+              viagem_id: contaAtual.viagem_id || null,
+              favorecido: camposBaseUpdate.favorecido || contaAtual.favorecido,
+              descricao: descParcela,
+              valor_nominal: camposBaseUpdate.valor_nominal !== undefined ? camposBaseUpdate.valor_nominal : contaAtual.valor_nominal,
+              valor_estimado: camposBaseUpdate.valor_estimado !== undefined ? camposBaseUpdate.valor_estimado : (contaAtual.valor_estimado || false),
+              data_vencimento: vencIso,
+              data_vencimento_operacional: vencOp,
+              forma_pagamento: camposBaseUpdate.forma_pagamento || contaAtual.forma_pagamento || 'boleto',
+              status: 'pendente',
+              parcela_numero: p,
+              parcela_total: totalParcelas,
+              recorrente: false,
+              criado_por: params.usuarioId || contaAtual.criado_por || null
+            });
+          }
+
+          if (insertsFuturos.length > 0) {
+            const { error: insErr } = await supabase.from('fin_contas_pagar').insert(insertsFuturos);
+            if (!insErr) novasParcelasCriadas = insertsFuturos.length;
+          }
+        }
+
+        await this.registrarAuditoria({
+          contaId: params.contaId,
+          usuarioId: params.usuarioId || 'sistema',
+          usuarioNome: params.usuarioNome,
+          acao: 'edicao',
+          detalhes: {
+            modo: 'conversao_recorrente',
+            tipoLancamento: params.novoTipoLancamento,
+            parcelasGeradas: novasParcelasCriadas,
+            alteracoes: camposBaseUpdate
+          }
+        });
+
+        return { sucesso: true, afetadas: 1 + novasParcelasCriadas };
+      }
 
       // Se for apenas esta conta ou não for recorrente:
       if (modoCascata === 'apenas_esta' || !ehRecorrenteOuParcelado) {
