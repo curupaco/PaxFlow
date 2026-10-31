@@ -1845,6 +1845,27 @@ Não. O PaxFlow é focado em CRM operacional e pós-venda. Recomendamos integra�
 
 ---
 
+## 3.51 Evolução Visual PaxFlow: Tipografia Tabular, Paleta Mineral & Microinterações
+
+### 3.51.1 Fundação Tipográfica Numérica Tabular (`tnum`)
+Para erradicar a instabilidade visual causada por números dançantes em tabelas de faturamento, DRE, conciliação e rateio de RAV, foi adotada a fundação OpenType `tnum` (Tabular Numbers) associada ao conjunto estilístico alternativo `cv05`.
+- **Comportamento**: Todos os algarismos de 0 a 9 compartilham milimetricamente a mesma largura de avanço horizontal.
+- **Escopo**: Ativado nativamente em `src/index.css` para elementos `table td`, `.kpi-value`, `[data-mask="currency"]` e classes `.tabular-nums`.
+
+### 3.51.2 Paleta Mineral de 4 Níveis & Elevação de 1px
+Substituição da base escura plana por uma estratificação física mineral de quatro camadas projetada para anular o cansaço ocular de operadores contínuos:
+1. **Nível 0 — Fundação (`#090d16` / `#fafbfc`)**: Tela de fundo base mineral sem pretos absolutos.
+2. **Nível 1 — Estrutura (`#0f1523` / `#ffffff`)**: Cards principais com borda fina de `1px` (`rgba(255, 255, 255, 0.07)` no dark).
+3. **Nível 2 — Elevação Superior (`#161e31`)**: Modais, gavetas de risco e popovers com micro-reflexo superior `inset 0 1px 0 0 rgba(255, 255, 255, 0.08)`.
+4. **Nível 3 — Ativação & Hover (`#1e293f`)**: Células ativas e estados de foco.
+
+### 3.51.3 Status Dots & Revelação Elegante
+Nas listagens densas de viagens e orçamentos, caixas retangulares pesadas foram substituídas por indicadores pontuais iluminados:
+- **Status Dots**: `🟢 Fechado`, `🟡 Pós-Venda`, `🟠 Pré-Embarque`, `🔵 Pós-Viagem`, `🔴 Reembolso Solicitado`.
+- **Revelação Elegante**: Botões operacionais mantêm repouso com opacidade atenuada em `75%`, acendendo suavemente para `100%` ao passar o mouse sobre a linha da tabela (`group-hover:opacity-100` em 150ms).
+
+---
+
 > **PaxFlow** — Gestão de Pós-Venda e Fluxo de Passageiros
 >
 > _Thiago Costa — 2026_

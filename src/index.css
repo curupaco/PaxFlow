@@ -46,10 +46,71 @@ html, body {
   overflow-x: hidden;
 }
 body {
-  background-color: #f8fafc;
+  background-color: #fafbfc;
 }
 html.dark body {
-  background-color: #0b0f19;
+  background-color: #090d16;
+}
+
+/* ================= PALETA MINERAL & ESCALA DE ELEVAÇÃO EM 4 NÍVEIS ================= */
+:root {
+  --surface-0: #fafbfc;
+  --surface-1: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-3: #e2e8f0;
+}
+
+html.dark {
+  --surface-0: #090d16;
+  --surface-1: #0f1523;
+  --surface-2: #161e31;
+  --surface-3: #1e293f;
+}
+
+/* Superfícies de elevação mineral */
+.surface-elevation-0 {
+  background-color: var(--surface-0);
+}
+
+.surface-elevation-1 {
+  background-color: var(--surface-1);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+html.dark .surface-elevation-1 {
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+.surface-elevation-2 {
+  background-color: var(--surface-2);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+}
+html.dark .surface-elevation-2 {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.surface-elevation-3 {
+  background-color: var(--surface-3);
+}
+html.dark .surface-elevation-3 {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+}
+
+/* ================= FUNDAÇÃO GLOBAL DE TIPOGRAFIA NUMÉRICA TABULAR (TNUM) ================= */
+/* Garante alinhamento milimétrico vertical dos dígitos numéricos (padrão Bloomberg / Stripe) */
+.font-tabular,
+.tabular-nums,
+table td,
+.kpi-value,
+[data-mask="currency"],
+.currency-cell,
+.data-valor,
+.data-total,
+.monetary-value {
+  font-feature-settings: "tnum" 1, "cv05" 1;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Animação para cards */

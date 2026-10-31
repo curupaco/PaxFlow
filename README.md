@@ -18,6 +18,20 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ---
 
+- **Polimento Visual, Design Tokens & Paleta Mineral (Evolução Visual 2026) [NEW]**:
+  - **Fundação Global de Tipografia Numérica Tabular (`tnum`)**:
+    - Ativação de OpenType features (`tnum` e `cv05`) em todas as células de tabelas, cartões de KPI e inputs monetários (`font-variant-numeric: tabular-nums`).
+    - Alinhamento vertical milimétrico dos dígitos em tabelas do Financeiro, Relatórios, Splits de Viagem e PNRs, eliminando desalinhamentos em números dinâmicos.
+  - **Paleta Mineral de 4 Camadas & Elevação Profunda**:
+    - Escala de superfícies minerais anti-fadiga visual (`mineral-0` a `mineral-3`) com micro-bordas iluminadas de 1px (`inset 0 1px 0 0 rgba(255, 255, 255, 0.08)`).
+    - Fundo base suave no Light Mode (`#fafbfc`) e Dark Mode mineral profundo (`#090d16`).
+  - **Status Dots Luminosos & Microinterações Calmas**:
+    - Substituição de caixas pesadas por indicadores pontuais (status dots cromáticos) nas tabelas operacionais (`🟢 Fechado`, `🟡 Pós-Venda`, `🟠 Pré-Embarque`, `🔵 Pós-Viagem`, `🔴 Reembolso Solicitado`).
+    - Coluna de ações com revelação elegante (repouso a 75% e 100% no hover da linha).
+  - **Módulo de Divisão de Viagens & Rateio RAV (`ViagemSplitEditor`)**:
+    - Inputs numéricos de porcentagem de Venda e RAV harmonizados em `h-[42px]` e `rounded-xl`.
+    - Dupla barra de validação com micro-gradientes semânticos (100% verde esmeralda, pendente âmbar, estouro vermelho) e espessura `h-2.5`.
+
 - **Apresentação Comercial Oficial & Vitrine de Produto (`/conheca`) [NEW]**:
   - **Tom Institucional, Descontraído e Sem Gatilhos de Venda Agressiva**: Comunicação clara e acolhedora de agente para agente, eliminando contadores regressivos, tabelas de e-commerce e urgências artificiais.
   - **Jornada Cronológica em 5 Etapas com Telas Reais Integradas**:

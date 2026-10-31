@@ -1101,7 +1101,21 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'financeiro',
     label: '⏳ Gestão de Títulos em Atraso, Busca Rápida e Máscaras Monetárias',
     description: 'Como funciona o filtro histórico de atrasadas, o card global de passivo e o filtro rápido de categorias.',
-    details: 'Recursos avançados para agilidade e precisão no Contas a Pagar:\n\n1. **Filtro de Atrasadas Históricas**: Ao selecionar o status \"Em Atraso (Histórico)\", o sistema ignora a trava de mês/ano e traz **todas as contas atrasadas da história da agência**, eliminando a necessidade de adivinhar o mês de vencimento.\n2. **Card KPI Global de Títulos em Atraso**: O terceiro card superior exibe permanentemente o passivo real acumulado de todas as contas em atraso da agência. Clicar sobre ele aplica imediatamente o filtro histórico de atrasadas.\n3. **Ordenação Alfabética A-Z & Busca Rápida**: Tipos de custo e categorias são listados em ordem alfabética estrita em filtros e modais. Nos modais de lançamento e edição, o campo `🔍 Filtrar categoria...` permite encontrar qualquer categoria digitando apenas as primeiras letras.\n4. **Máscaras Monetárias em Tempo Real**: Todos os inputs de valor (lançamento, edição, baixa com juros/desconto e contas bancárias) formatam automaticamente em padrão brasileiro `R$ 0,00` e protegem contra caracteres inválidos.'
+    details: 'Recursos avançados para agilidade e precisão no Contas a Pagar:\n\n1. **Filtro de Atrasadas Históricas**: Ao selecionar o status "Em Atraso (Histórico)", o sistema ignora a trava de mês/ano e traz **todas as contas atrasadas da história da agência**, eliminando a necessidade de adivinhar o mês de vencimento.\n2. **Card KPI Global de Títulos em Atraso**: O terceiro card superior exibe permanentemente o passivo real acumulado de todas as contas em atraso da agência. Clicar sobre ele aplica imediatamente o filtro histórico de atrasadas.\n3. **Ordenação Alfabética A-Z & Busca Rápida**: Tipos de custo e categorias são listados em ordem alfabética estrita em filtros e modais. Nos modais de lançamento e edição, o campo `🔍 Filtrar categoria...` permite encontrar qualquer categoria digitando apenas as primeiras letras.\n4. **Máscaras Monetárias em Tempo Real**: Todos os inputs de valor (lançamento, edição, baixa com juros/desconto e contas bancárias) formatam automaticamente em padrão brasileiro `R$ 0,00` e protegem contra caracteres inválidos.'
+  },
+  {
+    id: 'visual-tipografia-tabular-mineral',
+    modulo: 'geral',
+    label: '💎 Padrão Visual PaxFlow: Tipografia Tabular, Paleta Mineral e Status Dots',
+    description: 'Conheça os aprimoramentos de legibilidade, ausência de números dançantes e tabelas calmas.',
+    details: 'O PaxFlow conta com uma fundação de design construída para produtividade máxima em jornadas prolongadas:\n\n1. **Tipografia Numérica Tabular (`tnum`)**: Todos os números de tabelas, relatórios e moedas utilizam largura monospaçada para dígitos (OpenType `tnum`). Isso significa que `1.111,11` e `8.888,88` mantêm prumo vertical perfeito, eliminando o efeito de números dançantes.\n2. **Paleta Mineral de 4 Níveis**: Fundo mineral profundo (`#090d16` no dark e `#fafbfc` no light) acompanhado de micro-bordas iluminadas de 1px com reflexo suave superior, reduzindo em até 70% a fadiga visual.\n3. **Status Dots e Tabelas Calmas**: A tabela operacional de viagens adota pontos cromáticos discretos com micro-pulso (`🟢 Fechado`, `🟡 Pós-Venda`, `🟠 Pré-Embarque`, `🔵 Pós-Viagem`, `🔴 Reembolso Solicitado`) e botões de ação com revelação elegante no hover da linha.'
+  },
+  {
+    id: 'viagens-split-rav-editor',
+    modulo: 'viagens',
+    label: '✈️ Divisão de Viagens e Rateio de RAV Aérea (ViagemSplitEditor)',
+    description: 'Como configurar a divisão de comissão e rateio de RAV entre consultores parceiros com validação de 100%.',
+    details: 'Para viagens operadas em parceria entre consultores:\n\n1. **Editor Unificado em Altura Padrão**: Todos os inputs de porcentagem e seletores seguem o padrão oficial `h-[42px]` com cantos `rounded-xl` e formatação tabular.\n2. **Dupla Barra de Validação**: O sistema audita em tempo real a soma de 100% da Venda Geral e da RAV Aérea separadamente, exibindo gradiente esmeralda (100% válido), vermelho (estouro >100%) ou âmbar (pendente <100%).\n3. **Atalhos Rápidos de 1-Clique**: Botões instantâneos para `50/50`, `60/40`, `70/30`, `100% Titular` e sincronização automática de RAV com a Venda.'
   }
 ];
 

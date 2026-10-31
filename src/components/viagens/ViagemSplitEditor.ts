@@ -137,31 +137,31 @@ export class ViagemSplitEditor {
           <!-- Dupla Barra de Validação Visual (Venda Geral e RAV Aérea) -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <!-- Barra 1: Venda Geral -->
-            <div class="p-3.5 rounded-xl border ${validacaoVenda.valida ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-800 dark:text-emerald-200' : (validacaoVenda.soma > 100 ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40 text-rose-800 dark:text-rose-200' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-200')} transition-all">
-              <div class="flex items-center justify-between text-xs font-bold mb-1.5">
-                <span class="flex items-center gap-1.5">
+            <div id="card-validacao-venda" class="p-3.5 rounded-2xl border ${validacaoVenda.valida ? 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-800 dark:text-emerald-200 shadow-sm' : (validacaoVenda.soma > 100 ? 'bg-rose-50/80 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40 text-rose-800 dark:text-rose-200 shadow-sm' : 'bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-200 shadow-sm')} transition-all">
+              <div class="flex items-center justify-between text-xs font-bold mb-2">
+                <span id="label-validacao-venda" class="flex items-center gap-1.5 font-bold">
                   ${validacaoVenda.valida ? '✅' : (validacaoVenda.soma > 100 ? '🚨' : '⚠️')} Total da Venda
                 </span>
-                <span class="text-sm font-extrabold">${validacaoVenda.soma.toFixed(0)}%</span>
+                <span id="num-validacao-venda" class="text-sm font-black tabular-nums tracking-tight ${validacaoVenda.valida ? 'text-emerald-700 dark:text-emerald-400' : (validacaoVenda.soma > 100 ? 'text-rose-700 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400')}">${validacaoVenda.soma.toFixed(0)}%</span>
               </div>
-              <div class="w-full bg-white/70 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div class="h-2 rounded-full transition-all duration-300 ${validacaoVenda.valida ? 'bg-emerald-500' : (validacaoVenda.soma > 100 ? 'bg-rose-500' : 'bg-amber-500')}" style="width: ${Math.min(validacaoVenda.soma, 100)}%;"></div>
+              <div class="w-full bg-slate-200/70 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden p-0.5 shadow-inner">
+                <div id="prog-validacao-venda" class="h-full rounded-full transition-all duration-300 ${validacaoVenda.valida ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-sm' : (validacaoVenda.soma > 100 ? 'bg-gradient-to-r from-rose-500 to-red-600' : 'bg-gradient-to-r from-amber-400 to-orange-500')}" style="width: ${Math.min(validacaoVenda.soma, 100)}%;"></div>
               </div>
-              <p class="text-[11px] mt-1.5 opacity-90">${validacaoVenda.mensagem}</p>
+              <p id="msg-validacao-venda" class="text-[11px] mt-2 font-medium opacity-90">${validacaoVenda.mensagem}</p>
             </div>
 
             <!-- Barra 2: RAV Aérea -->
-            <div class="p-3.5 rounded-xl border ${validacaoRav.valida ? 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/40 text-indigo-800 dark:text-indigo-200' : (validacaoRav.soma > 100 ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40 text-rose-800 dark:text-rose-200' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-200')} transition-all">
-              <div class="flex items-center justify-between text-xs font-bold mb-1.5">
-                <span class="flex items-center gap-1.5">
+            <div id="card-validacao-rav" class="p-3.5 rounded-2xl border ${validacaoRav.valida ? 'bg-indigo-50/80 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/40 text-indigo-800 dark:text-indigo-200 shadow-sm' : (validacaoRav.soma > 100 ? 'bg-rose-50/80 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40 text-rose-800 dark:text-rose-200 shadow-sm' : 'bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-200 shadow-sm')} transition-all">
+              <div class="flex items-center justify-between text-xs font-bold mb-2">
+                <span id="label-validacao-rav" class="flex items-center gap-1.5 font-bold">
                   ${validacaoRav.valida ? '✈️' : (validacaoRav.soma > 100 ? '🚨' : '⚠️')} Total da RAV
                 </span>
-                <span class="text-sm font-extrabold">${validacaoRav.soma.toFixed(0)}%</span>
+                <span id="num-validacao-rav" class="text-sm font-black tabular-nums tracking-tight ${validacaoRav.valida ? 'text-indigo-700 dark:text-indigo-400' : (validacaoRav.soma > 100 ? 'text-rose-700 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400')}">${validacaoRav.soma.toFixed(0)}%</span>
               </div>
-              <div class="w-full bg-white/70 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div class="h-2 rounded-full transition-all duration-300 ${validacaoRav.valida ? 'bg-indigo-500' : (validacaoRav.soma > 100 ? 'bg-rose-500' : 'bg-amber-500')}" style="width: ${Math.min(validacaoRav.soma, 100)}%;"></div>
+              <div class="w-full bg-slate-200/70 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden p-0.5 shadow-inner">
+                <div id="prog-validacao-rav" class="h-full rounded-full transition-all duration-300 ${validacaoRav.valida ? 'bg-gradient-to-r from-indigo-500 to-sky-500 shadow-sm' : (validacaoRav.soma > 100 ? 'bg-gradient-to-r from-rose-500 to-red-600' : 'bg-gradient-to-r from-amber-400 to-orange-500')}" style="width: ${Math.min(validacaoRav.soma, 100)}%;"></div>
               </div>
-              <p class="text-[11px] mt-1.5 opacity-90">${validacaoRav.mensagem}</p>
+              <p id="msg-validacao-rav" class="text-[11px] mt-2 font-medium opacity-90">${validacaoRav.mensagem}</p>
             </div>
           </div>
 
@@ -178,11 +178,11 @@ export class ViagemSplitEditor {
               </div>
               <div class="flex flex-wrap gap-2">
                 ${atalhos.map(a => `
-                  <button type="button" class="btn-atalho-split px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition" data-titular="${a.titular}" data-parceiro="${a.parceiro}">
+                  <button type="button" class="btn-atalho-split px-3.5 h-[34px] rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer active:scale-95" data-titular="${a.titular}" data-parceiro="${a.parceiro}">
                     ${a.label}
                   </button>
                 `).join('')}
-                <button type="button" id="btn-atalho-rav-titular" class="px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:border-amber-500 transition">
+                <button type="button" id="btn-atalho-rav-titular" class="px-3.5 h-[34px] rounded-xl text-xs font-bold border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:border-amber-500 transition cursor-pointer active:scale-95">
                   ✈️ RAV 100% Titular
                 </button>
               </div>
@@ -199,9 +199,9 @@ export class ViagemSplitEditor {
             </div>
 
             <!-- Linha Fixa do Titular -->
-            <div class="p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/30 dark:bg-indigo-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="p-3.5 rounded-2xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/30 dark:bg-indigo-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
               <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                <span class="text-base">👑</span>
+                <span class="text-lg">👑</span>
                 <div class="truncate">
                   <div class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">${titularNome}</div>
                   <div class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold">Consultor Titular (Canal do Passageiro)</div>
@@ -222,7 +222,7 @@ export class ViagemSplitEditor {
                     data-consultor-id="${this.options.titularId}"
                     data-tipo="venda"
                     ${isReadOnly ? 'disabled' : ''}
-                    class="input-split-percentual w-20 px-2 py-1.5 text-right font-extrabold text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="input-split-percentual w-20 h-[42px] px-2.5 text-right font-black text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                   />
                   <span class="text-xs font-bold text-slate-500">%</span>
                 </div>
@@ -239,7 +239,7 @@ export class ViagemSplitEditor {
                     data-consultor-id="${this.options.titularId}"
                     data-tipo="rav"
                     ${isReadOnly ? 'disabled' : ''}
-                    class="input-split-rav w-20 px-2 py-1.5 text-right font-extrabold text-sm rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    class="input-split-rav w-20 h-[42px] px-2.5 text-right font-black text-sm rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 tabular-nums focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                   />
                   <span class="text-xs font-bold text-amber-600 dark:text-amber-400">%</span>
                 </div>
@@ -251,14 +251,14 @@ export class ViagemSplitEditor {
               ${this.divisoes.filter(d => d.consultor_id !== this.options.titularId).map((parceiro, idx) => {
                 const consultorInfo = this.options.consultores.find(c => c.id === parceiro.consultor_id);
                 return `
-                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                     <div class="flex-1 min-w-0">
                       ${isReadOnly ? `
                         <div class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                           ${consultorInfo?.nome || 'Consultor Parceiro'}
                         </div>
                       ` : `
-                        <select class="select-parceiro-split w-full px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-index="${idx}">
+                        <select class="select-parceiro-split w-full h-[42px] px-3 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" data-index="${idx}">
                           ${this.options.consultores
                             .filter(c => c.ativo !== false)
                             .map(c => `
@@ -284,7 +284,7 @@ export class ViagemSplitEditor {
                           data-consultor-id="${parceiro.consultor_id}"
                           data-tipo="venda"
                           ${isReadOnly ? 'disabled' : ''}
-                          class="input-split-percentual w-20 px-2 py-1.5 text-right font-extrabold text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          class="input-split-percentual w-20 h-[42px] px-2.5 text-right font-black text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                         />
                         <span class="text-xs font-bold text-slate-500">%</span>
                       </div>
@@ -301,13 +301,13 @@ export class ViagemSplitEditor {
                           data-consultor-id="${parceiro.consultor_id}"
                           data-tipo="rav"
                           ${isReadOnly ? 'disabled' : ''}
-                          class="input-split-rav w-20 px-2 py-1.5 text-right font-extrabold text-sm rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          class="input-split-rav w-20 h-[42px] px-2.5 text-right font-black text-sm rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 tabular-nums focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                         />
                         <span class="text-xs font-bold text-amber-600 dark:text-amber-400">%</span>
                       </div>
 
                       ${!isReadOnly ? `
-                        <button type="button" class="btn-remover-parceiro text-slate-400 hover:text-rose-500 p-1 rounded-lg transition" data-consultor-id="${parceiro.consultor_id}" title="Remover parceiro">
+                        <button type="button" class="btn-remover-parceiro h-[42px] w-[42px] flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition cursor-pointer active:scale-95" data-consultor-id="${parceiro.consultor_id}" title="Remover parceiro">
                           🗑️
                         </button>
                       ` : ''}
@@ -319,7 +319,7 @@ export class ViagemSplitEditor {
 
             <!-- Botão Adicionar Parceiro -->
             ${!isReadOnly ? `
-              <button type="button" id="btn-add-parceiro-split" class="w-full py-2.5 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
+              <button type="button" id="btn-add-parceiro-split" class="w-full h-[42px] border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95">
                 <span>➕</span> Adicionar Consultor Parceiro
               </button>
             ` : ''}
@@ -328,7 +328,7 @@ export class ViagemSplitEditor {
 
         <!-- Rodapé de Ações -->
         <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between gap-3">
-          <button type="button" id="btn-cancel-split" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-lg transition">
+          <button type="button" id="btn-cancel-split" class="px-5 h-[42px] text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-xl transition cursor-pointer active:scale-95">
             ${isReadOnly ? 'Fechar' : 'Cancelar'}
           </button>
           ${!isReadOnly ? `
@@ -336,7 +336,7 @@ export class ViagemSplitEditor {
               type="button" 
               id="btn-save-split" 
               ${!tudoValido ? 'disabled' : ''} 
-              class="px-5 py-2.5 text-xs font-bold text-white rounded-xl shadow-sm transition flex items-center gap-2 ${tudoValido ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20 cursor-pointer' : 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed opacity-60'}"
+              class="px-6 h-[42px] text-xs font-bold text-white rounded-xl shadow-md transition flex items-center gap-2 ${tudoValido ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20 cursor-pointer active:scale-95' : 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed opacity-60'}"
             >
               <span>💾</span> Salvar Divisão
             </button>
@@ -568,14 +568,48 @@ export class ViagemSplitEditor {
     const validacaoRav = ViagensDivisoesService.validarSomaRav(this.divisoes);
     const tudoValido = validacaoVenda.valida && validacaoRav.valida;
 
+    // Atualização reativa da Barra 1 (Venda Geral)
+    const cardVenda = this.modalContainer.querySelector('#card-validacao-venda');
+    const labelVenda = this.modalContainer.querySelector('#label-validacao-venda');
+    const numVenda = this.modalContainer.querySelector('#num-validacao-venda');
+    const progVenda = this.modalContainer.querySelector('#prog-validacao-venda') as HTMLElement;
+    const msgVenda = this.modalContainer.querySelector('#msg-validacao-venda');
+
+    if (cardVenda && numVenda && progVenda && msgVenda && labelVenda) {
+      cardVenda.className = `p-3.5 rounded-2xl border transition-all ${validacaoVenda.valida ? 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-800 dark:text-emerald-200 shadow-sm' : (validacaoVenda.soma > 100 ? 'bg-rose-50/80 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40 text-rose-800 dark:text-rose-200 shadow-sm' : 'bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-200 shadow-sm')}`;
+      labelVenda.innerHTML = `${validacaoVenda.valida ? '✅' : (validacaoVenda.soma > 100 ? '🚨' : '⚠️')} Total da Venda`;
+      numVenda.className = `text-sm font-black tabular-nums tracking-tight ${validacaoVenda.valida ? 'text-emerald-700 dark:text-emerald-400' : (validacaoVenda.soma > 100 ? 'text-rose-700 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400')}`;
+      numVenda.textContent = `${validacaoVenda.soma.toFixed(0)}%`;
+      progVenda.style.width = `${Math.min(validacaoVenda.soma, 100)}%`;
+      progVenda.className = `h-full rounded-full transition-all duration-300 ${validacaoVenda.valida ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-sm' : (validacaoVenda.soma > 100 ? 'bg-gradient-to-r from-rose-500 to-red-600' : 'bg-gradient-to-r from-amber-400 to-orange-500')}`;
+      msgVenda.textContent = validacaoVenda.mensagem;
+    }
+
+    // Atualização reativa da Barra 2 (RAV Aérea)
+    const cardRav = this.modalContainer.querySelector('#card-validacao-rav');
+    const labelRav = this.modalContainer.querySelector('#label-validacao-rav');
+    const numRav = this.modalContainer.querySelector('#num-validacao-rav');
+    const progRav = this.modalContainer.querySelector('#prog-validacao-rav') as HTMLElement;
+    const msgRav = this.modalContainer.querySelector('#msg-validacao-rav');
+
+    if (cardRav && numRav && progRav && msgRav && labelRav) {
+      cardRav.className = `p-3.5 rounded-2xl border transition-all ${validacaoRav.valida ? 'bg-indigo-50/80 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/40 text-indigo-800 dark:text-indigo-200 shadow-sm' : (validacaoRav.soma > 100 ? 'bg-rose-50/80 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40 text-rose-800 dark:text-rose-200 shadow-sm' : 'bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-200 shadow-sm')}`;
+      labelRav.innerHTML = `${validacaoRav.valida ? '✈️' : (validacaoRav.soma > 100 ? '🚨' : '⚠️')} Total da RAV`;
+      numRav.className = `text-sm font-black tabular-nums tracking-tight ${validacaoRav.valida ? 'text-indigo-700 dark:text-indigo-400' : (validacaoRav.soma > 100 ? 'text-rose-700 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400')}`;
+      numRav.textContent = `${validacaoRav.soma.toFixed(0)}%`;
+      progRav.style.width = `${Math.min(validacaoRav.soma, 100)}%`;
+      progRav.className = `h-full rounded-full transition-all duration-300 ${validacaoRav.valida ? 'bg-gradient-to-r from-indigo-500 to-sky-500 shadow-sm' : (validacaoRav.soma > 100 ? 'bg-gradient-to-r from-rose-500 to-red-600' : 'bg-gradient-to-r from-amber-400 to-orange-500')}`;
+      msgRav.textContent = validacaoRav.mensagem;
+    }
+
     const saveBtn = this.modalContainer.querySelector('#btn-save-split') as HTMLButtonElement;
     if (saveBtn) {
       if (tudoValido) {
         saveBtn.disabled = false;
-        saveBtn.className = 'px-5 py-2.5 text-xs font-bold text-white rounded-xl shadow-sm transition flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20 cursor-pointer';
+        saveBtn.className = 'px-6 h-[42px] text-xs font-bold text-white rounded-xl shadow-md transition flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20 cursor-pointer active:scale-95';
       } else {
         saveBtn.disabled = true;
-        saveBtn.className = 'px-5 py-2.5 text-xs font-bold text-white rounded-xl shadow-sm transition flex items-center gap-2 bg-slate-300 dark:bg-slate-700 cursor-not-allowed opacity-60';
+        saveBtn.className = 'px-6 h-[42px] text-xs font-bold text-white rounded-xl shadow-md transition flex items-center gap-2 bg-slate-300 dark:bg-slate-700 cursor-not-allowed opacity-60';
       }
     }
   }

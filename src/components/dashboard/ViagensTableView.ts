@@ -158,7 +158,7 @@ export class ViagensTableView {
     const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, ctx.settings, ctx.user, ctx.perfil);
 
     return `
-      <tr class="${rowBg} transition-colors duration-200">
+      <tr class="${rowBg} group transition-colors duration-150">
         <!-- SLA & Risk Score -->
         <td class="px-4 py-4 text-center select-none" title="Legenda do SLA:
 🟢 Normal (Tudo em dia)
@@ -291,20 +291,22 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
           })()}
         </td>
 
-        <!-- Dropdown Fase/Status -->
+        <!-- Dropdown Fase/Status com Status Dot Luminoso -->
         <td class="px-5 py-3.5">
-          <select class="select-status-inline w-full h-[36px] px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-xs cursor-pointer shadow-xs transition" data-trip-id="${v.id}" data-old-value="${v.status}">
-            <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Fechado</option>
-            <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Venda</option>
-            <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pré-Embarque</option>
-            <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Viagem</option>
-            <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Reembolso Solicitado</option>
-          </select>
+          <div class="relative flex items-center">
+            <select class="select-status-inline w-full h-[36px] pl-3 pr-2 border border-slate-200/90 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-xs cursor-pointer shadow-xs transition-all hover:border-indigo-400 dark:hover:border-indigo-600" data-trip-id="${v.id}" data-old-value="${v.status}">
+              <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟢 Fechado</option>
+              <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟡 Pós-Venda</option>
+              <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟠 Pré-Embarque</option>
+              <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔵 Pós-Viagem</option>
+              <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔴 Reembolso Solicitado</option>
+            </select>
+          </div>
         </td>
 
-        <!-- Ações (Travada em w-32 centralizada, sem efeito serrote) -->
+        <!-- Ações (Travada em w-32 centralizada, com revelação elegante no hover do grupo) -->
         <td class="px-2 py-3.5 text-center w-32 whitespace-nowrap">
-          <div class="flex items-center justify-center gap-1">
+          <div class="flex items-center justify-center gap-1 opacity-75 group-hover:opacity-100 transition-opacity duration-150">
             <button class="btn-action-view h-[32px] px-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 transition active:scale-95 text-[10px] uppercase shadow-xs flex items-center gap-1 cursor-pointer" data-trip-id="${v.id}" title="Ver detalhes completos da viagem">
               <span>🔍</span>
               <span>Ver</span>
@@ -499,12 +501,12 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
         <!-- Footer Actions: Status Dropdown + Detalhes Button -->
         <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60 flex-wrap">
           <div class="flex-1 min-w-[120px]">
-            <select class="select-status-inline w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-xs cursor-pointer" data-trip-id="${v.id}" data-old-value="${v.status}">
-              <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Fechado</option>
-              <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Venda</option>
-              <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pré-Embarque</option>
-              <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Viagem</option>
-              <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Reembolso Solicitado</option>
+            <select class="select-status-inline w-full h-[40px] px-3 border border-slate-200/90 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-xs cursor-pointer shadow-xs transition-all hover:border-indigo-400 dark:hover:border-indigo-600" data-trip-id="${v.id}" data-old-value="${v.status}">
+              <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟢 Fechado</option>
+              <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟡 Pós-Venda</option>
+              <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟠 Pré-Embarque</option>
+              <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔵 Pós-Viagem</option>
+              <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔴 Reembolso Solicitado</option>
             </select>
           </div>
           <div class="flex items-center gap-1">
