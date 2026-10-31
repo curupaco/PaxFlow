@@ -220,4 +220,182 @@ describe('Reembolsos Fluxo Completo - Testes Subcutâneos de Integridade, SLA e 
     expect(formatStatusTratativa('pago').key).toBe('concluido');
     expect(formatStatusTratativa(undefined).key).toBe('pendente_agencia');
   });
+
+  it('deve processar cancelamento parcial desacoplado: marca produto como reembolsado sem bloquear o status da viagem', async () => {
+    // Setup
+    const produtoId = 'prod-hotel-cancelado';
+    const viagemId = 'viagem-em-andamento-123';
+
+    let updateViagemChamado = false;
+    let updateProdutoStatus = '';
+
+    const mockInsert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: { id: 'rmb-parcial-1', viagem_id: viagemId, produto_viagem_id: produtoId },
+          error: null
+        })
+      })
+    });
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'reembolsos') {
+        return { insert: mockInsert } as any;
+      }
+      if (tabela === 'produtos_viagem') {
+        return {
+          update: vi.fn().mockImplementation((payload) => {
+            updateProdutoStatus = payload.status;
+            return { eq: vi.fn().mockResolvedValue({ error: null }) };
+          })
+        } as any;
+      }
+      if (tabela === 'viagens') {
+        return {
+          update: vi.fn().mockImplementation(() => {
+            updateViagemChamado = true;
+            return { eq: vi.fn().mockResolvedValue({ error: null }) };
+          })
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // Action: Reembolso parcial onde a viagem continua acontecendo normalmente (atualizarStatusViagem: false)
+    const res = await ReembolsosService.criarSolicitacao({
+      viagemId,
+      produtoViagemId: produtoId,
+      consultorSolicitanteId: 'consultor-1',
+      valorSolicitado: 1200.00,
+      valorProdutoOriginal: 1200.00,
+      motivoCancelamento: 'Passageiro desistiu de 1 das diárias',
+      atualizarStatusViagem: false
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(updateProdutoStatus).toBe('reembolsado');
+    expect(updateViagemChamado).toBe(false); // A viagem NÃO foi alterada para reembolso_solicitado
+  });
+
+  it('deve processar cancelamento total: atualiza produto para reembolsado e altera viagem para reembolso_solicitado', async () => {
+    // Setup
+    const produtoId = 'prod-pacote-completo';
+    const viagemId = 'viagem-cancelada-total';
+
+    let updateViagemStatus = '';
+    let updateProdutoStatus = '';
+
+    const mockInsert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: { id: 'rmb-total-1', viagem_id: viagemId, produto_viagem_id: produtoId },
+          error: null
+        })
+      })
+    });
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'reembolsos') {
+        return { insert: mockInsert } as any;
+      }
+      if (tabela === 'produtos_viagem') {
+        return {
+          update: vi.fn().mockImplementation((payload) => {
+            updateProdutoStatus = payload.status;
+            return { eq: vi.fn().mockResolvedValue({ error: null }) };
+          })
+        } as any;
+      }
+      if (tabela === 'viagens') {
+        return {
+          update: vi.fn().mockImplementation((payload) => {
+            updateViagemStatus = payload.status;
+            return { eq: vi.fn().mockResolvedValue({ error: null }) };
+          })
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // Action: Reembolso integral da viagem (atualizarStatusViagem: true)
+    const res = await ReembolsosService.criarSolicitacao({
+      viagemId,
+      produtoViagemId: produtoId,
+      consultorSolicitanteId: 'consultor-1',
+      valorSolicitado: 8500.00,
+      motivoCancelamento: 'Cancelamento total por motivo de saúde do pax',
+      atualizarStatusViagem: true
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(updateProdutoStatus).toBe('reembolsado');
+    expect(updateViagemStatus).toBe('reembolso_solicitado');
+  });
+
+  it('deve determinar status pós-resolução de viagem: pos_viagem se a data de volta já passou, ou confirmada se ainda futura', () => {
+    // Setup
+    const hojeStr = new Date().toISOString().slice(0, 10);
+    const dataPassada = '2025-01-10';
+    const dataFutura = '2028-12-31';
+
+    // Helper de determinação de ciclo de vida
+    const determinarStatusAposReembolso = (dataVolta?: string): 'pos_viagem' | 'confirmada' => {
+      if (!dataVolta) return 'confirmada';
+      return dataVolta < hojeStr ? 'pos_viagem' : 'confirmada';
+    };
+
+    // Action
+    const statusViagemAntiga = determinarStatusAposReembolso(dataPassada);
+    const statusViagemFutura = determinarStatusAposReembolso(dataFutura);
+    const statusSemData = determinarStatusAposReembolso(undefined);
+
+    // Assert
+    expect(statusViagemAntiga).toBe('pos_viagem');
+    expect(statusViagemFutura).toBe('confirmada');
+    expect(statusSemData).toBe('confirmada');
+  });
+
+  it('deve buscar e consolidar viagens órfãs com status reembolso_solicitado sem registros filhos na tabela reembolsos', async () => {
+    // Setup
+    const viagensNoBanco = [
+      {
+        id: 'via-orfa-1',
+        codigo_ref: 'VIA-001',
+        status: 'reembolso_solicitado',
+        reembolsos: [], // Sem reembolsos detalhados (Órfã!)
+        produtos: [{ id: 'p1', tipo: 'AÉREO' }]
+      },
+      {
+        id: 'via-correta-2',
+        codigo_ref: 'VIA-002',
+        status: 'reembolso_solicitado',
+        reembolsos: [{ id: 'rmb-ok-1' }], // Possui reembolso (Não é órfã)
+        produtos: [{ id: 'p2', tipo: 'HOTEL' }]
+      }
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'viagens') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: viagensNoBanco, error: null })
+            })
+          })
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // Action
+    const orfas = await ReembolsosService.buscarViagensOrfasReembolso();
+
+    // Assert
+    expect(orfas).toHaveLength(1);
+    expect(orfas[0].id).toBe('via-orfa-1');
+    expect(orfas[0].codigo_ref).toBe('VIA-001');
+  });
 });
+

@@ -119,4 +119,81 @@ describe('FinRemessasService - Testes Subcutâneos', () => {
     expect(res.sucesso).toBe(true);
     expect(mockUpdateRemessa).toHaveBeenCalled();
   });
+
+  it('deve desagrupar remessa desvinculando todos os títulos e excluindo a remessa mestre', async () => {
+    // Setup
+    const remessaId = 'remessa-para-desagrupar-999';
+
+    const mockUpdateTítulos = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+
+    const mockDeleteRemessa = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+
+    (supabase.from as any).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          update: mockUpdateTítulos
+        };
+      }
+      if (tabela === 'fin_remessas') {
+        return {
+          delete: mockDeleteRemessa
+        };
+      }
+      return {};
+    });
+
+    // Action
+    const res = await FinRemessasService.desagruparRemessa(remessaId);
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(mockUpdateTítulos).toHaveBeenCalledWith({ remessa_id: null });
+    expect(mockDeleteRemessa).toHaveBeenCalled();
+  });
+
+  it('deve retornar erro amigável ao tentar desagrupar sem fornecer o ID da remessa', async () => {
+    // Setup
+    const remessaIdInvalido = '';
+
+    // Action
+    const res = await FinRemessasService.desagruparRemessa(remessaIdInvalido);
+
+    // Assert
+    expect(res.sucesso).toBe(false);
+    expect(res.erro).toContain('ID da remessa não fornecido');
+  });
+
+  it('deve ser resiliente a Schema Drift (42P01 / 42703) ao desagrupar remessa sem quebrar a agência', async () => {
+    // Setup
+    const remessaId = 'remessa-drift-test';
+
+    (supabase.from as any).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ error: { code: '42703', message: 'column remessa_id does not exist' } })
+          })
+        };
+      }
+      if (tabela === 'fin_remessas') {
+        return {
+          delete: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ error: { code: '42P01', message: 'relation fin_remessas does not exist' } })
+          })
+        };
+      }
+      return {};
+    });
+
+    // Action
+    const res = await FinRemessasService.desagruparRemessa(remessaId);
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+  });
 });
+

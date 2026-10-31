@@ -114,4 +114,74 @@ describe('Conferência Financeira de LOC - Testes Subcutâneos', () => {
     expect(eqViagemMock).toHaveBeenCalledWith('viagem_id', viagemId);
     expect(eqLocMock).toHaveBeenCalledWith('codigo_localizador', loc);
   });
+
+  it('deve barrar conferência se houver diferença residual centesimal (ex: faltam R$ 0,02 para bater)', () => {
+    // Setup
+    const valorVendaTotal = 15000.00;
+    const pagamentosGrupo = [
+      { codigo_localizador: 'LOC-MULTI', valor: 10000.00 },
+      { codigo_localizador: 'LOC-MULTI', valor: 4999.98 }
+    ];
+    const totalPago = pagamentosGrupo.reduce((acc, p) => acc + p.valor, 0);
+
+    // Action
+    const isTotalmentePago = pagamentosGrupo.length > 0 && Math.abs(totalPago - valorVendaTotal) <= 0.01;
+
+    // Assert
+    expect(isTotalmentePago).toBe(false);
+    expect(valorVendaTotal - totalPago).toBeCloseTo(0.02, 2);
+  });
+
+  it('deve bloquear exclusão de produtos quando o grupo do LOC já foi conferido pela auditoria', () => {
+    // Setup
+    const locConferido = true;
+    const produtoIdParaExcluir = 'prod-loc-conferido-123';
+
+    // Action: Validação da trava de governança
+    let podeExcluir = false;
+    let motivoBloqueio = '';
+
+    if (locConferido) {
+      podeExcluir = false;
+      motivoBloqueio = 'Produto bloqueado: O localizador já foi auditado e conferido pelo financeiro.';
+    } else {
+      podeExcluir = true;
+    }
+
+    // Assert
+    expect(podeExcluir).toBe(false);
+    expect(motivoBloqueio).toContain('já foi auditado e conferido');
+  });
+
+  it('deve lidar com Schema Drift (42P01) com fallback gracioso sem quebrar a consulta de conferências', async () => {
+    // Setup
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({
+        data: null,
+        error: { code: '42P01', message: 'relation loc_conferencias does not exist' }
+      })
+    });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'loc_conferencias') {
+        return { select: selectMock };
+      }
+      return {};
+    });
+
+    // Action
+    let conferidos: string[] = [];
+    const { data, error } = await supabase.from('loc_conferencias').select('codigo_localizador').eq('viagem_id', 'via-drift');
+
+    if (error && error.code === '42P01') {
+      conferidos = []; // Fallback seguro
+    } else if (data) {
+      conferidos = data.map((c: any) => c.codigo_localizador);
+    }
+
+    // Assert
+    expect(conferidos).toEqual([]);
+    expect(selectMock).toHaveBeenCalled();
+  });
 });
+

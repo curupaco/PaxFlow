@@ -336,4 +336,121 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão, RAV e Govern
     expect(10000.00 * cotaVendaParceiro).toBe(3000.00);
     expect(ravBruta * cotaRavParceiro).toBe(0.00);
   });
+
+  it('deve calcular o RAV Líquido deduzindo alíquota de impostos (88% do RAV bruto após 12% tributário)', () => {
+    // Setup
+    const ravBruta = 2500.00;
+    const aliquotaImposto = 0.12; // 12% de dedução fiscal
+    const taxaLiquida = 1 - aliquotaImposto; // 88%
+
+    const divisao = {
+      id: 'via-rav-imposto',
+      divisoes: [
+        { consultor_id: 'user-a', percentual: 60, percentual_rav: 60, is_titular: true },
+        { consultor_id: 'user-b', percentual: 40, percentual_rav: 40, is_titular: false }
+      ]
+    };
+
+    // Action
+    const ravLiquidaTotal = ravBruta * taxaLiquida;
+    const partRavA = ViagensDivisoesService.calcularParticipacaoRavConsultor(divisao, 'user-a');
+    const partRavB = ViagensDivisoesService.calcularParticipacaoRavConsultor(divisao, 'user-b');
+
+    const ravLiquidaA = ravLiquidaTotal * partRavA;
+    const ravLiquidaB = ravLiquidaTotal * partRavB;
+
+    // Assert
+    expect(ravLiquidaTotal).toBe(2200.00);
+    expect(ravLiquidaA).toBe(1320.00); // 60% de 2200
+    expect(ravLiquidaB).toBe(880.00);  // 40% de 2200
+    expect(ravLiquidaA + ravLiquidaB).toBeCloseTo(ravLiquidaTotal, 2);
+  });
+
+  it('deve validar e calcular corretamente divisão tripartite de vendas (50% / 30% / 20%)', () => {
+    // Setup
+    const divisoesTripartite = [
+      { consultor_id: 'consultor-1', percentual: 50, percentual_rav: 50, is_titular: true },
+      { consultor_id: 'consultor-2', percentual: 30, percentual_rav: 30, is_titular: false },
+      { consultor_id: 'consultor-3', percentual: 20, percentual_rav: 20, is_titular: false }
+    ];
+
+    const viagemTripartite = {
+      id: 'via-tripartite',
+      valor_total: 30000.00,
+      divisoes: divisoesTripartite
+    };
+
+    // Action
+    const validacaoVenda = ViagensDivisoesService.validarSomaDivisoes(divisoesTripartite);
+    const validacaoRav = ViagensDivisoesService.validarSomaRav(divisoesTripartite);
+
+    const cota1 = ViagensDivisoesService.calcularParticipacaoConsultor(viagemTripartite, 'consultor-1');
+    const cota2 = ViagensDivisoesService.calcularParticipacaoConsultor(viagemTripartite, 'consultor-2');
+    const cota3 = ViagensDivisoesService.calcularParticipacaoConsultor(viagemTripartite, 'consultor-3');
+
+    // Assert
+    expect(validacaoVenda.valida).toBe(true);
+    expect(validacaoRav.valida).toBe(true);
+    expect(cota1).toBe(0.5);
+    expect(cota2).toBe(0.3);
+    expect(cota3).toBe(0.2);
+    expect(viagemTripartite.valor_total * cota1).toBe(15000.00);
+    expect(viagemTripartite.valor_total * cota2).toBe(9000.00);
+    expect(viagemTripartite.valor_total * cota3).toBe(6000.00);
+  });
+
+  it('deve aplicar fallback Zero-Break ao salvar divisão quando a coluna percentual_rav não existir no banco (42703)', async () => {
+    // Setup
+    const viagemId = 'via-drift-rav';
+    const divisoes = [
+      { consultor_id: 'user-1', percentual: 70, percentual_rav: 80, is_titular: true },
+      { consultor_id: 'user-2', percentual: 30, percentual_rav: 20, is_titular: false }
+    ];
+
+    let chamouFallback = false;
+
+    const deleteMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+
+    const insertMock = vi.fn()
+      .mockResolvedValueOnce({
+        error: { code: '42703', message: 'column "percentual_rav" of relation "viagens_divisoes" does not exist' }
+      })
+      .mockImplementationOnce(() => {
+        chamouFallback = true;
+        return Promise.resolve({ error: null });
+      });
+
+    const updateViagemMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+
+    (supabase.from as any).mockImplementation((tabela: string) => {
+      if (tabela === 'viagens_divisoes') {
+        return {
+          delete: deleteMock,
+          insert: insertMock
+        };
+      }
+      if (tabela === 'viagens') {
+        return {
+          update: updateViagemMock
+        };
+      }
+      return {};
+    });
+
+    // Action
+    const res = await ViagensDivisoesService.salvarDivisaoViagem({
+      viagemId,
+      titularId: 'user-1',
+      divisoes
+    });
+
+    // Assert
+    expect(res.success).toBe(true);
+    expect(chamouFallback).toBe(true);
+  });
 });
+

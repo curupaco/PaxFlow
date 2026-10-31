@@ -660,6 +660,271 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     expect(orRecebido).toContain('data_vencimento.gte.2026-02-01');
     expect(orRecebido).toContain('data_vencimento.gte.2026-10-01');
   });
+
+  it('deve processar baixa parcial gerando automaticamente um título residual com o saldo pendente', async () => {
+    // Setup
+    const contaOriginal = {
+      id: 'conta-original-1000',
+      valor_nominal: 1000.00,
+      descricao: 'Hospedagem Fornecedor X',
+      tipo_custo_id: 'custo-1',
+      categoria_id: 'cat-1',
+      subcategoria_id: 'sub-1',
+      conta_bancaria_id: 'banco-1',
+      viagem_id: 'viagem-1',
+      favorecido: 'Hotel Central',
+      data_vencimento: '2026-11-20',
+      data_vencimento_operacional: '2026-11-20',
+      status: 'pendente'
+    };
+
+    let payloadResidualInserido: any = null;
+    let payloadBaixaAtualizado: any = null;
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: contaOriginal, error: null })
+            })
+          }),
+          update: vi.fn().mockImplementation((payload) => {
+            payloadBaixaAtualizado = payload;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null })
+            };
+          }),
+          insert: vi.fn().mockImplementation((payload) => {
+            payloadResidualInserido = payload;
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: { id: 'residual-gerado-400' }, error: null })
+              })
+            };
+          })
+        } as any;
+      }
+      if (tabela === 'fin_auditoria') {
+        return {
+          insert: vi.fn().mockResolvedValue({ error: null })
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // Action: Paga R$ 600 de uma conta de R$ 1.000 (baixa parcial)
+    const res = await FinContasPagarService.baixarConta({
+      contaId: 'conta-original-1000',
+      dataPagamento: '2026-11-15',
+      valorPagoTotal: 600.00,
+      contaBancariaId: 'banco-1',
+      usuarioId: 'admin-uuid-1',
+      usuarioNome: 'Financeiro Chefe'
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(res.residualGeradoId).toBe('residual-gerado-400');
+    expect(payloadBaixaAtualizado.status).toBe('pago');
+    expect(payloadBaixaAtualizado.valor_pago).toBe(600.00);
+    expect(payloadResidualInserido).toBeDefined();
+    expect(payloadResidualInserido.valor_nominal).toBe(400.00); // Saldo de R$ 400 restante
+    expect(payloadResidualInserido.status).toBe('pendente');
+    expect(payloadResidualInserido.descricao).toContain('[SALDO RESIDUAL]');
+  });
+
+  it('deve processar baixa com juros e multa quitando o título integralmente sem gerar resíduo', async () => {
+    // Setup
+    const contaOriginal = {
+      id: 'conta-juros-1000',
+      valor_nominal: 1000.00,
+      descricao: 'Boleto em atraso',
+      status: 'pendente'
+    };
+
+    let payloadBaixa: any = null;
+    let insertChamado = false;
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: contaOriginal, error: null })
+            })
+          }),
+          update: vi.fn().mockImplementation((payload) => {
+            payloadBaixa = payload;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null })
+            };
+          }),
+          insert: vi.fn().mockImplementation(() => {
+            insertChamado = true;
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: { id: 'nao-deve-gerar' }, error: null })
+              })
+            };
+          })
+        } as any;
+      }
+      if (tabela === 'fin_auditoria') {
+        return { insert: vi.fn().mockResolvedValue({ error: null }) } as any;
+      }
+      return {} as any;
+    });
+
+    // Action: R$ 1.000 nominal + R$ 50 juros = R$ 1.050 pago
+    const res = await FinContasPagarService.baixarConta({
+      contaId: 'conta-juros-1000',
+      dataPagamento: '2026-11-15',
+      jurosMulta: 50.00,
+      valorPagoTotal: 1050.00,
+      usuarioId: 'admin-uuid-1'
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(res.residualGeradoId).toBeUndefined();
+    expect(insertChamado).toBe(false);
+    expect(payloadBaixa.status).toBe('pago');
+    expect(payloadBaixa.valor_pago).toBe(1050.00);
+    expect(payloadBaixa.juros_multa).toBe(50.00);
+  });
+
+  it('deve processar baixa com desconto comercial quitando o título integralmente sem saldo pendente', async () => {
+    // Setup
+    const contaOriginal = {
+      id: 'conta-desconto-1000',
+      valor_nominal: 1000.00,
+      descricao: 'Fornecedor com antecipação',
+      status: 'pendente'
+    };
+
+    let payloadBaixa: any = null;
+    let insertChamado = false;
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: contaOriginal, error: null })
+            })
+          }),
+          update: vi.fn().mockImplementation((payload) => {
+            payloadBaixa = payload;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null })
+            };
+          }),
+          insert: vi.fn().mockImplementation(() => {
+            insertChamado = true;
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: { id: 'nao-deve-gerar' }, error: null })
+              })
+            };
+          })
+        } as any;
+      }
+      if (tabela === 'fin_auditoria') {
+        return { insert: vi.fn().mockResolvedValue({ error: null }) } as any;
+      }
+      return {} as any;
+    });
+
+    // Action: R$ 1.000 nominal - R$ 100 desconto = R$ 900 pago
+    const res = await FinContasPagarService.baixarConta({
+      contaId: 'conta-desconto-1000',
+      dataPagamento: '2026-11-15',
+      desconto: 100.00,
+      valorPagoTotal: 900.00,
+      usuarioId: 'admin-uuid-1'
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(res.residualGeradoId).toBeUndefined();
+    expect(insertChamado).toBe(false);
+    expect(payloadBaixa.status).toBe('pago');
+    expect(payloadBaixa.valor_pago).toBe(900.00);
+    expect(payloadBaixa.desconto).toBe(100.00);
+  });
+
+  it('deve barrar estorno de pagamento se o usuário não for Administrador (RBAC)', async () => {
+    // Setup
+    const contaId = 'conta-paga-123';
+    const roleConsultor = 'consultor';
+
+    // Action
+    const res = await FinContasPagarService.estornarBaixa(
+      contaId,
+      roleConsultor,
+      'consultor-id',
+      'Tentativa não autorizada de estorno'
+    );
+
+    // Assert
+    expect(res.sucesso).toBe(false);
+    expect(res.erro).toContain('Apenas administradores');
+  });
+
+  it('deve permitir estorno de pagamento quando executado por Administrador revertendo status para pendente', async () => {
+    // Setup
+    const contaPaga = {
+      id: 'conta-paga-456',
+      status: 'pago',
+      valor_nominal: 1200.00,
+      valor_pago: 1200.00,
+      observacoes: 'Pago no dia correto'
+    };
+
+    let payloadUpdate: any = null;
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: contaPaga, error: null })
+            })
+          }),
+          update: vi.fn().mockImplementation((payload) => {
+            payloadUpdate = payload;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null })
+            };
+          })
+        } as any;
+      }
+      if (tabela === 'fin_auditoria') {
+        return { insert: vi.fn().mockResolvedValue({ error: null }) } as any;
+      }
+      return {} as any;
+    });
+
+    // Action
+    const res = await FinContasPagarService.estornarBaixa(
+      'conta-paga-456',
+      'admin',
+      'admin-id-1',
+      'Erro no lançamento bancário',
+      'Super Admin'
+    );
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(payloadUpdate.status).toBe('pendente');
+    expect(payloadUpdate.data_pagamento).toBeNull();
+    expect(payloadUpdate.valor_pago).toBe(0.00);
+    expect(payloadUpdate.baixado_por).toBeNull();
+    expect(payloadUpdate.observacoes).toContain('[ESTORNO');
+    expect(payloadUpdate.observacoes).toContain('Erro no lançamento bancário');
+  });
 });
+
 
 
