@@ -1718,9 +1718,14 @@ export class InboxService {
         const podeVerFinanceiro = podeAcessarFinanceiro(perfil);
 
         if (podeVerFinanceiro) {
-          const { FinContasPagarService } = await import('./finContasPagarService');
-          const contasCriticas = await FinContasPagarService.obterContasCriticasAlerta(2);
-          const hojeIso = new Date().toISOString().split('T')[0];
+          // Checar se as notificações do financeiro estão ativas nas configurações globais com blindagem contra 42703
+          const { data: stFinanceiro } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+          const notificacoesFinanceiroAtivas = stFinanceiro ? (stFinanceiro as any).notificacoes_financeiro_ativas !== false : true;
+
+          if (notificacoesFinanceiroAtivas) {
+            const { FinContasPagarService } = await import('./finContasPagarService');
+            const contasCriticas = await FinContasPagarService.obterContasCriticasAlerta(2);
+            const hojeIso = new Date().toISOString().split('T')[0];
 
           contasCriticas.forEach(conta => {
             const venc = conta.data_vencimento_operacional || conta.data_vencimento;
@@ -1777,6 +1782,7 @@ export class InboxService {
               eventDate: venc
             });
           });
+          }
         }
       } catch (errFin) {
         console.warn('Erro ao compilar alertas financeiros para o feed do Inbox:', errFin);

@@ -249,7 +249,9 @@ export class ConfiguracoesPage {
           studio_validade_dias: data.studio_validade_dias !== undefined ? data.studio_validade_dias : 7,
           studioValidadeDias: data.studio_validade_dias !== undefined ? data.studio_validade_dias : 7,
           studio_permitir_aceite_formal: data.studio_permitir_aceite_formal !== false,
-          studioPermitirAceiteFormal: data.studio_permitir_aceite_formal !== false
+          studioPermitirAceiteFormal: data.studio_permitir_aceite_formal !== false,
+          notificacoes_financeiro_ativas: data.notificacoes_financeiro_ativas !== false,
+          notificacoesFinanceiroAtivas: data.notificacoes_financeiro_ativas !== false
         };
       } else {
         const initialPayload = {
@@ -2110,6 +2112,23 @@ export class ConfiguracoesPage {
               </div>
             </div>
 
+            <!-- Notificações e Alertas Financeiros -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <h3 class="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>💵</span> Alertas e Notificações do Financeiro ${renderHelpIcon('fin-contas-pagar')}
+                  </h3>
+                  <p class="text-[10px] text-slate-400 mt-0.5">Exibe badges pulsantes e cards no Inbox para contas a pagar vencendo no dia ou em atraso.</p>
+                </div>
+                
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input id="input-notificacoes-financeiro-ativas" type="checkbox" ${this.settings.notificacoes_financeiro_ativas !== false ? 'checked' : ''} class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-emerald-600"></div>
+                </label>
+              </div>
+            </div>
+
             <!-- Reembolsos & NPS -->
             <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
               <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Reembolsos & Pesquisas NPS</h3>
@@ -2655,6 +2674,9 @@ export class ConfiguracoesPage {
       const validadeStudioVal = validadeStudioInput ? Number(validadeStudioInput.value) : (this.settings.studio_validade_dias || 7);
       const aceiteStudioVal = aceiteStudioInput ? aceiteStudioInput.checked : (this.settings.studio_permitir_aceite_formal !== false);
 
+      const notificacoesFinanceiroInput = document.getElementById('input-notificacoes-financeiro-ativas') as HTMLInputElement | null;
+      const notificacoesFinanceiroVal = notificacoesFinanceiroInput ? notificacoesFinanceiroInput.checked : (this.settings.notificacoes_financeiro_ativas !== false);
+
       const habilitarUpsellInput = document.getElementById('input-habilitar-upsell-preditivo') as HTMLInputElement;
       const habilitarUpsellVal = habilitarUpsellInput ? habilitarUpsellInput.checked : (this.settings.habilitar_upsell_preditivo !== false);
 
@@ -2686,7 +2708,8 @@ export class ConfiguracoesPage {
         habilitar_studio_pro: habilitarStudioVal,
         studio_moeda_padrao: moedaStudioVal,
         studio_validade_dias: validadeStudioVal,
-        studio_permitir_aceite_formal: aceiteStudioVal
+        studio_permitir_aceite_formal: aceiteStudioVal,
+        notificacoes_financeiro_ativas: notificacoesFinanceiroVal
       };
 
       try {
@@ -2700,12 +2723,13 @@ export class ConfiguracoesPage {
 
         // Resiliência mandatória a Schema Drift (código 42703 - coluna inexistente)
         if (updateError && updateError.code === '42703') {
-          console.warn('[Configuracoes] Schema drift detectado ao salvar Studio em global_settings (código 42703). Aplicando fallback seguro...');
+          console.warn('[Configuracoes] Schema drift detectado ao salvar Studio ou Notificações Financeiro em global_settings (código 42703). Aplicando fallback seguro...');
           const fallbackPayload = { ...payload };
           delete fallbackPayload.habilitar_studio_pro;
           delete fallbackPayload.studio_moeda_padrao;
           delete fallbackPayload.studio_validade_dias;
           delete fallbackPayload.studio_permitir_aceite_formal;
+          delete fallbackPayload.notificacoes_financeiro_ativas;
 
           const retryRes = await supabase
             .from('global_settings')

@@ -584,6 +584,82 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     expect(insertsFuturosRecebidos[1].data_vencimento).toBe('2026-12-30');
     expect(res.afetadas).toBe(3); // 1 atualizada + 2 criadas
   });
+
+  it('deve usar range contínuo otimizado (gte/lte) ao filtrar meses consecutivos', async () => {
+    // // Setup
+    let gteRecebido = '';
+    let lteRecebido = '';
+    const mockOrder = vi.fn().mockResolvedValue({
+      data: [{ id: 'c1', valor_nominal: 100, data_vencimento: '2026-10-15', status: 'pendente' }],
+      error: null
+    });
+
+    const mockLte = vi.fn().mockImplementation((col: string, val: string) => {
+      lteRecebido = val;
+      return { order: mockOrder };
+    });
+
+    const mockGte = vi.fn().mockImplementation((col: string, val: string) => {
+      gteRecebido = val;
+      return { lte: mockLte };
+    });
+
+    vi.mocked(supabase.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        gte: mockGte
+      })
+    } as any);
+
+    // // Action
+    const contas = await FinContasPagarService.listarContas({
+      periodoTipo: 'mes',
+      ano: 2026,
+      meses: [10, 11],
+      status: 'todos'
+    });
+
+    // // Assert
+    expect(contas.length).toBe(1);
+    expect(gteRecebido).toBe('2026-10-01');
+    expect(lteRecebido).toBe('2026-11-30');
+  });
+
+  it('deve construir query com cláusula or ao filtrar meses esparsos não-consecutivos', async () => {
+    // // Setup
+    let orRecebido = '';
+    const mockOrder = vi.fn().mockResolvedValue({
+      data: [
+        { id: 'c1', valor_nominal: 100, data_vencimento: '2026-02-15', status: 'pendente' },
+        { id: 'c2', valor_nominal: 200, data_vencimento: '2026-10-20', status: 'pago' }
+      ],
+      error: null
+    });
+
+    const mockOr = vi.fn().mockImplementation((cond: string) => {
+      orRecebido = cond;
+      return { order: mockOrder };
+    });
+
+    vi.mocked(supabase.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        or: mockOr
+      })
+    } as any);
+
+    // // Action
+    const contas = await FinContasPagarService.listarContas({
+      periodoTipo: 'mes',
+      ano: 2026,
+      meses: [2, 10], // Fevereiro e Outubro (não consecutivos)
+      status: 'todos'
+    });
+
+    // // Assert
+    expect(contas.length).toBe(2);
+    expect(mockOr).toHaveBeenCalled();
+    expect(orRecebido).toContain('data_vencimento.gte.2026-02-01');
+    expect(orRecebido).toContain('data_vencimento.gte.2026-10-01');
+  });
 });
 
 

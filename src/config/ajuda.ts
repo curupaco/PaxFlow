@@ -1104,6 +1104,27 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Recursos avançados para agilidade e precisão no Contas a Pagar:\n\n1. **Filtro de Atrasadas Históricas**: Ao selecionar o status "Em Atraso (Histórico)", o sistema ignora a trava de mês/ano e traz **todas as contas atrasadas da história da agência**, eliminando a necessidade de adivinhar o mês de vencimento.\n2. **Card KPI Global de Títulos em Atraso**: O terceiro card superior exibe permanentemente o passivo real acumulado de todas as contas em atraso da agência. Clicar sobre ele aplica imediatamente o filtro histórico de atrasadas.\n3. **Ordenação Alfabética A-Z & Busca Rápida**: Tipos de custo e categorias são listados em ordem alfabética estrita em filtros e modais. Nos modais de lançamento e edição, o campo `🔍 Filtrar categoria...` permite encontrar qualquer categoria digitando apenas as primeiras letras.\n4. **Máscaras Monetárias em Tempo Real**: Todos os inputs de valor (lançamento, edição, baixa com juros/desconto e contas bancárias) formatam automaticamente em padrão brasileiro `R$ 0,00` e protegem contra caracteres inválidos.'
   },
   {
+    id: 'fin-inativar-excluir-bancos',
+    modulo: 'financeiro',
+    label: '🏦 Inativação, Reativação & Exclusão Segura de Contas Bancárias',
+    description: 'Como inativar contas bancárias descontinuadas (ex: Cora) ou excluir contas sem lançamentos históricos.',
+    details: 'No submódulo **Plano de Contas**, a seção **Contas Bancárias & Caixas** conta com governança contábil completa:\n\n1. **Inativação sem Perda de Histórico**: Contas que a agência não utiliza mais para novos pagamentos (como Banco Cora) podem ser inativadas pelo botão `⏸️ Inativar` ou pelo interruptor dentro do modal de edição da conta. A conta recebe o badge cinza `Inativo` e deixa de aparecer como opção nos formulários de novos lançamentos de despesas.\n2. **Reativação em 1-Clique**: Contas inativas podem ser reativadas a qualquer momento pelo botão `▶️ Reativar`.\n3. **Exclusão Segura (Soft Delete Contábil)**: Ao clicar no botão de lixeira (`🗑️`), o PaxFlow verifica automaticamente se a conta bancária possui despesas ou remessas vinculadas. Se houver histórico, a conta é automaticamente inativada com aviso amigável, garantindo a integridade dos relatórios contábeis passados. Se não houver nenhum lançamento vinculado, a conta é removida fisicamente do banco de dados.'
+  },
+  {
+    id: 'fin-configurar-notificacoes',
+    modulo: 'financeiro',
+    label: '🔔 Configuração de Alertas do Financeiro (Ativar/Desativar Notificações)',
+    description: 'Como ligar ou desligar avisos de contas a pagar no Inbox e badge numérico no menu lateral.',
+    details: 'Para evitar excesso de avisos e garantir conforto aos operadores da agência:\n\n1. **Ajuste Global em Configurações**: No menu **Configurações -> Aba SLAs & Automações**, o painel conta com a opção **Notificações do Módulo Financeiro** (`input-notificacoes-financeiro-ativas`).\n2. **Desativação Total de Ruído**: Ao desmarcar a opção e salvar as configurações, o sistema oculta imediatamente o badge pulsante no menu lateral (`Financeiro`) e para de gerar alertas diários de contas a vencer no feed da Caixa de Entrada (Inbox).\n3. **Preservação de Métricas**: O desligamento afeta apenas as notificações reativas da equipe; os relatórios, scorecards e cards de liquidez dentro da tela do Financeiro continuam operando normalmente.'
+  },
+  {
+    id: 'fin-filtro-multi-meses',
+    modulo: 'financeiro',
+    label: '🗓️ Filtro de Múltiplos Meses de Referência & Exportação Consolidada',
+    description: 'Como selecionar múltiplos meses simultâneos no Contas a Pagar e exportar CSV do período.',
+    details: 'Para análises de médio prazo, trimestres ou ano completo no Contas a Pagar:\n\n1. **Seletor de Múltiplos Meses com Popover Flutuante**: O campo de mês conta com um menu flutuante ergonômico que permite marcar múltiplos meses simultâneos em chips interativos.\n2. **Atalhos Rápidos em 1-Clique**: Botões instantâneos para `Mês Atual`, `Trimestre` (Q1, Q2, Q3 ou Q4) e `Ano Todo` (todos os 12 meses selecionados).\n3. **Resumo e Indicadores Dinâmicos**: O rótulo do filtro exibe o período de forma concisa (ex: `Out, Nov`, `Ano Todo (12 meses)`), e os cards de liquidez recalculam os totais somando todo o intervalo escolhido.\n4. **Download de CSV Dinâmico**: Ao clicar em `📥 Exportar CSV`, o arquivo gerado traz os meses selecionados no próprio nome do arquivo (ex: `contas_a_pagar_2026_out_nov.csv`).'
+  },
+  {
     id: 'visual-tipografia-tabular-mineral',
     modulo: 'geral',
     label: '💎 Padrão Visual PaxFlow: Tipografia Tabular, Paleta Mineral e Status Dots',

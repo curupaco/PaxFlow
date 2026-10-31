@@ -111,6 +111,8 @@ export interface GlobalSettings {
   studioValidadeDias?: number;
   studio_permitir_aceite_formal?: boolean;
   studioPermitirAceiteFormal?: boolean;
+  notificacoes_financeiro_ativas?: boolean;
+  notificacoesFinanceiroAtivas?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -1112,6 +1114,7 @@ export interface FinAuditoria {
 export interface FinFiltrosContas {
   periodoTipo: 'mes' | 'personalizado';
   mes?: number;
+  meses?: number[];
   ano?: number;
   dataInicio?: string;
   dataFim?: string;

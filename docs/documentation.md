@@ -1623,7 +1623,23 @@ Para assegurar consistência estética absoluta com os Design Tokens do PaxFlow 
    - **Busca Rápida de Categorias**: Nos modais de Novo Lançamento e Edição de Contas a Pagar, o campo `🔍 Filtrar categoria...` permite filtrar instantaneamente as opções de categoria em tempo real conforme a digitação, integrado ao Tipo de Custo selecionado.
    - **Máscaras Monetárias em Tempo Real**: Todos os formulários contábeis (lançamento, edição, liquidação na baixa com juros/desconto e saldo inicial de contas bancárias) contam com formatação assistida `R$ 0,00` via `attachCurrencyMask` e conversão decimal segura via `parsePastedCurrency`, prevenindo erros de digitação e inconsistências de ponto versus vírgula no Supabase.
 
-10. **Apresentação Comercial Oficial & Vitrine de Produto (`/conheca`)**:
+10. **Aprimoramentos de Usabilidade, Inativação de Bancos & Governança no Financeiro**:
+    - **Inativação & Exclusão Segura de Contas Bancárias (`FinPlanoContasService`)**:
+      - Suporte ao campo booleano `ativo` na tabela `fin_contas_bancarias` com fallback Zero-Break para schema drift (código `42703`).
+      - Inativação em 1-clique via botão `⏸️ Inativar` / `▶️ Reativar` e switch toggle dentro do modal de edição da instituição bancária.
+      - Contas inativas são mantidas na aba de Plano de Contas com badge cinza `Inativo`, mas são filtradas automaticamente nos formulários de novos lançamentos de despesas.
+      - Ao solicitar exclusão (`🗑️`), o sistema executa verificação de integridade referencial cruzando `fin_contas_pagar` e `fin_remessas`. Caso haja títulos históricos vinculados, a conta é automaticamente inativada (Soft Delete) com notificação amigável, garantindo a consistência contábil. Se não houver vínculos, a exclusão física é executada.
+    - **Configuração Global de Notificações do Financeiro (`GlobalSettings`)**:
+      - Adição do parâmetro booleano `notificacoes_financeiro_ativas` em `global_settings` com fallback nativo para schema drift (código `42703`).
+      - Interruptor dedicado na aba **SLAs & Automações** em `Configuracoes.ts` permitindo habilitar ou silenciar avisos reativos.
+      - Quando desativado, o sistema oculta proativamente o badge numérico pulsante no menu lateral (`main.ts`) e suprime os cards de contas críticas no feed da Caixa de Entrada (`inboxService.ts`), preservando o foco operacional da agência.
+    - **Filtro de Múltiplos Meses de Referência no Contas a Pagar**:
+      - Expansão da interface `FinFiltrosContas` com a propriedade `meses?: number[]`.
+      - Implementação de cláusula `or` com intervalos combinados de data no Supabase em `FinContasPagarService.listarContas` quando múltiplos meses forem selecionados.
+      - Componente ergonômico com popover flutuante no filtro de Contas a Pagar, contendo atalhos rápidos (`Mês Atual`, `Trimestre`, `Ano Todo`), chips de seleção para os 12 meses e contador de meses ativos.
+      - Download de CSV dinâmico em `exportarCSV` incluindo as siglas dos meses selecionados no nome do arquivo (ex: `contas_a_pagar_2026_out_nov.csv`).
+
+11. **Apresentação Comercial Oficial & Vitrine de Produto (`/conheca`)**:
     - **Reestruturação Narrativa**: Reformulação integral da página pública do PaxFlow com foco em apresentação comercial clara, descontraída e madura, eliminando gatilhos de urgência, cronômetros regressivos e tabelas de planos agressivas de e-commerce.
     - **Jornada Cronológica em 5 Etapas com Telas Reais Integradas**:
       1. *01. Na Criação da Proposta (PaxFlow Studio™)*: Montagem de propostas de luxo e itinerários vivos com galeria de fotos integrada, visualização lado a lado e links interativos para o passageiro abrir no celular.

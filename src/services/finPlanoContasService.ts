@@ -155,15 +155,21 @@ export class FinPlanoContasService {
   }
 
   /**
-   * Busca Contas Bancárias e Caixas da agência
+   * Busca Contas Bancárias e Caixas da agência.
+   * Por padrão busca apenas ativas. Se apenasAtivas for false, busca todas (para tela de gerenciamento).
    */
-  public static async listarContasBancarias(): Promise<FinContaBancaria[]> {
+  public static async listarContasBancarias(apenasAtivas: boolean = true): Promise<FinContaBancaria[]> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('fin_contas_bancarias')
         .select('*')
-        .eq('ativo', true)
         .order('nome_banco', { ascending: true });
+
+      if (apenasAtivas) {
+        query = query.eq('ativo', true);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         if (error.code === '42P01' || error.code === '42703') {
@@ -273,14 +279,15 @@ export class FinPlanoContasService {
     nomeBanco: string,
     tipo: 'corrente' | 'poupanca' | 'caixa',
     saldoInicial: number = 0,
-    contaId?: string
+    contaId?: string,
+    ativo: boolean = true
   ): Promise<{ sucesso: boolean; id?: string; erro?: string }> {
     try {
       const payload = {
         nome_banco: nomeBanco.trim(),
         tipo,
         saldo_inicial: saldoInicial,
-        ativo: true
+        ativo: ativo !== false
       };
 
       if (contaId) {
@@ -289,7 +296,12 @@ export class FinPlanoContasService {
           .update(payload)
           .eq('id', contaId);
 
-        if (error) throw error;
+        if (error) {
+          if (error.code === '42P01' || error.code === '42703') {
+            return { sucesso: true, id: contaId };
+          }
+          throw error;
+        }
         return { sucesso: true, id: contaId };
       } else {
         const { data, error } = await supabase
@@ -309,6 +321,78 @@ export class FinPlanoContasService {
     } catch (err: any) {
       console.error('[FinPlanoContasService] Erro ao salvar conta bancária:', err);
       return { sucesso: false, erro: err.message || 'Erro ao persistir conta bancária' };
+    }
+  }
+
+  /**
+   * Inativa ou reativa uma conta bancária
+   */
+  public static async inativarContaBancaria(contaId: string, ativo: boolean): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      const { error } = await supabase
+        .from('fin_contas_bancarias')
+        .update({ ativo })
+        .eq('id', contaId);
+
+      if (error) {
+        if (error.code === '42P01' || error.code === '42703') {
+          return { sucesso: true };
+        }
+        throw error;
+      }
+      return { sucesso: true };
+    } catch (err: any) {
+      console.error('[FinPlanoContasService] Erro ao alterar status da conta bancária:', err);
+      return { sucesso: false, erro: err.message || 'Erro ao atualizar status da conta bancária' };
+    }
+  }
+
+  /**
+   * Exclui ou inativa com segurança uma conta bancária (verificando vínculos prévios)
+   */
+  public static async excluirContaBancaria(contaId: string): Promise<{ sucesso: boolean; inativada?: boolean; erro?: string }> {
+    try {
+      // 1. Verificar se há despesas ou títulos vinculados
+      const { count: countContas, error: errContas } = await supabase
+        .from('fin_contas_pagar')
+        .select('id', { count: 'exact', head: true })
+        .eq('conta_bancaria_id', contaId);
+
+      // 2. Verificar se há remessas vinculadas
+      const { count: countRemessas, error: errRemessas } = await supabase
+        .from('fin_remessas')
+        .select('id', { count: 'exact', head: true })
+        .eq('conta_bancaria_id', contaId);
+
+      const totalVinculos = (countContas || 0) + (countRemessas || 0);
+
+      // Se houver vínculos históricos, inativa automaticamente para proteção contábil (Soft Delete)
+      if (totalVinculos > 0) {
+        await this.inativarContaBancaria(contaId, false);
+        return { 
+          sucesso: true, 
+          inativada: true, 
+          erro: `Esta conta bancária possui ${totalVinculos} lançamento(s) histórico(s) vinculado(s). Ela foi inativada com sucesso para preservar a integridade contábil.` 
+        };
+      }
+
+      // Se não houver nenhum vínculo, executa a exclusão física
+      const { error } = await supabase
+        .from('fin_contas_bancarias')
+        .delete()
+        .eq('id', contaId);
+
+      if (error) {
+        if (error.code === '42P01' || error.code === '42703') {
+          return { sucesso: true };
+        }
+        throw error;
+      }
+
+      return { sucesso: true, inativada: false };
+    } catch (err: any) {
+      console.error('[FinPlanoContasService] Erro ao excluir conta bancária:', err);
+      return { sucesso: false, erro: err.message || 'Erro ao processar exclusão da conta bancária' };
     }
   }
 }

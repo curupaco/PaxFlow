@@ -1772,17 +1772,26 @@ class App {
    */
   private async atualizarFinanceiroBadge(): Promise<void> {
     if (!this.user) return;
+    const badge = document.getElementById('nav-financeiro-badge');
     if (!podeAcessarFinanceiro(this.perfil)) {
-      const badge = document.getElementById('nav-financeiro-badge');
       if (badge) badge.classList.add('hidden');
       return;
     }
 
     try {
+      // Verificar se notificações do financeiro estão ativas globalmente com blindagem contra 42703
+      const { data: stFinanceiro } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+      if (stFinanceiro && (stFinanceiro as any).notificacoes_financeiro_ativas === false) {
+        if (badge) {
+          badge.classList.add('hidden');
+          badge.textContent = '';
+        }
+        return;
+      }
+
       const { FinContasPagarService } = await import('./services/finContasPagarService');
       const resumo = await FinContasPagarService.obterResumoBadge();
 
-      const badge = document.getElementById('nav-financeiro-badge');
       if (badge) {
         if (resumo.totalCriticas > 0) {
           badge.textContent = String(resumo.totalCriticas);

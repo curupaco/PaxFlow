@@ -56,6 +56,7 @@ export class FinanceiroPage {
   private filtros: FinFiltrosContas = {
     periodoTipo: 'mes',
     mes: new Date().getMonth() + 1,
+    meses: [new Date().getMonth() + 1],
     ano: new Date().getFullYear(),
     status: 'todos',
     tipoCustoId: '',
@@ -63,6 +64,9 @@ export class FinanceiroPage {
     contaBancariaId: '',
     buscaFavorecido: ''
   };
+
+  // Controle de abertura do seletor múltiplo de meses
+  private dropdownMesesAberto: boolean = false;
 
   // Estado das Remessas (IDs de remessas com accordion expandido)
   private remessasExpandidas: Set<string> = new Set();
@@ -146,7 +150,7 @@ export class FinanceiroPage {
     const [tipos, categorias, bancos] = await Promise.all([
       FinPlanoContasService.listarTiposCusto(),
       FinPlanoContasService.listarCategorias(),
-      FinPlanoContasService.listarContasBancarias()
+      FinPlanoContasService.listarContasBancarias(false) // Carrega todas (ativas e inativas) para gestão no Plano de Contas
     ]);
     this.tiposCusto = tipos;
     this.categorias = categorias;
@@ -450,10 +454,33 @@ export class FinanceiroPage {
       return acc + (conta ? Number(conta.valor_nominal || 0) : 0);
     }, 0);
 
+    const mesesSelecionados = (this.filtros.meses && this.filtros.meses.length > 0)
+      ? this.filtros.meses
+      : (this.filtros.mes ? [this.filtros.mes] : [new Date().getMonth() + 1]);
+
+    let textoRotuloMeses = '';
+    if (this.filtros.status === 'atrasado') {
+      textoRotuloMeses = 'Histórico Global';
+    } else if (mesesSelecionados.length === 12) {
+      textoRotuloMeses = 'Ano Todo (12 meses)';
+    } else if (mesesSelecionados.length === 1) {
+      const mObj = meses.find(m => m.num === mesesSelecionados[0]);
+      textoRotuloMeses = mObj ? mObj.nome : `Mês ${mesesSelecionados[0]}`;
+    } else if (mesesSelecionados.length <= 3) {
+      textoRotuloMeses = mesesSelecionados
+        .slice()
+        .sort((a, b) => a - b)
+        .map(num => meses.find(m => m.num === num)?.nome.slice(0, 3))
+        .join(', ');
+    } else {
+      textoRotuloMeses = `${mesesSelecionados.length} meses selecionados`;
+    }
+
     const temFiltroAtivo = 
       this.filtros.status !== 'todos' || 
       Boolean(this.filtros.tipoCustoId) || 
       Boolean(this.filtros.categoriaId) || 
+      (this.filtros.meses && this.filtros.meses.length > 1) ||
       Boolean(this.filtros.buscaFavorecido?.trim());
 
     const statusColors: Record<string, string> = {
@@ -510,17 +537,67 @@ export class FinanceiroPage {
 
           <!-- Campos de Filtro (Mês, Status, Tipo, Categoria, Busca) -->
           <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
-            <div>
+            <div class="relative" id="container-filtro-meses">
               <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
-                <span>Mês de Referência</span>
+                <span>Meses de Referência</span>
                 ${this.filtros.status === 'atrasado' ? '<span class="text-rose-500 font-extrabold lowercase text-[9px]">(histórico global)</span>' : ''}
               </label>
-              <select id="filtro-mes" ${this.filtros.status === 'atrasado' ? 'disabled title="Exibindo histórico de todos os meses"' : ''} class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 ${this.filtros.status === 'atrasado' ? 'opacity-80 bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : ''}">
-                ${this.filtros.status === 'atrasado' ? `<option value="" selected>📅 Todas em Atraso (Histórico)</option>` : ''}
-                ${meses.map(m => `
-                  <option value="${m.num}" ${this.filtros.mes === m.num && this.filtros.status !== 'atrasado' ? 'selected' : ''}>${m.nome}</option>
-                `).join('')}
-              </select>
+              <button type="button" id="btn-toggle-dropdown-meses" ${this.filtros.status === 'atrasado' ? 'disabled title="Exibindo histórico de todos os meses"' : ''} class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-between gap-1 transition shadow-sm hover:border-slate-300 dark:hover:border-slate-600 ${this.filtros.status === 'atrasado' ? 'opacity-80 bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'cursor-pointer'}">
+                <div class="flex items-center gap-1.5 truncate">
+                  <span class="text-slate-400">📅</span>
+                  <span id="texto-rotulo-meses" class="truncate">${textoRotuloMeses}</span>
+                </div>
+                <span class="text-[9px] text-slate-400 transition-transform ${this.dropdownMesesAberto ? 'rotate-180' : ''}">▼</span>
+              </button>
+
+              <!-- Dropdown Multi-mês Flutuante -->
+              <div id="dropdown-meses-flutuante" class="${this.dropdownMesesAberto ? '' : 'hidden'} absolute left-0 top-[100%] mt-1.5 z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-3 animate-in fade-in zoom-in-95 duration-100">
+                <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
+                  <span class="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Filtro de Meses</span>
+                  <span id="dropdown-meses-count" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                    ${mesesSelecionados.length} selecionado(s)
+                  </span>
+                </div>
+
+                <!-- Atalhos Rápidos -->
+                <div class="grid grid-cols-3 gap-1.5 mb-2.5">
+                  <button type="button" id="btn-atalho-mes-atual" class="h-7 px-2 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition cursor-pointer">
+                    Mês Atual
+                  </button>
+                  <button type="button" id="btn-atalho-trimestre-atual" class="h-7 px-2 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition cursor-pointer">
+                    Trimestre
+                  </button>
+                  <button type="button" id="btn-atalho-ano-todo" class="h-7 px-2 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition cursor-pointer">
+                    Ano Todo
+                  </button>
+                </div>
+
+                <!-- Grade de 12 Meses -->
+                <div class="grid grid-cols-3 gap-1.5 mb-2.5">
+                  ${meses.map(m => {
+                    const isSelected = mesesSelecionados.includes(m.num);
+                    return `
+                      <button type="button" data-mes-num="${m.num}" class="btn-chip-mes h-8 rounded-lg text-xs font-bold transition flex items-center justify-center border cursor-pointer ${
+                        isSelected 
+                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm font-black' 
+                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                      }">
+                        ${m.nome.slice(0, 3)}
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+
+                <!-- Rodapé com Resetar e Aplicar -->
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <button type="button" id="btn-limpar-meses" class="text-[10px] font-bold text-rose-500 hover:underline cursor-pointer">
+                    Resetar
+                  </button>
+                  <button type="button" id="btn-aplicar-filtro-meses" class="h-7 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-black rounded-lg shadow-sm transition cursor-pointer">
+                    Aplicar
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -1490,34 +1567,55 @@ export class FinanceiroPage {
         <!-- Contas Bancárias & Caixas -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">Contas Bancárias & Caixas</h3>
-            <button id="btn-nova-conta-bancaria" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-lg transition cursor-pointer">
-              + Adicionar Banco
+            <div>
+              <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">Contas Bancárias & Caixas</h3>
+              <p class="text-[10px] text-slate-400">Contas ativas aparecem para baixas e pagamentos. Inative as que não usar mais.</p>
+            </div>
+            <button id="btn-nova-conta-bancaria" class="px-3.5 h-[36px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition cursor-pointer flex items-center gap-1.5 active:scale-95">
+              <span>+</span> Adicionar Banco
             </button>
           </div>
 
-          <div class="space-y-2">
+          <div class="space-y-2.5">
             ${this.contasBancarias.length === 0 ? `
               <div class="p-4 text-center text-xs text-slate-400 italic border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
                 Nenhuma conta bancária cadastrada. Clique em "+ Adicionar Banco".
               </div>
-            ` : this.contasBancarias.map(b => `
-              <div class="flex items-center justify-between p-3 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/30">
-                <div class="flex items-center gap-3">
-                  <span class="text-lg">🏦</span>
-                  <div>
-                    <span class="font-bold text-slate-800 dark:text-slate-100 text-xs block">${b.nome_banco}</span>
-                    <span class="text-[10px] text-slate-400 uppercase font-semibold">${b.tipo}</span>
+            ` : this.contasBancarias.map(b => {
+              const isAtivo = b.ativo !== false;
+              return `
+                <div class="flex items-center justify-between p-3.5 border ${isAtivo ? 'border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/30' : 'border-dashed border-slate-200 dark:border-slate-800 bg-slate-100/40 dark:bg-slate-900/40 opacity-70'} rounded-xl transition-all">
+                  <div class="flex items-center gap-3">
+                    <span class="text-xl">${isAtivo ? '🏦' : '🔒'}</span>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-800 dark:text-slate-100 text-xs">${b.nome_banco}</span>
+                        ${isAtivo ? `
+                          <span class="px-1.5 py-0.2 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[9px] font-black border border-emerald-200/50 uppercase">Ativo</span>
+                        ` : `
+                          <span class="px-1.5 py-0.2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-500 text-[9px] font-bold border border-slate-300 dark:border-slate-700 uppercase">Inativo</span>
+                        `}
+                      </div>
+                      <span class="text-[10px] text-slate-400 uppercase font-semibold block mt-0.5">${b.tipo}</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-black tabular-nums text-slate-900 dark:text-slate-100 mr-1">
+                      ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b.saldo_inicial || 0)}
+                    </span>
+                    <button class="btn-toggle-status-banco text-xs p-1.5 rounded-lg border border-slate-200/60 dark:border-slate-700 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 cursor-pointer transition" data-banco-id="${b.id}" data-ativo="${isAtivo}" title="${isAtivo ? 'Inativar banco' : 'Reativar banco'}">
+                      ${isAtivo ? '⏸️' : '▶️'}
+                    </button>
+                    <button class="btn-editar-conta-bancaria text-slate-500 hover:text-indigo-600 cursor-pointer text-xs p-1.5 rounded-lg border border-slate-200/60 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition" data-banco-id="${b.id}" title="Editar conta bancária">
+                      ✏️
+                    </button>
+                    <button class="btn-excluir-conta-bancaria text-slate-400 hover:text-rose-600 cursor-pointer text-xs p-1.5 rounded-lg border border-slate-200/60 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" data-banco-id="${b.id}" data-nome="${b.nome_banco}" title="Excluir ou inativar banco">
+                      🗑️
+                    </button>
                   </div>
                 </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs font-black text-slate-900 dark:text-slate-100">
-                    ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b.saldo_inicial || 0)}
-                  </span>
-                  <button class="btn-editar-conta-bancaria text-slate-400 hover:text-indigo-600 cursor-pointer text-xs p-1" data-banco-id="${b.id}" title="Editar conta bancária">✏️</button>
-                </div>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
       </div>
@@ -1570,10 +1668,125 @@ export class FinanceiroPage {
       });
     });
 
-    // Filtros
-    const mesEl = this.container.querySelector('#filtro-mes') as HTMLSelectElement;
-    mesEl?.addEventListener('change', async () => {
-      this.filtros.mes = Number(mesEl.value);
+    // Controle do Filtro Multi-Meses
+    const btnToggleMeses = this.container.querySelector('#btn-toggle-dropdown-meses');
+    const dropdownMeses = this.container.querySelector('#dropdown-meses-flutuante');
+    btnToggleMeses?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.dropdownMesesAberto = !this.dropdownMesesAberto;
+      dropdownMeses?.classList.toggle('hidden', !this.dropdownMesesAberto);
+    });
+
+    const nomesMesesFmt = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const atualizarVisualDropdownMeses = () => {
+      const mesesSel = (this.filtros.meses && this.filtros.meses.length > 0)
+        ? this.filtros.meses
+        : [new Date().getMonth() + 1];
+
+      // Atualiza estilo dos chips
+      this.container.querySelectorAll('.btn-chip-mes').forEach(c => {
+        const num = Number(c.getAttribute('data-mes-num'));
+        const ativo = mesesSel.includes(num);
+        if (ativo) {
+          c.className = 'btn-chip-mes h-8 rounded-lg text-xs font-black transition flex items-center justify-center border cursor-pointer bg-indigo-600 border-indigo-600 text-white shadow-sm';
+        } else {
+          c.className = 'btn-chip-mes h-8 rounded-lg text-xs font-bold transition flex items-center justify-center border cursor-pointer bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600';
+        }
+      });
+
+      // Atualiza badge de contagem no cabeçalho do dropdown
+      const badgeCount = this.container.querySelector('#dropdown-meses-count');
+      if (badgeCount) {
+        badgeCount.textContent = `${mesesSel.length} selecionado(s)`;
+      }
+
+      // Atualiza o texto do botão trigger
+      const labelEl = this.container.querySelector('#texto-rotulo-meses');
+      if (labelEl) {
+        let texto = '';
+        if (mesesSel.length === 12) {
+          texto = 'Ano Todo (12 meses)';
+        } else if (mesesSel.length === 1) {
+          texto = nomesMesesFmt[mesesSel[0] - 1] || `Mês ${mesesSel[0]}`;
+        } else if (mesesSel.length <= 3) {
+          texto = mesesSel.slice().sort((a, b) => a - b).map(num => nomesMesesFmt[num - 1]).join(', ');
+        } else {
+          texto = `${mesesSel.length} meses selecionados`;
+        }
+        labelEl.textContent = texto;
+      }
+    };
+
+    // Fechar e aplicar ao clicar fora
+    if (this.dropdownMesesAberto) {
+      const clickOutsideHandler = async (e: MouseEvent) => {
+        const containerMeses = this.container.querySelector('#container-filtro-meses');
+        if (containerMeses && !containerMeses.contains(e.target as Node)) {
+          this.dropdownMesesAberto = false;
+          dropdownMeses?.classList.add('hidden');
+          document.removeEventListener('click', clickOutsideHandler);
+          this.filtros.mes = this.filtros.meses?.[0] || (new Date().getMonth() + 1);
+          await this.carregarDadosAbaAtiva();
+          this.render();
+          this.setupEventListeners();
+        }
+      };
+      setTimeout(() => document.addEventListener('click', clickOutsideHandler), 10);
+    }
+
+    // Toggle de chips de mês
+    this.container.querySelectorAll('.btn-chip-mes').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const mesNum = Number(chip.getAttribute('data-mes-num'));
+        if (!mesNum) return;
+        if (!this.filtros.meses) {
+          this.filtros.meses = [this.filtros.mes || (new Date().getMonth() + 1)];
+        }
+        if (this.filtros.meses.includes(mesNum)) {
+          if (this.filtros.meses.length > 1) {
+            this.filtros.meses = this.filtros.meses.filter(m => m !== mesNum);
+          }
+        } else {
+          this.filtros.meses.push(mesNum);
+          this.filtros.meses.sort((a, b) => a - b);
+        }
+        atualizarVisualDropdownMeses();
+      });
+    });
+
+    // Atalhos Rápidos com atualização visual instantânea
+    this.container.querySelector('#btn-atalho-mes-atual')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.filtros.meses = [new Date().getMonth() + 1];
+      atualizarVisualDropdownMeses();
+    });
+
+    this.container.querySelector('#btn-atalho-trimestre-atual')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const curMonth = new Date().getMonth() + 1;
+      const quarter = Math.ceil(curMonth / 3);
+      const startM = (quarter - 1) * 3 + 1;
+      this.filtros.meses = [startM, startM + 1, startM + 2];
+      atualizarVisualDropdownMeses();
+    });
+
+    this.container.querySelector('#btn-atalho-ano-todo')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.filtros.meses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+      atualizarVisualDropdownMeses();
+    });
+
+    this.container.querySelector('#btn-limpar-meses')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.filtros.meses = [new Date().getMonth() + 1];
+      atualizarVisualDropdownMeses();
+    });
+
+    this.container.querySelector('#btn-aplicar-filtro-meses')?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      this.dropdownMesesAberto = false;
+      this.filtros.mes = this.filtros.meses?.[0] || (new Date().getMonth() + 1);
       await this.carregarDadosAbaAtiva();
       this.render();
       this.setupEventListeners();
@@ -1712,6 +1925,9 @@ export class FinanceiroPage {
       this.filtros.tipoCustoId = undefined;
       this.filtros.categoriaId = undefined;
       this.filtros.buscaFavorecido = undefined;
+      this.filtros.meses = [new Date().getMonth() + 1];
+      this.filtros.mes = new Date().getMonth() + 1;
+      this.dropdownMesesAberto = false;
       await this.carregarDadosAbaAtiva();
       this.render();
       this.setupEventListeners();
@@ -1884,6 +2100,65 @@ export class FinanceiroPage {
         const bancoId = btn.getAttribute('data-banco-id');
         const banco = this.contasBancarias.find(b => b.id === bancoId);
         if (banco) this.abrirModalNovaContaBancaria(banco);
+      });
+    });
+
+    // Alternar status ativo/inativo de conta bancária com 1-clique
+    this.container.querySelectorAll('.btn-toggle-status-banco').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const bancoId = btn.getAttribute('data-banco-id');
+        const isAtivoAtual = btn.getAttribute('data-ativo') === 'true';
+        if (!bancoId) return;
+
+        const novoStatus = !isAtivoAtual;
+        const confirmou = await showCustomConfirm(
+          novoStatus 
+            ? 'Deseja REATIVAR esta conta bancária para operações de pagamento e baixa?' 
+            : 'Deseja INATIVAR esta conta bancária? Ela deixará de aparecer para novas baixas, mas seus históricos contábeis serão preservados.'
+        );
+
+        if (confirmou) {
+          const res = await FinPlanoContasService.inativarContaBancaria(bancoId, novoStatus);
+          if (res.sucesso) {
+            await showCustomAlert(novoStatus ? 'Conta bancária reativada com sucesso!' : 'Conta bancária inativada com sucesso!', 'Sucesso');
+            await this.carregarCadastrosBase();
+            this.render();
+            this.setupEventListeners();
+          } else {
+            await showCustomAlert(res.erro || 'Falha ao alterar status da conta bancária.', 'Erro');
+          }
+        }
+      });
+    });
+
+    // Exclusão ou Inativação segura de conta bancária
+    this.container.querySelectorAll('.btn-excluir-conta-bancaria').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const bancoId = btn.getAttribute('data-banco-id');
+        const nomeBanco = btn.getAttribute('data-nome') || 'esta conta bancária';
+        if (!bancoId) return;
+
+        const confirmou = await showCustomConfirm(
+          `Deseja realmente remover ${nomeBanco}? Se houver títulos vinculados no histórico, a conta será apenas inativada com segurança.`
+        );
+
+        if (confirmou) {
+          const res = await FinPlanoContasService.excluirContaBancaria(bancoId);
+          if (res.sucesso) {
+            if (res.inativada) {
+              await showCustomAlert(res.erro || `${nomeBanco} possui histórico e foi inativada para manter a governança contábil.`, 'Atenção');
+            } else {
+              await showCustomAlert(`${nomeBanco} excluída com sucesso!`, 'Sucesso');
+            }
+            await this.carregarCadastrosBase();
+            this.render();
+            this.setupEventListeners();
+          } else {
+            await showCustomAlert(res.erro || 'Falha ao excluir conta bancária.', 'Erro');
+          }
+        }
       });
     });
 
@@ -2072,7 +2347,7 @@ export class FinanceiroPage {
             <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Conta Bancária / Caixa de Saída</label>
             <select id="select-baixa-banco" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
               <option value="">Selecione o banco de liquidação...</option>
-              ${this.contasBancarias.map(b => `<option value="${b.id}">${b.nome_banco}</option>`).join('')}
+              ${this.contasBancarias.filter(b => b.ativo !== false).map(b => `<option value="${b.id}">${b.nome_banco}</option>`).join('')}
             </select>
           </div>
 
@@ -2515,7 +2790,7 @@ export class FinanceiroPage {
               <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Conta Bancária de Saída</label>
               <select id="input-edit-banco" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
                 <option value="">Não vinculada (definir na baixa)</option>
-                ${this.contasBancarias.map(b => `<option value="${b.id}" ${b.id === c.conta_bancaria_id ? 'selected' : ''}>${b.nome_banco} (${b.tipo})</option>`).join('')}
+                ${this.contasBancarias.filter(b => b.ativo !== false || b.id === c.conta_bancaria_id).map(b => `<option value="${b.id}" ${b.id === c.conta_bancaria_id ? 'selected' : ''}>${b.nome_banco} (${b.tipo})${b.ativo === false ? ' [Inativo]' : ''}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -2710,7 +2985,13 @@ export class FinanceiroPage {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `contas_a_pagar_${this.filtros.ano}_${this.filtros.mes}.csv`);
+
+    const nomesMesesAbrev = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    const labelMeses = (this.filtros.meses && this.filtros.meses.length > 0)
+      ? this.filtros.meses.slice().sort((a, b) => a - b).map(m => nomesMesesAbrev[m - 1]).join('_')
+      : (nomesMesesAbrev[(this.filtros.mes || 1) - 1] || 'mes');
+
+    link.setAttribute('download', `contas_a_pagar_${this.filtros.ano}_${labelMeses}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -2887,6 +3168,17 @@ export class FinanceiroPage {
             </div>
           </div>
 
+          <div class="p-3 bg-slate-50/70 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-700 flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200 block">Conta Ativa para Pagamentos</span>
+              <span class="text-[10px] text-slate-400 block">Se desmarcada, não aparece nas opções de baixa e pagamento</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+              <input type="checkbox" id="input-banco-ativo" ${contaParaEditar?.ativo !== false ? 'checked' : ''} class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+
           <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button type="button" id="btn-cancelar-banco" class="h-[42px] px-4 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
               Cancelar
@@ -2918,6 +3210,7 @@ export class FinanceiroPage {
       const nomeBanco = (overlay.querySelector('#input-banco-nome') as HTMLInputElement).value.trim();
       const tipo = (overlay.querySelector('#input-banco-tipo') as HTMLSelectElement).value as any;
       const saldo = parsePastedCurrency(inputSaldo.value);
+      const ativo = (overlay.querySelector('#input-banco-ativo') as HTMLInputElement).checked;
 
       if (!nomeBanco) {
         await showCustomAlert('Por favor, informe o nome do banco ou caixa.', 'Atenção');
@@ -2931,7 +3224,7 @@ export class FinanceiroPage {
       }
 
       try {
-        const res = await FinPlanoContasService.salvarContaBancaria(nomeBanco, tipo, saldo, contaParaEditar?.id);
+        const res = await FinPlanoContasService.salvarContaBancaria(nomeBanco, tipo, saldo, contaParaEditar?.id, ativo);
         if (!res.sucesso) {
           throw new Error(res.erro || 'Falha ao salvar conta bancária');
         }
@@ -2943,7 +3236,7 @@ export class FinanceiroPage {
           'Sucesso'
         );
 
-        this.contasBancarias = await FinPlanoContasService.listarContasBancarias();
+        this.contasBancarias = await FinPlanoContasService.listarContasBancarias(false);
         this.render();
         await this.setupEventListeners();
       } catch (err: any) {

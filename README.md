@@ -121,8 +121,11 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
     - **Gestão Completa de Categorias e Contas Bancárias (Plano de Contas)**:
       - Modal interativo para criação e edição de categorias contábeis (`+ Nova Categoria`), vinculadas diretamente aos grupos de custo oficiais.
       - Botões rápidos de inclusão direta por grupo de custo (`+ Adicionar`) e edição rápida em linha (`✏️`).
-      - Modal de cadastro e edição de Contas Bancárias e Caixas (`+ Adicionar Banco`).
+      - Modal de cadastro e edição de Contas Bancárias e Caixas (`+ Adicionar Banco`), com alternador de status Ativo/Inativo.
+      - **Inativação & Exclusão Segura de Contas Bancárias [NEW]**: Possibilidade de inativar contas descontinuadas (ex: Banco Cora) sem perder histórico contábil anterior. Exclusão física automática para contas sem lançamentos e Soft Delete amigável com inativação para contas com títulos históricos vinculados.
       - Fallback resiliente contra erro 400 e ausência de colunas legadas no PostgREST, garantindo carregamento instantâneo e estável do painel e do badge de alertas.
+    - **Configuração de Notificações do Financeiro (Ativar/Desativar) [NEW]**: Opção nas configurações globais (*SLAs & Automações*) para habilitar ou silenciar avisos reativos de contas a pagar no feed do Inbox e no badge numérico do menu lateral, eliminando ruídos para equipes que preferem consultar compromissos sob demanda.
+    - **Filtro de Múltiplos Meses de Referência no Contas a Pagar [NEW]**: Substituição do seletor único por componente com popover flutuante de seleção múltipla, atalhos rápidos (`Mês Atual`, `Trimestre`, `Ano Todo`), recálculo automático de liquidez agregada e download dinâmico de CSV com nome representativo do período selecionado.
   - **Governança e RBAC Integrados**: Acesso unificado a todo o Financeiro e Conciliação liberado para a equipe financeira (`admin`, `financeiro` e flag `acesso_financeiro: true`), mantendo a operação crítica de Fechamento de Mês e trancamento de competências estritamente restrita a administradores.
 
 - **Robustez Zero-Break no Studio & Experiência Mobile de Propostas Públicas [NEW]**:

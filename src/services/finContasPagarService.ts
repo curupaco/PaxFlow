@@ -119,11 +119,33 @@ export class FinContasPagarService {
 
       // Se for busca específica por atrasadas, não filtra por período (traz histórico completo de atraso)
       if (!ehBuscaAtrasadas) {
-        if (filtros.periodoTipo === 'mes' && filtros.mes && filtros.ano) {
-          const primeiroDia = `${filtros.ano}-${String(filtros.mes).padStart(2, '0')}-01`;
-          const ultimoDiaDate = new Date(filtros.ano, filtros.mes, 0);
-          const ultimoDia = `${filtros.ano}-${String(filtros.mes).padStart(2, '0')}-${String(ultimoDiaDate.getDate()).padStart(2, '0')}`;
-          query = query.gte('data_vencimento', primeiroDia).lte('data_vencimento', ultimoDia);
+        const anoFiltro = filtros.ano;
+        if (filtros.periodoTipo === 'mes' && anoFiltro) {
+          const mesesSelecionados = (filtros.meses && filtros.meses.length > 0)
+            ? filtros.meses
+            : (filtros.mes ? [filtros.mes] : []);
+
+          const mesesOrdenados = [...mesesSelecionados].sort((a, b) => a - b);
+          const ehContinuo = mesesOrdenados.length > 0 && mesesOrdenados.every((m, idx) => idx === 0 || m === mesesOrdenados[idx - 1] + 1);
+
+          if (ehContinuo) {
+            // Meses consecutivos (ex: único, trimestre ou ano todo): range simples aproveita índices B-tree nativos
+            const minM = mesesOrdenados[0];
+            const maxM = mesesOrdenados[mesesOrdenados.length - 1];
+            const primeiroDia = `${anoFiltro}-${String(minM).padStart(2, '0')}-01`;
+            const ultimoDiaDate = new Date(anoFiltro, maxM, 0);
+            const ultimoDia = `${anoFiltro}-${String(maxM).padStart(2, '0')}-${String(ultimoDiaDate.getDate()).padStart(2, '0')}`;
+            query = query.gte('data_vencimento', primeiroDia).lte('data_vencimento', ultimoDia);
+          } else if (mesesOrdenados.length > 1) {
+            // Meses esparsos não-consecutivos: suporte via cláusula OR
+            const orConditions = mesesOrdenados.map(m => {
+              const primeiroDia = `${anoFiltro}-${String(m).padStart(2, '0')}-01`;
+              const ultimoDiaDate = new Date(anoFiltro, m, 0);
+              const ultimoDia = `${anoFiltro}-${String(m).padStart(2, '0')}-${String(ultimoDiaDate.getDate()).padStart(2, '0')}`;
+              return `and(data_vencimento.gte.${primeiroDia},data_vencimento.lte.${ultimoDia})`;
+            }).join(',');
+            query = query.or(orConditions);
+          }
         } else if (filtros.periodoTipo === 'personalizado') {
           if (filtros.dataInicio) query = query.gte('data_vencimento', filtros.dataInicio);
           if (filtros.dataFim) query = query.lte('data_vencimento', filtros.dataFim);
