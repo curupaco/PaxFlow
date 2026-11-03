@@ -475,4 +475,108 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
     // Assert
     expect(resultado.map(v => v.id)).toEqual(['viagem-1']);
   });
+
+  it('deve alternar automaticamente para Ver Tudo e status Todos ao abrir o Painel Avançado', async () => {
+    // Setup
+    const { DashboardFilterStateManager } = await import('../../src/components/dashboard/DashboardFilterStateManager');
+    let stateChanges = 0;
+    const manager = new DashboardFilterStateManager({
+      user: { id: 'admin-1' },
+      perfil: { id: 'admin-1', role: 'admin', nome: 'Admin' } as any,
+      settings: {} as any,
+      consultores: [],
+      formasRecebimento: [],
+      origensLead: [],
+      listaDestinosDisponiveis: [],
+      tiposProduto: [],
+      onStateChange: () => { stateChanges++; },
+      onNovaViagem: () => {},
+      onExportCsv: () => {}
+    });
+    manager.viewModeMonth = 'current';
+    manager.activeStatusTab = 'pos_venda';
+    manager.showFiltersPanel = false;
+    const handlers = manager.createHandlers();
+
+    // Action: Usuário clica no botão Avançado para abrir o painel
+    handlers.onToggleFiltersPanel();
+
+    // Assert: O painel é aberto, viewModeMonth muda para 'all' e activeStatusTab muda para 'todos'
+    expect(manager.showFiltersPanel).toBe(true);
+    expect(manager.viewModeMonth).toBe('all');
+    expect(manager.activeStatusTab).toBe('todos');
+    expect(stateChanges).toBe(1);
+  });
+
+  it('deve executar o filtro e recolher o painel ao acionar o botão OK (onApplyFilters)', async () => {
+    // Setup
+    const { DashboardFilterStateManager } = await import('../../src/components/dashboard/DashboardFilterStateManager');
+    let stateChanges = 0;
+    const manager = new DashboardFilterStateManager({
+      user: { id: 'admin-1' },
+      perfil: { id: 'admin-1', role: 'admin', nome: 'Admin' } as any,
+      settings: {} as any,
+      consultores: [],
+      formasRecebimento: [],
+      origensLead: [],
+      listaDestinosDisponiveis: [],
+      tiposProduto: [],
+      onStateChange: () => { stateChanges++; },
+      onNovaViagem: () => {},
+      onExportCsv: () => {}
+    });
+    manager.showFiltersPanel = true;
+    const handlers = manager.createHandlers();
+
+    // Action: Usuário clica no botão OK - Aplicar Filtros
+    handlers.onApplyFilters();
+
+    // Assert: Painel recolhido e atualização do dashboard notificada
+    expect(manager.showFiltersPanel).toBe(false);
+    expect(stateChanges).toBe(1);
+  });
+
+  it('deve renderizar o botão OK no rodapé do painel avançado com classes de estilo PaxFlow', async () => {
+    // Setup
+    const { DashboardFilterBar } = await import('../../src/components/dashboard/DashboardFilterBar');
+    const mockContext: any = {
+      counts: { todos: 10 },
+      totalSlaAlerts: 0,
+      totalFiltrosAtivos: 2,
+      tiposDisponiveis: [],
+      consultores: [],
+      formasRecebimento: [],
+      origensLead: [],
+      destinosList: [],
+      tagsDisponiveis: [],
+      listaDestinosDisponiveis: [],
+      currentMonthLabel: 'Novembro/2026',
+      totalVendas: 1000,
+      totalRentabilidade: 100,
+      totalMarkupAcumulado: 0,
+      totalRavAcumulado: 0,
+      ticketMedio: 1000
+    };
+    const mockState: any = {
+      showFiltersPanel: true,
+      viewModeMonth: 'all',
+      activeStatusTab: 'todos',
+      confFilters: {},
+      advProdutos: [],
+      advConsultores: [],
+      advFormasRecebimento: [],
+      advOrigensLead: [],
+      advPaxFaixas: [],
+      advTags: [],
+      advRiskScore: []
+    };
+
+    // Action: Renderiza o HTML do painel avançado
+    const html = DashboardFilterBar.renderAdvancedFiltersPanelHTML(mockContext, mockState);
+
+    // Assert: O botão OK deve estar presente no HTML com o id correto e estilos
+    expect(html).toContain('id="btn-apply-adv-filters"');
+    expect(html).toContain('OK - Aplicar Filtros');
+    expect(html).toContain('bg-indigo-600');
+  });
 });

@@ -236,10 +236,22 @@ export class DashboardFilterStateManager {
         this.config.onStateChange();
       },
       onToggleFiltersPanel: () => {
-        this.showFiltersPanel = !this.showFiltersPanel;
+        const willOpen = !this.showFiltersPanel;
+        this.showFiltersPanel = willOpen;
+        if (willOpen) {
+          this.viewModeMonth = 'all';
+          this.activeStatusTab = 'todos';
+          try {
+            localStorage.setItem('paxflow-view-mode-month', 'all');
+          } catch (e) {}
+        }
         this.config.onStateChange();
       },
       onCollapseFiltersPanel: () => {
+        this.showFiltersPanel = false;
+        this.config.onStateChange();
+      },
+      onApplyFilters: () => {
         this.showFiltersPanel = false;
         this.config.onStateChange();
       },

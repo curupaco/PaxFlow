@@ -1116,8 +1116,10 @@ Com o objetivo de eliminar assimetrias, alturas discrepantes e o desalinhamento 
 
 Para atender operações de agências de alto volume e demandas complexas de cruzamento operacional e contábil, a tela de Viagens conta com um componente especialista e desacoplado — `DashboardFilterBar.ts` (`src/components/dashboard/DashboardFilterBar.ts`), integrado ao `Dashboard.ts` por meio de contratos formais de estado (`DashboardFilterState`), contexto de renderização (`DashboardFilterContext`) e despachante de eventos (`DashboardFilterBarHandlers`), mantendo a reatividade instantânea, métricas financeiras consolidadas e exportação para planilhas:
 
-1. **Botão e Painel Expansível `🎛️ Avançado (N)`**:
+1. **Botão e Painel Expansível `🎛️ Avançado (N)` & Abertura Inteligente**:
    - Substitui o filtro simples de data por um botão dinâmico com badge indicativo da quantidade de critérios ativos em tempo real.
+   - **Comutação Automática para "🌐 Ver Tudo" e Status "Todos"**: Ao clicar em **🎛️ Avançado**, o sistema alterna imediatamente o período de visualização para **Ver Tudo** (`viewModeMonth = 'all'`) e a aba de status para **Todos** (`activeStatusTab = 'todos'`), eliminando qualquer restrição invisível do mês corrente ou de abas operacionais específicas e prevenindo apontamentos de falsos erros/sumiço de registros.
+   - **Botão Primário "✓ OK - Aplicar Filtros" & Tecla Enter**: No rodapé fixo do painel avançado, o botão destacado `✓ OK - Aplicar Filtros` (com token de ação primária PaxFlow) confirma os dados de qualquer input pendente, recolhe automaticamente o painel de filtros e foca diretamente na tabela de resultados atualizada. Pressionar a tecla `Enter` em qualquer campo de texto, data ou número do painel dispara o mesmo comportamento de aplicação rápida.
    - Painel colapsável moderno com background card suave, bordas translúcidas e transição fluida.
 
 2. **Critérios Combinatórios Disponíveis**:

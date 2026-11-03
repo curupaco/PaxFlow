@@ -83,6 +83,7 @@ export interface DashboardFilterBarHandlers {
   onSetViewModeMonth: (mode: 'current' | 'all') => void;
   onToggleFiltersPanel: () => void;
   onCollapseFiltersPanel: () => void;
+  onApplyFilters: () => void;
   onToggleConfPopover: () => void;
   onCloseConfPopover: () => void;
   onSelectConsultor: (id: string) => void;
@@ -801,14 +802,18 @@ export class DashboardFilterBar {
         <!-- Rodapé de Ações do Painel (Sticky) -->
         <div class="sticky bottom-0 -mx-4 md:-mx-6 -mb-4 md:-mb-5 px-4 md:px-6 py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 mt-4 z-10 shadow-sm">
           <div class="text-xs text-slate-500 dark:text-slate-400 font-bold">
-            ${ctx.totalFiltrosAtivos > 0 ? `<span class="text-indigo-600 dark:text-indigo-400 font-extrabold">🎯 ${ctx.totalFiltrosAtivos} critério(s) ativo(s)</span> &bull; Filtro reativo aplicado` : 'Nenhum filtro ativo selecionado'}
+            ${ctx.totalFiltrosAtivos > 0 ? `<span class="text-indigo-600 dark:text-indigo-400 font-extrabold">🎯 ${ctx.totalFiltrosAtivos} critério(s) ativo(s)</span> &bull; Pronto para filtrar` : 'Nenhum filtro ativo selecionado'}
           </div>
           <div class="flex items-center gap-2">
-            <button id="btn-clear-all-adv-filters" type="button" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-xs uppercase tracking-wider rounded-xl border border-slate-200/80 dark:border-slate-700/80 transition cursor-pointer">
-              Limpar Todos os Filtros
+            <button id="btn-clear-all-adv-filters" type="button" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold text-xs uppercase tracking-wider rounded-xl border border-slate-200/80 dark:border-slate-700/80 transition cursor-pointer">
+              Limpar Todos
             </button>
-            <button id="btn-collapse-adv-panel" type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-indigo-600/20 transition cursor-pointer">
-              Recolher Painel ▲
+            <button id="btn-collapse-adv-panel" type="button" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold text-xs uppercase tracking-wider rounded-xl border border-slate-200/80 dark:border-slate-700/80 transition cursor-pointer">
+              Recolher ▲
+            </button>
+            <button id="btn-apply-adv-filters" type="button" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-indigo-600/20 active:scale-95 transition cursor-pointer flex items-center gap-1.5">
+              <span>✓</span>
+              <span>OK - Aplicar Filtros</span>
             </button>
           </div>
         </div>
@@ -1336,6 +1341,48 @@ export class DashboardFilterBar {
         const filterKey = btn.getAttribute('data-clear-filter');
         if (filterKey) handlers.onRemoveSingleFilter(filterKey);
       });
+    });
+
+    // 24. Botão OK - Aplicar Filtros e Atalho Enter no Painel Avançado
+    const flushAdvInputs = () => {
+      ['filter-fin-start', 'filter-fin-end', 'filter-ida-start', 'filter-ida-end', 'filter-volta-start', 'filter-volta-end', 'filter-adv-fornecedor'].forEach(id => {
+        const el = container.querySelector(`#${id}`) as HTMLInputElement;
+        if (el && document.activeElement === el) {
+          el.dispatchEvent(new Event('change'));
+        }
+      });
+      [
+        'filter-adv-valor-min', 'filter-adv-valor-max',
+        'filter-adv-tarifa-min', 'filter-adv-tarifa-max',
+        'filter-adv-taxa-min', 'filter-adv-taxa-max',
+        'filter-adv-comissao-min', 'filter-adv-comissao-max',
+        'filter-adv-markup-min', 'filter-adv-markup-max',
+        'filter-adv-rav-min', 'filter-adv-rav-max',
+        'filter-adv-rent-min', 'filter-adv-rent-max'
+      ].forEach(id => {
+        const el = container.querySelector(`#${id}`) as HTMLInputElement;
+        if (el && document.activeElement === el) {
+          el.dispatchEvent(new Event('change'));
+        }
+      });
+    };
+
+    container.querySelector('#btn-apply-adv-filters')?.addEventListener('click', () => {
+      flushAdvInputs();
+      handlers.onApplyFilters();
+    });
+
+    const advPanelEl = container.querySelector('#advanced-filters-panel');
+    advPanelEl?.addEventListener('keydown', (e: Event) => {
+      const keyEvent = e as KeyboardEvent;
+      if (keyEvent.key === 'Enter') {
+        const target = keyEvent.target as HTMLElement;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'SELECT')) {
+          keyEvent.preventDefault();
+          flushAdvInputs();
+          handlers.onApplyFilters();
+        }
+      }
     });
   }
 }
