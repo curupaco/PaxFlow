@@ -305,9 +305,9 @@ export class LandingPage {
 
           <nav class="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-300 uppercase tracking-wider">
             <a href="#modulos" class="hover:text-cyan-300 transition flex items-center gap-1.5"><span class="text-cyan-400">🖥️</span>Telas do Sistema</a>
-            <a href="#studio-section" class="hover:text-amber-300 transition flex items-center gap-1.5"><span class="text-amber-400">✨</span>Studio™</a>
-            <a href="#risk-score-section" class="hover:text-emerald-300 transition flex items-center gap-1.5"><span class="text-emerald-400">🛡️</span>Risk Score™</a>
-            <a href="#next-trip-section" class="hover:text-indigo-300 transition flex items-center gap-1.5"><span class="text-indigo-400">🎯</span>Next Trip™</a>
+            <a href="#studio-section" class="hover:text-amber-300 transition flex items-center gap-1.5"><span class="text-amber-400">✨</span>Propostas</a>
+            <a href="#risk-score-section" class="hover:text-emerald-300 transition flex items-center gap-1.5"><span class="text-emerald-400">🛡️</span>Controle de Risco</a>
+            <a href="#next-trip-section" class="hover:text-indigo-300 transition flex items-center gap-1.5"><span class="text-indigo-400">🎯</span>Recompra</a>
             <a href="#financeiro-section" class="hover:text-blue-300 transition flex items-center gap-1.5"><span class="text-blue-400">💳</span>Financeiro</a>
             <a href="#marcas" class="hover:text-purple-300 transition">Sua Marca</a>
             <a href="#diferenciais" class="hover:text-white transition">Por que PaxFlow?</a>
@@ -379,11 +379,11 @@ export class LandingPage {
           <div class="pf-rise-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-14 text-xs font-semibold text-slate-300">
             <span class="flex items-center gap-2 text-emerald-400">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-              Risk Score Integrado
+              Auditoria Preventiva Contínua
             </span>
             <span class="flex items-center gap-2 text-cyan-400">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-              Sem taxa por consultor
+              Equipe Totalmente Integrada
             </span>
             <span class="flex items-center gap-2 text-amber-400">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
@@ -480,15 +480,15 @@ export class LandingPage {
               <button id="tab-btn-dashboard" class="shrink-0 whitespace-nowrap px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl flex items-center gap-1.5 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow cursor-pointer">Painel Comercial</button>
               <button id="tab-btn-risk" class="shrink-0 whitespace-nowrap px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl flex items-center gap-1.5 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-emerald-300 hover:border-emerald-500/40 transition cursor-pointer">
                 <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                Risk Score™
+                Controle de Risco (Risk Score)
               </button>
               <button id="tab-btn-nexttrip" class="shrink-0 whitespace-nowrap px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl flex items-center gap-1.5 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-indigo-300 hover:border-indigo-500/40 transition cursor-pointer">
                 <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                Next Trip Engine™
+                Recompra Ativa (Next Trip)
               </button>
               <button id="tab-btn-studio" class="shrink-0 whitespace-nowrap px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl flex items-center gap-1.5 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-amber-300 hover:border-amber-500/40 transition cursor-pointer">
                 <span class="text-xs">✨</span>
-                PaxFlow Studio™
+                Propostas Visuais (Studio)
               </button>
               <button id="tab-btn-financeiro" class="shrink-0 whitespace-nowrap px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl flex items-center gap-1.5 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-blue-300 hover:border-blue-500/40 transition cursor-pointer">
                 <span class="text-xs">💳</span>
@@ -959,18 +959,18 @@ export class LandingPage {
           </div>
         </section>
 
-        <!-- ===== SEÇÃO: PAXFLOW STUDIO™ (Aprofundamento) ===== -->
+        <!-- ===== SEÇÃO: PROPOSTAS VISUAIS DE ALTO PADRÃO (PAXFLOW STUDIO™) ===== -->
         <section id="studio-section" class="relative z-10 w-full py-16 px-4 sm:px-6 border-t border-white/10 bg-gradient-to-b from-[#06070f] via-[#140b28]/80 to-[#06070f]">
           <div class="pf-zone max-w-6xl mx-auto space-y-10">
             <div class="text-center max-w-3xl mx-auto space-y-3">
               <span class="px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black uppercase tracking-widest">
-                ✨ Lançamento Exclusivo PaxFlow Studio™
+                ✨ Experiência Visual de Vendas • PaxFlow Studio™
               </span>
-              <h2 class="text-2xl sm:text-4xl font-black tracking-tight text-white">
-                Propostas de Luxo com Live Preview em Tempo Real
+              <h2 class="text-2xl sm:text-4xl font-black tracking-tight text-white uppercase">
+                Crie Propostas Visuais de Cinema e Acelere o Fechamento
               </h2>
               <p class="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
-                Chega de propostas manuais em Word ou PDFs sem padronização. Transforme vouchers de consolidadoras e mensagens de WhatsApp em <strong>experiências visuais de cinema</strong> que encantam o cliente e aceleram o fechamento.
+                Chega de propostas amadoras em texto no WhatsApp ou PDFs sem identidade. Transforme cotações de consolidadoras em <strong>roteiros digitais cinematográficos</strong> que encantam o passageiro no celular e aumentam a taxa de conversão da agência com a tecnologia PaxFlow Studio™.
               </p>
             </div>
 
@@ -1008,18 +1008,18 @@ export class LandingPage {
           </div>
         </section>
 
-        <!-- ===== SEÇÃO: PAXFLOW RISK SCORE™ (Aprofundamento) ===== -->
+        <!-- ===== SEÇÃO: CONTROLE DE RISCO DAS VIAGENS (RISK SCORE™) ===== -->
         <section id="risk-score-section" class="relative z-10 w-full py-16 px-4 sm:px-6 border-t border-white/10 bg-gradient-to-b from-[#06070f] via-emerald-950/40 to-[#06070f]">
           <div class="pf-zone max-w-6xl mx-auto space-y-10">
             <div class="text-center max-w-3xl mx-auto space-y-3">
               <span class="px-3.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
-                🛡️ Blindagem Operacional Exclusiva
+                🛡️ Auditoria Preventiva Contínua • Tecnologia Risk Score™
               </span>
-              <h2 class="text-2xl sm:text-4xl font-black tracking-tight text-white">
-                PaxFlow Risk Score™
+              <h2 class="text-2xl sm:text-4xl font-black tracking-tight text-white uppercase">
+                Controle o Risco das Viagens e Blinde sua Operação
               </h2>
               <p class="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
-                Nunca mais seja surpreendido com clientes no aeroporto sem vouchers ou com passaportes vencidos. O motor de auditoria analisa continuamente de 0 a 100 o risco de cada viagem da sua carteira e dispara alertas para você e sua equipe agirem com ampla antecedência.
+                Nunca mais seja surpreendido com clientes no aeroporto sem vouchers, com passaportes vencidos ou sem seguro obrigatório. O motor inteligente avalia continuamente de 0 a 100 o índice de conformidade de cada viagem (Risk Score™) e avisa sua equipe com semanas de antecedência antes do embarque.
               </p>
             </div>
 
@@ -1057,18 +1057,18 @@ export class LandingPage {
           </div>
         </section>
 
-        <!-- ===== SEÇÃO: NEXT TRIP ENGINE™ (Aprofundamento) ===== -->
+        <!-- ===== SEÇÃO: RECOMPRA PREDITIVA (NEXT TRIP ENGINE™) ===== -->
         <section id="next-trip-section" class="relative z-10 w-full py-16 px-4 sm:px-6 border-t border-white/10 bg-gradient-to-b from-[#06070f] via-[#100d2e]/80 to-[#06070f]">
           <div class="pf-zone max-w-6xl mx-auto space-y-10">
             <div class="text-center max-w-3xl mx-auto space-y-3">
               <span class="px-3.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[10px] font-black uppercase tracking-widest">
-                🎯 Motor Preditivo de Recompra
+                🎯 Pós-Venda Ativo &amp; Fidelização • Algoritmo Next Trip™
               </span>
-              <h2 class="text-2xl sm:text-4xl font-black tracking-tight text-white">
-                Next Trip Engine™: Vendas Contínuas da Sua Base
+              <h2 class="text-2xl sm:text-4xl font-black tracking-tight text-white uppercase">
+                Transforme Clientes que Já Viajaram em Novas Vendas
               </h2>
               <p class="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
-                Transforme a base de clientes que já viajaram com a sua agência em vendas ativas. O algoritmo analisa 5 vetores estratégicos para dizer à sua equipe exatamente <strong>quem está no momento ideal para comprar uma nova viagem hoje</strong>.
+                Não deixe passageiros que amaram viajar com a sua agência comprarem as próximas férias na concorrência. O algoritmo inteligente Next Trip Engine™ analisa a sazonalidade e o perfil do viajante para mostrar à sua equipe exatamente <strong>quem está no momento ideal para fechar uma nova viagem hoje</strong>.
               </p>
             </div>
 
@@ -1295,7 +1295,7 @@ export class LandingPage {
                 </li>
                 <li class="flex items-start gap-2.5">
                   <span class="text-rose-400 font-bold shrink-0">✕</span>
-                  <span>Cobranças que sobem a cada novo consultor contratado, punindo o crescimento da sua equipe.</span>
+                  <span>Informações dispersas entre WhatsApp particular dos consultores e computadores isolados da agência.</span>
                 </li>
               </ul>
             </div>
@@ -1308,7 +1308,7 @@ export class LandingPage {
               <ul class="space-y-3 text-xs sm:text-sm text-slate-200 font-medium">
                 <li class="flex items-start gap-2.5">
                   <span class="text-emerald-400 font-bold shrink-0">✓</span>
-                  <span>O Risk Score audita tudo todos os dias e te avisa com semanas de folga antes do embarque.</span>
+                  <span>Auditoria preventiva contínua que avalia cada viagem e avisa com semanas de folga antes do embarque.</span>
                 </li>
                 <li class="flex items-start gap-2.5">
                   <span class="text-emerald-400 font-bold shrink-0">✓</span>
@@ -1320,7 +1320,7 @@ export class LandingPage {
                 </li>
                 <li class="flex items-start gap-2.5">
                   <span class="text-emerald-400 font-bold shrink-0">✓</span>
-                  <span>Sem pegadinhas por consultor: coloque toda a equipe para rodar com previsibilidade total.</span>
+                  <span>Equipe trabalhando em perfeita sintonia: histórico compartilhado, plantões transparentes e controle centralizado.</span>
                 </li>
               </ul>
             </div>
@@ -1397,11 +1397,11 @@ export class LandingPage {
 
             <details class="group p-4 rounded-2xl bg-white/[0.03] border border-white/10 [&_summary::-webkit-details-marker]:hidden">
               <summary class="flex items-center justify-between cursor-pointer font-bold text-sm text-white">
-                <span>Vocês cobram a mais por cada consultor cadastrado?</span>
+                <span>Como o PaxFlow ajuda toda a minha equipe a trabalhar em sintonia?</span>
                 <span class="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
               </summary>
               <p class="text-xs sm:text-sm text-slate-300 mt-3 font-normal leading-relaxed">
-                Não penalizamos agências que crescem. Nosso modelo comercial foi pensado para que toda a sua equipe (consultores, emissores, financeiro e gestores) possa usar a plataforma sem surpresas ou acréscimos na fatura.
+                O PaxFlow centraliza o atendimento de consultores, emissores e financeiro em um único painel integrado. Você organiza escalas de plantão de finais de semana, visualiza o status de cada viagem em tempo real e garante que nenhum cliente fique desassistido.
               </p>
             </details>
 
@@ -1437,8 +1437,9 @@ export class LandingPage {
             <div class="flex items-center gap-4 text-slate-400 text-xs">
               <a href="#topo" class="hover:text-white transition">Início</a>
               <a href="#modulos" class="hover:text-white transition">Telas</a>
-              <a href="#studio-section" class="hover:text-white transition">Studio™</a>
-              <a href="#risk-score-section" class="hover:text-white transition">Risk Score™</a>
+              <a href="#studio-section" class="hover:text-white transition">Propostas</a>
+              <a href="#risk-score-section" class="hover:text-white transition">Controle de Risco</a>
+              <a href="#next-trip-section" class="hover:text-white transition">Recompra</a>
               <a href="#financeiro-section" class="hover:text-white transition">Financeiro</a>
               <button id="btn-footer-demo" class="hover:text-cyan-400 transition cursor-pointer">Modo Demo</button>
               <button id="btn-footer-login" class="hover:text-white transition cursor-pointer">Entrar</button>

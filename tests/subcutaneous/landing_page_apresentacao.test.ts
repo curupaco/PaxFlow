@@ -27,16 +27,16 @@ describe('Subcutaneous: Landing Page - Apresentação Comercial Oficial Completa
 
     expect(html).toContain('id="tab-btn-risk"');
     expect(html).toContain('id="panel-risk"');
-    expect(html).toContain('Risk Score™');
+    expect(html).toContain('Controle de Risco (Risk Score)');
     expect(html).not.toContain('Onda 3');
 
     expect(html).toContain('id="tab-btn-nexttrip"');
     expect(html).toContain('id="panel-nexttrip"');
-    expect(html).toContain('Next Trip Engine™');
+    expect(html).toContain('Recompra Ativa (Next Trip)');
 
     expect(html).toContain('id="tab-btn-studio"');
     expect(html).toContain('id="panel-studio"');
-    expect(html).toContain('PaxFlow Studio™');
+    expect(html).toContain('Propostas Visuais (Studio)');
 
     expect(html).toContain('id="tab-btn-financeiro"');
     expect(html).toContain('id="panel-financeiro"');
@@ -64,22 +64,31 @@ describe('Subcutaneous: Landing Page - Apresentação Comercial Oficial Completa
     expect(html).toContain('id="panel-publicas"');
   });
 
-  it('deve conter as seções profundas dos motores: Studio, Risk Score, Next Trip e Financeiro', () => {
+  it('deve conter títulos de venda direta nas seções dos motores com citações secundárias das tecnologias', () => {
     // Setup & Action
     const html = LandingPage.renderHtml();
 
-    // Assert
+    // Assert - Seção Studio
     expect(html).toContain('id="studio-section"');
+    expect(html).toContain('Crie Propostas Visuais de Cinema e Acelere o Fechamento');
+    expect(html).toContain('PaxFlow Studio™');
     expect(html).toContain('Ingestão Inteligente de PDFs');
 
+    // Assert - Seção Risk Score
     expect(html).toContain('id="risk-score-section"');
+    expect(html).toContain('Controle o Risco das Viagens e Blinde sua Operação');
+    expect(html).toContain('Tecnologia Risk Score™');
     expect(html).toContain('Regras Sanitárias &amp; Vistos por País');
     expect(html).toContain('Ações em Lote em 1-Clique');
 
+    // Assert - Seção Next Trip
     expect(html).toContain('id="next-trip-section"');
+    expect(html).toContain('Transforme Clientes que Já Viajaram em Novas Vendas');
+    expect(html).toContain('Algoritmo Next Trip™');
     expect(html).toContain('Os 5 Vetores Transparentes');
     expect(html).toContain('Destinos Complementares');
 
+    // Assert - Seção Financeiro
     expect(html).toContain('id="financeiro-section"');
     expect(html).toContain('Extrato Bancário Inteligente (PDF/CSV)');
     expect(html).toContain('Fluxo de Caixa em Calendário');
@@ -97,7 +106,7 @@ describe('Subcutaneous: Landing Page - Apresentação Comercial Oficial Completa
     expect(html).toContain('id="brand-tab-whatsapp"');
   });
 
-  it('deve exibir o fechamento comercial em dose dupla direta sem tabelas de preços de e-commerce', () => {
+  it('deve exibir o fechamento comercial em dose dupla direta sem tabelas de preços de e-commerce e sem menções de cobrança', () => {
     // Setup & Action
     const html = LandingPage.renderHtml();
 
@@ -108,6 +117,10 @@ describe('Subcutaneous: Landing Page - Apresentação Comercial Oficial Completa
     expect(html).toContain('btn-cta-whatsapp-final');
     expect(html).not.toContain('R$ 199');
     expect(html).not.toContain('R$ 799');
+    expect(html).not.toContain('Sem taxa por consultor');
+    expect(html).not.toContain('cobram a mais por cada consultor');
+    expect(html).toContain('Equipe Totalmente Integrada');
+    expect(html).toContain('Auditoria Preventiva Contínua');
   });
 
   it('deve exibir o logo de bússola grande e não conter menções a 24/7 ou 24x7', () => {

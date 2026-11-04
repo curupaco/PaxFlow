@@ -1659,7 +1659,9 @@ Para assegurar consistência estética absoluta com os Design Tokens do PaxFlow 
 
 A página pública de apresentação do PaxFlow (`src/pages/LandingPage.ts`) foi consolidada como o ponto de contato institucional do produto com donos e gestores de agências de turismo.
 
-#### Características Arquiteturais:
+#### Características Arquiteturais & Diretrizes de Copy Comercial:
+- **Títulos Vendedores Focados em Benefício Direto**: Em vez de expor termos técnicos frios em destaque primário (`PaxFlow Studio™`, `PaxFlow Risk Score™`, `Next Trip Engine™`), os títulos das seções vendem a funcionalidade e o ganho real para a agência (*"CRIE PROPOSTAS VISUAIS DE CINEMA E ACELERE O FECHAMENTO"*, *"CONTROLE O RISCO DAS VIAGENS E BLINDE SUA OPERAÇÃO"*, *"TRANSFORME CLIENTES QUE JÁ VIAJARAM EM NOVAS VENDAS"*), posicionando os nomes das tecnologias como selos e citações de endosso secundário.
+- **Remoção Total de Menções a Precificação**: Ausência de tabelas de preços, custos ou perguntas de cobrança por consultor no FAQ e comparativos, concentrando o foco na união e produtividade de toda a equipe da agência.
 - **Rota Única e Exclusiva (`/conheca`)**: O roteador central em `src/main.ts` intercepta acessos diretos via pathname ou query string (`window.location.search.includes('conheca')`) direcionando o visitante para a apresentação.
 - **Isolamento Completo do Modo Demonstração (Sandbox)**: Ao acionar o botão de demonstração, o sistema sinaliza a flag de sessão `paxflowSandbox = true` e limpa chaves de dados operacionais sem tocar em dados de autenticação ou preferências globais de tema.
 - **Renderização Subcutânea Testável (`LandingPage.renderHtml()`)**: O template HTML da página é desacoplado do ciclo de vida do DOM do navegador, permitindo validações automatizadas de alta velocidade via Vitest em ambiente Node puro.
