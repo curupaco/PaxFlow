@@ -577,6 +577,41 @@ describe('EscalaService Subcutaneous Tests', () => {
     expect(ultimosTres[2].data).toBe('09/07');
   });
 
+  it('deve identificar os 3 ultimos feriados ocorridos em 04 de novembro de 2026 sem incluir feriados futuros (15/11 e 20/11)', () => {
+    // Setup: Data de corte 04/11/2026 (Finados já passou, mas Proclamação e Consciência Negra ainda não)
+    const dataCorte = '2026-11-04';
+
+    // Action
+    const ultimosTres = EscalaService.getUltimosTresFeriados(dataCorte);
+
+    // Assert: Deve conter 07/09, 12/10 e 02/11 em ordem cronológica
+    expect(ultimosTres.length).toBe(3);
+    expect(ultimosTres[0].data).toBe('07/09');
+    expect(ultimosTres[0].dataIso).toBe('2026-09-07');
+    expect(ultimosTres[1].data).toBe('12/10');
+    expect(ultimosTres[1].dataIso).toBe('2026-10-12');
+    expect(ultimosTres[2].data).toBe('02/11');
+    expect(ultimosTres[2].dataIso).toBe('2026-11-02');
+
+    // NUNCA conter feriados futuros
+    const datasIso = ultimosTres.map(f => f.dataIso);
+    expect(datasIso).not.toContain('2026-11-15');
+    expect(datasIso).not.toContain('2026-11-20');
+    expect(datasIso).not.toContain('2026-12-25');
+  });
+
+  it('deve atualizar a lista dinamicamente conforme feriados futuros passam a ocorrer', () => {
+    // Setup 1: Em 16/11/2026, 15/11 já ocorreu mas 20/11 ainda é futuro
+    const feriadosEm16Nov = EscalaService.getUltimosTresFeriados('2026-11-16');
+    // Assert 1
+    expect(feriadosEm16Nov.map(f => f.data)).toEqual(['12/10', '02/11', '15/11']);
+
+    // Setup 2: Em 21/11/2026, 20/11 já ocorreu
+    const feriadosEm21Nov = EscalaService.getUltimosTresFeriados('2026-11-21');
+    // Assert 2
+    expect(feriadosEm21Nov.map(f => f.data)).toEqual(['02/11', '15/11', '20/11']);
+  });
+
   it('deve carregar plantoes dos ultimos 3 feriados automaticamente a partir da escala_diaria', async () => {
     // Setup
     const ano = 2026;
@@ -624,6 +659,59 @@ describe('EscalaService Subcutaneous Tests', () => {
     expect(feriados[2].consultoresTrabalharam).toContain('Guto');
     expect(feriados[2].consultoresTrabalharam).toContain('Marinna');
     expect(feriados[2].consultoresTrabalharam).not.toContain('Rafael');
+  });
+
+  it('deve carregar os ultimos 3 feriados em novembro travando na data atual sem projetar feriados futuros', async () => {
+    // Setup
+    const ano = 2026;
+    const mesNovembro = 11;
+
+    const mockDadosEscala = [
+      { consultor_nome: 'Aline', turno_codigo: '10-19', data: '2026-09-07' },
+      { consultor_nome: 'Guto', turno_codigo: '10-19', data: '2026-10-12' },
+      { consultor_nome: 'Aline', turno_codigo: '10-19', data: '2026-11-02' },
+      { consultor_nome: 'Marinna', turno_codigo: '10-19', data: '2026-11-02' },
+      { consultor_nome: 'Eduardo', turno_codigo: 'Folga', data: '2026-11-02' },
+      // Feriados futuros (15/11 e 20/11) que NUNCA devem ser carregados
+      { consultor_nome: 'Guto', turno_codigo: '10-19', data: '2026-11-15' },
+      { consultor_nome: 'Rafael', turno_codigo: '10-19', data: '2026-11-20' },
+    ];
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_diaria') {
+        return createQueryMock(mockDadosEscala);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const feriados = await EscalaService.loadFeriadosPlantoes(ano, mesNovembro);
+
+    // Assert: Exatamente 3 feriados passados
+    expect(feriados.length).toBe(3);
+
+    // 1º: 07/09 (Independência)
+    expect(feriados[0].data).toBe('07/09');
+    expect(feriados[0].dataIso).toBe('2026-09-07');
+    expect(feriados[0].consultoresTrabalharam).toContain('Aline');
+
+    // 2º: 12/10 (Aparecida)
+    expect(feriados[1].data).toBe('12/10');
+    expect(feriados[1].dataIso).toBe('2026-10-12');
+    expect(feriados[1].consultoresTrabalharam).toContain('Guto');
+
+    // 3º: 02/11 (Finados)
+    expect(feriados[2].data).toBe('02/11');
+    expect(feriados[2].dataIso).toBe('2026-11-02');
+    expect(feriados[2].consultoresTrabalharam).toContain('Aline');
+    expect(feriados[2].consultoresTrabalharam).toContain('Marinna');
+    expect(feriados[2].consultoresTrabalharam).not.toContain('Eduardo');
+
+    // Prova de fogo: NUNCA deve conter feriados futuros de novembro
+    const datasIso = feriados.map(f => f.dataIso);
+    expect(datasIso).not.toContain('2026-11-15');
+    expect(datasIso).not.toContain('2026-11-20');
+    expect(datasIso).not.toContain('2026-12-25');
   });
 
   it('deve priorizar ajustes manuais de escala_eventos sobre a escala automatica', async () => {

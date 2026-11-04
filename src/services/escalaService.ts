@@ -470,28 +470,51 @@ export class EscalaService {
   }
 
   /**
-   * Identifica dinamicamente os 3 últimos feriados ocorridos até o mês/ano de referência
+   * Identifica dinamicamente os 3 últimos feriados que REALMENTE já ocorreram até a data de corte (padrão: hoje).
+   * Feriados futuros nunca são projetados antes de suas respectivas datas acontecerem.
    */
-  public static getUltimosTresFeriados(ano?: number, mes?: number): Array<{ data: string; dataIso: string; nome: string; nomeCurto: string }> {
+  public static getUltimosTresFeriados(
+    dataOuAno?: Date | string | number,
+    mes?: number
+  ): Array<{ dia: number; mes: number; data: string; dataIso: string; nome: string; nomeCurto: string }> {
     const hoje = new Date();
-    const targetAno = ano || hoje.getFullYear();
-    const targetMes = mes || (hoje.getMonth() + 1);
+    let dataReferencia: Date;
 
-    const feriadosAnoAnterior = this.getFeriadosOficiaisDoAno(targetAno - 1);
-    const feriadosAnoAtual = this.getFeriadosOficiaisDoAno(targetAno);
+    if (dataOuAno instanceof Date) {
+      dataReferencia = dataOuAno;
+    } else if (typeof dataOuAno === 'string') {
+      const parsed = new Date(dataOuAno.includes('T') ? dataOuAno : `${dataOuAno}T12:00:00`);
+      dataReferencia = isNaN(parsed.getTime()) ? hoje : parsed;
+    } else if (typeof dataOuAno === 'number' && typeof mes === 'number') {
+      // Se ano e mês foram passados, verifica se é um mês histórico já encerrado ou se é o mês atual/futuro
+      const ultimoDiaMes = new Date(dataOuAno, mes, 0).getDate();
+      const dataFimMes = new Date(dataOuAno, mes - 1, ultimoDiaMes, 23, 59, 59);
+      // Nunca ultrapassa o dia de hoje
+      dataReferencia = dataFimMes < hoje ? dataFimMes : hoje;
+    } else {
+      dataReferencia = hoje;
+    }
+
+    const refAno = dataReferencia.getFullYear();
+    const refMesStr = String(dataReferencia.getMonth() + 1).padStart(2, '0');
+    const refDiaStr = String(dataReferencia.getDate()).padStart(2, '0');
+    const dataLimiteIso = `${refAno}-${refMesStr}-${refDiaStr}`;
+
+    // Busca feriados do ano anterior e do ano atual da data de corte
+    const feriadosAnoAnterior = this.getFeriadosOficiaisDoAno(refAno - 1);
+    const feriadosAnoAtual = this.getFeriadosOficiaisDoAno(refAno);
     const todos = [...feriadosAnoAnterior, ...feriadosAnoAtual];
 
-    // Data limite: último dia do mês selecionado na escala (YYYY-MM-DD)
-    const ultimoDia = new Date(targetAno, targetMes, 0).getDate();
-    const dataLimiteIso = `${targetAno}-${String(targetMes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+    // Ordena cronologicamente por dataIso
+    todos.sort((a, b) => a.dataIso.localeCompare(b.dataIso));
 
-    // Filtra feriados ocorridos até o final do mês selecionado
+    // Filtra apenas feriados que já ocorreram (dataIso <= dataLimiteIso)
     const ocorridos = todos.filter(f => f.dataIso <= dataLimiteIso);
 
     if (ocorridos.length >= 3) {
       return ocorridos.slice(-3);
     }
-    return todos.slice(0, 3);
+    return ocorridos.length > 0 ? ocorridos : todos.slice(0, 3);
   }
 
   /**
