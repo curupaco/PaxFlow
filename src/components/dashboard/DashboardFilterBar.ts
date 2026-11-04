@@ -344,8 +344,33 @@ export class DashboardFilterBar {
     }
 
     return `
-      <div id="advanced-filters-panel" class="${state.showFiltersPanel ? 'flex' : 'hidden'} flex-col max-h-[75vh] md:max-h-[70vh] overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 px-4 md:px-6 py-4 md:py-5 transition-colors duration-200 shadow-xl z-30 animate-fadeIn shrink-0">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 pb-2">
+      <div id="advanced-filters-panel" class="${state.showFiltersPanel ? 'flex' : 'hidden'} fixed inset-0 z-[60] md:relative md:inset-auto md:z-30 flex-col bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 px-4 md:px-6 py-3 md:py-5 md:max-h-[70vh] transition-colors duration-200 shadow-2xl md:shadow-xl animate-fadeIn shrink-0">
+        
+        <!-- Top Bar / Cabeçalho do Painel -->
+        <div class="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/80 dark:border-slate-800 shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-sm md:text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+              <span>🎛️</span>
+              <span>Filtros Avançados</span>
+            </span>
+            ${ctx.totalFiltrosAtivos > 0 ? `<span class="px-2 py-0.5 text-[10px] font-black rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">🎯 ${ctx.totalFiltrosAtivos} ativo(s)</span>` : ''}
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- Botão Rápido no Topo no Mobile -->
+            <button type="button" class="btn-apply-adv-filters-top px-3.5 h-[34px] bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-indigo-600/20 transition cursor-pointer flex items-center gap-1.5 md:hidden">
+              <span>✓</span>
+              <span>Aplicar</span>
+            </button>
+            <button type="button" class="btn-close-adv-panel-top p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer" title="Fechar / Recolher">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scrollbar pr-0.5">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 pb-4 pt-1">
 
           <!-- Bloco 1: Período & Datas -->
           <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
@@ -797,21 +822,24 @@ export class DashboardFilterBar {
             </div>
           </div>
 
+          </div>
         </div>
 
-        <!-- Rodapé de Ações do Painel (Sticky) -->
-        <div class="sticky bottom-0 -mx-4 md:-mx-6 -mb-4 md:-mb-5 px-4 md:px-6 py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 mt-4 z-10 shadow-sm">
-          <div class="text-xs text-slate-500 dark:text-slate-400 font-bold">
+        <!-- Rodapé de Ações do Painel (Fixo / Sticky) -->
+        <div class="sticky bottom-0 -mx-4 md:-mx-6 -mb-3 md:-mb-5 px-4 md:px-6 py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-auto z-10 shadow-lg sm:shadow-sm shrink-0">
+          <div class="text-xs text-slate-500 dark:text-slate-400 font-bold hidden sm:block">
             ${ctx.totalFiltrosAtivos > 0 ? `<span class="text-indigo-600 dark:text-indigo-400 font-extrabold">🎯 ${ctx.totalFiltrosAtivos} critério(s) ativo(s)</span> &bull; Pronto para filtrar` : 'Nenhum filtro ativo selecionado'}
           </div>
-          <div class="flex items-center gap-2">
-            <button id="btn-clear-all-adv-filters" type="button" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold text-xs uppercase tracking-wider rounded-xl border border-slate-200/80 dark:border-slate-700/80 transition cursor-pointer">
-              Limpar Todos
-            </button>
-            <button id="btn-collapse-adv-panel" type="button" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold text-xs uppercase tracking-wider rounded-xl border border-slate-200/80 dark:border-slate-700/80 transition cursor-pointer">
-              Recolher ▲
-            </button>
-            <button id="btn-apply-adv-filters" type="button" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-indigo-600/20 active:scale-95 transition cursor-pointer flex items-center gap-1.5">
+          <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <button id="btn-clear-all-adv-filters" type="button" class="flex-1 sm:flex-none h-[42px] px-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold text-xs uppercase tracking-wider rounded-xl border border-slate-200/80 dark:border-slate-700/80 transition cursor-pointer flex items-center justify-center">
+                Limpar Todos
+              </button>
+              <button id="btn-collapse-adv-panel" type="button" class="flex-1 sm:flex-none h-[42px] px-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold text-xs uppercase tracking-wider rounded-xl border border-slate-200/80 dark:border-slate-700/80 transition cursor-pointer flex items-center justify-center">
+                Recolher ▲
+              </button>
+            </div>
+            <button id="btn-apply-adv-filters" type="button" class="w-full sm:w-auto h-[42px] px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md shadow-indigo-600/20 active:scale-95 transition cursor-pointer flex items-center justify-center gap-1.5">
               <span>✓</span>
               <span>OK - Aplicar Filtros</span>
             </button>
@@ -1070,8 +1098,10 @@ export class DashboardFilterBar {
       handlers.onToggleFiltersPanel();
     });
 
-    container.querySelector('#btn-collapse-adv-panel')?.addEventListener('click', () => {
-      handlers.onCollapseFiltersPanel();
+    container.querySelectorAll('#btn-collapse-adv-panel, .btn-close-adv-panel-top').forEach(btn => {
+      btn.addEventListener('click', () => {
+        handlers.onCollapseFiltersPanel();
+      });
     });
 
     // 2. Exportar CSV
@@ -1367,15 +1397,19 @@ export class DashboardFilterBar {
       });
     };
 
-    container.querySelector('#btn-apply-adv-filters')?.addEventListener('click', () => {
-      flushAdvInputs();
-      handlers.onApplyFilters();
+    container.querySelectorAll('#btn-apply-adv-filters, .btn-apply-adv-filters-top').forEach(btn => {
+      btn.addEventListener('click', () => {
+        flushAdvInputs();
+        handlers.onApplyFilters();
+      });
     });
 
     const advPanelEl = container.querySelector('#advanced-filters-panel');
     advPanelEl?.addEventListener('keydown', (e: Event) => {
       const keyEvent = e as KeyboardEvent;
-      if (keyEvent.key === 'Enter') {
+      if (keyEvent.key === 'Escape') {
+        handlers.onCollapseFiltersPanel();
+      } else if (keyEvent.key === 'Enter') {
         const target = keyEvent.target as HTMLElement;
         if (target && (target.tagName === 'INPUT' || target.tagName === 'SELECT')) {
           keyEvent.preventDefault();

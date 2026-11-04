@@ -578,5 +578,55 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
     expect(html).toContain('id="btn-apply-adv-filters"');
     expect(html).toContain('OK - Aplicar Filtros');
     expect(html).toContain('bg-indigo-600');
+    expect(html).toContain('w-full sm:w-auto');
+    expect(html).toContain('h-[42px]');
+    expect(html).toContain('fixed inset-0 z-[60] md:relative md:inset-auto');
+    expect(html).toContain('btn-apply-adv-filters-top');
+    expect(html).toContain('btn-close-adv-panel-top');
+  });
+
+  it('deve conter as classes de responsividade mobile que impedem o botao OK de ficar escondido', async () => {
+    // Setup
+    const { DashboardFilterBar } = await import('../../src/components/dashboard/DashboardFilterBar');
+    const mockContext: any = {
+      counts: { todos: 5 },
+      totalSlaAlerts: 0,
+      totalFiltrosAtivos: 1,
+      tiposDisponiveis: [],
+      consultores: [],
+      formasRecebimento: [],
+      origensLead: [],
+      destinosList: [],
+      tagsDisponiveis: [],
+      listaDestinosDisponiveis: [],
+      currentMonthLabel: 'Novembro/2026',
+      totalVendas: 500,
+      totalRentabilidade: 50,
+      totalMarkupAcumulado: 0,
+      totalRavAcumulado: 0,
+      ticketMedio: 500
+    };
+    const mockState: any = {
+      showFiltersPanel: true,
+      viewModeMonth: 'all',
+      activeStatusTab: 'todos',
+      confFilters: {},
+      advProdutos: [],
+      advConsultores: [],
+      advFormasRecebimento: [],
+      advOrigensLead: [],
+      advPaxFaixas: [],
+      advTags: [],
+      advRiskScore: []
+    };
+
+    // Action: Renderiza o HTML do painel avançado
+    const html = DashboardFilterBar.renderAdvancedFiltersPanelHTML(mockContext, mockState);
+
+    // Assert: Valida que a estrutura mobile usa fixed overlay e botoes full width no mobile
+    expect(html).toContain('fixed inset-0 z-[60] md:relative md:inset-auto');
+    expect(html).toContain('btn-apply-adv-filters-top');
+    expect(html).toContain('w-full sm:w-auto h-[42px]');
+    expect(html).toContain('flex flex-col-reverse sm:flex-row');
   });
 });
