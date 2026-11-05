@@ -1086,7 +1086,7 @@ O módulo **PaxFlow FinRecon™** (rota `#conciliacao`, restrito a Gestores e eq
    - Exportação em formato CSV padronizado (UTF-8 com BOM) para abertura perfeita no Microsoft Excel.
 
 7. **Arquitetura Zero-Break (Resiliência a Schema Drift)**:
-   - Tratamento nativo para ausência de tabelas ou colunas (`42P01` / `42703`), garantindo que a aplicação continue operando sem quebras ou travamentos mesmo antes de rodar migrações DDL no banco.
+   - Tratamento nativo para ausência de tabelas ou colunas (`42P01` / `42703` / `PGRST204`), com fallbacks encadeados em `importarLoteExtrato` (tentativa alternativa com `banco_origem`, incorporação em `nome_arquivo` e payloads mínimos de segurança), garantindo que a aplicação continue operando sem quebras ou travamentos mesmo antes de rodar migrações DDL no banco.
 
 ### 3.37 Design System de Tabelas, Proporções e Padronização Visual PaxFlow
 

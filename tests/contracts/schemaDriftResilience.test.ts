@@ -5,11 +5,16 @@ import { FinPlanoContasService } from '../../src/services/finPlanoContasService'
 import { FinContasPagarService } from '../../src/services/finContasPagarService';
 import { ViagensDivisoesService } from '../../src/services/viagensDivisoesService';
 import { ReembolsosService } from '../../src/services/reembolsosService';
+import { ConciliacaoService } from '../../src/services/conciliacaoService';
 
 vi.mock('../../src/services/supabase', () => ({
   supabase: {
     from: vi.fn()
-  }
+  },
+  getSessaoAtual: vi.fn().mockResolvedValue({
+    user: { id: 'admin-123' },
+    perfil: { id: 'admin-123', role: 'admin' }
+  })
 }));
 
 describe('Resiliência Sistêmica a Schema Drift e Falhas de Banco (Padrão Zero-Break)', () => {
@@ -141,6 +146,60 @@ describe('Resiliência Sistêmica a Schema Drift e Falhas de Banco (Padrão Zero
       // Assert
       expect(res.success).toBe(true);
       expect(fallbackExecutado).toBe(true);
+    });
+
+    it('deve importar lote de extratos com resiliência ao erro PGRST204/42703 (coluna banco_nome não encontrada no schema cache)', async () => {
+      // Setup
+      let tentativas = 0;
+      (supabase.from as any).mockImplementation((tabela: string) => {
+        if (tabela === 'extratos_bancarios_lotes') {
+          return {
+            insert: vi.fn().mockImplementation((payload: any) => {
+              tentativas++;
+              if (payload.banco_nome) {
+                return {
+                  select: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({
+                      data: null,
+                      error: {
+                        code: 'PGRST204',
+                        message: "Could not find the 'banco_nome' column of 'extratos_bancarios_lotes' in the schema cache"
+                      }
+                    })
+                  })
+                };
+              }
+              return {
+                select: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: 'lote-resiliente-123' },
+                    error: null
+                  })
+                })
+              };
+            })
+          };
+        }
+        if (tabela === 'extratos_bancarios_transacoes') {
+          return {
+            insert: vi.fn().mockResolvedValue({ data: null, error: null })
+          };
+        }
+        return {};
+      });
+
+      // Action
+      const resultado = await ConciliacaoService.importarLoteExtrato(
+        'extrato_xp.ofx',
+        'XP Empresas (XP Investimentos)',
+        [{ data: '2026-11-04', descricao: 'DOC RECEBIDO', valor: 2500, tipo: 'CREDITO' }] as any
+      );
+
+      // Assert
+      expect(resultado.sucesso).toBe(true);
+      expect(resultado.loteId).toBe('lote-resiliente-123');
+      expect(resultado.totalInserido).toBe(1);
+      expect(tentativas).toBeGreaterThanOrEqual(2);
     });
   });
 

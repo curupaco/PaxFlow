@@ -918,7 +918,7 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'conciliacao',
     label: '📥 Como Importar Extratos Bancários (OFX, CSV e PDF)',
     description: 'Passo a passo para baixar e enviar o extrato do Internet Banking para o PaxFlow.',
-    details: '1. Acesse seu banco online (Santander, XP Empresas, Itaú, Bradesco, etc.) e exporte o extrato no formato **OFX**, **CSV** ou baixe o **PDF** da conta corrente/digital PJ.\n2. No PaxFlow, acesse **Conciliação** no menu lateral e clique em **📁 Importar Extrato**.\n3. Selecione o banco de origem e arraste o arquivo para a área de upload.\n4. O motor FinRecon™ fará o mapeamento automático das colunas de data, histórico, documento e valor monetário, apresentando a prévia com o total de entradas e saídas antes de gravar no banco de dados com arquivamento seguro no Storage.'
+    details: '1. Acesse seu banco online (Santander, XP Empresas, Itaú, Bradesco, Inter, etc.) e exporte o extrato no formato **OFX**, **CSV** ou baixe o **PDF** da conta corrente/digital PJ.\n2. No PaxFlow, acesse **Conciliação** no menu lateral e clique em **📁 Importar Extrato**.\n3. Selecione o banco de origem (ex: XP Empresas, Santander, Itaú, Cora) e arraste o arquivo para a área de upload.\n4. O motor FinRecon™ fará o mapeamento automático das colunas de data, histórico, documento e valor monetário, apresentando a prévia com o total de entradas e saídas antes de gravar no banco de dados com resiliência nativa a variações de schema e arquivamento seguro no Storage.'
   },
 
   {
