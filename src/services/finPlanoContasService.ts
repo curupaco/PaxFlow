@@ -80,17 +80,13 @@ export class FinPlanoContasService {
         .order('nome', { ascending: true });
 
       if (error) {
-        if (error.code === '42P01' || error.code === '42703') {
-          console.warn('[FinPlanoContasService] Tabela fin_tipos_custo pendente no banco. Fallback ativado.');
-          return [...TIPOS_CUSTO_FALLBACK].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-        }
         throw error;
       }
       const lista = data && data.length > 0 ? data : TIPOS_CUSTO_FALLBACK;
       return [...lista].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     } catch (err) {
-      console.warn('[FinPlanoContasService] Erro ao carregar tipos de custo:', err);
-      return [...TIPOS_CUSTO_FALLBACK].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      console.error('[FinPlanoContasService] Erro ao carregar tipos de custo:', err);
+      throw err;
     }
   }
 
@@ -110,13 +106,6 @@ export class FinPlanoContasService {
 
       const { data, error } = await query;
       if (error) {
-        if (error.code === '42P01' || error.code === '42703') {
-          console.warn('[FinPlanoContasService] Tabela fin_categorias pendente no banco. Fallback ativado.');
-          const base = tipoCustoId 
-            ? CATEGORIAS_FALLBACK.filter(c => c.tipo_custo_id === tipoCustoId)
-            : CATEGORIAS_FALLBACK;
-          return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-        }
         throw error;
       }
       const base = data && data.length > 0 
@@ -124,11 +113,8 @@ export class FinPlanoContasService {
         : (tipoCustoId ? CATEGORIAS_FALLBACK.filter(c => c.tipo_custo_id === tipoCustoId) : CATEGORIAS_FALLBACK);
       return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     } catch (err) {
-      console.warn('[FinPlanoContasService] Erro ao carregar categorias:', err);
-      const base = tipoCustoId 
-        ? CATEGORIAS_FALLBACK.filter(c => c.tipo_custo_id === tipoCustoId)
-        : CATEGORIAS_FALLBACK;
-      return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      console.error('[FinPlanoContasService] Erro ao carregar categorias:', err);
+      throw err;
     }
   }
 
@@ -144,13 +130,12 @@ export class FinPlanoContasService {
         .order('nome', { ascending: true });
 
       if (error) {
-        if (error.code === '42P01' || error.code === '42703') return [];
         throw error;
       }
       return [...(data || [])].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     } catch (err) {
-      console.warn('[FinPlanoContasService] Erro ao carregar subcategorias:', err);
-      return [];
+      console.error('[FinPlanoContasService] Erro ao carregar subcategorias:', err);
+      throw err;
     }
   }
 
@@ -172,15 +157,12 @@ export class FinPlanoContasService {
       const { data, error } = await query;
 
       if (error) {
-        if (error.code === '42P01' || error.code === '42703') {
-          return CONTAS_BANCARIAS_FALLBACK;
-        }
         throw error;
       }
       return data && data.length > 0 ? data : CONTAS_BANCARIAS_FALLBACK;
     } catch (err) {
-      console.warn('[FinPlanoContasService] Erro ao carregar contas bancárias:', err);
-      return CONTAS_BANCARIAS_FALLBACK;
+      console.error('[FinPlanoContasService] Erro ao carregar contas bancárias:', err);
+      throw err;
     }
   }
 
@@ -215,9 +197,6 @@ export class FinPlanoContasService {
           .single();
 
         if (error) {
-          if (error.code === '42P01' || error.code === '42703') {
-            return { sucesso: true, id: `temp-${Date.now()}` };
-          }
           throw error;
         }
         return { sucesso: true, id: data.id };
@@ -259,9 +238,6 @@ export class FinPlanoContasService {
           .single();
 
         if (error) {
-          if (error.code === '42P01' || error.code === '42703') {
-            return { sucesso: true, id: `temp-sub-${Date.now()}` };
-          }
           throw error;
         }
         return { sucesso: true, id: data.id };
@@ -297,9 +273,6 @@ export class FinPlanoContasService {
           .eq('id', contaId);
 
         if (error) {
-          if (error.code === '42P01' || error.code === '42703') {
-            return { sucesso: true, id: contaId };
-          }
           throw error;
         }
         return { sucesso: true, id: contaId };
@@ -311,9 +284,6 @@ export class FinPlanoContasService {
           .single();
 
         if (error) {
-          if (error.code === '42P01' || error.code === '42703') {
-            return { sucesso: true, id: `temp-banco-${Date.now()}` };
-          }
           throw error;
         }
         return { sucesso: true, id: data.id };
@@ -335,9 +305,6 @@ export class FinPlanoContasService {
         .eq('id', contaId);
 
       if (error) {
-        if (error.code === '42P01' || error.code === '42703') {
-          return { sucesso: true };
-        }
         throw error;
       }
       return { sucesso: true };
@@ -383,9 +350,6 @@ export class FinPlanoContasService {
         .eq('id', contaId);
 
       if (error) {
-        if (error.code === '42P01' || error.code === '42703') {
-          return { sucesso: true };
-        }
         throw error;
       }
 

@@ -234,5 +234,106 @@ describe('Testes de Contrato de Schema do Supabase (Prevenção de Schema Drift)
       expect(colunasOficiaisBadges.has(coluna)).toBe(true);
     });
   });
+
+  it('deve validar que a estrutura de Reembolsos possui as colunas oficiais do PostgreSQL', () => {
+    // Setup
+    const colunasOficiaisReembolsos = new Set([
+      'codigo_ref',
+      'viagem_id',
+      'produto_viagem_id',
+      'consultor_solicitante_id',
+      'motivo_cancelamento',
+      'status_tratativa',
+      'valor_utilizado_pax',
+      'saldo_cliente',
+      'comprovante_url',
+      'forma_devolucao'
+    ]);
+
+    const payloadReembolso: any = {
+      codigo_ref: 'RMB-001',
+      viagem_id: 'viagem-123',
+      produto_viagem_id: 'prod-456',
+      consultor_solicitante_id: 'user-789',
+      motivo_cancelamento: 'Solicitação do cliente',
+      status_tratativa: 'pendente',
+      valor_utilizado_pax: 0,
+      saldo_cliente: 500,
+      comprovante_url: null,
+      forma_devolucao: 'pix'
+    };
+
+    // Action & Assert
+    Object.keys(payloadReembolso).forEach((coluna) => {
+      expect(colunasOficiaisReembolsos.has(coluna)).toBe(true);
+    });
+  });
+
+  it('deve validar que produtos_viagem possui as colunas oficiais e proíbe colunas fictícias de drift', () => {
+    // Setup
+    const colunasOficiaisProdutosViagem = new Set([
+      'viagem_id',
+      'tipo',
+      'tarifa',
+      'taxa',
+      'comissao',
+      'markup',
+      'rav',
+      'valor_venda'
+    ]);
+
+    const colunasProibidasDrift = ['tipo_produto', 'comissao_total', 'taxa_embarque'];
+
+    // Action & Assert
+    colunasProibidasDrift.forEach((coluna) => {
+      expect(colunasOficiaisProdutosViagem.has(coluna)).toBe(false);
+    });
+  });
+
+  it('deve validar que Studio Propostas possui estrutura de colunas oficiais', () => {
+    // Setup
+    const colunasOficiaisStudio = new Set([
+      'cliente_nome',
+      'cliente_whatsapp',
+      'cliente_email',
+      'destino',
+      'data_ida',
+      'data_volta',
+      'valor_total',
+      'moeda',
+      'foto_capa_url',
+      'dados_extraidos',
+      'itinerario_dias',
+      'status',
+      'aceite_formal',
+      'visualizacoes_count',
+      'ultima_visualizacao_em',
+      'orcamento_origem_id',
+      'consultor_id',
+      'consultor_nome',
+      'consultor_avatar',
+      'consultor_whatsapp',
+      'consultor_telefone',
+      'consultor_email',
+      'titulo_cabecalho',
+      'agencia_id'
+    ]);
+
+    const payloadStudio: any = {
+      cliente_nome: 'João Santos',
+      destino: 'Grécia',
+      data_ida: '2026-12-01',
+      valor_total: 35000,
+      moeda: 'BRL',
+      status: 'RASCUNHO',
+      visualizacoes_count: 0,
+      titulo_cabecalho: 'PAXFLOW LUXURY TRAVEL'
+    };
+
+    // Action & Assert
+    Object.keys(payloadStudio).forEach((coluna) => {
+      expect(colunasOficiaisStudio.has(coluna)).toBe(true);
+    });
+  });
 });
 

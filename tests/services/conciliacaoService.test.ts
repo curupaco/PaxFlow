@@ -384,9 +384,8 @@ describe('ConciliacaoService (PaxFlow FinRecon™)', () => {
     expect(contas).toEqual([]);
   });
 
-  it('deve importar lote com resiliência a schema drift quando coluna banco_nome não existe (PGRST204 / 42703)', async () => {
+  it('deve aplicar fail-fast transparente quando houver erro no banco ao salvar lote (PGRST204 / 42703)', async () => {
     // Setup
-    let tentativasLote = 0;
     const mockTransacoes = [
       { data: '2026-11-04', descricao: 'PIX RECEBIDO TESTE', valor: 1500, tipo: 'CREDITO' },
       { data: '2026-11-04', descricao: 'TARIFA BANCARIA', valor: 15, tipo: 'DEBITO' }
@@ -395,37 +394,17 @@ describe('ConciliacaoService (PaxFlow FinRecon™)', () => {
     (supabase.from as any).mockImplementation((table: string) => {
       if (table === 'extratos_bancarios_lotes') {
         return {
-          insert: vi.fn().mockImplementation((payload: any) => {
-            tentativasLote++;
-            // Na primeira tentativa (com banco_nome), simula o erro exato do schema cache do PostgREST
-            if (payload.banco_nome) {
-              return {
-                select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({
-                    data: null,
-                    error: {
-                      code: 'PGRST204',
-                      message: "Could not find the 'banco_nome' column of 'extratos_bancarios_lotes' in the schema cache"
-                    }
-                  })
-                })
-              };
-            }
-            // No fallback (com banco_origem ou sem banco_nome), salva com sucesso
-            return {
-              select: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: { id: 'lote-fallback-uuid-456' },
-                  error: null
-                })
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: {
+                  code: 'PGRST204',
+                  message: "Could not find the 'banco_nome' column of 'extratos_bancarios_lotes' in the schema cache"
+                }
               })
-            };
+            })
           })
-        };
-      }
-      if (table === 'extratos_bancarios_transacoes') {
-        return {
-          insert: vi.fn().mockResolvedValue({ data: null, error: null })
         };
       }
       return {};
@@ -438,16 +417,13 @@ describe('ConciliacaoService (PaxFlow FinRecon™)', () => {
       mockTransacoes as any
     );
 
-    // Assert: O serviço se recupera sem quebrar a agência
-    expect(resultado.sucesso).toBe(true);
-    expect(resultado.loteId).toBe('lote-fallback-uuid-456');
-    expect(resultado.totalInserido).toBe(2);
-    expect(tentativasLote).toBeGreaterThanOrEqual(2);
+    // Assert
+    expect(resultado.sucesso).toBe(false);
+    expect(resultado.erro).toContain("Could not find the 'banco_nome' column");
   });
 
-  it('deve importar transações com resiliência se a tabela de transações tiver drift de banco_origem (42703)', async () => {
+  it('deve aplicar fail-fast transparente quando a inserção das transações falhar no banco (42703)', async () => {
     // Setup
-    let tentativasItens = 0;
     const mockTransacoes = [
       { data: '2026-11-04', descricao: 'RECEBIMENTO CLIENTE', valor: 3000, tipo: 'CREDITO' }
     ];
@@ -467,15 +443,9 @@ describe('ConciliacaoService (PaxFlow FinRecon™)', () => {
       }
       if (table === 'extratos_bancarios_transacoes') {
         return {
-          insert: vi.fn().mockImplementation((payload: any[]) => {
-            tentativasItens++;
-            if (payload[0]?.banco_origem) {
-              return Promise.resolve({
-                data: null,
-                error: { code: '42703', message: 'column banco_origem does not exist' }
-              });
-            }
-            return Promise.resolve({ data: null, error: null });
+          insert: vi.fn().mockResolvedValue({
+            data: null,
+            error: { code: '42703', message: 'column banco_origem does not exist' }
           })
         };
       }
@@ -489,10 +459,9 @@ describe('ConciliacaoService (PaxFlow FinRecon™)', () => {
       mockTransacoes as any
     );
 
-    // Assert: Fallback recupera e conclui a importação com sucesso
-    expect(resultado.sucesso).toBe(true);
-    expect(resultado.totalInserido).toBe(1);
-    expect(tentativasItens).toBeGreaterThanOrEqual(2);
+    // Assert
+    expect(resultado.sucesso).toBe(false);
+    expect(resultado.erro).toContain('column banco_origem does not exist');
   });
 });
 

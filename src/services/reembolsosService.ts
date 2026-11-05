@@ -1,7 +1,7 @@
 /**
  * ReembolsosService
  * Camada de serviço centralizada para operações de reembolsos no PaxFlow.
- * Implementa resiliência a Schema Drift (Zero-Break) com fallback para erro 42703.
+ * Governança estrita e padrão Fail-Fast transparente.
  */
 
 import { supabase } from './supabase';
@@ -99,36 +99,6 @@ export class ReembolsosService {
         .insert(insertPayload)
         .select()
         .single();
-
-      // Padrão Zero-Break: Fallback defensivo para erro 42703 (coluna inexistente no schema)
-      if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
-        console.warn('⚠️ PaxFlow ReembolsosService: Detectado schema drift (42703). Aplicando fallback em observacoes_financeiras...');
-
-        const fallbackPayload = {
-          viagem_id: viagemId,
-          produto_viagem_id: produtoViagemId,
-          consultor_solicitante_id: consultorSolicitanteId,
-          valor_solicitado: valorSolicitado,
-          motivo_cancelamento: motivoCancelamento,
-          observacoes_financeiras: JSON.stringify({
-            forma_devolucao: formaDevolucao,
-            valor_produto: valorProdutoOriginal || valorSolicitado,
-            valor_utilizado_pax: 0,
-            status_tratativa: 'pendente_agencia'
-          }),
-          status: 'solicitado',
-          data_solicitacao: dataHoje
-        };
-
-        const fallbackRes = await supabase
-          .from('reembolsos')
-          .insert(fallbackPayload)
-          .select()
-          .single();
-
-        data = fallbackRes.data;
-        error = fallbackRes.error;
-      }
 
       if (error) {
         throw error;

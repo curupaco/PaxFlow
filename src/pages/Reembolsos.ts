@@ -156,7 +156,7 @@ export class ReembolsosPage {
         .from('reembolsos')
         .select(`
           id,
-          codigo_protocolo,
+          codigo_ref,
           status,
           status_tratativa,
           valor_solicitado,
@@ -164,6 +164,7 @@ export class ReembolsosPage {
           valor_utilizado_pax,
           saldo_cliente,
           comprovante_url,
+          forma_devolucao,
           data_solicitacao,
           data_resolucao,
           created_at,
@@ -171,7 +172,7 @@ export class ReembolsosPage {
           observacoes_financeiras,
           consultor_solicitante_id,
           viagem_id,
-          produto_id,
+          produto_viagem_id,
           viagem:viagens (
             id,
             codigo_ref,
@@ -180,7 +181,6 @@ export class ReembolsosPage {
             data_volta,
             status,
             consultor_id,
-            consultor_responsavel_id,
             cliente:clientes (id, nome, telefone, email)
           ),
           produto:produtos_viagem (id, viagem_id, tipo, fornecedor, valor_venda)
@@ -202,8 +202,7 @@ export class ReembolsosPage {
           const rSolicitanteId = r.consultor_solicitante_id || (r as any).consultorSolicitanteId;
           const viagemObj = Array.isArray(r.viagem) ? r.viagem[0] : r.viagem;
           const vConsultorId = viagemObj?.consultor_id || (viagemObj as any)?.consultorId;
-          const vRespId = viagemObj?.consultor_responsavel_id || (viagemObj as any)?.consultorResponsavelId;
-          return rSolicitanteId === this.user.id || vConsultorId === this.user.id || vRespId === this.user.id;
+          return rSolicitanteId === this.user.id || vConsultorId === this.user.id;
         });
       } else {
         this.reembolsos = rawData;

@@ -2016,6 +2016,17 @@ Nas listagens densas de viagens e orçamentos, caixas retangulares pesadas foram
 
 ---
 
+## 3.54 Governança Estrita de Banco de Dados, Saneamento de Schema & Padrão Fail-Fast
+
+### 3.54.1 Eliminação do Mascaramento "Zero-Drift"
+Historicamente, alguns módulos continham tratamentos defensivos que capturavam erros de código `42703` (coluna inexistente) e `42P01` (relação inexistente) do PostgreSQL, empacotando dados oficiais em campos de texto livre (`observacoes`, `_paxflow_meta`) ou gerando identificadores temporários em memória.
+Essa prática foi **100% expurgada**:
+1. **Padrão Fail-Fast Transparente**: Se uma coluna ou tabela oficial não estiver presente no banco remoto, a aplicação emite aviso claro de schema desatualizado em vez de falhar silenciosamente ou renderizar dados zerados.
+2. **Schema Real Consolidado**: Todas as entidades do PaxFlow (`studio_propostas`, `documentos_anexos`, `viagens_divisoes`, `origens_lead`, `campanhas_presets`, `gamification_celebrations`, `profiles.participa_metricas`, `profiles.acesso_financeiro`, etc.) possuem colunas físicas oficiais formalizadas em migração DDL.
+3. **Alinhamento do Painel Comercial e Dashboard**: As consultas do Dashboard de Resultados foram corrigidas para consultar estritamente as colunas existentes de `produtos_viagem` (`tipo`, `comissao`, `markup`, `rav`, `valor_venda`) com formatação temporal ISO `YYYY-MM-DD`, garantindo que todas as vendas e faturamento de períodos correntes e históricos sejam apurados e exibidos com precisão cirúrgica.
+
+---
+
 > **PaxFlow** — Gestão de Pós-Venda e Fluxo de Passageiros
 >
 > _Thiago Costa — 2026_

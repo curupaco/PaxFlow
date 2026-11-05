@@ -116,11 +116,9 @@ describe('Lembretes e Resolução de Passageiro - Testes Subcutâneos', () => {
     expect(alert?.body).toContain('João Carlos Pereira - Roma');
   });
 
-  it('deve enviar mensagem direta com lembrete e descrição tratando schema drift 42703', async () => {
+  it('deve enviar mensagem direta com lembrete e descrição persistindo na coluna oficial', async () => {
     // Setup
-    const lembreteInsertMock = vi.fn()
-      .mockResolvedValueOnce({ error: { code: '42703', message: 'column descricao does not exist' } })
-      .mockResolvedValueOnce({ error: null });
+    const lembreteInsertMock = vi.fn().mockResolvedValue({ error: null });
 
     (supabase.from as any).mockImplementation((table: string) => {
       if (table === 'mensagens_diretas') {
@@ -163,29 +161,13 @@ describe('Lembretes e Resolução de Passageiro - Testes Subcutâneos', () => {
     // Assert
     expect(result).toBeDefined();
     expect(result.id).toBe('msg-1');
-    expect(lembreteInsertMock).toHaveBeenCalledTimes(2);
-    expect(lembreteInsertMock).toHaveBeenNthCalledWith(1, [
-      {
+    expect(lembreteInsertMock).toHaveBeenCalledTimes(1);
+    expect(lembreteInsertMock).toHaveBeenCalledWith([
+      expect.objectContaining({
         orcamento_id: 'orc-123',
-        viagem_id: null,
         consultor_id: 'user-dest',
-        criador_id: 'user-remetente',
-        data_lembrete: '2026-10-25',
-        periodo: 'tarde',
         descricao: 'Confirmar poltronas do voo',
-        arquivado: false,
-      },
-    ]);
-    expect(lembreteInsertMock).toHaveBeenNthCalledWith(2, [
-      {
-        orcamento_id: 'orc-123',
-        viagem_id: null,
-        consultor_id: 'user-dest',
-        criador_id: 'user-remetente',
-        data_lembrete: '2026-10-25',
-        periodo: 'tarde',
-        arquivado: false,
-      },
+      }),
     ]);
   });
 });

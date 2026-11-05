@@ -115,7 +115,7 @@ describe('Studio - Melhorias de Fotos Unsplash, Branding e Consultor Subcutâneo
     expect(resultado.titulo_cabecalho).toBe('PAXFLOW LUXURY TRAVEL');
   });
 
-  it('deve suportar resiliência a Schema Drift (código 42703) ao salvar campos novos do Studio sem quebrar', async () => {
+  it('deve aplicar fail-fast transparente e rejeitar quando o banco retornar erro 42703 ao salvar proposta', async () => {
     // Setup
     const propostaComCamposNovos: Partial<StudioProposta> = {
       id: 'prop-drift-1',
@@ -125,36 +125,22 @@ describe('Studio - Melhorias de Fotos Unsplash, Branding e Consultor Subcutâneo
       consultor_whatsapp: '(21) 97777-6666'
     };
 
-    // Simula erro 42703 (coluna inexistente) no primeiro upsert da tabela studio_propostas
     const erroSchemaDrift = { code: '42703', message: 'column "titulo_cabecalho" does not exist' };
     const singleErroMock = vi.fn().mockResolvedValue({ data: null, error: erroSchemaDrift });
     const selectErroMock = vi.fn().mockReturnValue({ single: singleErroMock });
     const upsertErroMock = vi.fn().mockReturnValue({ select: selectErroMock });
 
-    // Mock do fallback salvando em global_settings
-    const singleFallbackMock = vi.fn().mockResolvedValue({ data: { id: 'settings', value: '[]' }, error: null });
-    const selectFallbackMock = vi.fn().mockReturnValue({ single: singleFallbackMock });
-    const eqFallbackMock = vi.fn().mockReturnValue({ select: selectFallbackMock, single: singleFallbackMock });
-    const upsertFallbackMock = vi.fn().mockResolvedValue({ data: { id: 'settings' }, error: null });
-
     (supabase.from as any).mockImplementation((tabela: string) => {
       if (tabela === 'studio_propostas') {
         return { upsert: upsertErroMock };
       }
-      return {
-        select: vi.fn().mockReturnValue({ eq: eqFallbackMock, single: singleFallbackMock }),
-        upsert: upsertFallbackMock
-      };
+      return {};
     });
 
-    // Action
-    const resultado = await StudioPropostasService.salvarProposta(propostaComCamposNovos);
-
-    // Assert
-    expect(resultado).toBeDefined();
-    expect(resultado.cliente_nome).toBe('Fernanda Lima');
-    expect(resultado.destino).toBe('Santorini');
-    expect(resultado.titulo_cabecalho).toBe('EXCLUSIVE TRAVEL');
+    // Action & Assert
+    await expect(StudioPropostasService.salvarProposta(propostaComCamposNovos)).rejects.toMatchObject({
+      code: '42703'
+    });
   });
 
   it('deve renderizar avatar de consultor com sucesso seja avatar animal SVG, foto externa ou iniciais', async () => {

@@ -510,13 +510,7 @@ export class CommentsService {
             lembretePayload.descricao = finalDesc;
           }
 
-          let { error: errLembrete } = await supabase.from('lembretes').insert(lembretePayload);
-
-          if (errLembrete && errLembrete.code === '42703' && lembretePayload.descricao) {
-            delete lembretePayload.descricao;
-            const resFallback = await supabase.from('lembretes').insert(lembretePayload);
-            errLembrete = resFallback.error;
-          }
+          const { error: errLembrete } = await supabase.from('lembretes').insert(lembretePayload);
 
           if (errLembrete) {
             console.error('Erro ao gravar lembrete no Supabase:', errLembrete);
@@ -930,13 +924,7 @@ export class CommentsService {
       arquivado: false
     };
 
-    let { error: errLembrete } = await supabase.from('lembretes').insert(lembretePayload);
-
-    if (errLembrete && errLembrete.code === '42703' && lembretePayload.descricao) {
-      delete lembretePayload.descricao;
-      const resFallback = await supabase.from('lembretes').insert(lembretePayload);
-      errLembrete = resFallback.error;
-    }
+    const { error: errLembrete } = await supabase.from('lembretes').insert(lembretePayload);
 
     if (errLembrete) {
       console.error('Erro ao registrar agendamento automático por texto:', errLembrete);

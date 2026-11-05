@@ -1179,6 +1179,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '✈️ Divisão de Viagens e Rateio de RAV Aérea (ViagemSplitEditor)',
     description: 'Como configurar a divisão de comissão e rateio de RAV entre consultores parceiros com validação de 100%.',
     details: 'Para viagens operadas em parceria entre consultores:\n\n1. **Editor Unificado em Altura Padrão**: Todos os inputs de porcentagem e seletores seguem o padrão oficial `h-[42px]` com cantos `rounded-xl` e formatação tabular.\n2. **Dupla Barra de Validação**: O sistema audita em tempo real a soma de 100% da Venda Geral e da RAV Aérea separadamente, exibindo gradiente esmeralda (100% válido), vermelho (estouro >100%) ou âmbar (pendente <100%).\n3. **Atalhos Rápidos de 1-Clique**: Botões instantâneos para `50/50`, `60/40`, `70/30`, `100% Titular` e sincronização automática de RAV com a Venda.'
+  },
+  {
+    id: 'governanca-fail-fast-schema',
+    modulo: 'copiloto',
+    label: '🛡️ Governança Estrita de Banco de Dados & Padrão Fail-Fast Transparente',
+    description: 'Como o PaxFlow protege a integridade dos dados e previne erros silenciosos no sistema.',
+    details: 'Para garantir integridade transacional absoluta e zero dados fantasmas:\n\n1. **Banco de Dados como Única Fonte da Verdade**: Nenhuma regra de negócio, status ou alerta utiliza localStorage. Toda a persistência é gravada diretamente no Supabase.\n2. **Expurgo Total de Zero-Drift Mascarado**: O sistema não silencia falhas de banco nem esconde dados em campos genéricos (como empacotar JSONs em observações). Se uma coluna ou tabela oficial não existir no PostgreSQL, o sistema aciona o padrão Fail-Fast transparente.\n3. **Avisos Claros ao Operador**: Em vez de telas vazias ou falhas silenciosas, banners visuais e mensagens amigáveis orientam o administrador caso alguma migração DDL oficial precise ser aplicada no Supabase.\n4. **Governança de DDL pelo Administrador**: As migrações oficiais de schema são sempre disponibilizadas em scripts SQL documentados para execução segura no SQL Editor do Supabase.'
   }
 ];
 

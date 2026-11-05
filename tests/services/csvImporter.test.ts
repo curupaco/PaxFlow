@@ -75,15 +75,10 @@ describe('csvImporter - Testes Subcutâneos', () => {
     expect(linhas[2][0]).toBe('Cliente 2');
   });
 
-  it('deve realizar fallback resiliente limpando campos opcionais se o Supabase acusar coluna inexistente no batch insert', async () => {
+  it('deve aplicar fail-fast transparente e retornar erro se o Supabase acusar erro 42703 no batch insert', async () => {
     // Setup
     const erroColuna = { code: '42703', message: 'column valor_proposta does not exist' };
-    const insertComErro = vi.fn().mockResolvedValueOnce({ error: erroColuna });
-    const insertComSucesso = vi.fn().mockResolvedValueOnce({ data: null, error: null });
-
-    const insertMock = vi.fn()
-      .mockImplementationOnce(insertComErro)
-      .mockImplementationOnce(insertComSucesso);
+    const insertMock = vi.fn().mockResolvedValue({ error: erroColuna });
 
     vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
 
@@ -95,7 +90,9 @@ describe('csvImporter - Testes Subcutâneos', () => {
     const resultado = await batchInsertOrcamentos(orcamentosComCamposNovos, 'user-1', false);
 
     // Assert
-    expect(insertMock).toHaveBeenCalledTimes(2);
+    expect(resultado.success).toBe(false);
+    expect(resultado.error).toEqual(erroColuna);
+    expect(insertMock).toHaveBeenCalledTimes(1);
   });
 
   it('deve formatar data brasileira DD/MM/YYYY para YYYY-MM-DD com e sem hora', () => {

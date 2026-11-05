@@ -21,7 +21,7 @@ export class ClienteSearchService {
    * Constrói a cláusula OR para filtragem no PostgREST/Supabase.
    * Suporta busca por texto geral e por dígitos limpos (quando houver 3 ou mais números).
    */
-  public static buildOrFilter(termo: string, includeCleanColumns: boolean = true): string {
+  public static buildOrFilter(termo: string, includeCleanColumns: boolean = false): string {
     const raw = termo.trim();
     if (!raw) return '';
 
@@ -35,13 +35,12 @@ export class ClienteSearchService {
     ];
 
     if (cleanDigits.length >= 3) {
-      // Se habilitado e suportado pelo banco (colunas geradas indexadas)
       if (includeCleanColumns) {
         orConditions.push(`documento_limpo.ilike.%${cleanDigits}%`);
         orConditions.push(`telefone_limpo.ilike.%${cleanDigits}%`);
       }
 
-      // Variações formatadas (CPF/CNPJ) para compatibilidade com ou sem colunas geradas
+      // Variações formatadas (CPF/CNPJ)
       const formattedDoc = formatCpfCnpj(cleanDigits);
       if (formattedDoc && formattedDoc !== raw) {
         orConditions.push(`documento.ilike.%${formattedDoc}%`);
@@ -149,58 +148,20 @@ export class ClienteSearchService {
       return { data: data || [], count: count || 0, fallbackUsed: false };
     }
 
-    // 1. Tentativa com colunas geradas de alta performance (documento_limpo / telefone_limpo)
-    try {
-      const orFilterWithClean = this.buildOrFilter(termo, true);
-      const { data, error, count } = await buildBaseQuery().or(orFilterWithClean);
+    // Executa busca nativa com as colunas oficiais do schema
+    const orFilter = this.buildOrFilter(termo, false);
+    const { data, error, count } = await buildBaseQuery().or(orFilter);
 
-      if (error) {
-        // Verifica se é erro de coluna inexistente (Schema Drift 42703)
-        const isColumnMissing =
-          error.code === '42703' ||
-          (error.message && (error.message.includes('42703') || error.message.includes('documento_limpo') || error.message.includes('telefone_limpo')));
-
-        if (isColumnMissing) {
-          console.warn('[ClienteSearchService] Colunas de busca otimizada não encontradas (42703). Acionando fallback resiliente.');
-          return await this.executarFallback(termo, buildBaseQuery());
-        }
-        throw error;
-      }
-
-      return { data: data || [], count: count || 0, fallbackUsed: false };
-    } catch (err: any) {
-      const isColumnMissing =
-        err.code === '42703' ||
-        (err.message && (err.message.includes('42703') || err.message.includes('documento_limpo') || err.message.includes('telefone_limpo')));
-
-      if (isColumnMissing) {
-        console.warn('[ClienteSearchService] Erro 42703 capturado no bloco catch. Acionando fallback resiliente.');
-        return await this.executarFallback(termo, buildBaseQuery());
-      }
-      throw err;
+    if (error) {
+      throw error;
     }
-  }
-
-  /**
-   * Fallback resiliente que consulta apenas as colunas nativas e filtra em memória se necessário
-   */
-  private static async executarFallback(termo: string, baseQuery: any): Promise<ResultadoBuscaClientes> {
-    const fallbackOr = this.buildOrFilter(termo, false);
-    const { data, error, count } = await baseQuery.or(fallbackOr);
-
-    if (error) throw error;
 
     let rows = data || [];
-    // Garante que se o termo possuir dígitos (ex: 336875 ou 33687583813), a filtragem precisa também seja aplicada
     const cleanDigits = termo.replace(/\D/g, '');
     if (cleanDigits.length >= 3) {
       rows = rows.filter((c: any) => this.matchCliente(c, termo));
     }
 
-    return {
-      data: rows,
-      count: count || rows.length,
-      fallbackUsed: true
-    };
+    return { data: rows, count: count || rows.length, fallbackUsed: false };
   }
 }

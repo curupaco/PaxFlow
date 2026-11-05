@@ -226,7 +226,7 @@ describe('CampanhasService - Testes Subcutâneos', () => {
     expect(resultadoWhatsApp[0].registroId).toBe('viagem-2');
   });
 
-  it('deve tratar Schema Drift (código 42P01 / 42703) ao salvar preset com fallback resiliente', async () => {
+  it('deve aplicar fail-fast transparente caso a tabela campanhas_presets falhe (código 42P01 / 42703)', async () => {
     // Setup: Simula erro 42P01 (relation does not exist)
     const mockInsert = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
@@ -248,9 +248,8 @@ describe('CampanhasService - Testes Subcutâneos', () => {
       { id: 'admin-1', nome: 'Admin' }
     );
 
-    // Assert: O sistema não deve quebrar nem estourar erro vermelho
-    expect(resultado.sucesso).toBe(true);
-    expect(resultado.preset?.id).toContain('temp-');
-    expect(resultado.aviso).toContain('lembre-se de rodar a migração DDL no Supabase');
+    // Assert: Deve reportar falha transparente
+    expect(resultado.sucesso).toBe(false);
+    expect(resultado.aviso).toContain('relation campanhas_presets does not exist');
   });
 });

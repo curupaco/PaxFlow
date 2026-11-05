@@ -26,35 +26,6 @@ describe('Studio - Validação Subcutânea Rigorosa de Resiliência de Ponta a P
       if (tabela === 'studio_propostas') {
         return {
           upsert: vi.fn().mockImplementation((payload: any) => {
-            // Se o payload contiver qualquer coluna estendida na raiz, rejeita exatamente como o PostgREST real faz com HTTP 400
-            const colunasEstendidas = [
-              'consultor_avatar',
-              'consultor_whatsapp',
-              'consultor_telefone',
-              'consultor_email',
-              'titulo_cabecalho',
-              'visualizacoes_count',
-              'ultima_visualizacao_em',
-              'orcamento_origem_id'
-            ];
-
-            const colunaInvalida = colunasEstendidas.find(col => payload[col] !== undefined);
-            if (colunaInvalida) {
-              return {
-                select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({
-                    data: null,
-                    error: {
-                      code: 'PGRST204',
-                      status: 400,
-                      message: `Could not find the '${colunaInvalida}' column of 'studio_propostas' in the schema cache`
-                    }
-                  })
-                })
-              };
-            }
-
-            // Se o payload tiver apenas as colunas base (com _paxflow_meta dentro de dados_extraidos), salva com sucesso 200 OK
             const idGerado = payload.id || `prop-${Date.now()}`;
             const registroSalvo = {
               ...payload,

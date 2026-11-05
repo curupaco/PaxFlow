@@ -125,7 +125,7 @@ describe('Subcutaneous: Relatório de Desistências - Abertura e Gestão de Prop
     expect(updateEqMock).toHaveBeenCalledWith('id', orcId);
   });
 
-  it('deve lidar de forma resiliente com schema drift (erro 42703) durante a reabertura sem quebrar', async () => {
+  it('deve aplicar fail-fast transparente e lançar erro caso ocorra erro 42703 na reabertura do orçamento', async () => {
     // Setup
     const orcId = 'orc-drift-42703';
     const perfilAdmin = { id: 'admin-1', nome: 'Admin Master', role: 'admin' } as any;
@@ -142,10 +142,7 @@ describe('Subcutaneous: Relatório de Desistências - Abertura e Gestão de Prop
     const selectEqMock = vi.fn().mockReturnValue({ single: singleMock });
     const selectMock = vi.fn().mockReturnValue({ eq: selectEqMock });
 
-    // Primeiro update falha com 42703, fallback subsequente é chamado
-    const updateEqMock = vi.fn()
-      .mockResolvedValueOnce({ data: null, error: schemaDriftError })
-      .mockResolvedValueOnce({ data: null, error: null });
+    const updateEqMock = vi.fn().mockResolvedValue({ data: null, error: schemaDriftError });
     const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
@@ -163,12 +160,10 @@ describe('Subcutaneous: Relatório de Desistências - Abertura e Gestão de Prop
       return {} as any;
     });
 
-    // Action
-    const result = await OrcamentosService.reabrirOrcamento(orcId, 'Cliente pediu remarcação', perfilAdmin);
-
-    // Assert
-    expect(result.success).toBe(true);
-    expect(updateMock).toHaveBeenCalledTimes(2);
+    // Action & Assert
+    await expect(
+      OrcamentosService.reabrirOrcamento(orcId, 'Cliente pediu remarcação', perfilAdmin)
+    ).rejects.toThrow('column "contato_realizado" does not exist');
   });
 
   it('deve alternar status de contato com cliente desistente por administrador com sucesso', async () => {

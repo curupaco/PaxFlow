@@ -92,26 +92,7 @@ export async function batchInsertOrcamentos(
       .from('orcamentos')
       .insert(orcamentos);
 
-    if (error) {
-      // Trata cenário de coluna 'valor_proposta' inexistente no Supabase de forma resiliente
-      if (error.code === '42703' || (error.message && error.message.includes('column') && error.message.includes('does not exist'))) {
-        console.warn('Banco desatualizado (colunas extras). Tentando salvar limpando campos opcionais.');
-        
-        // Remove campos opcionais que podem não existir no banco (ex: valor_proposta se for passado)
-        const cleanedOrcamentos = orcamentos.map(o => {
-          const { valor_proposta, ...rest } = o;
-          return rest;
-        });
-
-        const { error: retryErr } = await supabase
-          .from('orcamentos')
-          .insert(cleanedOrcamentos);
-
-        if (retryErr) throw retryErr;
-        return { success: true, count: cleanedOrcamentos.length };
-      }
-      throw error;
-    }
+    if (error) throw error;
 
     return { success: true, count: orcamentos.length };
   } catch (err: any) {

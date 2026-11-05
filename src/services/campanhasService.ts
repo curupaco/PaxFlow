@@ -484,24 +484,6 @@ export class CampanhasService {
         .single();
 
       if (error) {
-        // Tabela não criada ainda (42P01) ou Coluna inexistente (42703)
-        if (error.code === '42P01' || error.code === '42703') {
-          console.warn('[CampanhasService] Schema drift ou tabela campanhas_presets pendente no Supabase. Fallback seguro ativado.');
-          const presetVirtual: PresetCampanha = {
-            id: `temp-${Date.now()}`,
-            nome: payload.nome,
-            descricao: payload.descricao || undefined,
-            filtros: payload.filtros,
-            criadoPor: usuario.id,
-            criadoPorNome: usuario.nome,
-            createdAt: new Date().toISOString()
-          };
-          return {
-            sucesso: true,
-            preset: presetVirtual,
-            aviso: 'O modelo foi preparado para a sessão, mas lembre-se de rodar a migração DDL no Supabase para persistência definitiva.'
-          };
-        }
         throw error;
       }
 

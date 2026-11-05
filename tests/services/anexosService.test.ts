@@ -183,7 +183,7 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
         tipo_documento: 'PASSAPORTE',
         viagem_id: 'viagem-drift'
       })
-    ).rejects.toThrow('Não foi possível salvar o documento no sistema. O banco de dados recusou a gravação do anexo. Por favor, tente novamente ou contate o administrador.');
+    ).rejects.toThrow(/Não foi possível salvar o documento no sistema/);
 
     expect(updateViagensChamado).toBe(false);
   });
@@ -200,17 +200,8 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(obsLimpa).not.toContain('PAXFLOW_ANEXOS');
   });
 
-  it('deve listar arquivos existentes no Supabase Storage mesmo com tabela do banco ausente', async () => {
+  it('deve lançar erro transparente (Fail-Fast) caso a tabela de documentos_anexos retorne erro do banco', async () => {
     const mockFrom = vi.fn().mockImplementation((table: string) => {
-      if (table === 'viagens') {
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: { observacoes: '' }, error: null })
-            })
-          })
-        };
-      }
       return {
         select: vi.fn().mockReturnValue({
           order: vi.fn().mockReturnValue({
@@ -224,27 +215,8 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     });
     (supabase.from as any) = mockFrom;
 
-    (supabase.storage.from as any) = vi.fn().mockReturnValue({
-      list: vi.fn().mockResolvedValue({
-        data: [
-          {
-            name: '1741123456_voucher_hotel_fasano.pdf',
-            id: 'file-storage-1',
-            metadata: { size: 54321, mimetype: 'application/pdf' },
-            created_at: '2026-09-11T20:00:00Z'
-          }
-        ],
-        error: null
-      })
-    });
-
-    // Action
-    const resultado = await AnexosService.listarAnexos('viagem-fernanda');
-
-    // Assert
-    expect(resultado.length).toBeGreaterThan(0);
-    expect(resultado[0].nome_original).toContain('voucher_hotel_fasano.pdf');
-    expect(resultado[0].tipo_documento).toBe('VOUCHER_HOTEL');
+    // Action & Assert
+    await expect(AnexosService.listarAnexos('viagem-fernanda')).rejects.toThrow('relation does not exist');
   });
 
   it('deve excluir anexo com sucesso e solicitar remoção do Supabase Storage', async () => {
@@ -364,18 +336,10 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ documento: '12345678900' }));
   });
 
-  it('deve lidar com erro de schema drift 42703 (coluna inexistente) fazendo fallback sem quebrar', async () => {
+  it('deve falhar de forma transparente (Fail-Fast) se o banco retornar erro 42703 em uploadAnexo', async () => {
     // Setup
     const mockFile = new File(['dummy'], 'rg_passageiro.pdf', { type: 'application/pdf' });
-    const mockDocRetornadoBase = {
-      id: 'doc-rg-base',
-      rotulo: 'RG Titular',
-      tipo_documento: 'RG',
-      nome_original: 'rg_passageiro.pdf',
-      storage_path: 'supabase-storage://geral/rg.pdf'
-    };
 
-    let tentativa = 0;
     const mockFrom = vi.fn().mockImplementation((table: string) => {
       if (table === 'global_settings') {
         return {
@@ -385,45 +349,27 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
         };
       }
       return {
-        insert: vi.fn().mockImplementation((payload: any) => {
-          tentativa++;
-          if (tentativa === 1) {
-            // Simula erro 42703 (coluna numero_documento não existe no banco)
-            return {
-              select: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: null,
-                  error: { code: '42703', message: 'column numero_documento does not exist' }
-                })
-              })
-            };
-          }
-          // Segunda tentativa: insere com sucesso sem as novas colunas
-          return {
-            select: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({
-                data: mockDocRetornadoBase,
-                error: null
-              })
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: null,
+              error: { code: '42703', message: 'column numero_documento does not exist' }
             })
-          };
+          })
         })
       };
     });
     (supabase.from as any) = mockFrom;
 
-    // Action
-    const resultado = await AnexosService.uploadAnexo({
-      file: mockFile,
-      rotulo: 'RG Titular',
-      tipo_documento: 'RG',
-      numero_documento: 'MG-12.345.678'
-    });
-
-    // Assert
-    expect(resultado.id).toBe('doc-rg-base');
-    expect(resultado.tipo_documento).toBe('RG');
-    expect(tentativa).toBe(2);
+    // Action & Assert
+    await expect(
+      AnexosService.uploadAnexo({
+        file: mockFile,
+        rotulo: 'RG Titular',
+        tipo_documento: 'RG',
+        numero_documento: 'MG-12.345.678'
+      })
+    ).rejects.toThrow(/Não foi possível salvar o documento no sistema/);
   });
 
   it('deve inferir tipos e rótulos inteligentes baseados no nome do arquivo', () => {
@@ -789,11 +735,9 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(payloadEnviado.passageiro_nome).toBe('Maria Silva');
   });
 
-  it('deve lidar com schema drift 42703 na coluna passageiro_nome fazendo fallback sem quebrar a operação', async () => {
+  it('deve falhar de forma transparente (Fail-Fast) se a coluna passageiro_nome não existir no banco (42703)', async () => {
     // Setup
     const mockFile = new File(['rg joao'], 'rg_joao.pdf', { type: 'application/pdf' });
-    let tentativasInsert = 0;
-    let payloadSegundoInsert: any = null;
 
     const mockFrom = vi.fn().mockImplementation((tabela: string) => {
       if (tabela === 'global_settings') {
@@ -805,29 +749,13 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
       }
       if (tabela === 'documentos_anexos') {
         return {
-          insert: vi.fn().mockImplementation((payload) => {
-            tentativasInsert++;
-            if (tentativasInsert === 1) {
-              // Simula erro 42703 (coluna passageiro_nome não existe no schema do Supabase)
-              return {
-                select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({
-                    data: null,
-                    error: { code: '42703', message: 'column "passageiro_nome" of relation "documentos_anexos" does not exist' }
-                  })
-                })
-              };
-            }
-            // Segunda tentativa sem a coluna inexistente deve ter sucesso
-            payloadSegundoInsert = payload;
-            return {
-              select: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: { id: 'doc-drift-1', ...payload },
-                  error: null
-                })
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: { code: '42703', message: 'column "passageiro_nome" of relation "documentos_anexos" does not exist' }
               })
-            };
+            })
           })
         };
       }
@@ -844,22 +772,18 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     });
     (supabase.from as any) = mockFrom;
 
-    // Action
-    const resultado = await AnexosService.uploadAnexo({
-      file: mockFile,
-      rotulo: 'RG João Silva',
-      tipo_documento: 'RG',
-      viagem_id: 'viagem-sul-02',
-      cliente_id: 'cliente-55',
-      passageiro_nome: 'João Silva',
-      destino_tipo: 'PASSAGEIRO'
-    });
-
-    // Assert
-    expect(tentativasInsert).toBe(2);
-    expect(payloadSegundoInsert).toBeDefined();
-    expect(payloadSegundoInsert.passageiro_nome).toBeUndefined();
-    expect(resultado.id).toBe('doc-drift-1');
+    // Action & Assert
+    await expect(
+      AnexosService.uploadAnexo({
+        file: mockFile,
+        rotulo: 'RG João Silva',
+        tipo_documento: 'RG',
+        viagem_id: 'viagem-sul-02',
+        cliente_id: 'cliente-55',
+        passageiro_nome: 'João Silva',
+        destino_tipo: 'PASSAGEIRO'
+      })
+    ).rejects.toThrow(/Não foi possível salvar o documento no sistema/);
   });
 
   it('deve ocultar comprovantes e vouchers de viagens antigos ao listar anexos na ficha do cliente', async () => {
@@ -935,50 +859,23 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(anexosCliente.some(a => a.tipo_documento === 'CNH')).toBe(true);
   });
 
-  it('deve contornar erro PGRST204 (coluna created_by ausente no schema cache) e salvar com sucesso via fallback Zero-Break', async () => {
+  it('deve falhar de forma transparente (Fail-Fast) ao receber PGRST204 no upload de anexo', async () => {
     // Setup
     const mockFile = new File(['conteudo voucher'], 'voucher_seguro.pdf', { type: 'application/pdf' });
-    let insercoesFeitas: any[] = [];
-
-    const mockDocSucesso = {
-      id: 'doc-salvo-sem-created-by',
-      viagem_id: 'viagem-seguro',
-      rotulo: 'Apólice de Seguro',
-      tipo_documento: 'SEGURO_VIAGEM',
-      nome_original: 'voucher_seguro.pdf',
-      storage_path: 'supabase-storage://viagem-seguro/voucher_seguro.pdf',
-      mime_type: 'application/pdf',
-      tamanho_bytes: 2048
-    };
 
     const mockFrom = vi.fn().mockImplementation((tabela: string) => {
       if (tabela === 'documentos_anexos') {
         return {
-          insert: vi.fn().mockImplementation((payloadInserido: any) => {
-            insercoesFeitas.push(payloadInserido);
-            // Se tiver created_by, simula a recusa do PostgREST (PGRST204)
-            if (payloadInserido.created_by !== undefined) {
-              return {
-                select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({
-                    data: null,
-                    error: {
-                      code: 'PGRST204',
-                      message: "Could not find the 'created_by' column of 'documentos_anexos' in the schema cache"
-                    }
-                  })
-                })
-              };
-            }
-            // Se não tiver created_by, grava normalmente com 200 OK
-            return {
-              select: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: mockDocSucesso,
-                  error: null
-                })
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: {
+                  code: 'PGRST204',
+                  message: "Could not find the 'created_by' column of 'documentos_anexos' in the schema cache"
+                }
               })
-            };
+            })
           })
         };
       }
@@ -986,22 +883,16 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     });
     (supabase.from as any) = mockFrom;
 
-    // Action
-    const resultado = await AnexosService.uploadAnexo({
-      file: mockFile,
-      rotulo: 'Apólice de Seguro',
-      tipo_documento: 'SEGURO_VIAGEM',
-      viagem_id: 'viagem-seguro',
-      user_id: 'user-consultor-123'
-    });
-
-    // Assert
-    expect(resultado.id).toBe('doc-salvo-sem-created-by');
-    expect(resultado.rotulo).toBe('Apólice de Seguro');
-    // Houve fallback: a última inserção executada não enviou created_by
-    expect(insercoesFeitas.length).toBeGreaterThanOrEqual(2);
-    const ultimaTentativa = insercoesFeitas[insercoesFeitas.length - 1];
-    expect(ultimaTentativa.created_by).toBeUndefined();
+    // Action & Assert
+    await expect(
+      AnexosService.uploadAnexo({
+        file: mockFile,
+        rotulo: 'Apólice de Seguro',
+        tipo_documento: 'SEGURO_VIAGEM',
+        viagem_id: 'viagem-seguro',
+        user_id: 'user-consultor-123'
+      })
+    ).rejects.toThrow(/Não foi possível salvar o documento no sistema/);
   });
 
   it('deve identificar erro de RLS no Supabase Storage e lançar mensagem orientando a aplicação de políticas', async () => {

@@ -1198,7 +1198,7 @@ export class ComercialDashboard {
 
     try {
       const [{ data: clientesData }, { data: orcamentosData }] = await Promise.all([
-        supabase.from('clientes').select('id, nome, email, telefone, data_nascimento, tags, consultor_id, created_at'),
+        supabase.from('clientes').select('id, nome, email, telefone, data_nascimento, classificacoes, consultor_responsavel_id, created_at'),
         supabase.from('orcamentos').select('id, consultor_id, cliente_id, destino, status, created_at')
       ]);
 

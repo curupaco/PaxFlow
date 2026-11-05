@@ -47,7 +47,7 @@ describe('Studio Settings - Resiliência a Schema Drift (42703)', () => {
     });
   });
 
-  it('deve interceptar erro 42703 (coluna inexistente) e aplicar fallback resiliente sem quebrar a agência', async () => {
+  it('deve aplicar fail-fast transparente e lançar erro caso a coluna seja inexistente no banco (42703)', async () => {
     // Setup
     const erroColunaInexistente = {
       code: '42703',
@@ -66,16 +66,14 @@ describe('Studio Settings - Resiliência a Schema Drift (42703)', () => {
       return {} as any;
     });
 
-    // Action
-    const resultado = await StudioPropostasService.salvarConfiguracoesStudio('settings-123', {
+    // Action & Assert
+    await expect(StudioPropostasService.salvarConfiguracoesStudio('settings-123', {
       habilitar_studio_pro: false,
       studio_moeda_padrao: 'EUR',
       studio_validade_dias: 14,
       studio_permitir_aceite_formal: false
+    })).rejects.toMatchObject({
+      code: '42703'
     });
-
-    // Assert
-    expect(resultado.sucesso).toBe(true);
-    expect(resultado.fallbackAplicado).toBe(true);
   });
 });

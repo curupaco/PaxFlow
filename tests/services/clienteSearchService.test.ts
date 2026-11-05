@@ -52,7 +52,7 @@ describe('ClienteSearchService - Testes Subcutâneos de Busca e Resiliência', (
     expect(matchInvalido).toBe(false);
   });
 
-  it('deve realizar busca no banco com colunas limpas quando o schema estiver atualizado', async () => {
+  it('deve realizar busca no banco usando colunas oficiais e variações formatadas', async () => {
     // Setup
     const mockClientesData = [
       { id: 'cli-1', nome: 'Ana Paula', documento: '336.875.838-13', telefone: '(11) 98765-4321' }
@@ -75,32 +75,15 @@ describe('ClienteSearchService - Testes Subcutâneos de Busca e Resiliência', (
     expect(resultado.fallbackUsed).toBe(false);
     expect(resultado.data).toEqual(mockClientesData);
     expect(resultado.count).toBe(1);
-    expect(orMock).toHaveBeenCalledWith(expect.stringContaining('documento_limpo.ilike.%336875%'));
+    expect(orMock).toHaveBeenCalledWith(expect.stringContaining('nome.ilike.%336875%'));
   });
 
-  it('deve acionar fallback resiliente (Padrão Zero-Break) quando o banco retornar erro 42703 (coluna inexistente)', async () => {
+  it('deve lançar erro transparente (Fail-Fast) quando o banco retornar erro na busca de clientes', async () => {
     // Setup
-    const mockClientesDataFallback = [
-      { id: 'cli-1', nome: 'Carlos Eduardo', documento: '336.875.838-13', telefone: '(11) 98765-4321' }
-    ];
-
-    let chamadasOr = 0;
-    const orMock = vi.fn().mockImplementation((filtro: string) => {
-      chamadasOr++;
-      if (chamadasOr === 1) {
-        // Primeira chamada simula erro 42703 (coluna documento_limpo não existe no banco antes da migration)
-        return Promise.resolve({
-          data: null,
-          error: { code: '42703', message: 'column clientes.documento_limpo does not exist' },
-          count: null
-        });
-      }
-      // Segunda chamada (fallback) executa com sucesso sem as colunas geradas
-      return Promise.resolve({
-        data: mockClientesDataFallback,
-        error: null,
-        count: mockClientesDataFallback.length
-      });
+    const orMock = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '42703', message: 'column clientes.documento_limpo does not exist' },
+      count: null
     });
 
     const rangeMock = vi.fn().mockReturnValue({ or: orMock });
@@ -110,16 +93,12 @@ describe('ClienteSearchService - Testes Subcutâneos de Busca e Resiliência', (
       from: vi.fn().mockReturnValue({ select: selectMock })
     };
 
-    // Action
-    const resultado = await ClienteSearchService.buscarClientes({
-      termo: '336875',
-      clientOverride: mockClient
-    });
-
-    // Assert
-    expect(resultado.fallbackUsed).toBe(true);
-    expect(resultado.data.length).toBe(1);
-    expect(resultado.data[0].id).toBe('cli-1');
-    expect(chamadasOr).toBe(2);
+    // Action & Assert
+    await expect(
+      ClienteSearchService.buscarClientes({
+        termo: '336875',
+        clientOverride: mockClient
+      })
+    ).rejects.toThrow('column clientes.documento_limpo does not exist');
   });
 });

@@ -198,7 +198,7 @@ describe('Fluxo Subcutâneo de Aceite Formal da Proposta e Conversão em Viagem'
     expect(lembreteCriado.descricao).toContain('Ushuaia');
   });
 
-  it('deve aplicar fallback Zero-Break resiliente se a coluna orcamento_id não existir na tabela viagens (erro 42703)', async () => {
+  it('deve aplicar fail-fast transparente se a criação de viagem na conversão falhar no banco (42703)', async () => {
     // Setup
     const propostaId = 'prop-drift-01';
     const propostaBase: StudioProposta = {
@@ -212,7 +212,6 @@ describe('Fluxo Subcutâneo de Aceite Formal da Proposta e Conversão em Viagem'
       itinerario_dias: []
     };
 
-    let tentativa = 0;
     const mockFrom = vi.fn().mockImplementation((table: string) => {
       if (table === 'studio_propostas') {
         return {
@@ -222,11 +221,6 @@ describe('Fluxo Subcutâneo de Aceite Formal da Proposta e Conversão em Viagem'
                 data: propostaBase,
                 error: null
               })
-            })
-          }),
-          upsert: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: propostaBase, error: null })
             })
           })
         };
@@ -247,33 +241,13 @@ describe('Fluxo Subcutâneo de Aceite Formal da Proposta e Conversão em Viagem'
       }
       if (table === 'viagens') {
         return {
-          insert: vi.fn().mockImplementation((payload: any) => {
-            tentativa++;
-            if (tentativa === 1) {
-              return {
-                select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({
-                    data: null,
-                    error: { code: '42703', message: 'column "orcamento_id" does not exist' }
-                  })
-                })
-              };
-            }
-            return {
-              select: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: { id: 'via-salva-fallback' },
-                  error: null
-                })
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: { code: '42703', message: 'column "orcamento_id" does not exist' }
               })
-            };
-          })
-        };
-      }
-      if (table === 'orcamentos') {
-        return {
-          update: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ error: null })
+            })
           })
         };
       }
@@ -282,11 +256,9 @@ describe('Fluxo Subcutâneo de Aceite Formal da Proposta e Conversão em Viagem'
 
     (supabase.from as any) = mockFrom;
 
-    // Action
-    const resultado = await StudioPropostasService.converterEmViagem(propostaId);
-
-    // Assert
-    expect(resultado.viagemId).toBe('via-salva-fallback');
-    expect(tentativa).toBe(2);
+    // Action & Assert
+    await expect(StudioPropostasService.converterEmViagem(propostaId)).rejects.toMatchObject({
+      code: '42703'
+    });
   });
 });

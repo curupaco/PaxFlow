@@ -192,12 +192,11 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão, RAV e Govern
     ]);
   });
 
-  it('deve aplicar fallback Zero-Break ao salvar se a coluna percentual_rav for inexistente (erro 42703)', async () => {
+  it('deve aplicar fail-fast transparente e retornar erro se a inserção de divisões falhar no banco (42703)', async () => {
     // Setup
     const mockDeleteEq = vi.fn().mockResolvedValue({ error: null });
     const mockInsert = vi.fn()
-      .mockResolvedValueOnce({ error: { code: '42703', message: 'column "percentual_rav" does not exist' } })
-      .mockResolvedValueOnce({ error: null });
+      .mockResolvedValueOnce({ error: { code: '42703', message: 'column "percentual_rav" does not exist' } });
 
     (supabase.from as any).mockImplementation((table: string) => {
       if (table === 'viagens_divisoes') {
@@ -227,13 +226,9 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão, RAV e Govern
     const res = await ViagensDivisoesService.salvarDivisaoViagem(params);
 
     // Assert
-    expect(res.success).toBe(true);
-    expect(mockInsert).toHaveBeenCalledTimes(2);
-    // Na segunda chamada de insert (fallback), deve ter inserido sem a coluna percentual_rav
-    expect(mockInsert).toHaveBeenLastCalledWith([
-      { viagem_id: 'viagem-0325', consultor_id: 'user-rafael', percentual: 50, is_titular: true },
-      { viagem_id: 'viagem-0325', consultor_id: 'user-guto', percentual: 50, is_titular: false }
-    ]);
+    expect(res.success).toBe(false);
+    expect(res.error).toContain('column "percentual_rav" does not exist');
+    expect(mockInsert).toHaveBeenCalledTimes(1);
   });
 
   it('deve aplicar fallback Zero-Break sem quebrar ao detectar erro 42P01 de tabela inexistente', async () => {
@@ -413,17 +408,8 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão, RAV e Govern
       eq: vi.fn().mockResolvedValue({ error: null })
     });
 
-    const insertMock = vi.fn()
-      .mockResolvedValueOnce({
-        error: { code: '42703', message: 'column "percentual_rav" of relation "viagens_divisoes" does not exist' }
-      })
-      .mockImplementationOnce(() => {
-        chamouFallback = true;
-        return Promise.resolve({ error: null });
-      });
-
-    const updateViagemMock = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null })
+    const insertMock = vi.fn().mockResolvedValue({
+      error: { code: '42703', message: 'column "percentual_rav" of relation "viagens_divisoes" does not exist' }
     });
 
     (supabase.from as any).mockImplementation((tabela: string) => {
@@ -431,11 +417,6 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão, RAV e Govern
         return {
           delete: deleteMock,
           insert: insertMock
-        };
-      }
-      if (tabela === 'viagens') {
-        return {
-          update: updateViagemMock
         };
       }
       return {};
@@ -449,8 +430,8 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão, RAV e Govern
     });
 
     // Assert
-    expect(res.success).toBe(true);
-    expect(chamouFallback).toBe(true);
+    expect(res.success).toBe(false);
+    expect(res.error).toBeDefined();
   });
 });
 

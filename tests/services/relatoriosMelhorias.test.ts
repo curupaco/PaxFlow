@@ -114,7 +114,7 @@ describe('Relatórios - Melhorias Subcutâneas (Embarques, Desistências e Valid
     expect(result.contatosAtualizados['ida-0'].gestor_nome).toBeUndefined();
   });
 
-  it('deve tratar erro 42703 (schema drift) com fallback resiliente salvando em observacoes sem travar', async () => {
+  it('deve falhar de forma transparente (Fail-Fast) se o banco retornar erro 42703 ao salvar contatos de embarque', async () => {
     // Setup
     const mockViagem = {
       id: 'viagem-drift',
@@ -126,16 +126,12 @@ describe('Relatórios - Melhorias Subcutâneas (Embarques, Desistências e Valid
     const eqMock = vi.fn().mockReturnValue({ maybeSingle: maybeSingleMock });
     const selectMock = vi.fn().mockReturnValue({ eq: eqMock });
 
-    const updateMock = vi.fn()
-      .mockImplementationOnce(() => ({
-        eq: vi.fn().mockResolvedValue({
-          data: null,
-          error: { code: '42703', message: 'column "contatos_embarque" does not exist' }
-        })
-      }))
-      .mockImplementationOnce(() => ({
-        eq: vi.fn().mockResolvedValue({ data: null, error: null })
-      }));
+    const updateMock = vi.fn().mockImplementation(() => ({
+      eq: vi.fn().mockResolvedValue({
+        data: null,
+        error: { code: '42703', message: 'column "contatos_embarque" does not exist' }
+      })
+    }));
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'viagens') {
@@ -147,20 +143,16 @@ describe('Relatórios - Melhorias Subcutâneas (Embarques, Desistências e Valid
       return {} as any;
     });
 
-    // Action
-    const result = await ContatosEmbarqueService.alternarValidacaoGestor(
-      mockViagem,
-      'ida-0',
-      'gestor-admin-1',
-      'Gestor Geral',
-      true
-    );
-
-    // Assert
-    expect(result.sucesso).toBe(true);
-    expect(result.novoStatus).toBe(true);
-    expect(result.contatosAtualizados['ida-0'].validado_gestor).toBe(true);
-    expect(updateMock).toHaveBeenCalledTimes(2);
+    // Action & Assert
+    await expect(
+      ContatosEmbarqueService.alternarValidacaoGestor(
+        mockViagem,
+        'ida-0',
+        'gestor-admin-1',
+        'Gestor Geral',
+        true
+      )
+    ).rejects.toThrow('column "contatos_embarque" does not exist');
   });
 
   it('deve buscar e normalizar dados de orçamento para o modal sobreposto de relatórios', async () => {

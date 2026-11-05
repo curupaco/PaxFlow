@@ -335,7 +335,7 @@ export class RelatoriosPage {
       }
       const pOrcamentos = orcQuery;
 
-      let cliQuery = supabase.from('clientes').select('id, nome, telefone, email, consultor_responsavel_id, created_at, tags');
+      let cliQuery = supabase.from('clientes').select('id, nome, telefone, email, consultor_responsavel_id, created_at, classificacoes');
       if (!isAdmin) {
         cliQuery = cliQuery.eq('consultor_responsavel_id', this.user.id);
       }
@@ -343,15 +343,18 @@ export class RelatoriosPage {
 
       let reemQuery = supabase.from('reembolsos').select(`
         id,
-        codigo_protocolo,
+        codigo_ref,
         status,
+        status_tratativa,
         valor_solicitado,
         valor_aprovado,
+        motivo_cancelamento,
+        forma_devolucao,
         created_at,
         consultor_solicitante_id,
         viagem_id,
-        produto_id,
-        viagem:viagens (id, consultor_id, consultor_responsavel_id, codigo_ref, destino),
+        produto_viagem_id,
+        viagem:viagens (id, consultor_id, codigo_ref, destino),
         produto:produtos_viagem (id, tipo, fornecedor)
       `);
       if (janelaInicio) {
@@ -421,27 +424,19 @@ export class RelatoriosPage {
           codigo_ref,
           codigo_localizador,
           consultor_id,
-          consultor_responsavel_id,
           cliente_id,
-          orcamento_id,
           data_ida,
           data_volta,
           data_financeiro,
           valor_total,
-          taxa_embarque_total,
           status,
-          tags,
           observacoes,
           processo_conferido,
-          nps_nota,
-          nps_respondido,
-          pos_contato_concluido,
           destino,
           created_at,
           cliente:clientes (id, nome, telefone, email),
           reembolsos (id, status, valor_solicitado, valor_aprovado, created_at),
-          produtos:produtos_viagem (id, viagem_id, tipo, valor_venda, taxa, comissao, fornecedor, markup, rav),
-          destino_ref:destinos (id, nome)
+          produtos:produtos_viagem (id, viagem_id, tipo, valor_venda, taxa, comissao, fornecedor, markup, rav)
         `);
 
         if (janelaInicio) {
@@ -513,6 +508,12 @@ export class RelatoriosPage {
       if (resSettings.data && resSettings.data.length > 0) {
         this.prazoReembolsoDias = resSettings.data[0].prazoReembolsoDias || 30;
       }
+
+      // Fail-Fast: Se qualquer consulta essencial falhar, propaga o erro de forma transparente
+      if (resViagens?.error) throw new Error(`Falha ao carregar viagens: ${resViagens.error.message || resViagens.error}`);
+      if (resOrcamentos?.error) throw new Error(`Falha ao carregar orçamentos: ${resOrcamentos.error.message || resOrcamentos.error}`);
+      if (resClientes?.error) throw new Error(`Falha ao carregar clientes: ${resClientes.error.message || resClientes.error}`);
+      if (resReembolsos?.error) throw new Error(`Falha ao carregar reembolsos: ${resReembolsos.error.message || resReembolsos.error}`);
 
       this.orcamentos = resOrcamentos.data || [];
       this.clientes = resClientes.data || [];

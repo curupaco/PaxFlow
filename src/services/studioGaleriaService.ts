@@ -97,62 +97,32 @@ export class StudioGaleriaService {
       origem: 'upload'
     };
 
-    try {
-      // 1. Tenta salvar na tabela dedicada studio_fotos_agencia com payload completo
-      const payloadCompleto: any = {
-        titulo: novaFoto.titulo,
-        url: novaFoto.url,
-        thumb_url: novaFoto.thumb_url,
-        tags: novaFoto.tags,
-        origem: 'upload'
-      };
+    const payload: any = {
+      titulo: novaFoto.titulo,
+      url: novaFoto.url,
+      tags: novaFoto.tags || []
+    };
 
-      const { data, error } = await supabase
-        .from('studio_fotos_agencia')
-        .insert([payloadCompleto])
-        .select()
-        .single();
+    const { data, error } = await supabase
+      .from('studio_fotos_agencia')
+      .insert([payload])
+      .select()
+      .single();
 
-      if (!error && data) {
-        return {
-          id: data.id,
-          titulo: data.titulo,
-          url: data.url,
-          thumb_url: data.thumb_url || data.url,
-          tags: data.tags,
-          criado_em: data.criado_em || data.created_at,
-          origem: 'upload'
-        };
-      }
-
-      // Se der erro 42703 (coluna inexistente como thumb_url ou tags), tenta fallback minimalista
-      if (error && (error.code === '42703' || error.message?.includes('column'))) {
-        const { data: fallbackData, error: fallbackErr } = await supabase
-          .from('studio_fotos_agencia')
-          .insert([{
-            titulo: novaFoto.titulo,
-            url: novaFoto.url
-          }])
-          .select()
-          .single();
-
-        if (!fallbackErr && fallbackData) {
-          return {
-            id: fallbackData.id,
-            titulo: fallbackData.titulo,
-            url: fallbackData.url,
-            thumb_url: fallbackData.url,
-            tags: novaFoto.tags,
-            criado_em: fallbackData.criado_em || fallbackData.created_at,
-            origem: 'upload'
-          };
-        }
-      }
-    } catch {
-      // Tabela ainda não criada no banco (42P01 ou ausente): retorna novaFoto sem quebrar
+    if (error) {
+      console.error('[StudioGaleriaService] Erro ao salvar foto da agência:', error);
+      throw error;
     }
 
-    return novaFoto;
+    return {
+      id: data.id,
+      titulo: data.titulo,
+      url: data.url,
+      thumb_url: data.url,
+      tags: data.tags || [],
+      criado_em: data.criado_em || data.created_at,
+      origem: 'upload'
+    };
   }
 
   /**

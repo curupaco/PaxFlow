@@ -149,41 +149,16 @@ export class ViagensDivisoesService {
     if (!viagemId) return [];
 
     try {
-      let data: any[] | null = null;
-      let error: any = null;
-
-      // Tentativa 1: busca completa com percentual_rav
-      const res = await supabase
+      // Busca direta na tabela oficial viagens_divisoes
+      const { data, error } = await supabase
         .from('viagens_divisoes')
         .select('id, viagem_id, consultor_id, percentual, percentual_rav, is_titular, created_at, updated_at, consultor:profiles(id, nome, email, avatar_url)')
         .eq('viagem_id', viagemId)
         .order('is_titular', { ascending: false })
         .order('percentual', { ascending: false });
 
-      data = res.data;
-      error = res.error;
-
-      // Se der erro 42703 (coluna percentual_rav ainda não existe no Supabase), tenta sem ela
-      if (error && (error.code === '42703' || error.message?.includes('percentual_rav'))) {
-        console.warn('⚠️ PaxFlow ViagensDivisoes: Coluna percentual_rav inexistente (42703). Fallback para percentual geral.');
-        const resFallback = await supabase
-          .from('viagens_divisoes')
-          .select('id, viagem_id, consultor_id, percentual, is_titular, created_at, updated_at, consultor:profiles(id, nome, email, avatar_url)')
-          .eq('viagem_id', viagemId)
-          .order('is_titular', { ascending: false })
-          .order('percentual', { ascending: false });
-        data = resFallback.data;
-        error = resFallback.error;
-      }
-
       if (error) {
-        // Fallback Zero-Break caso a tabela ainda não exista no Supabase (42P01)
-        if (error.code === '42P01' || error.message?.includes('does not exist')) {
-          console.warn('⚠️ PaxFlow ViagensDivisoes: Tabela viagens_divisoes inexistente (42P01). Aplicando fallback legado.');
-          return titularIdFallback
-            ? [{ consultor_id: titularIdFallback, percentual: 100, percentual_rav: 100, is_titular: true }]
-            : [];
-        }
+        console.error('Erro ao consultar viagens_divisoes:', error);
         throw error;
       }
 
@@ -305,29 +280,12 @@ export class ViagensDivisoesService {
         };
       });
 
-      // 3. Tenta inserir com percentual_rav
+      // 3. Insere na tabela oficial viagens_divisoes
       const { error: insError } = await supabase
         .from('viagens_divisoes')
         .insert(rowsToInsert);
 
-      if (insError) {
-        // Fallback para erro 42703 (coluna percentual_rav ainda não existe no banco)
-        if (insError.code === '42703' || insError.message?.includes('percentual_rav')) {
-          console.warn('⚠️ PaxFlow ViagensDivisoes: Coluna percentual_rav inexistente (42703) ao salvar. Inserindo sem percentual_rav.');
-          const rowsFallback = rowsToInsert.map(r => ({
-            viagem_id: r.viagem_id,
-            consultor_id: r.consultor_id,
-            percentual: r.percentual,
-            is_titular: r.is_titular
-          }));
-          const { error: fallbackError } = await supabase
-            .from('viagens_divisoes')
-            .insert(rowsFallback);
-          if (fallbackError) throw fallbackError;
-        } else {
-          throw insError;
-        }
-      }
+      if (insError) throw insError;
 
       // 4. Sincroniza o titular principal no registro da viagem (para compatibilidade)
       if (titularId) {

@@ -9,7 +9,7 @@ vi.mock('../../src/services/supabase', () => ({
 }));
 
 describe('FinPlanoContasService - Testes Subcutâneos', () => {
-  it('deve listar os 5 tipos de custo padrão no fallback caso o banco esteja sem migração (Schema Drift 42P01)', async () => {
+  it('deve falhar de forma transparente (Fail-Fast) ao listar tipos de custo se a tabela não existir (42P01)', async () => {
     // Setup
     (supabase.from as any).mockReturnValue({
       select: vi.fn().mockReturnValue({
@@ -20,28 +20,27 @@ describe('FinPlanoContasService - Testes Subcutâneos', () => {
       })
     });
 
-    // Action
-    const tipos = await FinPlanoContasService.listarTiposCusto();
-
-    // Assert
-    expect(tipos).toHaveLength(5);
-    expect(tipos.map(t => t.nome)).toEqual(
-      expect.arrayContaining(['Custos Diretos', 'Despesas Fixas', 'Despesas Variáveis', 'Investimentos', 'Gastos Não Operacionais'])
-    );
+    // Action & Assert
+    await expect(FinPlanoContasService.listarTiposCusto()).rejects.toThrow('relation fin_tipos_custo does not exist');
   });
 
-  it('deve incluir REPASSE AGAXTUR dentro das Despesas Variáveis nas categorias padrão', async () => {
-    // Setup: simula fallback de categorias com encadeamento de eq
-    const mockOrder = vi.fn().mockResolvedValue({
-      data: null,
-      error: { code: '42P01', message: 'relation fin_categorias does not exist' }
+  it('deve incluir REPASSE AGAXTUR dentro das Despesas Variáveis nas categorias', async () => {
+    // Setup
+    const mockCategorias = [
+      { id: 'cat-1', nome: 'REPASSE AGAXTUR', tipo_custo_id: 'tipo-3' },
+      { id: 'cat-2', nome: 'COMISSÕES', tipo_custo_id: 'tipo-3' }
+    ];
+
+    const mockEq = vi.fn().mockResolvedValue({
+      data: mockCategorias,
+      error: null
+    });
+    const mockOrder = vi.fn().mockReturnValue({
+      eq: mockEq
     });
 
     (supabase.from as any).mockReturnValue({
       select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          order: mockOrder
-        }),
         order: mockOrder
       })
     });
@@ -55,26 +54,23 @@ describe('FinPlanoContasService - Testes Subcutâneos', () => {
     expect(repasseAgaxtur?.tipo_custo_id).toBe('tipo-3');
   });
 
-  it('deve retornar contas bancárias padrão com saldo inicial zerado no fallback seguro', async () => {
+  it('deve falhar de forma transparente (Fail-Fast) ao listar contas bancárias se a tabela fin_contas_bancarias retornar erro 42P01', async () => {
     // Setup
+    const mockEq = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '42P01', message: 'relation fin_contas_bancarias does not exist' }
+    });
+
     (supabase.from as any).mockReturnValue({
       select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({
-            data: null,
-            error: { code: '42P01', message: 'relation fin_contas_bancarias does not exist' }
-          })
+        order: vi.fn().mockReturnValue({
+          eq: mockEq
         })
       })
     });
 
-    // Action
-    const bancos = await FinPlanoContasService.listarContasBancarias();
-
-    // Assert
-    expect(bancos.length).toBeGreaterThanOrEqual(4);
-    expect(bancos.some(b => b.nome_banco === 'Banco Itaú')).toBe(true);
-    expect(bancos.some(b => b.nome_banco === 'Banco Cora')).toBe(true);
+    // Action & Assert
+    await expect(FinPlanoContasService.listarContasBancarias()).rejects.toThrow('relation fin_contas_bancarias does not exist');
   });
 
   it('deve permitir inativar uma conta bancária com sucesso', async () => {
@@ -164,7 +160,7 @@ describe('FinPlanoContasService - Testes Subcutâneos', () => {
     expect(mockDelete).toHaveBeenCalled();
   });
 
-  it('deve tratar Schema Drift 42703 (coluna ativo inexistente) aplicando fallback seguro ao salvar conta bancária', async () => {
+  it('deve falhar de forma transparente (Fail-Fast) ao salvar conta bancária se o banco retornar erro 42703', async () => {
     // Setup: insert retorna erro 42703
     const mockInsert = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
@@ -189,7 +185,7 @@ describe('FinPlanoContasService - Testes Subcutâneos', () => {
     );
 
     // Assert
-    expect(res.sucesso).toBe(true);
-    expect(res.id).toBeDefined();
+    expect(res.sucesso).toBe(false);
+    expect(res.erro).toContain('column ativo does not exist');
   });
 });

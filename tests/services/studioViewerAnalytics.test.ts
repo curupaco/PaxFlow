@@ -67,7 +67,7 @@ describe('PaxFlow Studio - Rastreamento de Leitura em Tempo Real (Viewer Analyti
     );
   });
 
-  it('deve ser resiliente a schema drift (erro 42703) ao registrar visualizações sem quebrar a execução', async () => {
+  it('deve lidar de forma não-bloqueante retornando null caso a atualização de visualizações falhe no banco', async () => {
     // Setup
     const mockProposta = {
       id: 'prop-drift-456',
@@ -82,24 +82,14 @@ describe('PaxFlow Studio - Rastreamento de Leitura em Tempo Real (Viewer Analyti
       })
     });
 
-    // Simula erro 42703 no primeiro upsert e sucesso no retry sanitizado
-    const mockUpsert = vi.fn()
-      .mockReturnValueOnce({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: null,
-            error: { code: '42703', message: 'column visualizacoes_count does not exist' }
-          })
+    const mockUpsert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: { code: '42703', message: 'column visualizacoes_count does not exist' }
         })
       })
-      .mockReturnValueOnce({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: { id: 'prop-drift-456', cliente_nome: 'Carlos Eduardo', destino: 'Paris' },
-            error: null
-          })
-        })
-      });
+    });
 
     (supabase.from as any).mockImplementation((table: string) => {
       if (table === 'studio_propostas') {
@@ -115,8 +105,7 @@ describe('PaxFlow Studio - Rastreamento de Leitura em Tempo Real (Viewer Analyti
     const resultado = await StudioPropostasService.registrarAcessoLeitura('prop-drift-456');
 
     // Assert
-    expect(resultado).toBeDefined();
-    expect(resultado?.id).toBe('prop-drift-456');
-    expect(mockUpsert).toHaveBeenCalledTimes(2);
+    expect(resultado).toBeNull();
+    expect(mockUpsert).toHaveBeenCalledTimes(1);
   });
 });

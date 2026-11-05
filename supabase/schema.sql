@@ -154,6 +154,11 @@ BEGIN
       next_trip_corte_prontidao_alta = COALESCE(NEW.next_trip_corte_prontidao_alta, 75),
       next_trip_snooze_dias = COALESCE(NEW.next_trip_snooze_dias, 30),
       habilitar_upsell_preditivo = COALESCE(NEW.habilitar_upsell_preditivo, true),
+      habilitar_studio_pro = COALESCE(NEW.habilitar_studio_pro, true),
+      studio_moeda_padrao = COALESCE(NEW.studio_moeda_padrao, 'BRL'),
+      studio_validade_dias = COALESCE(NEW.studio_validade_dias, 7),
+      studio_permitir_aceite_formal = COALESCE(NEW.studio_permitir_aceite_formal, true),
+      notificacoes_financeiro_ativas = COALESCE(NEW.notificacoes_financeiro_ativas, true),
       updated_at = NOW()
     WHERE id = OLD.id;
     RETURN NEW;
@@ -168,7 +173,8 @@ BEGIN
       digisac_enable_webhooks, tempo_desistencia_orcamento_dias, antecedencia_risco_operacional_dias,
       habilitar_risk_score, risk_score_janela_carencia_dias, risk_score_limite_critico,
       habilitar_next_trip_engine, next_trip_corte_prontidao_alta, next_trip_snooze_dias,
-      habilitar_upsell_preditivo
+      habilitar_upsell_preditivo, habilitar_studio_pro, studio_moeda_padrao,
+      studio_validade_dias, studio_permitir_aceite_formal, notificacoes_financeiro_ativas
     ) VALUES (
       COALESCE(NEW.agency_name, 'PaxFlow'),
       COALESCE(NEW.taxa_cancelamento_padrao, 0),
@@ -188,6 +194,27 @@ BEGIN
       NEW.digisac_token,
       NEW.digisac_domain,
       NEW.digisac_service_id,
+      COALESCE(NEW.digisac_enable_manual_send, false),
+      COALESCE(NEW.digisac_enable_chat_history, false),
+      COALESCE(NEW.digisac_enable_vouchers, false),
+      COALESCE(NEW.digisac_enable_routing, false),
+      COALESCE(NEW.digisac_enable_bot_triggers, false),
+      COALESCE(NEW.digisac_enable_webhooks, false),
+      COALESCE(NEW.tempo_desistencia_orcamento_dias, 15),
+      COALESCE(NEW.antecedencia_risco_operacional_dias, 15),
+      COALESCE(NEW.habilitar_risk_score, true),
+      COALESCE(NEW.risk_score_janela_carencia_dias, 60),
+      COALESCE(NEW.risk_score_limite_critico, 50),
+      COALESCE(NEW.habilitar_next_trip_engine, true),
+      COALESCE(NEW.next_trip_corte_prontidao_alta, 75),
+      COALESCE(NEW.next_trip_snooze_dias, 30),
+      COALESCE(NEW.habilitar_upsell_preditivo, true),
+      COALESCE(NEW.habilitar_studio_pro, true),
+      COALESCE(NEW.studio_moeda_padrao, 'BRL'),
+      COALESCE(NEW.studio_validade_dias, 7),
+      COALESCE(NEW.studio_permitir_aceite_formal, true),
+      COALESCE(NEW.notificacoes_financeiro_ativas, true)
+    );
       COALESCE(NEW.digisac_enable_manual_send, true),
       COALESCE(NEW.digisac_enable_chat_history, true),
       COALESCE(NEW.digisac_enable_vouchers, true),
@@ -1398,3 +1425,112 @@ INSERT INTO public.templates_mensagem (titulo, descricao, conteudo, variaveis_su
 ('Lembrete de Pagamento', 'Aviso de vencimento de faturamento pendente.', 'Olá, {{cliente}}! Gostaria de lembrar sobre o vencimento da parcela pendente referente à sua viagem para {{destino}} (Localizador: {{localizador}}). Caso já tenha efetuado o pagamento, por favor desconsidere. Qualquer dúvida, estou à disposição. Abraços, {{consultor}}.', ARRAY['cliente', 'destino', 'localizador', 'consultor']),
 ('Avaliação de Atendimento Geral', 'Mensagem padrão de NPS sem destino específico.', 'Olá, {{cliente}}! Sua opinião é fundamental para melhorarmos sempre nossos serviços. Por favor, avalie nosso atendimento neste breve link: {{link_feedback}}. Agradecemos muito a sua parceria! Equipe PaxFlow.', ARRAY['cliente', 'link_feedback'])
 ON CONFLICT DO NOTHING;
+
+
+-- ============================================================================
+-- 20. TABELAS ADICIONAIS CONSOLIDADAS: studio_propostas, documentos_anexos,
+--     viagens_divisoes, origens_lead, campanhas_presets e gamification_celebrations
+-- ============================================================================
+
+ALTER TABLE IF EXISTS public.profiles
+    ADD COLUMN IF NOT EXISTS participa_metricas BOOLEAN DEFAULT TRUE NOT NULL,
+    ADD COLUMN IF NOT EXISTS acesso_financeiro BOOLEAN DEFAULT FALSE NOT NULL;
+
+ALTER TABLE IF EXISTS public.global_settings_table
+    ADD COLUMN IF NOT EXISTS habilitar_studio_pro BOOLEAN DEFAULT TRUE NOT NULL,
+    ADD COLUMN IF NOT EXISTS studio_moeda_padrao VARCHAR(10) DEFAULT 'BRL' NOT NULL,
+    ADD COLUMN IF NOT EXISTS studio_validade_dias INT DEFAULT 7 NOT NULL,
+    ADD COLUMN IF NOT EXISTS studio_permitir_aceite_formal BOOLEAN DEFAULT TRUE NOT NULL,
+    ADD COLUMN IF NOT EXISTS notificacoes_financeiro_ativas BOOLEAN DEFAULT TRUE NOT NULL;
+
+CREATE TABLE IF NOT EXISTS public.studio_propostas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cliente_nome TEXT NOT NULL DEFAULT 'Cliente',
+    cliente_whatsapp TEXT,
+    cliente_email TEXT,
+    destino TEXT NOT NULL DEFAULT 'Destino a definir',
+    data_ida DATE,
+    data_volta DATE,
+    valor_total NUMERIC DEFAULT 0,
+    moeda VARCHAR(10) DEFAULT 'BRL',
+    foto_capa_url TEXT,
+    dados_extraidos JSONB DEFAULT '{}'::jsonb,
+    itinerario_dias JSONB DEFAULT '[]'::jsonb,
+    status VARCHAR(20) DEFAULT 'RASCUNHO',
+    aceite_formal JSONB,
+    visualizacoes_count INT DEFAULT 0,
+    ultima_visualizacao_em TIMESTAMPTZ,
+    orcamento_origem_id UUID REFERENCES public.orcamentos(id) ON DELETE SET NULL,
+    consultor_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    consultor_nome TEXT,
+    consultor_avatar TEXT,
+    consultor_whatsapp TEXT,
+    consultor_telefone TEXT,
+    consultor_email TEXT,
+    titulo_cabecalho TEXT DEFAULT 'PAXFLOW LUXURY TRAVEL',
+    agencia_id UUID,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.documentos_anexos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agencia_id UUID,
+    viagem_id UUID REFERENCES public.viagens(id) ON DELETE CASCADE,
+    cliente_id UUID REFERENCES public.clientes(id) ON DELETE CASCADE,
+    rotulo TEXT NOT NULL,
+    tipo_documento VARCHAR(50) NOT NULL,
+    numero_documento TEXT,
+    data_validade DATE,
+    nome_original TEXT NOT NULL,
+    storage_path TEXT NOT NULL,
+    mime_type TEXT,
+    tamanho_bytes BIGINT,
+    passageiro_nome TEXT,
+    created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.viagens_divisoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    viagem_id UUID REFERENCES public.viagens(id) ON DELETE CASCADE NOT NULL,
+    consultor_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    percentual NUMERIC(5,2) NOT NULL,
+    percentual_rav NUMERIC(5,2) NOT NULL DEFAULT 100,
+    is_titular BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.origens_lead (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome TEXT NOT NULL,
+    icone TEXT DEFAULT '📣',
+    ativo BOOLEAN DEFAULT TRUE NOT NULL,
+    ordem INT DEFAULT 0 NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.campanhas_presets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome TEXT NOT NULL,
+    descricao TEXT,
+    filtros JSONB NOT NULL DEFAULT '{}'::jsonb,
+    criado_por UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    criado_por_nome TEXT,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.gamification_celebrations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    badge_key TEXT NOT NULL,
+    badge_name TEXT NOT NULL,
+    badge_emoji TEXT NOT NULL,
+    campaign_id UUID,
+    campaign_titulo TEXT NOT NULL,
+    visualizada BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);

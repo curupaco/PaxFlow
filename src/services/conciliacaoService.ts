@@ -128,94 +128,22 @@ export class ConciliacaoService {
         criado_por: user?.id
       };
 
-      let loteId: string | null = null;
-      let { data: loteData, error: loteErr } = await supabase
+      const { data: loteData, error: loteErr } = await supabase
         .from('extratos_bancarios_lotes')
         .insert(lotePayload)
         .select()
         .single();
 
-      // Fallback 1: Trata schema drift na tabela extratos_bancarios_lotes (42703 ou PGRST204)
-      if (loteErr && (loteErr.code === '42703' || loteErr.code === 'PGRST204' || loteErr.message?.includes('banco_nome') || loteErr.message?.includes('schema cache'))) {
-        console.warn('[ConciliacaoService Schema Drift] Coluna banco_nome ausente em extratos_bancarios_lotes. Tentando fallback...');
-        
-        // Tentativa A: tentar banco_origem
-        const payloadComBancoOrigem = { ...lotePayload };
-        delete payloadComBancoOrigem.banco_nome;
-        payloadComBancoOrigem.banco_origem = bancoNome;
-
-        const resAlt = await supabase
-          .from('extratos_bancarios_lotes')
-          .insert(payloadComBancoOrigem)
-          .select()
-          .single();
-
-        if (!resAlt.error && resAlt.data?.id) {
-          loteData = resAlt.data;
-          loteErr = null;
-        } else if (resAlt.error && (resAlt.error.code === '42703' || resAlt.error.code === 'PGRST204' || resAlt.error.message?.includes('schema cache'))) {
-          // Tentativa B: sem coluna de banco (embute no nome_arquivo)
-          const payloadSemBanco = { ...lotePayload };
-          delete payloadSemBanco.banco_nome;
-          delete payloadSemBanco.banco_origem;
-          payloadSemBanco.nome_arquivo = `${nomeArquivo} [${bancoNome}]`;
-
-          const resSemBanco = await supabase
-            .from('extratos_bancarios_lotes')
-            .insert(payloadSemBanco)
-            .select()
-            .single();
-
-          if (!resSemBanco.error && resSemBanco.data?.id) {
-            loteData = resSemBanco.data;
-            loteErr = null;
-          } else if (resSemBanco.error && (resSemBanco.error.code === '42703' || resSemBanco.error.code === 'PGRST204' || resSemBanco.error.message?.includes('schema cache'))) {
-            // Tentativa C: payload mínimo
-            const payloadMinimo: any = {
-              nome_arquivo: `${nomeArquivo} [${bancoNome}]`,
-              total_registros: transacoes.length,
-              total_creditos: creditos,
-              total_debitos: debitos
-            };
-            const resMin = await supabase
-              .from('extratos_bancarios_lotes')
-              .insert(payloadMinimo)
-              .select()
-              .single();
-
-            if (!resMin.error && resMin.data?.id) {
-              loteData = resMin.data;
-              loteErr = null;
-            } else {
-              loteErr = resMin.error;
-            }
-          } else {
-            loteErr = resSemBanco.error;
-          }
-        } else {
-          loteErr = resAlt.error;
-        }
-      }
-
       if (loteErr) {
-        if (loteErr.code === '42P01' || loteErr.code === 'PGRST205' || loteErr.message?.includes('does not exist')) {
-          console.warn('[Schema Drift 42P01] Tabela extratos_bancarios_lotes inexistente.');
-          return { sucesso: false, totalInserido: 0, erro: 'Tabela de extratos não criada no Supabase. Execute o script DDL.' };
-        }
-        // Se ainda for erro de coluna, não travar a agência: continua para inserção de transações
-        if (loteErr.code === '42703' || loteErr.code === 'PGRST204' || loteErr.message?.includes('schema cache')) {
-          console.warn('[Schema Drift Zero-Break] Prosseguindo com inserção de transações apesar de drift em extratos_bancarios_lotes.');
-          loteId = null;
-        } else {
-          throw loteErr;
-        }
-      } else if (loteData?.id) {
-        loteId = loteData.id;
+        throw new Error(`Falha ao gravar lote de extrato: ${loteErr.message || loteErr}`);
       }
 
-      // 3. Insere os itens do extrato com resiliência a schema drift
-      let itensPayload = transacoes.map(t => ({
-        ...(loteId ? { lote_id: loteId } : {}),
+      const loteId = loteData?.id;
+
+      // 3. Insere os itens do extrato
+      const itensPayload = transacoes.map(t => ({
+        lote_id: loteId,
+        banco_nome: bancoNome,
         banco_origem: bancoNome,
         data_transacao: t.data,
         descricao: t.descricao,
@@ -226,64 +154,12 @@ export class ConciliacaoService {
         status: 'pendente'
       }));
 
-      let { error: itensErr } = await supabase
+      const { error: itensErr } = await supabase
         .from('extratos_bancarios_transacoes')
         .insert(itensPayload);
 
-      // Fallback 2: Trata schema drift na tabela extratos_bancarios_transacoes (42703 ou PGRST204)
-      if (itensErr && (itensErr.code === '42703' || itensErr.code === 'PGRST204' || itensErr.message?.includes('column') || itensErr.message?.includes('schema cache'))) {
-        console.warn('[ConciliacaoService Schema Drift] Coluna ausente em extratos_bancarios_transacoes. Tentando fallback...');
-
-        // Tentativa A: tentar banco_nome em vez de banco_origem
-        const payloadComBancoNome = itensPayload.map((item: any) => {
-          const { banco_origem, ...rest } = item;
-          return { ...rest, banco_nome: bancoNome };
-        });
-
-        const resItensAlt = await supabase
-          .from('extratos_bancarios_transacoes')
-          .insert(payloadComBancoNome);
-
-        if (!resItensAlt.error) {
-          itensErr = null;
-        } else if (resItensAlt.error && (resItensAlt.error.code === '42703' || resItensAlt.error.code === 'PGRST204' || resItensAlt.error.message?.includes('schema cache'))) {
-          // Tentativa B: sem coluna de banco, embute o banco na descrição
-          const payloadSemBanco = itensPayload.map((item: any) => {
-            const { banco_origem, banco_nome, ...rest } = item;
-            return {
-              ...rest,
-              descricao: `[${bancoNome}] ${item.descricao}`
-            };
-          });
-
-          const resSemBanco = await supabase
-            .from('extratos_bancarios_transacoes')
-            .insert(payloadSemBanco);
-
-          if (!resSemBanco.error) {
-            itensErr = null;
-          } else if (resSemBanco.error && (resSemBanco.error.code === '42703' || resSemBanco.error.code === 'PGRST204' || resSemBanco.error.message?.includes('schema cache'))) {
-            // Tentativa C: payload essencial sem colunas secundárias
-            const payloadEssencial = transacoes.map(t => ({
-              ...(loteId ? { lote_id: loteId } : {}),
-              data_transacao: t.data,
-              descricao: `[${bancoNome}] ${t.descricao}`,
-              tipo: t.tipo.startsWith('CRED') ? 'CREDITO' : 'DEBITO',
-              valor: t.valor,
-              status: 'pendente'
-            }));
-
-            const resMin = await supabase
-              .from('extratos_bancarios_transacoes')
-              .insert(payloadEssencial);
-
-            itensErr = resMin.error;
-          } else {
-            itensErr = resSemBanco.error;
-          }
-        } else {
-          itensErr = resItensAlt.error;
-        }
+      if (itensErr) {
+        throw new Error(`Falha ao gravar transações do extrato: ${itensErr.message || itensErr}`);
       }
 
       if (itensErr) throw itensErr;

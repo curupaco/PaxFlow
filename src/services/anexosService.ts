@@ -324,82 +324,18 @@ export class AnexosService {
 
     let documentoSalvo: DocumentoAnexo;
 
-    try {
-      const { data, error: dbErr } = await supabase
-        .from(this.TABELA)
-        .insert(payload)
-        .select()
-        .single();
+    const { data, error: dbErr } = await supabase
+      .from(this.TABELA)
+      .insert(payload)
+      .select()
+      .single();
 
-      if (dbErr) {
-        // Fallback para schema drift em colunas novas (42703, PGRST204 ou erro de schema cache)
-        const isColumnError =
-          dbErr.code === '42703' ||
-          dbErr.code === 'PGRST204' ||
-          dbErr.code === 'PGRST200' ||
-          dbErr.message?.includes('schema cache') ||
-          dbErr.message?.includes('column');
-
-        if (isColumnError) {
-          console.warn('[AnexosService] Colunas adicionais inexistentes ou erro de schema. Tentando payload sem colunas estendidas.');
-          const payloadBase = { ...payload };
-          delete payloadBase.numero_documento;
-          delete payloadBase.data_validade;
-          delete payloadBase.passageiro_nome;
-
-          // Se a mensagem mencionar explicitamente created_by ou se der novo erro, remove created_by
-          if (dbErr.message?.includes('created_by')) {
-            delete payloadBase.created_by;
-          }
-
-          let { data: dataBase, error: errBase } = await supabase
-            .from(this.TABELA)
-            .insert(payloadBase)
-            .select()
-            .single();
-
-          // Se ainda falhar por coluna inexistente (ex: created_by não existia no schema cache), tenta sem created_by
-          if (errBase && (
-            errBase.code === '42703' ||
-            errBase.code === 'PGRST204' ||
-            errBase.message?.includes('created_by') ||
-            errBase.message?.includes('schema cache') ||
-            errBase.message?.includes('column')
-          )) {
-            console.warn('[AnexosService] Tentando inserção essencial sem created_by e sem campos opcionais.');
-            const payloadEssencial = { ...payloadBase };
-            delete payloadEssencial.created_by;
-
-            const resEssencial = await supabase
-              .from(this.TABELA)
-              .insert(payloadEssencial)
-              .select()
-              .single();
-
-            dataBase = resEssencial.data;
-            errBase = resEssencial.error;
-          }
-
-          if (errBase) {
-            console.error('[AnexosService] Falha técnica ao salvar anexo na tabela oficial com payload base:', errBase);
-            throw new Error('Não foi possível salvar o documento no sistema. O banco de dados recusou a gravação do anexo. Por favor, tente novamente ou contate o administrador.');
-          } else {
-            documentoSalvo = { ...dataBase, ...payload } as DocumentoAnexo;
-          }
-        } else {
-          console.error('[AnexosService] Falha técnica ao gravar em documentos_anexos:', dbErr);
-          throw new Error('Não foi possível salvar o documento no sistema. O banco de dados recusou a gravação do anexo. Por favor, tente novamente ou contate o administrador.');
-        }
-      } else {
-        documentoSalvo = data as DocumentoAnexo;
-      }
-    } catch (err: any) {
-      if (err.message && err.message.includes('Não foi possível salvar o documento no sistema')) {
-        throw err;
-      }
-      console.error('[AnexosService] Exceção capturada ao gravar anexo:', err);
-      throw new Error('Não foi possível salvar o documento no sistema. O banco de dados recusou a gravação do anexo. Por favor, tente novamente ou contate o administrador.');
+    if (dbErr) {
+      console.error('[AnexosService] Falha técnica ao gravar em documentos_anexos:', dbErr);
+      throw new Error(`Não foi possível salvar o documento no sistema (${dbErr.message || dbErr.code}). Por favor, tente novamente ou contate o administrador.`);
     }
+
+    documentoSalvo = data as DocumentoAnexo;
 
     // 6. Sincronização retrocompatível com a ficha do cliente
     if (cliente_id) {
@@ -458,33 +394,25 @@ export class AnexosService {
     }
 
     // 1. Consulta a tabela oficial documentos_anexos
-    try {
-      let query = supabase.from(this.TABELA).select('*').order('created_at', { ascending: false });
+    let query = supabase.from(this.TABELA).select('*').order('created_at', { ascending: false });
 
-      if (viagemId && clienteIdEfetivo) {
-        query = query.or(`viagem_id.eq.${viagemId},cliente_id.eq.${clienteIdEfetivo}`);
-      } else if (viagemId) {
-        query = query.eq('viagem_id', viagemId);
-      } else if (clienteIdEfetivo) {
-        query = query.eq('cliente_id', clienteIdEfetivo);
-      }
+    if (viagemId && clienteIdEfetivo) {
+      query = query.or(`viagem_id.eq.${viagemId},cliente_id.eq.${clienteIdEfetivo}`);
+    } else if (viagemId) {
+      query = query.eq('viagem_id', viagemId);
+    } else if (clienteIdEfetivo) {
+      query = query.eq('cliente_id', clienteIdEfetivo);
+    }
 
-      const { data, error } = await query;
+    const { data, error } = await query;
 
-      if (!error && data) {
-        listaFinal.push(...(data as DocumentoAnexo[]));
-      } else if (
-        error &&
-        (error.code === '42P01' ||
-          error.code === '42703' ||
-          error.code === 'PGRST204' ||
-          error.code === 'PGRST200' ||
-          error.message?.includes('does not exist'))
-      ) {
-        tabelaExiste = false;
-      }
-    } catch {
-      tabelaExiste = false;
+    if (error) {
+      console.error('[AnexosService] Erro ao consultar documentos_anexos:', error);
+      throw error;
+    }
+
+    if (data) {
+      listaFinal.push(...(data as DocumentoAnexo[]));
     }
 
     // 2. Recuperação de anexos legados em viagens.observacoes e higienização automática do banco

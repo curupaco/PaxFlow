@@ -80,39 +80,16 @@ describe('ContatosEmbarqueService (Subcutâneo)', () => {
     );
   });
 
-  it('deve aplicar fallback seguro em observações quando a coluna contatos_embarque não existir (erro 42703)', async () => {
+  it('deve aplicar fail-fast transparente e rejeitar quando a coluna contatos_embarque não existir (erro 42703)', async () => {
     // Setup
     const updateError = { code: '42703', message: 'column "contatos_embarque" does not exist' };
     const updateMock = vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue({ error: updateError })
     });
-    const selectSingleMock = vi.fn().mockResolvedValue({
-      data: { observacoes: 'Observacao previa' },
-      error: null
-    });
-    const selectMock = vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        single: selectSingleMock
-      })
-    });
-    const updateFallbackMock = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null })
-    });
 
-    vi.mocked(supabase.from).mockImplementation((table: string) => {
-      if (table === 'viagens') {
-        return {
-          update: vi.fn().mockImplementation((payload: any) => {
-            if (payload.contatos_embarque !== undefined) {
-              return updateMock();
-            }
-            return updateFallbackMock(payload);
-          }),
-          select: selectMock
-        } as any;
-      }
-      return {} as any;
-    });
+    vi.mocked(supabase.from).mockReturnValue({
+      update: updateMock
+    } as any);
 
     const contatos = {
       'viagem-ida': {
@@ -123,19 +100,13 @@ describe('ContatosEmbarqueService (Subcutâneo)', () => {
       }
     };
 
-    // Action
-    const sucesso = await ContatosEmbarqueService.salvarContatos('trip-456', contatos);
-
-    // Assert
-    expect(sucesso).toBe(true);
-    expect(updateFallbackMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        observacoes: expect.stringContaining('[CONTATOS_EMBARQUE]:')
-      })
-    );
+    // Action & Assert
+    await expect(ContatosEmbarqueService.salvarContatos('trip-456', contatos)).rejects.toMatchObject({
+      code: '42703'
+    });
   });
 
-  it('deve aplicar fallback seguro em observações quando a coluna contatos_embarque não existir (erro PGRST204 do schema cache)', async () => {
+  it('deve aplicar fail-fast transparente quando houver erro PGRST204 do schema cache', async () => {
     // Setup
     const updateError = {
       code: 'PGRST204',
@@ -144,33 +115,10 @@ describe('ContatosEmbarqueService (Subcutâneo)', () => {
     const updateMock = vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue({ error: updateError })
     });
-    const selectSingleMock = vi.fn().mockResolvedValue({
-      data: { observacoes: 'Observacao original' },
-      error: null
-    });
-    const selectMock = vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        single: selectSingleMock
-      })
-    });
-    const updateFallbackMock = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null })
-    });
 
-    vi.mocked(supabase.from).mockImplementation((table: string) => {
-      if (table === 'viagens') {
-        return {
-          update: vi.fn().mockImplementation((payload: any) => {
-            if (payload.contatos_embarque !== undefined) {
-              return updateMock();
-            }
-            return updateFallbackMock(payload);
-          }),
-          select: selectMock
-        } as any;
-      }
-      return {} as any;
-    });
+    vi.mocked(supabase.from).mockReturnValue({
+      update: updateMock
+    } as any);
 
     const contatos = {
       'viagem-volta': {
@@ -181,13 +129,9 @@ describe('ContatosEmbarqueService (Subcutâneo)', () => {
       }
     };
 
-    // Action
-    const sucesso = await ContatosEmbarqueService.salvarContatos('trip-789', contatos);
-
-    // Assert
-    expect(sucesso).toBe(true);
-    expect(updateFallbackMock).toHaveBeenCalledWith({
-      observacoes: expect.stringContaining('[CONTATOS_EMBARQUE]:')
+    // Action & Assert
+    await expect(ContatosEmbarqueService.salvarContatos('trip-789', contatos)).rejects.toMatchObject({
+      code: 'PGRST204'
     });
   });
 

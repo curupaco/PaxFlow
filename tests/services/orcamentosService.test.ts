@@ -200,26 +200,17 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
     });
   });
 
-  it('deve executar fallback resiliente ao erro 42703 (coluna inexistente) ao criar lembrete', async () => {
+  it('deve aplicar fail-fast transparente ao ocorrer erro 42703 ao criar lembrete', async () => {
     // Setup
     const insertMock = vi.fn()
-      .mockResolvedValueOnce({ error: { code: '42703', message: 'column descricao does not exist' } })
-      .mockResolvedValueOnce({ error: null });
+      .mockResolvedValueOnce({ error: { code: '42703', message: 'column descricao does not exist' } });
     vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
 
-    // Action
-    await OrcamentosService.createReminder('orc-999', 'user-consultor', '2026-10-15', 'MANHA', 'Cobrar retorno');
-
-    // Assert
-    expect(insertMock).toHaveBeenCalledTimes(2);
-    expect(insertMock).toHaveBeenNthCalledWith(2, {
-      orcamento_id: 'orc-999',
-      consultor_id: 'user-consultor',
-      criador_id: 'user-consultor',
-      data_lembrete: '2026-10-15',
-      periodo: 'MANHA',
-      arquivado: false,
-    });
+    // Action & Assert
+    await expect(
+      OrcamentosService.createReminder('orc-999', 'user-consultor', '2026-10-15', 'MANHA', 'Cobrar retorno')
+    ).rejects.toMatchObject({ code: '42703' });
+    expect(insertMock).toHaveBeenCalledTimes(1);
   });
 
   it('deve carregar detalhes do cliente e suas viagens ativas', async () => {

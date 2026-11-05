@@ -1019,16 +1019,14 @@ export class ConfiguracoesPage {
         if (rpcError) throw rpcError;
 
         if (userId) {
-          try {
-            await supabase.from('profiles').update({ 
-              role: role,
-              participa_escala: participaEscala,
-              participa_metricas: participaMetricas,
-              acesso_financeiro: acessoFinanceiro
-            }).eq('id', userId);
-          } catch (errDrift: any) {
-            console.warn('[Schema Drift 42703] Não foi possível atualizar flags no cadastro inicial:', errDrift);
-          }
+          const { error: profileUpdateErr } = await supabase.from('profiles').update({ 
+            role: role,
+            participa_escala: participaEscala,
+            participa_metricas: participaMetricas,
+            acesso_financeiro: acessoFinanceiro
+          }).eq('id', userId);
+
+          if (profileUpdateErr) throw profileUpdateErr;
         }
 
         this.showToast('Novo consultor cadastrado com sucesso!', 'success');
@@ -1276,20 +1274,7 @@ export class ConfiguracoesPage {
             .update(updatePayload)
             .eq('id', c.id);
 
-          if (profileErr) {
-            if (profileErr.code === '42703' || profileErr.message?.includes('acesso_financeiro') || profileErr.message?.includes('participa_metricas')) {
-              console.warn('[Schema Drift 42703] Coluna inexistente detectada no profile. Executando fallback.');
-              delete updatePayload.acesso_financeiro;
-              delete updatePayload.participa_metricas;
-              const { error: fallbackErr } = await supabase
-                .from('profiles')
-                .update(updatePayload)
-                .eq('id', c.id);
-              if (fallbackErr) throw fallbackErr;
-            } else {
-              throw profileErr;
-            }
-          }
+          if (profileErr) throw profileErr;
 
           // 2. Se for a si mesmo, atualiza também a sessão ativa no auth
           if (isSelf) {
@@ -2713,31 +2698,10 @@ export class ConfiguracoesPage {
       };
 
       try {
-        let updateError: any = null;
-        const res = await supabase
+        const { error: updateError } = await supabase
           .from('global_settings')
           .update(payload)
           .eq('id', this.settings.id);
-
-        updateError = res.error;
-
-        // Resiliência mandatória a Schema Drift (código 42703 - coluna inexistente)
-        if (updateError && updateError.code === '42703') {
-          console.warn('[Configuracoes] Schema drift detectado ao salvar Studio ou Notificações Financeiro em global_settings (código 42703). Aplicando fallback seguro...');
-          const fallbackPayload = { ...payload };
-          delete fallbackPayload.habilitar_studio_pro;
-          delete fallbackPayload.studio_moeda_padrao;
-          delete fallbackPayload.studio_validade_dias;
-          delete fallbackPayload.studio_permitir_aceite_formal;
-          delete fallbackPayload.notificacoes_financeiro_ativas;
-
-          const retryRes = await supabase
-            .from('global_settings')
-            .update(fallbackPayload)
-            .eq('id', this.settings.id);
-
-          updateError = retryRes.error;
-        }
 
         if (updateError) throw updateError;
 

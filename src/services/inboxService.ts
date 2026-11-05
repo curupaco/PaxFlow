@@ -752,8 +752,8 @@ export class InboxService {
             vQuery = vQuery.or(`and(data_ida.gte.${dataMinimaIda},data_ida.lte.${dataMaximaIda}),and(data_volta.gte.${dataMinimaVolta},data_volta.lte.${agora.toISOString().split('T')[0]})`);
           }
 
-          if (!userIsAdmin && typeof (vQuery as any).or === 'function') {
-            vQuery = vQuery.or(`consultor_id.eq.${user.id},consultor_responsavel_id.eq.${user.id}`);
+          if (!userIsAdmin) {
+            vQuery = vQuery.eq('consultor_id', user.id);
           }
 
           const res = await vQuery;
@@ -1371,7 +1371,7 @@ export class InboxService {
           v.produtos = [];
         }
 
-        if (!userIsAdmin && v.consultor_id !== user.id && v.consultor_responsavel_id !== user.id) {
+        if (!userIsAdmin && v.consultor_id !== user.id) {
           return;
         }
 
@@ -2041,35 +2041,22 @@ export class InboxService {
       console.warn('Aviso ao vincular mensagem_destinatarios:', destErr);
     }
 
-    // Criar notificações no Inbox para cada destinatário
+    // Criar notificações no Inbox para cada destinatário (colunas oficiais)
     const notifInserts = uniqueRecipients.map(recipientId => ({
       user_id: recipientId,
       tipo_item: 'mensagem',
       item_id: createdMsg.id,
       parent_id: createdMsg.id,
-      mensagem_id: createdMsg.id,
       lida: false,
       arquivada: false
     }));
 
-    let { data: createdNotifs, error: notifErr } = await supabase
+    const { data: createdNotifs, error: notifErr } = await supabase
       .from('notificacoes')
       .insert(notifInserts)
       .select();
 
-    if (notifErr && notifErr.code === '42703') {
-      // Fallback seguro caso coluna mensagem_id não exista em notificacoes
-      const fallbackNotifs = uniqueRecipients.map(recipientId => ({
-        user_id: recipientId,
-        tipo_item: 'mensagem',
-        item_id: createdMsg.id,
-        parent_id: createdMsg.id,
-        lida: false,
-        arquivada: false
-      }));
-      const fbRes = await supabase.from('notificacoes').insert(fallbackNotifs).select();
-      createdNotifs = fbRes.data;
-    } else if (notifErr) {
+    if (notifErr) {
       console.warn('Aviso ao registrar notificações no Inbox:', notifErr);
     }
 
@@ -2108,18 +2095,7 @@ export class InboxService {
         .insert(lembreteInserts);
 
       if (lembreteErr) {
-        if (lembreteErr.code === '42703') {
-          // Fallback resiliente caso a coluna 'descricao' não exista ainda no banco
-          const fallbackInserts = lembreteInserts.map(({ descricao, ...rest }) => rest);
-          const { error: retryErr } = await supabase
-            .from('lembretes')
-            .insert(fallbackInserts);
-          if (retryErr) {
-            console.warn('Aviso ao registrar lembretes com fallback:', retryErr);
-          }
-        } else {
-          console.warn('Aviso ao registrar lembretes:', lembreteErr);
-        }
+        console.warn('Aviso ao registrar lembretes:', lembreteErr);
       }
     }
 

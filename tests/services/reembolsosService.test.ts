@@ -72,56 +72,21 @@ describe('ReembolsosService - Testes Subcutâneos e Resiliência a Schema Drift 
     expect(mockUpdateViagem).toHaveBeenCalledWith({ status: 'reembolso_solicitado' });
   });
 
-  it('deve acionar fallback Zero-Break ao detectar erro 42703 (coluna inexistente) e salvar em observacoes_financeiras', async () => {
+  it('deve aplicar fail-fast transparente quando o banco rejeitar o insert de reembolso (erro 42703)', async () => {
     // Setup
     const erroDrift42703 = {
       code: '42703',
       message: 'column "forma_devolucao" of relation "reembolsos" does not exist'
     };
 
-    const mockFallbackReembolso = {
-      id: 'reemb-fallback-456',
-      viagem_id: 'trip-999',
-      produto_viagem_id: 'prod-888',
-      valor_solicitado: 2300,
-      observacoes_financeiras: JSON.stringify({
-        forma_devolucao: 'Estorno Cartão de Crédito',
-        valor_produto: 2300,
-        valor_utilizado_pax: 0,
-        status_tratativa: 'pendente_agencia'
+    const mockInsert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: null, error: erroDrift42703 })
       })
-    };
-
-    let tentativaInsert = 0;
-    const mockInsert = vi.fn().mockImplementation((payload: any) => {
-      tentativaInsert++;
-      if (tentativaInsert === 1) {
-        // Primeira tentativa falha com erro 42703 (schema drift)
-        return {
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: null, error: erroDrift42703 })
-          })
-        };
-      }
-      // Segunda tentativa com fallback estruturado tem sucesso
-      return {
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: mockFallbackReembolso, error: null })
-        })
-      };
-    });
-
-    const mockUpdateProduto = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ data: null, error: null })
-    });
-    const mockUpdateViagem = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ data: null, error: null })
     });
 
     (supabase.from as any).mockImplementation((table: string) => {
       if (table === 'reembolsos') return { insert: mockInsert };
-      if (table === 'produtos_viagem') return { update: mockUpdateProduto };
-      if (table === 'viagens') return { update: mockUpdateViagem };
       return {};
     });
 
@@ -136,10 +101,8 @@ describe('ReembolsosService - Testes Subcutâneos e Resiliência a Schema Drift 
     });
 
     // Assert
-    expect(resultado.sucesso).toBe(true);
-    expect(tentativaInsert).toBe(2);
-    expect(resultado.data?.id).toBe('reemb-fallback-456');
-    expect(mockUpdateProduto).toHaveBeenCalledWith({ status: 'reembolsado' });
+    expect(resultado.sucesso).toBe(false);
+    expect(resultado.error).toEqual(erroDrift42703);
   });
 
   it('não deve alterar status da viagem se atualizarStatusViagem for falso (cancelamento parcial)', async () => {

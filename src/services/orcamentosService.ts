@@ -290,18 +290,7 @@ export class OrcamentosService {
       .from('lembretes')
       .insert(payload);
 
-    if (error) {
-      // Fallback resiliente caso a coluna 'descricao' ainda não exista no banco (Postgres code 42703)
-      if (error.code === '42703' && payload.descricao) {
-        delete payload.descricao;
-        const { error: retryErr } = await supabase
-          .from('lembretes')
-          .insert(payload);
-        if (retryErr) throw retryErr;
-        return;
-      }
-      throw error;
-    }
+    if (error) throw error;
   }
 
   /**
@@ -381,28 +370,12 @@ export class OrcamentosService {
       updated_at: agora.toISOString()
     };
 
-    let { error: updateErr } = await supabase
+    const { error: updateErr } = await supabase
       .from('orcamentos')
       .update(payload)
       .eq('id', orcamentoId);
 
-    if (updateErr) {
-      // Fallback para Schema Drift caso colunas de contato_realizado não existam
-      if (updateErr.code === '42703' || (updateErr.message && updateErr.message.includes('column') && updateErr.message.includes('does not exist'))) {
-        delete payload.contato_realizado;
-        delete payload.contato_realizado_por;
-        delete payload.contato_realizado_em;
-
-        const { error: retryErr } = await supabase
-          .from('orcamentos')
-          .update(payload)
-          .eq('id', orcamentoId);
-
-        if (retryErr) throw retryErr;
-      } else {
-        throw updateErr;
-      }
-    }
+    if (updateErr) throw updateErr;
 
     // 2. Registrar comentário no histórico da proposta
     try {

@@ -256,7 +256,7 @@ describe('Módulo Financeiro Unificado - Testes Subcutâneos de Permissão e Nav
     }));
   });
 
-  it('deve implementar fallback defensivo se a tabela fin_categorias ou fin_contas_bancarias retornar 42P01', async () => {
+  it('deve falhar de forma transparente (Fail-Fast) se a tabela fin_categorias retornar 42P01', async () => {
     // Setup
     const { FinPlanoContasService } = await import('../../src/services/finPlanoContasService');
     const { supabase } = await import('../../src/services/supabase');
@@ -275,9 +275,9 @@ describe('Módulo Financeiro Unificado - Testes Subcutâneos de Permissão e Nav
     // Action
     const res = await FinPlanoContasService.salvarCategoria('Teste Fallback', 'tipo-1');
 
-    // Assert: Zero-Break fallback ativado
-    expect(res.sucesso).toBe(true);
-    expect(res.id).toMatch(/^temp-/);
+    // Assert: Fail-Fast transparente
+    expect(res.sucesso).toBe(false);
+    expect(res.erro).toBeDefined();
   });
 
   it('deve formatar a coluna DATA no Contas a Pagar exibindo data de pagamento para status pago e vencimento para status pendente', () => {

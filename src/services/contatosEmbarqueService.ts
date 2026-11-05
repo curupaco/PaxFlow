@@ -156,7 +156,6 @@ export class ContatosEmbarqueService {
     contatos: Record<string, ContatoEmbarqueRegistro>
   ): Promise<boolean> {
     try {
-      // 1. Tentar salvar diretamente na coluna nativa contatos_embarque (sem updated_at, pois a tabela viagens não possui esse campo)
       const { error } = await supabase
         .from('viagens')
         .update({
@@ -164,50 +163,8 @@ export class ContatosEmbarqueService {
         })
         .eq('id', viagemId);
 
-      if (!error) return true;
-
-      // 2. Se a coluna contatos_embarque não existir (erro 42703, PGRST204 ou mensagem de schema cache / does not exist)
-      const errCode = (error as any).code;
-      const errMsg = error.message || '';
-      const isMissingColumn =
-        errCode === '42703' ||
-        errCode === 'PGRST204' ||
-        errMsg.includes('schema cache') ||
-        errMsg.includes('column') ||
-        errMsg.includes('does not exist') ||
-        errMsg.includes('contatos_embarque');
-
-      if (isMissingColumn) {
-        console.warn(
-          'Coluna contatos_embarque não encontrada no banco Supabase. Salvando com segurança em observações da viagem:',
-          errMsg
-        );
-
-        const query = supabase
-          .from('viagens')
-          .select('observacoes')
-          .eq('id', viagemId);
-
-        const { data: vData } = typeof (query as any).maybeSingle === 'function'
-          ? await (query as any).maybeSingle()
-          : await (query as any).single();
-
-        let currentObs = vData?.observacoes || '';
-        currentObs = currentObs.replace(/\[CONTATOS_EMBARQUE\]:\s*\{.*\}\n?/g, '').trim();
-        const novoObs = `${currentObs}\n[CONTATOS_EMBARQUE]: ${JSON.stringify(contatos)}`.trim();
-
-        const { error: errObs } = await supabase
-          .from('viagens')
-          .update({
-            observacoes: novoObs
-          })
-          .eq('id', viagemId);
-
-        if (errObs) throw errObs;
-        return true;
-      }
-
-      throw error;
+      if (error) throw error;
+      return true;
     } catch (err) {
       console.error('Erro ao persistir contatos de pré-embarque:', err);
       throw err;

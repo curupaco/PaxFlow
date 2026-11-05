@@ -1058,10 +1058,11 @@ describe('InboxService Subcutaneous Flow Tests', () => {
     expect(result.id).toBe('msg-recuperada-123');
   });
 
-  it('deve executar fallback resiliente quando a insercao em notificacoes falhar com erro 42703 (coluna mensagem_id inexistente)', async () => {
+  it('deve inserir notificacoes diretamente com as colunas oficiais sem gerar erro 42703', async () => {
     // Setup
     const remetenteId = 'consultor-origem-1';
     const recipientId = 'consultor-destino-2';
+    let notifPayloadRecebido: any = null;
     let notifInsertAttempts = 0;
 
     (supabase.from as any).mockImplementation((table: string) => {
@@ -1086,17 +1087,10 @@ describe('InboxService Subcutaneous Flow Tests', () => {
         return {
           insert: vi.fn((payload: any) => {
             notifInsertAttempts++;
-            if (notifInsertAttempts === 1) {
-              return {
-                select: vi.fn().mockResolvedValue({
-                  data: null,
-                  error: { code: '42703', message: 'column "mensagem_id" of relation "notificacoes" does not exist' }
-                })
-              };
-            }
+            notifPayloadRecebido = payload;
             return {
               select: vi.fn().mockResolvedValue({
-                data: [{ id: 'notif-fallback-1', user_id: recipientId }],
+                data: [{ id: 'notif-1', user_id: recipientId }],
                 error: null
               })
             };
@@ -1110,12 +1104,14 @@ describe('InboxService Subcutaneous Flow Tests', () => {
     const result = await InboxService.sendDirectMessage({
       remetenteId,
       recipients: [recipientId],
-      assunto: 'Teste Schema Drift 42703',
-      conteudo: 'Verificando resiliência de schema na tabela de notificações'
+      assunto: 'Teste Notificacoes Schema Real',
+      conteudo: 'Verificando insercao direta com colunas oficiais'
     });
 
     // Assert
-    expect(notifInsertAttempts).toBe(2);
+    expect(notifInsertAttempts).toBe(1);
+    expect(notifPayloadRecebido[0].mensagem_id).toBeUndefined();
+    expect(notifPayloadRecebido[0].tipo_item).toBe('mensagem');
     expect(result).toBeDefined();
     expect(result.id).toBe('msg-schema-test');
   });
