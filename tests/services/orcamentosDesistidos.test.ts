@@ -83,7 +83,7 @@ describe('Orçamentos Desistidos - Validação de Contato do Gestor e Reabertura
     }));
   });
 
-  it('deve tratar erro 42703 (schema drift) em alternarContatoDesistencia com fallback resiliente sem travar', async () => {
+  it('deve aplicar fail-fast e lançar erro caso ocorra falha de coluna no Supabase em alternarContatoDesistencia', async () => {
     // Setup
     const orcId = 'orc-desistido-3';
     const perfilAdmin = {
@@ -97,39 +97,20 @@ describe('Orçamentos Desistidos - Validação de Contato do Gestor e Reabertura
       message: 'column "contato_realizado" does not exist'
     };
 
-    const firstUpdateEqMock = vi.fn().mockResolvedValue({ data: null, error: schemaDriftError });
-    const retryUpdateEqMock = vi.fn().mockResolvedValue({ data: null, error: null });
-    const updateMock = vi.fn()
-      .mockReturnValueOnce({ eq: firstUpdateEqMock })
-      .mockReturnValueOnce({ eq: retryUpdateEqMock });
-
-    const singleMock = vi.fn().mockResolvedValue({
-      data: { notas_negociacao: 'Notas anteriores do cliente' },
-      error: null
-    });
-    const eqSelectMock = vi.fn().mockReturnValue({ single: singleMock });
-    const selectMock = vi.fn().mockReturnValue({ eq: eqSelectMock });
+    const updateEqMock = vi.fn().mockResolvedValue({ data: null, error: schemaDriftError });
+    const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'orcamentos') {
         return {
-          update: updateMock,
-          select: selectMock
+          update: updateMock
         } as any;
       }
       return {} as any;
     });
 
-    // Action
-    const result = await OrcamentosService.alternarContatoDesistencia(orcId, true, perfilAdmin);
-
-    // Assert
-    expect(result.success).toBe(true);
-    expect(result.contatoRealizado).toBe(true);
-    expect(updateMock).toHaveBeenCalledTimes(2);
-    expect(updateMock).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      notas_negociacao: expect.stringContaining('[Contato Gestor: Confirmado')
-    }));
+    // Action & Assert
+    await expect(OrcamentosService.alternarContatoDesistencia(orcId, true, perfilAdmin)).rejects.toEqual(schemaDriftError);
   });
 
   it('deve reabrir o orçamento movendo para SOLICITADO, limpando sub_status e gravando o motivo no histórico', async () => {

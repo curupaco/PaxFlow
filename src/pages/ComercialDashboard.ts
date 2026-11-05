@@ -201,7 +201,7 @@ export class ComercialDashboard {
    * Configura ouvinte para sincronização do localStorage entre abas
    */
   private setupStorageListener(): void {
-    if (this.storageListener) return;
+    if (typeof window === 'undefined' || this.storageListener) return;
 
     this.storageListener = (e: StorageEvent) => {
       const keyOrc = `paxflow-orcamentos-${this.user?.id || 'global'}`;
@@ -220,7 +220,7 @@ export class ComercialDashboard {
       this.realtimeChannel.unsubscribe();
       this.realtimeChannel = null;
     }
-    if (this.storageListener) {
+    if (this.storageListener && typeof window !== 'undefined') {
       window.removeEventListener('storage', this.storageListener);
       this.storageListener = null;
     }
@@ -259,14 +259,41 @@ export class ComercialDashboard {
   }
 
   /**
+   * Obtém a data de corte inicial para filtrar orçamentos e viagens na competência selecionada
+   */
+  private getDataCortePeriodo(): string | null {
+    const now = new Date();
+    switch (this.selectedPeriod) {
+      case 'mes_atual':
+        return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      case '30_dias':
+        return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      case '90_dias':
+        return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+      case 'ano_atual':
+        return new Date(now.getFullYear(), 0, 1).toISOString();
+      case 'todo_periodo':
+      default:
+        return null;
+    }
+  }
+
+  /**
    * Carrega os orçamentos e viagens com tratamento de fallback local/offline
    */
   private async loadData(): Promise<void> {
     try {
-      // 1. Carregar Orçamentos do banco
-      let queryOrc = supabase.from('orcamentos').select('*');
+      const dataCorte = this.getDataCortePeriodo();
+
+      // 1. Carregar Orçamentos do banco com projeção cirúrgica e corte temporal
+      let queryOrc = supabase.from('orcamentos').select(
+        'id, consultor_id, cliente_id, nome_cliente, contato, destino, data_viagem, temperatura, tags, status, sub_status, notas_negociacao, valor_proposta, created_at, updated_at'
+      );
       if (this.perfil?.role !== 'admin' && this.user?.id) {
         queryOrc = queryOrc.eq('consultor_id', this.user.id);
+      }
+      if (dataCorte) {
+        queryOrc = queryOrc.gte('created_at', dataCorte);
       }
       const { data: dataOrc, error: errOrc } = await queryOrc;
       if (errOrc) throw errOrc;
@@ -290,8 +317,10 @@ export class ComercialDashboard {
         updatedAt: d.updated_at
       }));
 
-      // 2. Carregar Viagens do banco para métricas comerciais e relatórios
-      let queryVia = supabase.from('viagens').select('*, produtos:produtos_viagem(*)');
+      // 2. Carregar Viagens do banco com projeção cirúrgica e corte temporal
+      let queryVia = supabase.from('viagens').select(
+        'id, codigo_ref, cliente_id, consultor_id, destino, data_ida, data_volta, valor_total, status, codigo_localizador, created_at, updated_at, data_financeiro, produtos:produtos_viagem(id, viagem_id, tipo_produto, valor_venda, comissao, comissao_total, markup, rav)'
+      );
       if (this.perfil?.role !== 'admin' && this.user?.id) {
         const parceiroViagemIds = await ViagensDivisoesService.obterViagensDivididasPorConsultor(this.user.id);
         if (parceiroViagemIds.length > 0) {
@@ -300,37 +329,30 @@ export class ComercialDashboard {
           queryVia = queryVia.eq('consultor_id', this.user.id);
         }
       }
+      if (dataCorte) {
+        queryVia = queryVia.or(`created_at.gte.${dataCorte},data_financeiro.gte.${dataCorte}`);
+      }
       const { data: dataVia, error: errVia } = await queryVia;
       if (errVia) throw errVia;
 
-      // 2.1. Carrega divisões de parcerias entre consultores (com resiliência a schema drift)
+      // 2.1. Carrega divisões de parcerias entre consultores (governança estrita, sem fallback de schema drift)
       const divisoesMap = new Map<string, any[]>();
       try {
-        let divData: any[] | null = null;
-        let divError: any = null;
-        const res = await supabase
+        const { data: divData, error: divError } = await supabase
           .from('viagens_divisoes')
           .select('viagem_id, consultor_id, percentual, percentual_rav, is_titular');
-        divData = res.data;
-        divError = res.error;
 
-        if (divError && (divError.code === '42703' || divError.message?.includes('percentual_rav'))) {
-          const fallbackRes = await supabase
-            .from('viagens_divisoes')
-            .select('viagem_id, consultor_id, percentual, is_titular');
-          divData = fallbackRes.data;
-          divError = fallbackRes.error;
-        }
+        if (divError) throw divError;
 
-        if (!divError && divData) {
+        if (divData) {
           divData.forEach((row: any) => {
             const arr = divisoesMap.get(row.viagem_id) || [];
             arr.push(row);
             divisoesMap.set(row.viagem_id, arr);
           });
         }
-      } catch (errDiv) {
-        console.warn('Erro defensivo ao carregar viagens_divisoes no ComercialDashboard:', errDiv);
+      } catch (errDiv: any) {
+        console.warn('Erro ao carregar viagens_divisoes no ComercialDashboard:', errDiv.message || errDiv);
       }
 
       this.viagens = (dataVia || []).map(d => ({
@@ -348,7 +370,6 @@ export class ComercialDashboard {
         valorTotal: d.valor_total ? Number(d.valor_total) : 0,
         status: d.status,
         codigoLocalizador: d.codigo_localizador,
-        observacoes: d.observacoes,
         createdAt: d.created_at,
         updatedAt: d.updated_at,
         dataFinanceiro: d.data_financeiro,
@@ -357,17 +378,22 @@ export class ComercialDashboard {
         divisoes: divisoesMap.get(d.id) || []
       }));
 
-      // 3. Carregar Pagamentos e Formas de Recebimento
+      // 3. Carregar Pagamentos e Formas de Recebimento (apenas das viagens carregadas)
       this.locPagamentos = [];
       try {
-        const { data: dataPags } = await supabase
-          .from('loc_pagamentos')
-          .select('*, formas_recebimento(*)');
-        if (dataPags) {
-          this.locPagamentos = dataPags;
+        const viagemIds = (dataVia || []).map(v => v.id);
+        if (viagemIds.length > 0) {
+          const { data: dataPags, error: errPags } = await supabase
+            .from('loc_pagamentos')
+            .select('viagem_id, valor, formas_recebimento(nome)')
+            .in('viagem_id', viagemIds);
+          if (errPags) throw errPags;
+          if (dataPags) {
+            this.locPagamentos = dataPags;
+          }
         }
-      } catch (err) {
-        console.warn('Erro ao carregar pagamentos no dashboard:', err);
+      } catch (err: any) {
+        console.warn('Erro ao carregar pagamentos no dashboard:', err.message || err);
       }
 
     } catch (err: any) {
@@ -451,9 +477,20 @@ export class ComercialDashboard {
   private setupEventListeners(): void {
     // Filtro de Período
     const selectPeriodo = document.getElementById('select-dashboard-periodo') as HTMLSelectElement;
-    selectPeriodo?.addEventListener('change', () => {
+    selectPeriodo?.addEventListener('change', async () => {
       this.selectedPeriod = selectPeriodo.value as PeriodType;
-      this.renderMetricsSection();
+      const metricsContainer = document.getElementById('dashboard-metrics-container');
+      if (metricsContainer) {
+        metricsContainer.style.opacity = '0.5';
+      }
+      try {
+        await this.loadData();
+      } finally {
+        if (metricsContainer) {
+          metricsContainer.style.opacity = '1';
+        }
+        this.renderMetricsSection();
+      }
     });
 
     // Filtro de Consultor (apenas Admins)
@@ -1137,8 +1174,8 @@ export class ComercialDashboard {
 
     try {
       const [{ data: clientesData }, { data: orcamentosData }] = await Promise.all([
-        supabase.from('clientes').select('*'),
-        supabase.from('orcamentos').select('*')
+        supabase.from('clientes').select('id, nome, email, telefone, data_nascimento, tags, consultor_id, created_at'),
+        supabase.from('orcamentos').select('id, consultor_id, cliente_id, destino, status, created_at')
       ]);
 
       const clientes = clientesData || [];

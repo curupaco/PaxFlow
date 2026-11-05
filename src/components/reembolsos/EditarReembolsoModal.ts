@@ -12,7 +12,7 @@ import { renderCurrencyInputHTML, parseDoubleBr, formatCurrencyValue, setupFormV
 export interface EditarReembolsoModalOptions {
   reembolso: any;
   showToast: (msg: string, type: 'success' | 'error', err?: any) => void;
-  onSucesso?: (novoStatusTratativa: string) => void | Promise<void>;
+  onSucesso?: (novoStatusTratativa: string, dadosAtualizados?: any) => void | Promise<void>;
 }
 
 export class EditarReembolsoModal {
@@ -149,29 +149,10 @@ export class EditarReembolsoModal {
       };
 
       try {
-        let { error } = await supabase
+        const { error } = await supabase
           .from('reembolsos')
           .update(updatePayload)
           .eq('id', r.id);
-
-        // Fallback defensivo para schema drift (42703)
-        if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
-          const fallbackPayload = {
-            status: basePayload.status,
-            data_resolucao: basePayload.data_resolucao,
-            valor_solicitado: novoValorSolicitado,
-            valor_aprovado: novoValorAprovado,
-            observacoes_financeiras: JSON.stringify({
-              status_tratativa: basePayload.status_tratativa,
-              valor_produto: novoValorProduto,
-              valor_utilizado_pax: novoValorUtilizadoPax,
-              obs: novasObs,
-              atualizado_em: new Date().toISOString()
-            })
-          };
-          const fallbackRes = await supabase.from('reembolsos').update(fallbackPayload).eq('id', r.id);
-          error = fallbackRes.error;
-        }
 
         if (error) throw error;
 
@@ -179,7 +160,7 @@ export class EditarReembolsoModal {
         fechar();
 
         if (onSucesso) {
-          await onSucesso(novoStatusTratativa);
+          await onSucesso(novoStatusTratativa, updatePayload);
         }
 
       } catch (err: any) {

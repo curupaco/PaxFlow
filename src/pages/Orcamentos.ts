@@ -25,7 +25,7 @@ import {
   parseDoubleBr,
   parsePhoneValue
 } from '../utils/masks';
-import { highlightMatch } from '../utils/textHelper';
+import { highlightMatch, debounce } from '../utils/textHelper';
 import { validarPassoWizardConversao } from '../controllers/orcamentosController';
 import { renderSkeletonCards } from '../utils/skeletonHelper';
 import './Orcamentos.css';
@@ -63,6 +63,7 @@ export class OrcamentosPage {
   }
 
   private loadColumnSorts(): void {
+    if (typeof localStorage === 'undefined') return;
     const key = `paxflow-orcamentos-sorts-${this.user?.id || 'global'}`;
     const saved = localStorage.getItem(key);
     if (saved) {
@@ -75,11 +76,16 @@ export class OrcamentosPage {
   }
 
   private saveColumnSorts(): void {
+    if (typeof localStorage === 'undefined') return;
     const key = `paxflow-orcamentos-sorts-${this.user?.id || 'global'}`;
     localStorage.setItem(key, JSON.stringify(this.columnSorts));
   }
 
   private loadShowAllConcluded(): void {
+    if (typeof localStorage === 'undefined') {
+      this.showAllConcluded = false;
+      return;
+    }
     const key = `paxflow-orcamentos-show-all-concluded-${this.user?.id || 'global'}`;
     const saved = localStorage.getItem(key);
     if (saved !== null) {
@@ -90,6 +96,7 @@ export class OrcamentosPage {
   }
 
   private saveShowAllConcluded(): void {
+    if (typeof localStorage === 'undefined') return;
     const key = `paxflow-orcamentos-show-all-concluded-${this.user?.id || 'global'}`;
     localStorage.setItem(key, String(this.showAllConcluded));
   }
@@ -112,10 +119,9 @@ export class OrcamentosPage {
 
 
 
-      // 2. Carregar dados (Orçamentos, Consultores, Clientes e Origens de Lead)
+      // 2. Carregar dados (Orçamentos, Consultores e Origens de Lead - Clientes carregados sob demanda via lazy loading)
       await this.loadConsultores();
       await this.loadOrcamentos();
-      await this.loadClientes();
       await this.loadOrigensLead();
 
       // 3. Renderizar interface principal (que já configura os ouvintes de eventos)
@@ -211,10 +217,12 @@ export class OrcamentosPage {
 
   /**
    * Busca os orçamentos no Supabase com fallback offline robusto
+   * Carrega por padrão propostas ativas + concluídas recentes (últimos 30 dias), permitindo carregar todo o histórico sob demanda.
    */
-  private async loadOrcamentos(): Promise<void> {
+  private async loadOrcamentos(incluirTodos?: boolean): Promise<void> {
     try {
-      this.orcamentos = await OrcamentosService.loadOrcamentos(this.user, this.perfil);
+      const carregarTodos = incluirTodos !== undefined ? incluirTodos : this.showAllConcluded;
+      this.orcamentos = await OrcamentosService.loadOrcamentos(this.user, this.perfil, { incluirTodosConcluidos: carregarTodos });
       this.isFallbackMode = false;
     } catch (err: any) {
       console.error('Erro ao carregar orçamentos do Supabase:', err.message);
@@ -365,12 +373,18 @@ export class OrcamentosPage {
     // Vincular botões dentro do Kanban
     this.setupColumnButtons();
 
-    // Evento de Alternar Exibição de Concluídos do Mês Corrente / Todos
-    document.getElementById('btn-toggle-concluidos-mes')?.addEventListener('click', () => {
+    // Evento de Alternar Exibição de Concluídos Recentes / Todos
+    const toggleConcluidosHandler = async () => {
       this.showAllConcluded = !this.showAllConcluded;
       this.saveShowAllConcluded();
+      if (this.showAllConcluded) {
+        await this.loadOrcamentos(true);
+      }
       this.render();
-    });
+    };
+
+    document.getElementById('btn-toggle-concluidos-mes')?.addEventListener('click', toggleConcluidosHandler);
+    document.getElementById('btn-link-mostrar-todos-historicos')?.addEventListener('click', toggleConcluidosHandler);
 
     // Evento de Filtro de Concluídos (Viagem Fechada / Desistência)
     const selectConcluido = document.getElementById('select-concluido-filtro') as HTMLSelectElement;
@@ -443,7 +457,6 @@ export class OrcamentosPage {
           const success = await this.persistOrcamento(orc);
           if (success) {
             this.showToast('Orçamento em andamento! Hora de criar a proposta.', 'success');
-            await this.loadOrcamentos();
             this.render();
           }
         }
@@ -474,7 +487,6 @@ export class OrcamentosPage {
           const success = await this.persistOrcamento(orc);
           if (success) {
             this.showToast('Orçamento retornado para Solicitado! Tempo na etapa reiniciado.', 'success');
-            await this.loadOrcamentos();
             this.render();
           }
         }
@@ -495,7 +507,6 @@ export class OrcamentosPage {
           const success = await this.persistOrcamento(orc);
           if (success) {
             this.showToast('Orçamento retornado para ajuste! Tempo na etapa reiniciado.', 'success');
-            await this.loadOrcamentos();
             this.render();
           }
         }
@@ -574,7 +585,14 @@ export class OrcamentosPage {
           const res = await OrcamentosService.alternarContatoDesistencia(id, checked, this.perfil);
           if (res.success) {
             this.showToast(checked ? 'Contato com cliente registrado!' : 'Contato desmarcado.', 'success');
-            await this.loadOrcamentos();
+            const orc = this.orcamentos.find(o => o.id === id);
+            if (orc) {
+              orc.contatoRealizado = checked;
+              orc.contato_realizado = checked;
+              orc.contatoRealizadoPor = res.contatoRealizadoPor;
+              orc.contatoRealizadoPorNome = res.contatoRealizadoPorNome;
+              orc.contatoRealizadoEm = res.contatoRealizadoEm;
+            }
             this.render();
           }
         } catch (err: any) {
@@ -725,7 +743,6 @@ export class OrcamentosPage {
           const success = await this.persistOrcamento(orc);
           if (success) {
             this.showToast(`Temperatura alterada para ${temp}!`, 'success');
-            await this.loadOrcamentos();
             this.render();
           }
         }
@@ -1087,6 +1104,12 @@ export class OrcamentosPage {
             </div>
             ${this.renderSortControls('CONCLUIDO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
+              ${!this.showAllConcluded ? `
+                <div class="px-3 py-2 text-center text-[10.5px] text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/50 rounded-xl border border-slate-200/50 dark:border-slate-700/40">
+                  <span>Exibindo recentes (últimos 30 dias).</span>
+                  <button type="button" id="btn-link-mostrar-todos-historicos" class="text-indigo-600 dark:text-indigo-400 font-extrabold hover:underline ml-1 cursor-pointer">Ver histórico completo</button>
+                </div>
+              ` : ''}
               ${concluido.map(o => this.renderCardHtml(o)).join('')}
               ${concluido.length === 0 ? this.renderEmptySlot() : ''}
             </div>
@@ -1672,15 +1695,21 @@ export class OrcamentosPage {
       container?.appendChild(dropdown);
     };
 
+    const debouncedFilter = debounce((inputEl: HTMLInputElement, field: 'nome' | 'telefone' | 'email') => {
+      filterAndShowSuggestions(inputEl, field);
+    }, 300);
+
     const setupInputAutocomplete = (inputEl: HTMLInputElement, field: 'nome' | 'telefone' | 'email') => {
       inputEl.addEventListener('input', () => {
         this.selectedClienteId = null; // Reset linkage if manual edits occur
         clearLinkedClientIndicator();
-        filterAndShowSuggestions(inputEl, field);
+        debouncedFilter(inputEl, field);
       });
 
       inputEl.addEventListener('focus', () => {
-        filterAndShowSuggestions(inputEl, field);
+        if (inputEl.value.trim().length >= 2) {
+          filterAndShowSuggestions(inputEl, field);
+        }
       });
     };
 
@@ -3736,7 +3765,13 @@ export class OrcamentosPage {
         if (res.success) {
           this.showToast('Orçamento reaberto com sucesso e movido para Solicitado!', 'success');
           this.closeModal();
-          await this.loadOrcamentos();
+          orc.status = 'SOLICITADO';
+          orc.subStatus = undefined;
+          orc.contatoRealizado = false;
+          orc.contato_realizado = false;
+          if (res.orcamentoAtualizado?.notas_negociacao) {
+            orc.notasNegociacao = res.orcamentoAtualizado.notas_negociacao;
+          }
           this.render();
         }
       } catch (err: any) {

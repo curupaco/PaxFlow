@@ -197,7 +197,7 @@ describe('Subcutaneous: Relatório de Desistências - Abertura e Gestão de Prop
     expect(updateEqMock).toHaveBeenCalledWith('id', orcId);
   });
 
-  it('deve alternar status de contato com fallback resiliente para schema drift 42703', async () => {
+  it('deve aplicar fail-fast transparente e lançar erro caso ocorra falha de coluna 42703 em alternarContatoDesistencia', async () => {
     // Setup
     const orcId = 'orc-contato-drift';
     const perfilAdmin = { id: 'admin-1', nome: 'Admin PaxFlow', role: 'admin' } as any;
@@ -207,30 +207,15 @@ describe('Subcutaneous: Relatório de Desistências - Abertura e Gestão de Prop
       message: 'column "contato_realizado" does not exist'
     };
 
-    const singleMock = vi.fn().mockResolvedValue({
-      data: { notas_negociacao: 'Nota anterior do cliente' },
-      error: null
-    });
-    const selectEqMock = vi.fn().mockReturnValue({ single: singleMock });
-    const selectMock = vi.fn().mockReturnValue({ eq: selectEqMock });
-
-    const updateEqMock = vi.fn()
-      .mockResolvedValueOnce({ data: null, error: schemaDriftError })
-      .mockResolvedValueOnce({ data: null, error: null });
+    const updateEqMock = vi.fn().mockResolvedValue({ data: null, error: schemaDriftError });
     const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
 
     vi.mocked(supabase.from).mockReturnValue({
-      select: selectMock,
       update: updateMock,
     } as any);
 
-    // Action
-    const result = await OrcamentosService.alternarContatoDesistencia(orcId, true, perfilAdmin);
-
-    // Assert
-    expect(result.success).toBe(true);
-    expect(result.contatoRealizado).toBe(true);
-    expect(updateMock).toHaveBeenCalledTimes(2);
+    // Action & Assert
+    await expect(OrcamentosService.alternarContatoDesistencia(orcId, true, perfilAdmin)).rejects.toEqual(schemaDriftError);
   });
 });
 

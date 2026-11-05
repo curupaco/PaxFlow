@@ -84,11 +84,31 @@ export class ConciliacaoPage {
     this.render();
 
     try {
-      const [transacoes, pendentesLocs, fechamentos, contasPagar] = await Promise.all([
-        ConciliacaoService.listarTransacoesExtrato(),
-        ConciliacaoService.listarRecebimentosPendentes(),
+      const transacoes = await ConciliacaoService.listarTransacoesExtrato();
+
+      // Delimita a janela de consulta baseada nas datas das transações do extrato (+/- 45 dias)
+      let dataInicio: string | undefined;
+      let dataFim: string | undefined;
+
+      const datasTransacoes = transacoes
+        .map(t => t.data_transacao)
+        .filter(Boolean)
+        .sort();
+
+      if (datasTransacoes.length > 0) {
+        const primeiraData = new Date(datasTransacoes[0] + 'T00:00:00');
+        const ultimaData = new Date(datasTransacoes[datasTransacoes.length - 1] + 'T23:59:59');
+        dataInicio = new Date(primeiraData.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString();
+        dataFim = new Date(ultimaData.getTime() + 45 * 24 * 60 * 60 * 1000).toISOString();
+      }
+
+      const [pendentesLocs, fechamentos, contasPagar] = await Promise.all([
+        ConciliacaoService.listarRecebimentosPendentes({ dataInicio, dataFim }),
         ConciliacaoService.listarFechamentos(),
-        ConciliacaoService.listarContasPagarConciliacao()
+        ConciliacaoService.listarContasPagarConciliacao({
+          dataInicio: dataInicio ? dataInicio.split('T')[0] : undefined,
+          dataFim: dataFim ? dataFim.split('T')[0] : undefined
+        })
       ]);
 
       this.transacoes = transacoes;
@@ -698,7 +718,8 @@ export class ConciliacaoPage {
             locPagamentoIds: [locId]
           });
           showCustomAlert('Casamento inteligente realizado com sucesso! 🎯', 'success');
-          await this.carregarDados();
+          // Atualização cirúrgica em memória sem recarregar da rede
+          this.aplicarConciliacaoEmMemoria(transacaoId, [locId]);
         } catch (e: any) {
           showCustomAlert(`Erro ao conciliar: ${e.message || 'Erro desconhecido'}`, 'error');
           (btn as HTMLButtonElement).disabled = false;
@@ -727,7 +748,8 @@ export class ConciliacaoPage {
 
           if (res.sucesso) {
             showCustomAlert('Débito conciliado com a Conta a Pagar com sucesso! 🎯', 'success');
-            await this.carregarDados();
+            // Atualização cirúrgica em memória sem recarregar da rede
+            this.aplicarConciliacaoEmMemoria(transacaoId, undefined, contaId);
           } else {
             showCustomAlert(res.erro || 'Erro ao conciliar saída', 'error');
             (btn as HTMLButtonElement).disabled = false;
@@ -818,6 +840,43 @@ export class ConciliacaoPage {
         }
       });
     });
+  }
+
+  /**
+   * Atualiza o estado da conciliação em memória após vincular ou aceitar Smart Match
+   */
+  public aplicarConciliacaoEmMemoria(transacaoId: string, locPagamentoIds?: string[], contaPagarId?: string): void {
+    // 1. Atualiza status da transação para 'conciliado'
+    const transacao = this.transacoes.find(t => t.id === transacaoId);
+    if (transacao) {
+      transacao.status = 'conciliado';
+      if (locPagamentoIds && locPagamentoIds.length > 0) {
+        (transacao as any).loc_pagamento_id = locPagamentoIds[0];
+      }
+      if (contaPagarId) {
+        (transacao as any).conta_pagar_id = contaPagarId;
+      }
+    }
+
+    // 2. Remove recebimento conciliado da lista de pendentes em memória
+    if (locPagamentoIds && locPagamentoIds.length > 0) {
+      const idsSet = new Set(locPagamentoIds);
+      this.pendentesLocs = this.pendentesLocs.filter(p => !idsSet.has(p.id));
+    }
+
+    // 3. Remove conta a pagar conciliada da lista de contas ativas em memória
+    if (contaPagarId) {
+      this.contasPagar = this.contasPagar.filter(c => c.id !== contaPagarId);
+    }
+
+    // 4. Remove a sugestão de Smart Match já resolvida
+    this.sugestoes = this.sugestoes.filter(s => s.transacaoExtratoId !== transacaoId);
+
+    // 5. Recalcula resumo localmente sem chamadas de rede
+    this.resumo = ConciliacaoService.calcularResumo(this.transacoes, this.pendentesLocs);
+
+    // 6. Atualiza exibição na tela
+    this.render();
   }
 
   private renderAuthError(msg: string): void {

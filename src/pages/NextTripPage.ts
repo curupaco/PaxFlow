@@ -115,31 +115,7 @@ export class NextTripPage {
             q = q.eq('consultor_id', this.user.id);
           }
 
-          const res = await q;
-          if (res && res.error) {
-            let fallbackQ = supabase
-              .from('viagens')
-              .select(`
-                id,
-                codigo_ref,
-                destino,
-                data_ida,
-                data_volta,
-                status,
-                consultor_id,
-                nps_nota,
-                cliente_id,
-                passageiros,
-                created_at,
-                reembolsos (status),
-                cliente:clientes (id, nome, telefone, email, cpf, next_trip_snooze_until)
-              `);
-            if (!isAdmin && this.user?.id) {
-              fallbackQ = fallbackQ.eq('consultor_id', this.user.id);
-            }
-            return await fallbackQ;
-          }
-          return res;
+          return await q;
         } catch (_) {
           return { data: [] };
         }
@@ -184,27 +160,7 @@ export class NextTripPage {
             q = q.eq('consultor_id', this.user.id);
           }
 
-          const res = await q;
-          if (res && res.error) {
-            let fallbackQ = supabase
-              .from('orcamentos')
-              .select(`
-                id,
-                status,
-                destino,
-                cliente_id,
-                cliente_nome,
-                cliente_email,
-                consultor_id,
-                created_at,
-                updated_at
-              `);
-            if (!isAdmin && this.user?.id) {
-              fallbackQ = fallbackQ.eq('consultor_id', this.user.id);
-            }
-            return await fallbackQ;
-          }
-          return res;
+          return await q;
         } catch (_) {
           return { data: [] };
         }

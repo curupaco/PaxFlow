@@ -425,7 +425,7 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'orcamentos',
     label: 'Funil de Vendas de Orçamentos',
     description: 'Etapas de negociação pelas quais passa uma solicitação de orçamento.',
-    details: 'As etapas padrão do funil no PaxFlow são:\n\n- **Solicitado**: Pedido do cliente recebido, aguardando cotação.\n- **Em Andamento**: Consultor pesquisando tarifas ou enviando proposta.\n- **Aguardando**: Proposta enviada, aguardando resposta/feedback do cliente.\n- **Concluído**: Negociação encerrada (Aceito ou Desistência).'
+    details: 'As etapas padrão do funil no PaxFlow são:\n\n- **Solicitado**: Pedido do cliente recebido, aguardando cotação.\n- **Em Andamento**: Consultor pesquisando tarifas ou enviando proposta.\n- **Aguardando**: Proposta enviada, aguardando resposta/feedback do cliente.\n- **Concluído**: Negociação encerrada (Aceito ou Desistência).\n\n### ⚡ Arquitetura de Alta Performance:\n- **Abertura Ultrarrápida (< 300ms)**: O funil abre instantaneamente sem varredura pesada de clientes na carga inicial.\n- **Busca de Clientes Sob Demanda**: No formulário de novo orçamento, a digitação a partir de 3 caracteres aciona busca remota assíncrona com `debounce` de 300ms, exibindo os resultados mais relevantes sem sobrecarregar a memória.\n- **Controle de Propostas Concluídas**: A coluna *Concluído* exibe por padrão as propostas recentes dos últimos 30 dias. Para carregar o histórico completo acumulado da agência, basta clicar no ícone `👁️` ou no link de expansão de histórico.\n- **Interações Instantâneas**: Transições de status, alterações de temperatura e registros de contato do gestor mutam os cartões na tela de forma instantânea sem recarga destrutiva da rede.'
   },
   {
     id: 'substatus-orcamento',
@@ -1018,6 +1018,27 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🔒 Governança & Trava Pós-Conferência na Divisão de Vendas',
     description: 'Proteção contra alterações indevidas de comissões após a conferência financeira da viagem.',
     details: 'Para proteger a contabilidade da agência e evitar alterações arbitrárias de comissão:\n\n1. **Trava Automática de Auditoria**: Assim que o processo da viagem ou seus LOCs financeiros são marcados como **Conferidos** por um administrador, a divisão de vendas é automaticamente trancada com ícone de cadeado (`🔒 Divisão Bloqueada`).\n2. **Privilégio Exclusivo de Administrador**: Consultores comuns não conseguem alterar as porcentagens de uma viagem conferida. Apenas usuários com perfil de **Administrador** têm permissão para reabrir ou reajustar a divisão.\n3. **Abertura na Venda ou a Qualquer Momento**: A parceria pode ser definida no fechamento do orçamento (marcando "Venda em parceria") ou a qualquer momento nos detalhes da viagem pelo botão `🤝 Dividir Venda` no cabeçalho.'
+  },
+  {
+    id: 'reembolsos-performance-slas',
+    modulo: 'viagens',
+    label: '⚡ Alta Performance & Cronômetro de SLAs na Central de Reembolsos',
+    description: 'Como a Central de Reembolsos abre em milissegundos com paralelismo e atualizações instantâneas.',
+    details: 'A Central de Reembolsos adota arquitetura de alta performance:\n\n1. **Paralelização de Consultas**: Os protocolos de reembolso e viagens órfãs são obtidos simultaneamente em uma única viagem de rede via `Promise.all`.\n2. **Mutações Cirúrgicas em Memória**: Ao alterar status de tratativa ou excluir processos, a interface é atualizada instantaneamente sem recarregar o banco de dados.\n3. **Cronômetro de SLA Suave (30s)**: A contagem de tempo decorrido roda em ciclos suaves a cada 30 segundos, economizando processamento e bateria em notebooks.'
+  },
+  {
+    id: 'conciliacao-performance-smart-match',
+    modulo: 'financeiro',
+    label: '⚡ Alta Performance & Smart Match Indexado na Conciliação Bancária',
+    description: 'Como o módulo de conciliação processa extratos e sugere correspondências instantaneamente.',
+    details: 'A Conciliação Bancária opera com alta eficiência através de dois pilares:\n\n1. **Delimitação Temporal Inteligente**: Busca apenas recebimentos e contas a pagar dentro da janela do extrato analisado (+/- 45 dias) ou últimos 90 dias, sem varrer todo o histórico da agência.\n2. **Smart Match Indexado O(1)**: O algoritmo de pareamento agrupa pendências por valores arredondados em memória, comparando transações apenas contra candidatos potenciais e calculando scores em milissegundos.\n3. **Casamento 1-Clique em Memória**: Ao aceitar sugestões de Smart Match, a transação é conciliada no Supabase e atualizada de imediato na tela sem recarregar a página.'
+  },
+  {
+    id: 'painel-comercial-performance-competencias',
+    modulo: 'clientes',
+    label: '⚡ Alta Performance & Janela de Competência no Painel Comercial',
+    description: 'Como o Painel Comercial abre instantaneamente operando na competência ativa ou período sob demanda.',
+    details: 'O Painel Comercial conta com arquitetura de alta performance concebida para carregamento em menos de 400ms:\n\n1. **Competência Padrão no Mês Vigente**: Ao abrir a tela, o sistema consulta diretamente no banco apenas os orçamentos e viagens criados ou faturados no mês atual, eliminando o tráfego de toda a base histórica da agência.\n2. **Projeção Cirúrgica de Colunas**: Apenas as colunas essenciais para o funil, conversão e métricas financeiras são baixadas, expurgando regras tarifárias, textos longos, propostas pesadas e descrições desnecessárias.\n3. **Carga Sob Demanda de Períodos**: Ao trocar o seletor rápido no topo para "Últimos 30 Dias", "Últimos 90 Dias", "Ano Atual" ou "Todo o Período", o PaxFlow dispara a consulta cirúrgica do intervalo selecionado sem travar a interface.\n4. **Deduções e Pagamentos Focados**: Descontos e prejuízos que afetam o faturamento são apurados exclusivamente para as viagens do período ativo, economizando banda e processamento.'
   },
   {
     id: 'relatorios-rateio-parcerias',

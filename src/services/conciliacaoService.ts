@@ -367,9 +367,9 @@ export class ConciliacaoService {
   /**
    * Lista recebimentos de clientes/viagens pendentes de conciliação
    */
-  public static async listarRecebimentosPendentes(): Promise<LocPagamentoPendente[]> {
+  public static async listarRecebimentosPendentes(options?: { dataInicio?: string; dataFim?: string }): Promise<LocPagamentoPendente[]> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('loc_pagamentos')
         .select(`
           id,
@@ -387,29 +387,30 @@ export class ConciliacaoService {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        // Fallback defensivo caso a coluna conciliado ou relação com viagens ainda não exista
-        if (error.code === '42703' || error.message?.includes('conciliado') || error.message?.includes('relation')) {
-          console.warn('[Conciliação] Usando fallback resiliente para loc_pagamentos:', error.message);
-          const { data: fallbackData, error: fbErr } = await supabase
-            .from('loc_pagamentos')
-            .select('id, viagem_id, codigo_localizador, valor, created_at')
-            .order('created_at', { ascending: false });
-
-          if (fbErr) {
-            console.error('[Conciliação] Falha crítica no fallback de loc_pagamentos:', fbErr);
-            return [];
-          }
-          return (fallbackData || []).map((p: any) => this.normalizarLocPagamento(p));
-        }
-
-        console.error('[Conciliação] Falha ao consultar loc_pagamentos:', error);
-        return [];
+      // Filtra apenas registros pendentes de conciliação
+      if (typeof (query as any).or === 'function') {
+        query = query.or('conciliado.is.null,conciliado.eq.false');
       }
 
+      // Aplica delimitação temporal
+      if (options?.dataInicio) {
+        if (typeof (query as any).gte === 'function') query = query.gte('created_at', options.dataInicio);
+      } else {
+        // Padrão: últimos 90 dias caso nenhuma janela seja informada
+        const cutOff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+        if (typeof (query as any).gte === 'function') query = query.gte('created_at', cutOff);
+      }
+
+      if (options?.dataFim && typeof (query as any).lte === 'function') {
+        query = query.lte('created_at', options.dataFim);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
       return (data || []).map((p: any) => this.normalizarLocPagamento(p));
-    } catch (err) {
-      console.error('[Conciliação] Erro inesperado em listarRecebimentosPendentes:', err);
+    } catch (err: any) {
+      console.error('[Conciliação] Falha ao consultar loc_pagamentos pendentes:', err.message || err);
       return [];
     }
   }
@@ -417,8 +418,8 @@ export class ConciliacaoService {
   /**
    * Alias de compatibilidade
    */
-  public static async carregarRecebimentosSistema(): Promise<LocPagamentoPendente[]> {
-    return this.listarRecebimentosPendentes();
+  public static async carregarRecebimentosSistema(options?: { dataInicio?: string; dataFim?: string }): Promise<LocPagamentoPendente[]> {
+    return this.listarRecebimentosPendentes(options);
   }
 
   private static normalizarLocPagamento(p: any): LocPagamentoPendente {
@@ -443,9 +444,9 @@ export class ConciliacaoService {
   /**
    * Lista contas a pagar ativas para conciliação bancária de débitos/saídas
    */
-  public static async listarContasPagarConciliacao(): Promise<FinContaPagar[]> {
+  public static async listarContasPagarConciliacao(options?: { dataInicio?: string; dataFim?: string }): Promise<FinContaPagar[]> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('fin_contas_pagar')
         .select(`
           *,
@@ -455,19 +456,28 @@ export class ConciliacaoService {
         .in('status', ['pendente', 'pago', 'atrasado'])
         .order('data_vencimento', { ascending: false });
 
-      if (error) {
-        if (error.code === '42P01' || error.code === '42703') return [];
-        throw error;
+      if (options?.dataInicio) {
+        if (typeof (query as any).gte === 'function') query = query.gte('data_vencimento', options.dataInicio);
+      } else {
+        const cutOff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        if (typeof (query as any).gte === 'function') query = query.gte('data_vencimento', cutOff);
       }
+
+      if (options?.dataFim && typeof (query as any).lte === 'function') {
+        query = query.lte('data_vencimento', options.dataFim);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
       return data || [];
-    } catch (err) {
-      console.warn('[Conciliação] Erro ao listar contas a pagar para conciliação:', err);
+    } catch (err: any) {
+      console.warn('[Conciliação] Erro ao listar contas a pagar para conciliação:', err.message || err);
       return [];
     }
   }
 
   /**
-   * Algoritmo de Smart Matching (Sugestão Inteligente de Casamento de Créditos e Débitos)
+   * Algoritmo de Smart Matching Otimizado (Indexado por Buckets de Valor O(1))
    */
   public static calcularSmartMatches(
     transacoes: ExtratoTransacao[],
@@ -476,6 +486,25 @@ export class ConciliacaoService {
   ): SugestaoMatch[] {
     const sugestoes: SugestaoMatch[] = [];
     const pendentesNaoConciliados = pendentes.filter(p => !p.conciliado);
+
+    // Indexação prévia de recebimentos pendentes por bucket de valor arredondado
+    const mapaPendentesPorValor = new Map<number, LocPagamentoPendente[]>();
+    for (const p of pendentesNaoConciliados) {
+      const bucket = Math.round(p.valor);
+      const list = mapaPendentesPorValor.get(bucket) || [];
+      list.push(p);
+      mapaPendentesPorValor.set(bucket, list);
+    }
+
+    // Indexação prévia de contas a pagar por bucket de valor arredondado
+    const mapaContasPorValor = new Map<number, FinContaPagar[]>();
+    for (const c of contasPagar) {
+      const valorConta = c.status === 'pago' && c.valor_pago ? c.valor_pago : c.valor_nominal;
+      const bucket = Math.round(valorConta);
+      const list = mapaContasPorValor.get(bucket) || [];
+      list.push(c);
+      mapaContasPorValor.set(bucket, list);
+    }
 
     for (const t of transacoes) {
       if (t.status !== 'pendente') continue;
@@ -488,7 +517,18 @@ export class ConciliacaoService {
         let melhorScore = 0;
         let motivos: string[] = [];
 
-        for (const p of pendentesNaoConciliados) {
+        // Coleta candidatos apenas nos buckets com tolerância de até 6%
+        const minBucket = Math.floor(t.valor * 0.94);
+        const maxBucket = Math.ceil(t.valor * 1.06);
+        const candidatos: LocPagamentoPendente[] = [];
+        for (let b = minBucket; b <= maxBucket; b++) {
+          const bucketList = mapaPendentesPorValor.get(b);
+          if (bucketList) {
+            candidatos.push(...bucketList);
+          }
+        }
+
+        for (const p of candidatos) {
           let score = 0;
           const currentMotivos: string[] = [];
 
@@ -559,7 +599,18 @@ export class ConciliacaoService {
         let motivos: string[] = [];
         const valorDebitoAbs = Math.abs(t.valor);
 
-        for (const c of contasPagar) {
+        // Coleta candidatos apenas nos buckets com tolerância de até 4%
+        const minBucket = Math.floor(valorDebitoAbs * 0.96);
+        const maxBucket = Math.ceil(valorDebitoAbs * 1.04);
+        const candidatosConta: FinContaPagar[] = [];
+        for (let b = minBucket; b <= maxBucket; b++) {
+          const bucketList = mapaContasPorValor.get(b);
+          if (bucketList) {
+            candidatosConta.push(...bucketList);
+          }
+        }
+
+        for (const c of candidatosConta) {
           let score = 0;
           const currentMotivos: string[] = [];
 

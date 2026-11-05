@@ -20,8 +20,14 @@ export class OrcamentosService {
 
   /**
    * Busca os orçamentos no Supabase
+   * Por padrão no Kanban, carrega propostas ativas (SOLICITADO, EM_ANDAMENTO, AGUARDANDO) + propostas recentes (últimos 30 dias).
+   * O histórico completo pode ser solicitado via options.incluirTodosConcluidos = true.
    */
-  static async loadOrcamentos(user: any, perfil: PerfilConsultor | null): Promise<Orcamento[]> {
+  static async loadOrcamentos(
+    user: any,
+    perfil: PerfilConsultor | null,
+    options?: { incluirTodosConcluidos?: boolean }
+  ): Promise<Orcamento[]> {
     if (!user) return [];
 
     let query = supabase
@@ -29,7 +35,15 @@ export class OrcamentosService {
       .select('*, destino_ref:destinos(*)')
       .order('created_at', { ascending: false });
 
-    // Carrega todos os orçamentos para suportar busca global (Modo Co-Piloto) e kanban
+    if (!options?.incluirTodosConcluidos) {
+      const dataCorte = new Date();
+      dataCorte.setDate(dataCorte.getDate() - 30);
+      const dataCorteIso = dataCorte.toISOString();
+      if (typeof (query as any).or === 'function') {
+        query = query.or(`status.in.("SOLICITADO","EM_ANDAMENTO","AGUARDANDO"),created_at.gte.${dataCorteIso}`);
+      }
+    }
+
     const { data, error } = await query;
     if (error) throw error;
 
@@ -198,38 +212,7 @@ export class OrcamentosService {
     }
 
     if (resError) {
-      // Se o erro for de coluna inexistente no Supabase (Postgres code 42703 ou undefined_column)
-      const isMissingColumn = 
-        resError.code === '42703' ||
-        (resError.message && resError.message.includes('column') && resError.message.includes('does not exist'));
-
-      if (isMissingColumn) {
-        console.warn('Aviso: Colunas novas não encontradas no Supabase. Removendo colunas recentes e aplicando fallback resiliente.');
-        
-        delete payload.valor_proposta;
-        delete payload.cliente_id;
-        delete payload.valor_viagem;
-        delete payload.contato_realizado;
-        delete payload.contato_realizado_por;
-        delete payload.contato_realizado_em;
-        
-        let retryError;
-        if (o.id && !o.id.startsWith('orc-')) {
-          const { error } = await supabase
-            .from('orcamentos')
-            .update(payload)
-            .eq('id', o.id);
-          retryError = error;
-        } else {
-          const { error } = await supabase
-            .from('orcamentos')
-            .insert(payload);
-          retryError = error;
-        }
-        if (retryError) throw retryError;
-      } else {
-        throw resError;
-      }
+      throw resError;
     }
 
     // Regras de Gamificação XP
@@ -349,28 +332,6 @@ export class OrcamentosService {
       .eq('id', orcamentoId);
 
     if (error) {
-      // Tratamento de schema drift 42703
-      if (error.code === '42703' || (error.message && error.message.includes('column') && error.message.includes('does not exist'))) {
-        console.warn('Aviso: Colunas de contato_realizado não encontradas no Supabase (42703). Gravando observação de fallback.');
-        const carimbo = status 
-          ? `[Contato Gestor: Confirmado em ${new Date().toLocaleDateString('pt-BR')} por ${userPerfil?.nome || 'Admin'}]`
-          : `[Contato Gestor: Desmarcado em ${new Date().toLocaleDateString('pt-BR')} por ${userPerfil?.nome || 'Admin'}]`;
-        
-        const { data: currentOrc } = await supabase.from('orcamentos').select('notas_negociacao').eq('id', orcamentoId).single();
-        const notasAtuais = currentOrc?.notas_negociacao || '';
-        await supabase.from('orcamentos').update({
-          notas_negociacao: `${carimbo}\n${notasAtuais}`.trim(),
-          updated_at: agora
-        }).eq('id', orcamentoId);
-
-        return {
-          success: true,
-          contatoRealizado: status,
-          contatoRealizadoPor: userPerfil?.id,
-          contatoRealizadoPorNome: userPerfil?.nome,
-          contatoRealizadoEm: agora
-        };
-      }
       throw error;
     }
 

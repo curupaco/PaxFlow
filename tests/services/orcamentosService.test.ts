@@ -340,17 +340,11 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
     expect(registrarXp).toHaveBeenCalledWith('consultor-1', 'venda_aceita_uuid-orc-aprovado-1', 100);
   });
 
-  it('deve realizar retry automático removendo colunas extras se o banco retornar erro 42703', async () => {
+  it('deve aplicar fail-fast transparente e lançar erro caso o banco retorne erro de coluna inexistente (42703)', async () => {
     // Setup
     const erroColunaInexistente = { code: '42703', message: 'column valor_proposta does not exist' };
-    const insertComErro = vi.fn().mockResolvedValueOnce({ error: erroColunaInexistente });
-    const insertComSucesso = vi.fn().mockResolvedValueOnce({ error: null });
-
-    const insertMock = vi.fn()
-      .mockImplementationOnce(insertComErro)
-      .mockImplementationOnce(insertComSucesso);
-
-    vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+    const insertComErro = vi.fn().mockResolvedValue({ error: erroColunaInexistente });
+    vi.mocked(supabase.from).mockReturnValue({ insert: insertComErro } as any);
 
     const orcamentoComColunasExtras: any = {
       id: 'orc-novo-99',
@@ -360,12 +354,8 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
       valorViagem: 11000,
     };
 
-    // Action
-    const res = await OrcamentosService.persistOrcamento(orcamentoComColunasExtras);
-
-    // Assert
-    expect(res.success).toBe(true);
-    expect(insertMock).toHaveBeenCalledTimes(2);
+    // Action & Assert
+    await expect(OrcamentosService.persistOrcamento(orcamentoComColunasExtras)).rejects.toEqual(erroColunaInexistente);
   });
 
   it('deve utilizar a RPC atualizar_orcamento_co_piloto caso ocorra bloqueio de RLS no update direto', async () => {

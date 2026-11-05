@@ -151,18 +151,46 @@ export class ReembolsosPage {
    */
   private async loadReembolsos(): Promise<void> {
     try {
-      // Consulta com junções no Supabase
-      const { data, error } = await supabase
+      // Consulta com junções no Supabase e busca de viagens órfãs paralelizada com Promise.all
+      const queryReembolsos = supabase
         .from('reembolsos')
         .select(`
-          *,
+          id,
+          codigo_protocolo,
+          status,
+          status_tratativa,
+          valor_solicitado,
+          valor_aprovado,
+          valor_utilizado_pax,
+          saldo_cliente,
+          comprovante_url,
+          data_solicitacao,
+          data_resolucao,
+          created_at,
+          updated_at,
+          observacoes_financeiras,
+          consultor_solicitante_id,
+          viagem_id,
+          produto_id,
           viagem:viagens (
-            *,
-            cliente:clientes (*)
+            id,
+            codigo_ref,
+            destino,
+            data_ida,
+            data_volta,
+            status,
+            consultor_id,
+            consultor_responsavel_id,
+            cliente:clientes (id, nome, telefone, email)
           ),
-          produto:produtos_viagem (*)
+          produto:produtos_viagem (id, viagem_id, tipo_produto, fornecedor, valor_venda)
         `)
         .order('created_at', { ascending: false });
+
+      const [{ data, error }, viagensOrfas] = await Promise.all([
+        queryReembolsos,
+        ReembolsosService.buscarViagensOrfasReembolso()
+      ]);
 
       if (error) throw error;
 
@@ -172,16 +200,17 @@ export class ReembolsosPage {
       if (this.perfil && this.perfil.role !== 'admin') {
         this.reembolsos = rawData.filter(r => {
           const rSolicitanteId = r.consultor_solicitante_id || (r as any).consultorSolicitanteId;
-          const vConsultorId = r.viagem?.consultor_id || (r.viagem as any)?.consultorId;
-          const vRespId = r.viagem?.consultor_responsavel_id || (r.viagem as any)?.consultorResponsavelId;
+          const viagemObj = Array.isArray(r.viagem) ? r.viagem[0] : r.viagem;
+          const vConsultorId = viagemObj?.consultor_id || (viagemObj as any)?.consultorId;
+          const vRespId = viagemObj?.consultor_responsavel_id || (viagemObj as any)?.consultorResponsavelId;
           return rSolicitanteId === this.user.id || vConsultorId === this.user.id || vRespId === this.user.id;
         });
       } else {
         this.reembolsos = rawData;
       }
 
-      // Busca viagens marcadas como 'reembolso_solicitado' que ainda não possuem registro na tabela 'reembolsos'
-      this.viagensOrfas = await ReembolsosService.buscarViagensOrfasReembolso();
+      // Viagens marcadas como 'reembolso_solicitado' que ainda não possuem registro na tabela 'reembolsos'
+      this.viagensOrfas = viagensOrfas || [];
     } catch (err: any) {
       console.error('Erro ao carregar reembolsos do servidor:', err.message);
       this.reembolsos = [];
@@ -191,7 +220,7 @@ export class ReembolsosPage {
   }
 
   /**
-   * Inicia o intervalo de 1 segundo para atualizar o cronômetro dos SLAs em tempo real na tela
+   * Inicia o intervalo de atualização suave para o cronômetro dos SLAs na tela (a cada 30 segundos)
    */
   private iniciarSlaTimer(): void {
     if (this.timerId) {
@@ -217,7 +246,7 @@ export class ReembolsosPage {
           el.setAttribute('title', '🚨 Atenção: Processo aguardando há mais de 30 dias!');
         }
       });
-    }, 1000);
+    }, 30000);
   }
 
   /**
@@ -263,23 +292,21 @@ export class ReembolsosPage {
         try {
           const payload = prepareReembolsoStatusPayload(novoStatus);
 
-          let { error } = await supabase
+          const { error } = await supabase
             .from('reembolsos')
             .update(payload)
             .eq('id', reembolsoId);
 
-          // Fallback defensivo para schema drift caso a coluna status_tratativa não exista (42703)
-          if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
-            const fallbackPayload = {
-              status: payload.status,
-              data_resolucao: payload.data_resolucao,
-              observacoes_financeiras: `[Status Tratativa]: ${payload.status_tratativa}`
-            };
-            const fallbackRes = await supabase.from('reembolsos').update(fallbackPayload).eq('id', reembolsoId);
-            error = fallbackRes.error;
-          }
-
           if (error) throw error;
+
+          // Atualização cirúrgica em memória (sem recarregar toda a base pela rede)
+          const itemIndex = this.reembolsos.findIndex(r => r.id === reembolsoId);
+          if (itemIndex >= 0) {
+            this.reembolsos[itemIndex] = {
+              ...this.reembolsos[itemIndex],
+              ...payload
+            };
+          }
 
           this.showToast('Status da tratativa atualizado com sucesso!', 'success');
 
@@ -287,8 +314,7 @@ export class ReembolsosPage {
             await this.verificarEAtualizarViagemReembolsoConcluido(reembolsoId);
           }
 
-          // Recarrega os dados e atualiza a exibição da tabela
-          await this.loadReembolsos();
+          // Atualiza a exibição da tabela com dados em memória
           this.render();
           this.iniciarSlaTimer();
 
@@ -391,11 +417,19 @@ export class ReembolsosPage {
     EditarReembolsoModal.abrir({
       reembolso: r,
       showToast: (msg, type, err) => this.showToast(msg, type, err),
-      onSucesso: async (novoStatusTratativa) => {
+      onSucesso: async (novoStatusTratativa, dadosAtualizados) => {
         if (formatStatusTratativa(novoStatusTratativa).key === 'concluido') {
           await this.verificarEAtualizarViagemReembolsoConcluido(r.id);
         }
-        await this.loadReembolsos();
+        // Atualização cirúrgica em memória
+        const itemIndex = this.reembolsos.findIndex(item => item.id === r.id);
+        if (itemIndex >= 0) {
+          this.reembolsos[itemIndex] = {
+            ...this.reembolsos[itemIndex],
+            status_tratativa: novoStatusTratativa,
+            ...(dadosAtualizados || {})
+          };
+        }
         this.render();
         this.iniciarSlaTimer();
       }
@@ -464,7 +498,7 @@ export class ReembolsosPage {
       }
 
       this.showToast('Reembolso excluído com sucesso!', 'success');
-      await this.loadReembolsos();
+      this.reembolsos = this.reembolsos.filter(r => r.id !== id);
       this.render();
       this.iniciarSlaTimer();
     } catch (err: any) {
