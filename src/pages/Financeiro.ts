@@ -2438,6 +2438,336 @@ export class FinanceiroPage {
   }
 
   // ==========================================================================
+  // MODAL DE FILTROS AVANÇADOS - CONTAS A PAGAR
+  // ==========================================================================
+  private abrirModalFiltrosAvancados(): void {
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity';
+
+    let tipoDataFiltro: 'vencimento' | 'pagamento' = this.filtros.tipoDataFiltro || 'vencimento';
+    let naturezaLancamento = this.filtros.naturezaLancamento || 'todos';
+
+    const fmtMoedaInput = (v?: number) => {
+      if (!v && v !== 0) return '';
+      return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+    };
+
+    const bancosOptions = this.contasBancarias
+      .filter(b => b.ativo !== false)
+      .map(b => `
+        <option value="${b.id}" ${this.filtros.contaBancariaId === b.id ? 'selected' : ''}>
+          ${b.nome_banco}
+        </option>
+      `).join('');
+
+    const formasPagamento = [
+      { id: 'pix', label: 'Pix' },
+      { id: 'boleto', label: 'Boleto Bancário' },
+      { id: 'transferencia', label: 'Transferência TED/DOC' },
+      { id: 'debito', label: 'Débito em Conta' },
+      { id: 'cartao_corp', label: 'Cartão Corporativo' },
+      { id: 'dinheiro', label: 'Dinheiro em Espécie' }
+    ];
+
+    const formasOptions = formasPagamento.map(f => `
+      <option value="${f.id}" ${this.filtros.formaPagamento === f.id ? 'selected' : ''}>${f.label}</option>
+    `).join('');
+
+    const naturezas = [
+      { id: 'todos', label: 'Todos' },
+      { id: 'avulso', label: 'Avulsos' },
+      { id: 'recorrente', label: 'Recorrentes' },
+      { id: 'parcelado', label: 'Parcelados' },
+      { id: 'remessa', label: 'Lotes de Remessa' },
+      { id: 'estimado', label: 'Valores Estimados' }
+    ];
+
+    const naturezasHtml = naturezas.map(n => `
+      <button type="button" data-natureza="${n.id}" class="adv-btn-nat px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
+        naturezaLancamento === n.id
+          ? 'bg-indigo-600 text-white shadow-xs'
+          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+      }">
+        ${n.label}
+      </button>
+    `).join('');
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-scale-in max-h-[92vh] overflow-y-auto custom-scrollbar">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl">⚡</span>
+            <div>
+              <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Filtros Avançados</h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Refine as despesas do Contas a Pagar por múltiplos critérios combinados</p>
+            </div>
+          </div>
+          <button id="btn-fechar-modal-adv" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg cursor-pointer">✕</button>
+        </div>
+
+        <form id="form-filtros-avancados" class="space-y-4">
+          <!-- 1. Busca Geral -->
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+              🔍 Busca Abrangente (Favorecido, Descrição ou Obs)
+            </label>
+            <input 
+              type="text" 
+              id="adv-busca-geral" 
+              value="${this.filtros.buscaGeral || ''}" 
+              placeholder="Ex: Fornecedor, NF 1234, taxa, aluguel, contrato..."
+              class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            />
+          </div>
+
+          <!-- 2. Período Personalizado com Chaveamento -->
+          <div class="p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 rounded-2xl space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                📅 Intervalo de Datas
+              </label>
+              <!-- Switch Vencimento vs Pagamento -->
+              <div class="inline-flex p-0.5 bg-slate-200/80 dark:bg-slate-700/80 rounded-xl text-[11px] font-bold">
+                <button 
+                  type="button" 
+                  id="adv-btn-tipo-vencimento" 
+                  class="px-2.5 py-1 rounded-lg transition cursor-pointer ${tipoDataFiltro === 'vencimento' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-600 dark:text-slate-300'}">
+                  Por Vencimento
+                </button>
+                <button 
+                  type="button" 
+                  id="adv-btn-tipo-pagamento" 
+                  class="px-2.5 py-1 rounded-lg transition cursor-pointer ${tipoDataFiltro === 'pagamento' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-600 dark:text-slate-300'}">
+                  Por Pagamento
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <span class="block text-[10px] font-bold text-slate-400 mb-1">Data Inicial</span>
+                <input 
+                  type="date" 
+                  id="adv-data-inicio" 
+                  value="${this.filtros.dataInicio || ''}" 
+                  class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200"
+                />
+              </div>
+              <div>
+                <span class="block text-[10px] font-bold text-slate-400 mb-1">Data Final</span>
+                <input 
+                  type="date" 
+                  id="adv-data-fim" 
+                  value="${this.filtros.dataFim || ''}" 
+                  class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200"
+                />
+              </div>
+            </div>
+
+            <!-- Checkbox Ignorar Mês de Referência -->
+            <label class="flex items-center gap-2 cursor-pointer pt-1">
+              <input 
+                type="checkbox" 
+                id="adv-check-ignorar-mes" 
+                ${this.filtros.ignorarMes ? 'checked' : ''} 
+                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+              />
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Buscar em todo o histórico / ano <span class="text-[11px] font-normal text-slate-400">(ignora o filtro de mês da barra principal)</span>
+              </span>
+            </label>
+          </div>
+
+          <!-- 3. Conta Bancária e Forma de Pagamento -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                🏦 Conta Bancária de Saída
+              </label>
+              <select 
+                id="adv-select-conta-bancaria" 
+                class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+                <option value="">Todas as contas bancárias</option>
+                ${bancosOptions}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                💳 Forma de Pagamento
+              </label>
+              <select 
+                id="adv-select-forma-pagamento" 
+                class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+                <option value="">Todas as formas</option>
+                ${formasOptions}
+              </select>
+            </div>
+          </div>
+
+          <!-- 4. Faixa de Valor Nominal -->
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+              💰 Faixa de Valor Nominal (R$)
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <input 
+                  type="text" 
+                  id="adv-valor-min" 
+                  placeholder="R$ Mínimo" 
+                  value="${fmtMoedaInput(this.filtros.valorMin)}"
+                  class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200"
+                />
+              </div>
+              <div>
+                <input 
+                  type="text" 
+                  id="adv-valor-max" 
+                  placeholder="R$ Máximo" 
+                  value="${fmtMoedaInput(this.filtros.valorMax)}"
+                  class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Natureza do Lançamento -->
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+              🏷️ Natureza do Lançamento
+            </label>
+            <div class="flex flex-wrap gap-1.5">
+              ${naturezasHtml}
+            </div>
+          </div>
+
+          <!-- Rodapé de Ações -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <button 
+              type="button" 
+              id="adv-btn-limpar" 
+              class="w-full sm:w-auto px-4 h-[42px] border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-black text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer">
+              Limpar Filtros
+            </button>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button 
+                type="button" 
+                id="adv-btn-cancelar" 
+                class="px-4 h-[42px] rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition cursor-pointer">
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                id="adv-btn-aplicar" 
+                class="px-6 h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md shadow-indigo-600/20 active:scale-95 transition cursor-pointer">
+                OK - Aplicar Filtros
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const fechar = () => overlay.remove();
+    overlay.querySelector('#btn-fechar-modal-adv')?.addEventListener('click', fechar);
+    overlay.querySelector('#adv-btn-cancelar')?.addEventListener('click', fechar);
+
+    // Anexa máscaras de moeda
+    const inputMin = overlay.querySelector('#adv-valor-min') as HTMLInputElement;
+    const inputMax = overlay.querySelector('#adv-valor-max') as HTMLInputElement;
+    if (inputMin) attachCurrencyMask(inputMin);
+    if (inputMax) attachCurrencyMask(inputMax);
+
+    // Switch de tipo de data
+    const btnVenc = overlay.querySelector('#adv-btn-tipo-vencimento') as HTMLButtonElement;
+    const btnPag = overlay.querySelector('#adv-btn-tipo-pagamento') as HTMLButtonElement;
+    btnVenc?.addEventListener('click', () => {
+      tipoDataFiltro = 'vencimento';
+      btnVenc.className = 'px-2.5 py-1 rounded-lg transition cursor-pointer bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs';
+      btnPag.className = 'px-2.5 py-1 rounded-lg transition cursor-pointer text-slate-600 dark:text-slate-300';
+    });
+    btnPag?.addEventListener('click', () => {
+      tipoDataFiltro = 'pagamento';
+      btnPag.className = 'px-2.5 py-1 rounded-lg transition cursor-pointer bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs';
+      btnVenc.className = 'px-2.5 py-1 rounded-lg transition cursor-pointer text-slate-600 dark:text-slate-300';
+    });
+
+    // Pills de Natureza do Lançamento
+    overlay.querySelectorAll('.adv-btn-nat').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const nat = btn.getAttribute('data-natureza') as any;
+        if (!nat) return;
+        naturezaLancamento = nat;
+        overlay.querySelectorAll('.adv-btn-nat').forEach(b => {
+          b.className = 'adv-btn-nat px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
+        });
+        btn.className = 'adv-btn-nat px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer bg-indigo-600 text-white shadow-xs';
+      });
+    });
+
+    // Botão Limpar Filtros do Modal
+    overlay.querySelector('#adv-btn-limpar')?.addEventListener('click', async () => {
+      this.filtros.buscaGeral = undefined;
+      this.filtros.dataInicio = undefined;
+      this.filtros.dataFim = undefined;
+      this.filtros.tipoDataFiltro = undefined;
+      this.filtros.contaBancariaId = undefined;
+      this.filtros.formaPagamento = undefined;
+      this.filtros.valorMin = undefined;
+      this.filtros.valorMax = undefined;
+      this.filtros.naturezaLancamento = 'todos';
+      this.filtros.ignorarMes = false;
+      this.filtros.periodoTipo = 'mes';
+      fechar();
+      await this.carregarDadosAbaAtiva();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // Submissão do Formulário de Filtros Avançados
+    const form = overlay.querySelector('#form-filtros-avancados') as HTMLFormElement;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const inputBusca = overlay.querySelector('#adv-busca-geral') as HTMLInputElement;
+      const inputInicio = overlay.querySelector('#adv-data-inicio') as HTMLInputElement;
+      const inputFim = overlay.querySelector('#adv-data-fim') as HTMLInputElement;
+      const checkIgnorar = overlay.querySelector('#adv-check-ignorar-mes') as HTMLInputElement;
+      const selectBanco = overlay.querySelector('#adv-select-conta-bancaria') as HTMLSelectElement;
+      const selectForma = overlay.querySelector('#adv-select-forma-pagamento') as HTMLSelectElement;
+
+      this.filtros.buscaGeral = inputBusca?.value.trim() || undefined;
+      this.filtros.dataInicio = inputInicio?.value || undefined;
+      this.filtros.dataFim = inputFim?.value || undefined;
+      this.filtros.tipoDataFiltro = tipoDataFiltro;
+      this.filtros.ignorarMes = checkIgnorar?.checked || false;
+
+      if (this.filtros.dataInicio || this.filtros.dataFim) {
+        this.filtros.periodoTipo = 'personalizado';
+      }
+
+      this.filtros.contaBancariaId = selectBanco?.value || undefined;
+      this.filtros.formaPagamento = selectForma?.value || undefined;
+
+      const vMinRaw = inputMin?.value ? parsePastedCurrency(inputMin.value) : 0;
+      const vMaxRaw = inputMax?.value ? parsePastedCurrency(inputMax.value) : 0;
+      this.filtros.valorMin = vMinRaw > 0 ? vMinRaw : undefined;
+      this.filtros.valorMax = vMaxRaw > 0 ? vMaxRaw : undefined;
+
+      this.filtros.naturezaLancamento = naturezaLancamento as any;
+
+      fechar();
+      await this.carregarDadosAbaAtiva();
+      this.render();
+      this.setupEventListeners();
+    });
+  }
+
+  // ==========================================================================
   // MODAL DE BAIXA INTELIGENTE COM JUROS, DESCONTO E BAIXA PARCIAL
   // ==========================================================================
   private abrirModalBaixa(c: FinContaPagar): void {
