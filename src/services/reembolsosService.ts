@@ -189,7 +189,7 @@ export class ReembolsosService {
           status,
           cliente:clientes (id, nome),
           reembolsos (id),
-          produtos:produtos_viagem (id, viagem_id, tipo_produto, fornecedor, valor_venda)
+          produtos:produtos_viagem (id, viagem_id, tipo, fornecedor, valor_venda)
         `)
         .eq('status', 'reembolso_solicitado')
         .order('data_ida', { ascending: false });

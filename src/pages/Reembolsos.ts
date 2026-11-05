@@ -183,7 +183,7 @@ export class ReembolsosPage {
             consultor_responsavel_id,
             cliente:clientes (id, nome, telefone, email)
           ),
-          produto:produtos_viagem (id, viagem_id, tipo_produto, fornecedor, valor_venda)
+          produto:produtos_viagem (id, viagem_id, tipo, fornecedor, valor_venda)
         `)
         .order('created_at', { ascending: false });
 

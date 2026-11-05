@@ -203,5 +203,53 @@ describe('Painel Comercial - Otimização de Performance e Janela Temporal Subcu
     expect(orcamentosConvertidos).toBe(1);
     expect(taxaConversao).toBeCloseTo(33.33, 1);
   });
+
+  it('deve usar estritamente as colunas oficiais do schema em produtos_viagem sem colunas inexistentes', async () => {
+    // Setup
+    let selectVia = '';
+    (supabase.from as any).mockImplementation((table: string) => {
+      const qMock = createQueryMock([]);
+      qMock.select = vi.fn((sel: string) => {
+        if (table === 'viagens') selectVia = sel;
+        return qMock;
+      });
+      return qMock;
+    });
+
+    const fakeContainer = {} as HTMLElement;
+    const dashboard = new ComercialDashboard(fakeContainer);
+    (dashboard as any).user = { id: 'admin-comercial-1' };
+    (dashboard as any).perfil = { id: 'admin-comercial-1', role: 'admin' };
+
+    // Action
+    await (dashboard as any).loadData();
+
+    // Assert
+    expect(selectVia).toContain('produtos:produtos_viagem(id, viagem_id, tipo, valor_venda, comissao, markup, rav)');
+    expect(selectVia).not.toContain('tipo_produto');
+    expect(selectVia).not.toContain('comissao_total');
+    expect(selectVia).not.toContain('taxa_embarque');
+  });
+
+  it('deve adotar Fail-Fast Transparente propagando erro quando a consulta ao banco falhar', async () => {
+    // Setup
+    (supabase.from as any).mockImplementation((table: string) => {
+      const qMock = createQueryMock([]);
+      if (table === 'viagens') {
+        qMock.then = vi.fn().mockImplementation((onfulfilled) => {
+          return Promise.resolve(onfulfilled({ data: null, error: new Error('PostgREST 42703: column does not exist') }));
+        });
+      }
+      return qMock;
+    });
+
+    const fakeContainer = {} as HTMLElement;
+    const dashboard = new ComercialDashboard(fakeContainer);
+    (dashboard as any).user = { id: 'admin-comercial-1' };
+    (dashboard as any).perfil = { id: 'admin-comercial-1', role: 'admin' };
+
+    // Action & Assert
+    await expect((dashboard as any).loadData()).rejects.toThrow('PostgREST 42703: column does not exist');
+  });
 });
 

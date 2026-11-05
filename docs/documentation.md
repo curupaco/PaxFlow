@@ -1727,12 +1727,12 @@ Para garantir abertura instantânea (< 400ms) das taxas de conversão, metas e v
 
 1. **Competência Inicial Padrão no PostgreSQL (Mês Vigente)**:
    - Eliminação de `supabase.from('orcamentos').select('*')` e `supabase.from('viagens').select('*')` irrestritos.
-   - Aplicação de cláusula temporal `.gte('created_at', dataCorteIso)` em orçamentos e `.or('created_at.gte.X,data_financeiro.gte.X')` em viagens, filtrando no PostgreSQL exatamente a competência ativa (padrão: mês corrente).
+   - Aplicação de cláusula temporal `.gte('created_at', dataCorteIso)` em orçamentos e `.or('created_at.gte.YYYY-MM-DD,data_financeiro.gte.YYYY-MM-DD')` em viagens com formatação nativa de data para conformidade estrita com colunas do tipo `DATE`, filtrando no PostgreSQL exatamente a competência ativa (padrão: mês corrente).
    - Ao alterar o seletor no topo da tela ("Últimos 30 Dias", "Últimos 90 Dias", "Ano Atual" ou "Todo o Período"), a query é disparada sob demanda com recarregamento ágil e feedback visual na interface.
 
-2. **Projeções Cirúrgicas de Colunas**:
+2. **Projeções Cirúrgicas de Colunas & Alinhamento Estrito de Schema**:
    - Em `orcamentos`, a query requisita exclusivamente os atributos essenciais de status, cliente, consultor, valor de proposta e datas, descartando históricos textuais densos.
-   - Em `viagens`, traz apenas identificadores, destino, status, datas, valor total e produtos sumarizados (`id, tipo_produto, valor_venda, comissao, markup, rav`), expurgando roteiros longos e anotações operacionais.
+   - Em `viagens`, traz apenas identificadores, destino, status, datas, valor total e produtos sumarizados conforme o schema oficial do banco (`id, tipo, valor_venda, comissao, markup, rav`), expurgando roteiros longos e anotações operacionais sem solicitar nomes de colunas fantasmas (`tipo_produto`, `comissao_total`).
 
 3. **Carga Sob Demanda de Pagamentos & Deduções**:
    - A tabela `loc_pagamentos` é consultada apenas para as viagens faturadas na competência (`.in('viagem_id', viagemIds)`), restringindo a projeção a `viagem_id, valor, formas_recebimento(nome)`.
@@ -1740,8 +1740,8 @@ Para garantir abertura instantânea (< 400ms) das taxas de conversão, metas e v
 4. **Widget do Next Trip Engine com Carga Enxuta**:
    - A chamada integrada ao radar preditivo no painel comercial busca exclusivamente os campos de perfil e status em `clientes` e `orcamentos`, eliminando varreduras redundantes de tabelas completas.
 
-5. **Governança Estrita & Fail-Fast**:
-   - Expurgados quaisquer blocos de tratamento silencioso de erro ou schema drift (42703/42P01) em `viagens_divisoes`, assegurando conformidade absoluta com o schema oficial do banco de dados.
+5. **Governança Estrita & Fail-Fast Transparente**:
+   - Expurgados quaisquer blocos de tratamento silencioso de erro ou schema drift (42703/42P01) em `viagens_divisoes` e no `loadData()`. Se a comunicação com o banco falhar, o erro é propagado de forma visível ao operador por meio de banner explicativo ou tela de erro, prevenindo a exibição de métricas zeradas fictícias.
 
 ### 3.60 Arquitetura de Alta Performance da Central de Reembolsos & Gestão de SLAs
 

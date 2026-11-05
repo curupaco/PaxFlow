@@ -352,7 +352,7 @@ export class RelatoriosPage {
         viagem_id,
         produto_id,
         viagem:viagens (id, consultor_id, consultor_responsavel_id, codigo_ref, destino),
-        produto:produtos_viagem (id, tipo_produto, fornecedor)
+        produto:produtos_viagem (id, tipo, fornecedor)
       `);
       if (janelaInicio) {
         reemQuery = reemQuery.gte('created_at', janelaInicio);
@@ -440,7 +440,7 @@ export class RelatoriosPage {
           created_at,
           cliente:clientes (id, nome, telefone, email),
           reembolsos (id, status, valor_solicitado, valor_aprovado, created_at),
-          produtos:produtos_viagem (id, viagem_id, tipo_produto, valor_venda, taxa_embarque, comissao_total, fornecedor, markup, rav),
+          produtos:produtos_viagem (id, viagem_id, tipo, valor_venda, taxa, comissao, fornecedor, markup, rav),
           destino_ref:destinos (id, nome)
         `);
 

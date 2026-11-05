@@ -261,21 +261,33 @@ export class ComercialDashboard {
   /**
    * Obtém a data de corte inicial para filtrar orçamentos e viagens na competência selecionada
    */
-  private getDataCortePeriodo(): string | null {
+  private getDataCortePeriodo(): { iso: string; dateOnly: string } | null {
     const now = new Date();
+    let d: Date;
     switch (this.selectedPeriod) {
       case 'mes_atual':
-        return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        d = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
       case '30_dias':
-        return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
       case '90_dias':
-        return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+        d = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
       case 'ano_atual':
-        return new Date(now.getFullYear(), 0, 1).toISOString();
+        d = new Date(now.getFullYear(), 0, 1);
+        break;
       case 'todo_periodo':
       default:
         return null;
     }
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return {
+      iso: d.toISOString(),
+      dateOnly: `${year}-${month}-${day}`
+    };
   }
 
   /**
@@ -293,7 +305,7 @@ export class ComercialDashboard {
         queryOrc = queryOrc.eq('consultor_id', this.user.id);
       }
       if (dataCorte) {
-        queryOrc = queryOrc.gte('created_at', dataCorte);
+        queryOrc = queryOrc.gte('created_at', dataCorte.iso);
       }
       const { data: dataOrc, error: errOrc } = await queryOrc;
       if (errOrc) throw errOrc;
@@ -317,9 +329,9 @@ export class ComercialDashboard {
         updatedAt: d.updated_at
       }));
 
-      // 2. Carregar Viagens do banco com projeção cirúrgica e corte temporal
+      // 2. Carregar Viagens do banco com projeção cirúrgica e corte temporal (schema oficial: tipo, comissao, markup, rav)
       let queryVia = supabase.from('viagens').select(
-        'id, codigo_ref, cliente_id, consultor_id, destino, data_ida, data_volta, valor_total, status, codigo_localizador, created_at, updated_at, data_financeiro, produtos:produtos_viagem(id, viagem_id, tipo_produto, valor_venda, comissao, comissao_total, markup, rav)'
+        'id, codigo_ref, cliente_id, consultor_id, destino, data_ida, data_volta, valor_total, status, codigo_localizador, created_at, updated_at, data_financeiro, produtos:produtos_viagem(id, viagem_id, tipo, valor_venda, comissao, markup, rav)'
       );
       if (this.perfil?.role !== 'admin' && this.user?.id) {
         const parceiroViagemIds = await ViagensDivisoesService.obterViagensDivididasPorConsultor(this.user.id);
@@ -330,7 +342,7 @@ export class ComercialDashboard {
         }
       }
       if (dataCorte) {
-        queryVia = queryVia.or(`created_at.gte.${dataCorte},data_financeiro.gte.${dataCorte}`);
+        queryVia = queryVia.or(`created_at.gte.${dataCorte.dateOnly},data_financeiro.gte.${dataCorte.dateOnly}`);
       }
       const { data: dataVia, error: errVia } = await queryVia;
       if (errVia) throw errVia;
@@ -397,8 +409,9 @@ export class ComercialDashboard {
       }
 
     } catch (err: any) {
-      console.error('Erro de conexão no ComercialDashboard:', err.message);
+      console.error('Erro de conexão no ComercialDashboard:', err.message || err);
       this.isFallbackMode = false;
+      throw err;
     }
   }
 
@@ -485,11 +498,22 @@ export class ComercialDashboard {
       }
       try {
         await this.loadData();
+        this.renderMetricsSection();
+      } catch (err: any) {
+        console.error('Erro ao atualizar período no Dashboard Comercial:', err);
+        if (metricsContainer) {
+          metricsContainer.innerHTML = `
+            <div class="p-8 text-center bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-3xl">
+              <div class="text-3xl mb-2">⚠️</div>
+              <h3 class="text-base font-bold text-rose-800 dark:text-rose-200">Falha ao carregar dados do período</h3>
+              <p class="text-xs text-rose-600 dark:text-rose-400 mt-1">${err.message || 'Erro de comunicação com o banco de dados.'}</p>
+            </div>
+          `;
+        }
       } finally {
         if (metricsContainer) {
           metricsContainer.style.opacity = '1';
         }
-        this.renderMetricsSection();
       }
     });
 
