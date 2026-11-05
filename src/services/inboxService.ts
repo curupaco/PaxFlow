@@ -511,7 +511,7 @@ export class InboxService {
   }
 
   /**
-   * Fetches data from Supabase and compiles the alerts (manual & SLAs)
+   * Fetches data from Supabase and compiles the alerts (manual & SLAs) de forma altamente paralelizada e otimizada
    */
   static async loadAndBuildAlerts(
     user: any,
@@ -525,48 +525,326 @@ export class InboxService {
     }
 
     const userIsAdmin = (perfil?.role || '').toLowerCase() === 'admin';
-    const archivedList = await InboxService.getArchivedAlerts(user.id);
-    const archivedSet = new Set(archivedList);
 
-    // --- PART 1: MANUAL REMINDERS ("Me Lembre Depois") ---
     try {
-      let lembretesData: any[] = [];
+      // =========================================================================
+      // DISPARO PARALELO DAS REQUISIÇÕES (PROMISE.ALL) - ZERO CASCATA SEQUENCIAL
+      // =========================================================================
 
-      try {
-        let lembretesQuery = supabase
-          .from('lembretes')
-          .select(`
-            *,
-            orcamento:orcamentos (*),
-            viagem:viagens (*, cliente:clientes(*)),
-            consultor:profiles!lembretes_consultor_id_fkey (*)
-          `)
-          .order('created_at', { ascending: false });
+      // 1. Alertas arquivados do usuário
+      const pArchived = InboxService.getArchivedAlerts(user.id);
 
-        if (!userIsAdmin) {
-          lembretesQuery = lembretesQuery.or(`consultor_id.eq.${user.id},criador_id.eq.${user.id}`);
-        }
+      // 2. Perfis da agência com projeção enxuta para relacionamentos em memória
+      const pProfiles = supabase.from('profiles').select('id, nome, avatar_url');
 
-        const { data, error } = await lembretesQuery;
-        if (!error && data) {
-          lembretesData = data;
-        } else {
-          // Fallback query sem join estrito caso FK do PostgREST falhe
-          let fallbackQuery = supabase
+      // 3. Lembretes manuais com junções diretas no PostgREST
+      const pLembretes = (async () => {
+        try {
+          let lembretesQuery = supabase
             .from('lembretes')
-            .select('*')
+            .select(`
+              *,
+              orcamento:orcamentos (*),
+              viagem:viagens (*, cliente:clientes(*)),
+              consultor:profiles!lembretes_consultor_id_fkey (*)
+            `)
             .order('created_at', { ascending: false });
 
           if (!userIsAdmin) {
-            fallbackQuery = fallbackQuery.or(`consultor_id.eq.${user.id},criador_id.eq.${user.id}`);
+            lembretesQuery = lembretesQuery.or(`consultor_id.eq.${user.id},criador_id.eq.${user.id}`);
           }
-          const { data: fData } = await fallbackQuery;
-          lembretesData = fData || [];
-        }
-      } catch (errQ) {
-        console.warn('Erro ao consultar tabela de lembretes:', errQ);
-      }
 
+          const res = await lembretesQuery;
+          if (res && res.error) {
+            let fallbackQuery = supabase
+              .from('lembretes')
+              .select('*')
+              .order('created_at', { ascending: false });
+            if (!userIsAdmin) {
+              fallbackQuery = fallbackQuery.or(`consultor_id.eq.${user.id},criador_id.eq.${user.id}`);
+            }
+            return await fallbackQuery;
+          }
+          return res;
+        } catch (errQ) {
+          console.warn('Erro ao consultar tabela de lembretes:', errQ);
+          return { data: [] };
+        }
+      })();
+
+      // 4. Checagem cirúrgica de passaportes (apenas clientes com validade <= 6 meses ou expirados)
+      const limiteData = new Date();
+      limiteData.setMonth(limiteData.getMonth() + 6);
+      const limiteIso = limiteData.toISOString().split('T')[0];
+
+      const pPassaportes = (async () => {
+        try {
+          let clientesQuery = supabase
+            .from('clientes')
+            .select('id, nome, email, telefone, passaporte_numero, passaporte_validade, consultor_responsavel_id, created_at')
+            .not('passaporte_validade', 'is', null)
+            .lte('passaporte_validade', limiteIso);
+
+          if (!userIsAdmin) {
+            clientesQuery = clientesQuery.eq('consultor_responsavel_id', user.id);
+          }
+
+          const res = await clientesQuery;
+          if (res && res.error) {
+            return await supabase.from('clientes').select('id, nome, email, telefone, passaporte_numero, passaporte_validade, consultor_responsavel_id, created_at');
+          }
+          return res;
+        } catch (_) {
+          return await supabase.from('clientes').select('*');
+        }
+      })();
+
+      // 5. Reembolsos pendentes
+      const pReembolsos = (async () => {
+        try {
+          let reembolsosQuery = supabase
+            .from('reembolsos')
+            .select(`
+              *,
+              viagem:viagens (
+                *,
+                cliente:clientes (*)
+              )
+            `)
+            .not('status', 'in', '("pago","cancelado","concluido","recusado")')
+            .order('created_at', { ascending: false });
+
+          return await reembolsosQuery;
+        } catch (err) {
+          console.warn('Erro ao consultar reembolsos:', err);
+          return { data: [] };
+        }
+      })();
+
+      // 6. Notificações e menções diretas ativas
+      const pNotificacoes = (async () => {
+        try {
+          let queryNotificacoes = supabase
+            .from('notificacoes')
+            .select(`
+              *,
+              comentario:comentarios (
+                *,
+                autor:profiles (*)
+              )
+            `)
+            .order('created_at', { ascending: false });
+
+          if (!userIsAdmin) {
+            queryNotificacoes = queryNotificacoes.eq('user_id', user.id);
+          }
+
+          const res = await queryNotificacoes;
+          if (res && res.error) {
+            let fallbackQuery = supabase
+              .from('notificacoes')
+              .select(`
+                *,
+                comentario:comentarios (*)
+              `)
+              .order('created_at', { ascending: false });
+            if (!userIsAdmin) {
+              fallbackQuery = fallbackQuery.eq('user_id', user.id);
+            }
+            return await fallbackQuery;
+          }
+          return res;
+        } catch (errNot) {
+          console.warn('Exceção ao consultar notificações:', errNot);
+          return { data: [] };
+        }
+      })();
+
+      // 7. Mensagens diretas recebidas
+      const pMensagensRecebidas = (async () => {
+        try {
+          let recipientMsgIds: string[] = [];
+          if (!userIsAdmin) {
+            const { data: destRows } = await supabase
+              .from('mensagem_destinatarios')
+              .select('mensagem_id')
+              .eq('destinatario_id', user.id);
+            recipientMsgIds = (destRows || []).map((d: any) => d.mensagem_id);
+            if (recipientMsgIds.length === 0) {
+              return { data: [] };
+            }
+          }
+
+          let q = supabase
+            .from('mensagens_diretas')
+            .select('*, remetente:profiles!remetente_id(*), destinatarios:mensagem_destinatarios(*, destinatario:profiles!destinatario_id(*))')
+            .order('created_at', { ascending: false });
+
+          if (!userIsAdmin && recipientMsgIds.length > 0) {
+            q = q.in('id', recipientMsgIds);
+          }
+          return await q;
+        } catch (errDM) {
+          return { data: [] };
+        }
+      })();
+
+      // 8. Mensagens diretas enviadas
+      const pEnviadas = (async () => {
+        try {
+          let queryEnviadas = supabase
+            .from('mensagens_diretas')
+            .select(`
+              *,
+              remetente:profiles!remetente_id (*),
+              destinatarios:mensagem_destinatarios (*, destinatario:profiles!destinatario_id (*))
+            `)
+            .order('created_at', { ascending: false });
+
+          if (!userIsAdmin) {
+            queryEnviadas = queryEnviadas.eq('remetente_id', user.id);
+          }
+          return await queryEnviadas;
+        } catch (eEnv) {
+          return { data: [] };
+        }
+      })();
+
+      // 9. Notificações de comentários enviadas pelo usuário (menções @ enviadas)
+      const pNotificacoesEnviadas = (async () => {
+        try {
+          return await supabase
+            .from('notificacoes')
+            .select(`
+              id,
+              user_id,
+              tipo_item,
+              parent_id,
+              created_at,
+              destinatario:profiles!user_id (id, nome, avatar_url),
+              comentario:comentarios!comentario_id (id, autor_id, texto, created_at)
+            `)
+            .not('comentario_id', 'is', null)
+            .order('created_at', { ascending: false });
+        } catch (eNotEnv) {
+          return { data: [] };
+        }
+      })();
+
+      // 10. Viagens operacionais relevantes (janela cirúrgica de pré-embarque até 15 dias e pós-viagem 8 dias)
+      const agora = new Date();
+      const dataMinimaVolta = new Date(agora.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const dataMaximaIda = new Date(agora.getTime() + 16 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const dataMinimaIda = new Date(agora.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const pViagens = (async () => {
+        try {
+          let vQuery = supabase
+            .from('viagens')
+            .select(`
+              *,
+              cliente:clientes (*),
+              produtos:produtos_viagem(*)
+            `)
+            .not('status', 'eq', 'cancelada');
+
+          if (typeof (vQuery as any).or === 'function') {
+            vQuery = vQuery.or(`and(data_ida.gte.${dataMinimaIda},data_ida.lte.${dataMaximaIda}),and(data_volta.gte.${dataMinimaVolta},data_volta.lte.${agora.toISOString().split('T')[0]})`);
+          }
+
+          if (!userIsAdmin && typeof (vQuery as any).or === 'function') {
+            vQuery = vQuery.or(`consultor_id.eq.${user.id},consultor_responsavel_id.eq.${user.id}`);
+          }
+
+          const res = await vQuery;
+          if (res && res.error) {
+            // Fallback defensivo para queries de viagens sem restrição de .or() em mocks
+            return await supabase
+              .from('viagens')
+              .select(`
+                *,
+                cliente:clientes (*),
+                produtos:produtos_viagem(*)
+              `)
+              .not('status', 'eq', 'cancelada');
+          }
+          return res;
+        } catch (errViag) {
+          return { data: [] };
+        }
+      })();
+
+      // 11. Solicitações de escala
+      const pEscala = EscalaService.loadSolicitacoes().catch(errEsc => {
+        console.warn('Erro ao carregar solicitações de escala:', errEsc);
+        return [];
+      });
+
+      // 12. Gestão financeira e contas a pagar
+      const podeVerFinanceiro = podeAcessarFinanceiro(perfil);
+      const pFinanceiro = (async () => {
+        if (!podeVerFinanceiro) return [];
+        try {
+          const { data: stFinanceiro } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+          const notificacoesFinanceiroAtivas = stFinanceiro ? (stFinanceiro as any).notificacoes_financeiro_ativas !== false : true;
+          if (!notificacoesFinanceiroAtivas) return [];
+          const { FinContasPagarService } = await import('./finContasPagarService');
+          return await FinContasPagarService.obterContasCriticasAlerta(2);
+        } catch (errFin) {
+          return [];
+        }
+      })();
+
+      // 13. Campanhas ativas (gamificação)
+      const pCampanhas = (async () => {
+        try {
+          return await supabase.from('campaigns').select('*');
+        } catch (_) {
+          return { data: [] };
+        }
+      })();
+
+      // RESOLUÇÃO DE TODAS AS PROMISES SIMULTANEAMENTE
+      const [
+        archivedList,
+        profilesRes,
+        lembretesRes,
+        passaportesRes,
+        reembolsosRes,
+        notificacoesRes,
+        mensagensRecebidasRes,
+        enviadasRes,
+        notificacoesEnviadasRes,
+        viagensRes,
+        solicitacoesEscala,
+        contasCriticasFinanceiro,
+        campanhasRes
+      ] = await Promise.all([
+        pArchived,
+        pProfiles,
+        pLembretes,
+        pPassaportes,
+        pReembolsos,
+        pNotificacoes,
+        pMensagensRecebidas,
+        pEnviadas,
+        pNotificacoesEnviadas,
+        pViagens,
+        pEscala,
+        pFinanceiro,
+        pCampanhas
+      ]);
+
+      const archivedSet = new Set(archivedList || []);
+      const profilesList: any[] = profilesRes?.data || [];
+      const profilesMap = new Map<string, any>();
+      profilesList.forEach((p: any) => {
+        if (p.id) profilesMap.set(p.id, p);
+        if (p.nome) profilesMap.set(p.nome.toLowerCase().trim(), p);
+      });
+
+      // --- PARTE 1: PROCESSAMENTO DE LEMBRETES MANUAIS ---
+      const lembretesData: any[] = lembretesRes?.data || [];
       let filteredLembretes = lembretesData;
       if (!userIsAdmin) {
         filteredLembretes = filteredLembretes.filter((lem: any) => 
@@ -574,46 +852,9 @@ export class InboxService {
         );
       }
 
-      // Fetch lists for manual mock join resolution if needed (fallback for lenient local mock storage)
-      const needsManualJoin = filteredLembretes.length > 0 && filteredLembretes.some((lem: any) => 
-        (lem.orcamento_id && !lem.orcamento) || 
-        (lem.viagem_id && (!lem.viagem || !lem.viagem.cliente)) || 
-        (lem.consultor_id && !lem.consultor)
-      );
-
-      let orcamentosList: any[] = [];
-      let viagensList: any[] = [];
-      let clientesList: any[] = [];
-      let profilesList: any[] = [];
-
-      if (needsManualJoin) {
-        const { data: oList } = await supabase.from('orcamentos').select('*');
-        const { data: vList } = await supabase.from('viagens').select('*, cliente:clientes(*)');
-        const { data: cList } = await supabase.from('clientes').select('*');
-        const { data: pList } = await supabase.from('profiles').select('*');
-        orcamentosList = oList || [];
-        viagensList = vList || [];
-        clientesList = cList || [];
-        profilesList = pList || [];
-      } else {
-        // Still load profiles if needed to translate criador_id name
-        const { data: pList } = await supabase.from('profiles').select('*');
-        profilesList = pList || [];
-      }
-
       (filteredLembretes || []).forEach((lem: any) => {
-        // Resolve relations manually if needed
-        if (!lem.orcamento && lem.orcamento_id) {
-          lem.orcamento = orcamentosList.find((o: any) => o.id === lem.orcamento_id);
-        }
-        if (!lem.viagem && lem.viagem_id) {
-          lem.viagem = viagensList.find((v: any) => v.id === lem.viagem_id);
-        }
-        if (lem.viagem && !lem.viagem.cliente && lem.viagem.cliente_id) {
-          lem.viagem.cliente = clientesList.find((c: any) => c.id === lem.viagem.cliente_id);
-        }
         if (!lem.consultor && lem.consultor_id) {
-          lem.consultor = profilesList.find((p: any) => p.id === lem.consultor_id);
+          lem.consultor = profilesMap.get(lem.consultor_id);
         }
 
         const dataFormatada = new Date(lem.data_lembrete + 'T00:00:00').toLocaleDateString('pt-BR');
@@ -631,7 +872,7 @@ export class InboxService {
         let targetId = '';
 
         const criadorNome = lem.criador_id 
-          ? (profilesList.find((p: any) => p.id === lem.criador_id)?.nome || 'Outro Consultor')
+          ? (profilesMap.get(lem.criador_id)?.nome || 'Outro Consultor')
           : 'PaxFlow Reminders';
 
         const customDesc = (lem.descricao && String(lem.descricao).trim() !== '') ? String(lem.descricao).trim() : null;
@@ -670,16 +911,11 @@ export class InboxService {
           typeText = 'Viagem';
           targetId = lem.viagem.id;
           
-          // Obter nome real do passageiro titular da viagem
           let clientName = 'Passageiro Titular';
           if (lem.viagem.cliente && lem.viagem.cliente.nome) {
             clientName = lem.viagem.cliente.nome;
           } else if (lem.viagem.nome_cliente) {
             clientName = lem.viagem.nome_cliente;
-          } else if (lem.viagem.cliente_id) {
-            const foundClient = clientesList.find(c => c.id === lem.viagem.cliente_id);
-            const associatedOrc = orcamentosList.find(o => o.cliente_id === lem.viagem.cliente_id);
-            clientName = foundClient?.nome || associatedOrc?.nome_cliente || 'Passageiro Titular';
           }
 
           detailLink = `<a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" data-viagem-id="${lem.viagem.id}">[${clientName} - ${lem.viagem.destino}]</a>`;
@@ -704,7 +940,6 @@ export class InboxService {
             body = `${descHighlight}Você cadastrou um alerta sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e gerenciar a viagem correspondente.`;
           }
         } else {
-          // General reminder (e.g. from direct message, or custom unlinked reminder)
           typeText = 'Compromisso';
           targetId = '';
           detailLink = '';
@@ -746,7 +981,6 @@ export class InboxService {
           consultorNome: lem.consultor?.nome || 'Consultor',
           createdAt: lem.created_at,
           eventDate: lem.data_lembrete,
-          
           criadorId: lem.criador_id || lem.consultor_id,
           isDelegated: isDelegated || false,
           isCreatedByMe: isCreatedByMe || false,
@@ -754,13 +988,11 @@ export class InboxService {
         });
       });
 
-      // --- PART 2: PASSPORT SLA ALERTS ---
-      let clientesQuery = supabase.from('clientes').select('*');
-      const { data: clientesData } = await clientesQuery;
+      // --- PARTE 2: PROCESSAMENTO CIRÚRGICO DE PASSAPORTES ---
+      const clientesData: any[] = passaportesRes?.data || [];
 
       (clientesData || []).forEach((c: any) => {
-        // Filter by consultant responsibility if not admin
-        if (perfil && (perfil.role || '').toLowerCase() !== 'admin' && c.consultor_responsavel_id !== user.id) {
+        if (!userIsAdmin && c.consultor_responsavel_id && c.consultor_responsavel_id !== user.id) {
           return;
         }
 
@@ -790,42 +1022,27 @@ export class InboxService {
         }
       });
 
-      // --- PART 3: REFUND SLA ALERTS ---
-      let reembolsosQuery = supabase
-        .from('reembolsos')
-        .select(`
-          *,
-          viagem:viagens (
-            *,
-            cliente:clientes (*)
-          )
-        `)
-        .not('status', 'in', '("pago","cancelado","concluido","recusado")')
-        .order('created_at', { ascending: false });
-
-      const { data: reembolsosData } = await reembolsosQuery;
+      // --- PARTE 3: PROCESSAMENTO DE REEMBOLSOS ---
+      const reembolsosData: any[] = reembolsosRes?.data || [];
 
       (reembolsosData || []).forEach((rem: any) => {
         const consultorId = rem.viagem?.consultor_id || rem.consultor_solicitante_id;
 
-        // Desconsidera reembolsos já finalizados ou cancelados
         const st = String(rem.status || '').toLowerCase();
         const trat = String(rem.status_tratativa || '').toLowerCase();
         if (st === 'pago' || st === 'concluido' || st === 'cancelado' || st === 'recusado' || trat === 'concluido') {
           return;
         }
 
-        // Filter by consultant responsibility if not admin
-        if (perfil && (perfil.role || '').toLowerCase() !== 'admin' && consultorId !== user.id) {
+        if (!userIsAdmin && consultorId && consultorId !== user.id) {
           return;
         }
 
         const dataAbertura = new Date(rem.created_at);
-        const hoje = new Date();
-        const diffMs = hoje.getTime() - dataAbertura.getTime();
+        const hojeCalc = new Date();
+        const diffMs = hojeCalc.getTime() - dataAbertura.getTime();
         const diasAbertos = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-        // Alerta a partir de 2 dias antes do estoiro do prazo ou quando vencido
         if (diasAbertos >= (prazoReembolsoDias - 2)) {
           const isAtrasado = diasAbertos >= prazoReembolsoDias;
           const isVencendoHoje = diasAbertos === prazoReembolsoDias;
@@ -867,148 +1084,49 @@ export class InboxService {
         }
       });
 
-      // --- PART 4: MENTION & DIRECT MESSAGE NOTIFICATIONS ---
-      let notificacoesData: any[] = [];
-      try {
-        let queryNotificacoes = supabase
-          .from('notificacoes')
-          .select(`
-            *,
-            comentario:comentarios (
-              *,
-              autor:profiles (*)
-            )
-          `)
-          .order('created_at', { ascending: false });
+      // --- PARTE 4: PROCESSAMENTO DE NOTIFICAÇÕES E MENSAGENS DIRETAS ---
+      const notificacoesData: any[] = notificacoesRes?.data || [];
+      const camps: any[] = campanhasRes?.data || [];
 
-        // Administradores carregam as notificações da equipe para permitir alternar no seletor
-        if (!userIsAdmin) {
-          queryNotificacoes = queryNotificacoes.eq('user_id', user.id);
-        }
-
-        const { data, error } = await queryNotificacoes;
-        if (!error && data) {
-          notificacoesData = data;
-        } else {
-          // Fallback seguro caso haja problema com a relação autor no PostgREST
-          let fallbackQuery = supabase
-            .from('notificacoes')
-            .select(`
-              *,
-              comentario:comentarios (*)
-            `)
-            .order('created_at', { ascending: false });
-
-          if (!userIsAdmin) {
-            fallbackQuery = fallbackQuery.eq('user_id', user.id);
+      if (camps.length > 0) {
+        notificacoesData.forEach((n: any) => {
+          if (n.tipo_item === 'campanha' && !n.campaign) {
+            n.campaign = camps.find((c: any) => c.id === n.campaign_id);
           }
-          const { data: fData, error: fError } = await fallbackQuery;
-          if (!fError && fData) {
-            notificacoesData = fData;
-          } else {
-            console.error('Erro ao buscar notificações do banco:', error || fError);
-          }
-        }
-      } catch (errNot) {
-        console.error('Exceção ao consultar notificações:', errNot);
+        });
       }
 
-      // Enriquecer campanhas se houver notificações de campanha
-      if (notificacoesData.some((n: any) => n.tipo_item === 'campanha' && n.campaign_id)) {
-        try {
-          const { data: camps } = await supabase.from('campaigns').select('*');
-          if (camps) {
-            notificacoesData.forEach((n: any) => {
-              if (n.tipo_item === 'campanha' && !n.campaign) {
-                n.campaign = camps.find((c: any) => c.id === n.campaign_id);
-              }
-            });
-          }
-        } catch (e) {}
-      }
-
-      // Enriquecer mensagens diretas se houver notificações de mensagem
-      if (notificacoesData.some((n: any) => n.tipo_item === 'mensagem')) {
-        try {
-          const msgIds = notificacoesData
+      // Mesclar mensagens diretas recebidas que ainda não constem em notificacoesData
+      const msgsRecebidas: any[] = mensagensRecebidasRes?.data || [];
+      if (msgsRecebidas.length > 0) {
+        const existingNotifMsgIds = new Set(
+          notificacoesData
             .filter((n: any) => n.tipo_item === 'mensagem')
             .map((n: any) => n.item_id || n.parent_id)
-            .filter(Boolean);
-          if (msgIds.length > 0) {
-            const { data: msgs } = await supabase
-              .from('mensagens_diretas')
-              .select('*, remetente:profiles!remetente_id(*), destinatarios:mensagem_destinatarios(*, destinatario:profiles!destinatario_id(*))')
-              .in('id', msgIds);
-            if (msgs) {
-              notificacoesData.forEach((n: any) => {
-                if (n.tipo_item === 'mensagem' && !n.mensagem) {
-                  n.mensagem = msgs.find((m: any) => m.id === (n.item_id || n.parent_id));
-                }
-              });
-            }
+        );
+
+        msgsRecebidas.forEach((msg: any) => {
+          if (!existingNotifMsgIds.has(msg.id)) {
+            notificacoesData.push({
+              id: `dm-direct-${msg.id}`,
+              user_id: user.id,
+              tipo_item: 'mensagem',
+              item_id: msg.id,
+              parent_id: msg.id,
+              lida: false,
+              arquivada: false,
+              created_at: msg.created_at,
+              mensagem: msg
+            });
           }
-        } catch (e) {
-          console.warn('Erro ao enriquecer notificações de mensagens:', e);
-        }
-      }
-
-      // 4.1 Carregar mensagens diretas recebidas diretamente da tabela para garantir que nenhuma mensagem seja perdida
-      try {
-        let recipientMsgIds: string[] = [];
-        if (!userIsAdmin) {
-          const { data: destRows } = await supabase
-            .from('mensagem_destinatarios')
-            .select('mensagem_id')
-            .eq('destinatario_id', user.id);
-          recipientMsgIds = (destRows || []).map((d: any) => d.mensagem_id);
-        }
-
-        let queryMensagensRecebidas = supabase
-          .from('mensagens_diretas')
-          .select('*, remetente:profiles!remetente_id(*), destinatarios:mensagem_destinatarios(*, destinatario:profiles!destinatario_id(*))')
-          .order('created_at', { ascending: false });
-
-        if (!userIsAdmin) {
-          if (recipientMsgIds.length > 0) {
-            queryMensagensRecebidas = queryMensagensRecebidas.in('id', recipientMsgIds);
-          } else {
-            queryMensagensRecebidas = queryMensagensRecebidas.eq('id', '00000000-0000-0000-0000-000000000000');
-          }
-        }
-
-        const { data: msgsRecebidas } = await queryMensagensRecebidas;
-        if (msgsRecebidas && msgsRecebidas.length > 0) {
-          const existingNotifMsgIds = new Set(
-            notificacoesData
-              .filter((n: any) => n.tipo_item === 'mensagem')
-              .map((n: any) => n.item_id || n.parent_id)
-          );
-
-          msgsRecebidas.forEach((msg: any) => {
-            if (!existingNotifMsgIds.has(msg.id)) {
-              notificacoesData.push({
-                id: `dm-direct-${msg.id}`,
-                user_id: user.id,
-                tipo_item: 'mensagem',
-                item_id: msg.id,
-                parent_id: msg.id,
-                lida: false,
-                arquivada: false,
-                created_at: msg.created_at,
-                mensagem: msg
-              });
-            }
-          });
-        }
-      } catch (errDM) {
-        console.warn('Aviso ao sincronizar mensagens diretas recebidas:', errDM);
+        });
       }
 
       (notificacoesData || []).forEach((not: any) => {
         const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
 
         if (not.tipo_item === 'campanha') {
-          if (!not.campaign) return; // Campanha deleted
+          if (!not.campaign) return;
 
           let metaLabel = '';
           if (not.campaign.tipo_meta === 'xp_acumulado') metaLabel = `${not.campaign.meta_quantidade} XP`;
@@ -1079,16 +1197,15 @@ export class InboxService {
         }
 
         if (not.tipo_item === 'mensagem') {
-          if (!not.mensagem) return; // Mensagem deleted
+          if (!not.mensagem) return;
 
-          const remetente = not.mensagem.remetente || profilesList.find((p: any) => p.id === not.mensagem.remetente_id);
+          const remetente = not.mensagem.remetente || profilesMap.get(not.mensagem.remetente_id);
           const senderName = remetente ? remetente.nome : 'Consultor';
           const senderAvatar = remetente ? remetente.avatar_url : undefined;
 
-          // Nomes dos destinatários
           const destList = not.mensagem.destinatarios || [];
           const destNames = destList
-            .map((d: any) => d.destinatario?.nome || profilesList.find((p: any) => p.id === d.destinatario_id)?.nome)
+            .map((d: any) => d.destinatario?.nome || profilesMap.get(d.destinatario_id)?.nome)
             .filter(Boolean);
           const recipientName = destNames.length > 0 ? destNames.join(', ') : 'Você';
           const recipientsHtml = `Para: ${recipientName}`;
@@ -1117,9 +1234,9 @@ export class InboxService {
           return;
         }
 
-        if (!not.comentario) return; // Comentário deleted
+        if (!not.comentario) return;
 
-        const author = not.comentario.autor || profilesList.find((p: any) => p.id === (not.comentario.autor_id || not.comentario.user_id));
+        const author = not.comentario.autor || profilesMap.get(not.comentario.autor_id || not.comentario.user_id);
         const authorName = author ? author.nome : 'Consultor';
         const authorAvatar = author ? author.avatar_url : undefined;
 
@@ -1162,133 +1279,91 @@ export class InboxService {
         });
       });
 
-      // --- PART 5: SENT DIRECT MESSAGES ---
-      try {
-        let queryEnviadas = supabase
-          .from('mensagens_diretas')
-          .select(`
-            *,
-            remetente:profiles!remetente_id (*),
-            destinatarios:mensagem_destinatarios (*, destinatario:profiles!destinatario_id (*))
-          `)
-          .order('created_at', { ascending: false });
+      // --- PARTE 5: PROCESSAMENTO DE MENSAGENS E NOTIFICAÇÕES ENVIADAS ---
+      const enviadasData: any[] = enviadasRes?.data || [];
 
-        if (!userIsAdmin) {
-          queryEnviadas = queryEnviadas.eq('remetente_id', user.id);
-        }
+      enviadasData.forEach((msg: any) => {
+        const dataFormatada = new Date(msg.created_at).toLocaleDateString('pt-BR');
+        const isSentByMe = msg.remetente_id === user.id;
+        const senderName = isSentByMe ? 'Você' : (msg.remetente ? msg.remetente.nome : (profilesMap.get(msg.remetente_id)?.nome || 'Consultor'));
+        const senderAvatar = msg.remetente ? msg.remetente.avatar_url : undefined;
+        
+        const destList = msg.destinatarios || [];
+        const destNames = destList
+          .map((d: any) => d.destinatario?.nome || profilesMap.get(d.destinatario_id)?.nome)
+          .filter(Boolean);
+        const destinatarioName = destNames.length > 0 ? destNames.join(', ') : 'Consultor';
+        const recipientsHtml = `Para: ${destinatarioName}`;
 
-        const { data: enviadasData, error: enviadasErr } = await queryEnviadas;
+        list.push({
+          id: `sent-${msg.id}`,
+          type: 'direct_message',
+          title: msg.assunto || 'Mensagem Direta',
+          sender: senderName,
+          senderAvatar: senderAvatar,
+          dateStr: dataFormatada,
+          subject: `Para: ${destinatarioName}`,
+          body: msg.conteudo,
+          targetId: msg.id,
+          arquivado: archivedSet.has(`sent-${msg.id}`) || archivedSet.has(`dm-direct-${msg.id}`),
+          consultorId: msg.remetente_id,
+          consultorNome: senderName,
+          createdAt: msg.created_at,
+          eventDate: msg.created_at.split('T')[0],
+          recipientsHtml,
+          isSent: true,
+          senderId: msg.remetente_id,
+          parentId: msg.parent_id,
+          threadId: msg.thread_id || msg.id
+        });
+      });
 
-        if (!enviadasErr && enviadasData) {
-          enviadasData.forEach((msg: any) => {
-            const dataFormatada = new Date(msg.created_at).toLocaleDateString('pt-BR');
-            const isSentByMe = msg.remetente_id === user.id;
-            const senderName = isSentByMe ? 'Você' : (msg.remetente ? msg.remetente.nome : (profilesList.find((p: any) => p.id === msg.remetente_id)?.nome || 'Consultor'));
-            const senderAvatar = msg.remetente ? msg.remetente.avatar_url : undefined;
-            
-            const destList = msg.destinatarios || [];
-            const destNames = destList
-              .map((d: any) => d.destinatario?.nome || profilesList.find((p: any) => p.id === d.destinatario_id)?.nome)
-              .filter(Boolean);
-            const destinatarioName = destNames.length > 0 ? destNames.join(', ') : 'Consultor';
-            const recipientsHtml = `Para: ${destinatarioName}`;
+      const notificacoesEnviadas: any[] = notificacoesEnviadasRes?.data || [];
 
-            list.push({
-              id: `sent-${msg.id}`,
-              type: 'direct_message',
-              title: msg.assunto || 'Mensagem Direta',
-              sender: senderName,
-              senderAvatar: senderAvatar,
-              dateStr: dataFormatada,
-              subject: `Para: ${destinatarioName}`,
-              body: msg.conteudo,
-              targetId: msg.id,
-              arquivado: archivedSet.has(`sent-${msg.id}`) || archivedSet.has(`dm-direct-${msg.id}`),
-              consultorId: msg.remetente_id,
-              consultorNome: senderName,
-              createdAt: msg.created_at,
-              eventDate: msg.created_at.split('T')[0],
-              recipientsHtml,
-              isSent: true,
-              senderId: msg.remetente_id,
-              parentId: msg.parent_id,
-              threadId: msg.thread_id || msg.id
-            });
-          });
-        }
+      notificacoesEnviadas.forEach((not: any) => {
+        if (!not.comentario) return;
+        if (!userIsAdmin && not.comentario.autor_id !== user.id) return;
+        const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
+        const destName = not.destinatario?.nome || 'Colega';
+        const itemLabel = not.tipo_item === 'orcamento' ? 'Orçamento' : (not.tipo_item === 'viagem' ? 'Viagem' : 'Produto');
+        let linkAttr = '';
+        if (not.tipo_item === 'orcamento') linkAttr = `data-orcamento-id="${not.parent_id}"`;
+        else linkAttr = `data-viagem-id="${not.parent_id}"`;
 
-        // 5.2. Notificações de comentários enviadas pelo usuário logado (Menções @)
-        const { data: notificacoesEnviadas, error: notifsEnvErr } = await supabase
-          .from('notificacoes')
-          .select(`
-            id,
-            user_id,
-            tipo_item,
-            parent_id,
-            created_at,
-            destinatario:profiles!user_id (id, nome, avatar_url),
-            comentario:comentarios!comentario_id (id, autor_id, texto, created_at)
-          `)
-          .not('comentario_id', 'is', null)
-          .order('created_at', { ascending: false });
+        const isSentByMe = not.comentario.autor_id === user.id;
+        const authorProfile = profilesMap.get(not.comentario.autor_id);
+        const authorName = isSentByMe ? 'Você' : (authorProfile?.nome || 'Consultor');
 
-        if (!notifsEnvErr && notificacoesEnviadas) {
-          notificacoesEnviadas.forEach((not: any) => {
-            if (!not.comentario) return;
-            if (!userIsAdmin && not.comentario.autor_id !== user.id) return;
-            const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
-            const destName = not.destinatario?.nome || 'Colega';
-            const itemLabel = not.tipo_item === 'orcamento' ? 'Orçamento' : (not.tipo_item === 'viagem' ? 'Viagem' : 'Produto');
-            let linkAttr = '';
-            if (not.tipo_item === 'orcamento') linkAttr = `data-orcamento-id="${not.parent_id}"`;
-            else linkAttr = `data-viagem-id="${not.parent_id}"`;
+        list.push({
+          id: `sent-mention-${not.id}`,
+          type: 'mention',
+          title: `💬 Menção Enviada em ${itemLabel}`,
+          sender: authorName,
+          senderAvatar: authorProfile?.avatar_url,
+          dateStr: dataFormatada,
+          subject: `Para: ${destName}`,
+          body: `${isSentByMe ? 'Você mencionou' : `${authorName} mencionou`} <strong>${destName}</strong> em um comentário no ${itemLabel}:<br><br>
+                 <div class="pl-3 border-l-4 border-indigo-500 italic text-slate-600 dark:text-slate-400 py-1.5 bg-slate-50 dark:bg-slate-800/40 rounded-r-lg my-3">
+                   "${not.comentario.texto}"
+                 </div>
+                 Clique no link abaixo para abrir o item correspondente:<br>
+                 <a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" ${linkAttr}>
+                   [Ver Detalhes do(a) ${itemLabel}]
+                 </a>`,
+          targetId: not.parent_id,
+          arquivado: archivedSet.has(`sent-mention-${not.id}`) || archivedSet.has(`mention-${not.id}`),
+          consultorId: not.comentario.autor_id,
+          consultorNome: authorName,
+          senderId: not.comentario.autor_id,
+          createdAt: not.created_at,
+          eventDate: not.created_at.split('T')[0],
+          recipientsHtml: `Para: ${destName}`,
+          isSent: true
+        });
+      });
 
-            const isSentByMe = not.comentario.autor_id === user.id;
-            const authorProfile = profilesList.find((p: any) => p.id === not.comentario.autor_id);
-            const authorName = isSentByMe ? 'Você' : (authorProfile?.nome || 'Consultor');
-
-            list.push({
-              id: `sent-mention-${not.id}`,
-              type: 'mention',
-              title: `💬 Menção Enviada em ${itemLabel}`,
-              sender: authorName,
-              senderAvatar: authorProfile?.avatar_url,
-              dateStr: dataFormatada,
-              subject: `Para: ${destName}`,
-              body: `${isSentByMe ? 'Você mencionou' : `${authorName} mencionou`} <strong>${destName}</strong> em um comentário no ${itemLabel}:<br><br>
-                     <div class="pl-3 border-l-4 border-indigo-500 italic text-slate-600 dark:text-slate-400 py-1.5 bg-slate-50 dark:bg-slate-800/40 rounded-r-lg my-3">
-                       "${not.comentario.texto}"
-                     </div>
-                     Clique no link abaixo para abrir o item correspondente:<br>
-                     <a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" ${linkAttr}>
-                       [Ver Detalhes do(a) ${itemLabel}]
-                     </a>`,
-              targetId: not.parent_id,
-              arquivado: archivedSet.has(`sent-mention-${not.id}`) || archivedSet.has(`mention-${not.id}`),
-              consultorId: not.comentario.autor_id,
-              consultorNome: authorName,
-              senderId: not.comentario.autor_id,
-              createdAt: not.created_at,
-              eventDate: not.created_at.split('T')[0],
-              recipientsHtml: `Para: ${destName}`,
-              isSent: true
-            });
-          });
-        }
-      } catch (eEnv) {
-        console.warn('Aviso ao buscar mensagens enviadas:', eEnv);
-      }
-      // --- PART 6: PRÉ-EMBARQUE & PÓS-VIAGEM NPS ALERTS ---
-      let viagensQuery = supabase
-        .from('viagens')
-        .select(`
-          *,
-          cliente:clientes (*),
-          produtos:produtos_viagem(*)
-        `)
-        .not('status', 'eq', 'cancelada');
-
-      const { data: viagensData } = await viagensQuery;
+      // --- PARTE 6: PROCESSAMENTO CIRÚRGICO DE VIAGENS (PRÉ-EMBARQUE, AÉREO E NPS) ---
+      const viagensData: any[] = viagensRes?.data || [];
       const hoje = new Date();
 
       (viagensData || []).forEach((v: any) => {
@@ -1296,8 +1371,7 @@ export class InboxService {
           v.produtos = [];
         }
 
-        // Filter by consultant responsibility if not admin
-        if (perfil && (perfil.role || '').toLowerCase() !== 'admin' && v.consultor_id !== user.id && v.consultor_responsavel_id !== user.id) {
+        if (!userIsAdmin && v.consultor_id !== user.id && v.consultor_responsavel_id !== user.id) {
           return;
         }
 
@@ -1310,7 +1384,6 @@ export class InboxService {
           const diffMs = dataIda.getTime() - hoje.getTime();
           const horasAteIda = diffMs / (1000 * 60 * 60);
 
-          // Se a viagem inicia em até 7 dias (168 horas) e ainda não ocorreu
           if (horasAteIda > -24 && horasAteIda <= 168) {
             const isUrgente = horasAteIda <= 48;
             const uniqueId = `pre-embarque-${v.id}`;
@@ -1335,85 +1408,82 @@ export class InboxService {
               eventDate: v.data_ida
             });
           }
+
           // 1.2. Alertas de Pré-Embarque para Trechos Aéreos
-        if (v.produtos && Array.isArray(v.produtos)) {
-          v.produtos.forEach((p: any) => {
-            if ((p.tipo === 'AÉREO OPERADORA' || p.tipo === 'AÉREO FACIAL') && p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
-              p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
-                const labelTrecho = `${p.fornecedor} - Trecho ${idx + 1} (${t.origem} ➔ ${t.destino})`;
-                
-                // Ida do Trecho
-                if (t.dataIda) {
-                  const dataIda = new Date(t.dataIda + 'T00:00:00');
-                  const diffMs = dataIda.getTime() - hoje.getTime();
-                  const horasAteIda = diffMs / (1000 * 60 * 60);
+          if (v.produtos && Array.isArray(v.produtos)) {
+            v.produtos.forEach((p: any) => {
+              if ((p.tipo === 'AÉREO OPERADORA' || p.tipo === 'AÉREO FACIAL') && p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+                p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+                  const labelTrecho = `${p.fornecedor} - Trecho ${idx + 1} (${t.origem} ➔ ${t.destino})`;
+                  
+                  if (t.dataIda) {
+                    const dataIdaTrecho = new Date(t.dataIda + 'T00:00:00');
+                    const diffMsTrecho = dataIdaTrecho.getTime() - hoje.getTime();
+                    const horasAteIdaTrecho = diffMsTrecho / (1000 * 60 * 60);
 
-                  if (horasAteIda > 0 && horasAteIda <= 48) {
-                    const uniqueId = `pre-embarque-trecho-ida-${v.id}-${p.id}-${idx}`;
+                    if (horasAteIdaTrecho > 0 && horasAteIdaTrecho <= 48) {
+                      const uniqueId = `pre-embarque-trecho-ida-${v.id}-${p.id}-${idx}`;
 
-                    list.push({
-                      id: uniqueId,
-                      type: 'pre-embarque',
-                      title: '✈️ Alerta - Ida de Trecho Aéreo',
-                      sender: 'PaxFlow Operações',
-                      senderAvatar: 'paxflow',
-                      dateStr: dataIda.toLocaleDateString('pt-BR'),
-                      subject: `Embarque de ${clienteNome}: ${labelTrecho} em breve!`,
-                      body: `A ida do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendada para iniciar em menos de 48 horas.<br><br>• <strong>Data de Ida do Trecho:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
-                      targetId: v.id,
-                      arquivado: archivedSet.has(uniqueId) || archivedSet.has(`pre-embarque-${v.id}`),
-                      consultorId: v.consultor_id || '',
-                      consultorNome: 'PaxFlow Automático',
-                      createdAt: v.created_at || new Date().toISOString(),
-                      eventDate: t.dataIda
-                    });
+                      list.push({
+                        id: uniqueId,
+                        type: 'pre-embarque',
+                        title: '✈️ Alerta - Ida de Trecho Aéreo',
+                        sender: 'PaxFlow Operações',
+                        senderAvatar: 'paxflow',
+                        dateStr: dataIdaTrecho.toLocaleDateString('pt-BR'),
+                        subject: `Embarque de ${clienteNome}: ${labelTrecho} em breve!`,
+                        body: `A ida do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendada para iniciar em menos de 48 horas.<br><br>• <strong>Data de Ida do Trecho:</strong> ${dataIdaTrecho.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
+                        targetId: v.id,
+                        arquivado: archivedSet.has(uniqueId) || archivedSet.has(`pre-embarque-${v.id}`),
+                        consultorId: v.consultor_id || '',
+                        consultorNome: 'PaxFlow Automático',
+                        createdAt: v.created_at || new Date().toISOString(),
+                        eventDate: t.dataIda
+                      });
+                    }
                   }
-                }
 
-                // Volta do Trecho (se houver)
-                if (t.dataVolta) {
-                  const dataVolta = new Date(t.dataVolta + 'T00:00:00');
-                  const diffMs = dataVolta.getTime() - hoje.getTime();
-                  const horasAteVolta = diffMs / (1000 * 60 * 60);
+                  if (t.dataVolta) {
+                    const dataVoltaTrecho = new Date(t.dataVolta + 'T00:00:00');
+                    const diffMsVolta = dataVoltaTrecho.getTime() - hoje.getTime();
+                    const horasAteVoltaTrecho = diffMsVolta / (1000 * 60 * 60);
 
-                  if (horasAteVolta > 0 && horasAteVolta <= 48) {
-                    const uniqueId = `pre-embarque-trecho-volta-${v.id}-${p.id}-${idx}`;
+                    if (horasAteVoltaTrecho > 0 && horasAteVoltaTrecho <= 48) {
+                      const uniqueId = `pre-embarque-trecho-volta-${v.id}-${p.id}-${idx}`;
 
-                    list.push({
-                      id: uniqueId,
-                      type: 'pre-embarque',
-                      title: '✈️ Alerta - Volta de Trecho Aéreo',
-                      sender: 'PaxFlow Operações',
-                      senderAvatar: 'paxflow',
-                      dateStr: dataVolta.toLocaleDateString('pt-BR'),
-                      subject: `Retorno de ${clienteNome}: ${labelTrecho} em breve!`,
-                      body: `O retorno do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendado para iniciar em menos de 48 horas.<br><br>• <strong>Data de Volta do Trecho:</strong> ${dataVolta.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
-                      targetId: v.id,
-                      arquivado: archivedSet.has(uniqueId) || archivedSet.has(`pre-embarque-${v.id}`),
-                      consultorId: v.consultor_id || '',
-                      consultorNome: 'PaxFlow Automático',
-                      createdAt: v.created_at || new Date().toISOString(),
-                      eventDate: t.dataVolta
-                    });
+                      list.push({
+                        id: uniqueId,
+                        type: 'pre-embarque',
+                        title: '✈️ Alerta - Volta de Trecho Aéreo',
+                        sender: 'PaxFlow Operações',
+                        senderAvatar: 'paxflow',
+                        dateStr: dataVoltaTrecho.toLocaleDateString('pt-BR'),
+                        subject: `Retorno de ${clienteNome}: ${labelTrecho} em breve!`,
+                        body: `O retorno do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendado para iniciar em menos de 48 horas.<br><br>• <strong>Data de Volta do Trecho:</strong> ${dataVoltaTrecho.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
+                        targetId: v.id,
+                        arquivado: archivedSet.has(uniqueId) || archivedSet.has(`pre-embarque-${v.id}`),
+                        consultorId: v.consultor_id || '',
+                        consultorNome: 'PaxFlow Automático',
+                        createdAt: v.created_at || new Date().toISOString(),
+                        eventDate: t.dataVolta
+                      });
+                    }
                   }
-                }
-              });
-            }
-          });
+                });
+              }
+            });
+          }
         }
-      }
 
-        // 2. Alerta de Pós-Viagem NPS (24h após a volta)
+        // 2. Alerta de Pós-Viagem NPS (24h após a volta até 7 dias)
         if (v.data_volta) {
           const dataVolta = new Date(v.data_volta);
-          // Adiciona 24h após a data de volta (fim do dia de volta)
           const dataDisparo = new Date(dataVolta);
           dataDisparo.setDate(dataDisparo.getDate() + 1);
 
           const diffMsDisparo = hoje.getTime() - dataDisparo.getTime();
           const diasAposVolta = diffMsDisparo / (1000 * 60 * 60 * 24);
 
-          // Disparar se já se passaram 24h da volta e estamos dentro de 7 dias pós-volta
           if (diasAposVolta >= 0 && diasAposVolta <= 7) {
             const uniqueId = `pos-viagem-nps-${v.id}`;
 
@@ -1481,312 +1551,275 @@ export class InboxService {
         }
       });
 
-      // --- PART 7: SOLICITAÇÕES DE ESCALA (TROCAS, FOLGAS E FÉRIAS) ---
-      try {
-        const { data: allProfilesData } = await supabase.from('profiles').select('id, nome, avatar_url');
-        const profilesMap = new Map<string, any>();
-        (allProfilesData || []).forEach((p: any) => {
-          if (p.id) profilesMap.set(p.id, p);
-          if (p.nome) profilesMap.set(p.nome.toLowerCase().trim(), p);
-        });
+      // --- PARTE 7: PROCESSAMENTO DE SOLICITAÇÕES DE ESCALA ---
+      (solicitacoesEscala || []).forEach(sol => {
+        const isUserSolicitante = (sol.solicitante_id && String(sol.solicitante_id) === String(user.id)) ||
+          isSameConsultantName(sol.solicitante_nome || '', perfil?.nome || '');
+        const isUserDestinatario = (sol.destinatario_id && String(sol.destinatario_id) === String(user.id)) ||
+          isSameConsultantName(sol.destinatario_nome || '', perfil?.nome || '');
+        const isAdmin = userIsAdmin;
 
-        const solicitacoesEscala = await EscalaService.loadSolicitacoes();
-        (solicitacoesEscala || []).forEach(sol => {
-          const isUserSolicitante = (sol.solicitante_id && String(sol.solicitante_id) === String(user.id)) ||
-            isSameConsultantName(sol.solicitante_nome || '', perfil?.nome || '');
-          const isUserDestinatario = (sol.destinatario_id && String(sol.destinatario_id) === String(user.id)) ||
-            isSameConsultantName(sol.destinatario_nome || '', perfil?.nome || '');
-          const isAdmin = userIsAdmin;
+        let shouldInclude = false;
+        let isSentItem = false;
+        let cardTitle = '';
+        let cardSubject = '';
+        let cardBody = '';
+        let cardSender = sol.solicitante_nome || 'Central de Escala';
 
-          let shouldInclude = false;
-          let isSentItem = false;
-          let cardTitle = '';
-          let cardSubject = '';
-          let cardBody = '';
-          let cardSender = sol.solicitante_nome || 'Central de Escala';
+        const solProfile = profilesMap.get(sol.solicitante_id) || profilesMap.get((sol.solicitante_nome || '').toLowerCase().trim());
+        const senderAvatarReal = (sol as any).solicitante_avatar || solProfile?.avatar_url || undefined;
 
-          // Obter avatar real do solicitante/remetente da solicitação
-          const solProfile = profilesMap.get(sol.solicitante_id) || profilesMap.get((sol.solicitante_nome || '').toLowerCase().trim());
-          const senderAvatarReal = (sol as any).solicitante_avatar || solProfile?.avatar_url || undefined;
+        const dataOrigemFmt = formatarDataBR(sol.data_origem);
+        const dataDestinoFmt = formatarDataBR(sol.data_destino);
+        const rangeStr = formatarPeriodoDataBR(sol.data_origem, sol.data_destino);
 
-          const dataOrigemFmt = formatarDataBR(sol.data_origem);
-          const dataDestinoFmt = formatarDataBR(sol.data_destino);
-          const rangeStr = formatarPeriodoDataBR(sol.data_origem, sol.data_destino);
-
-          // 1. Troca pendente de aceite pelo colega destinatário
-          if (sol.status === 'pendente_colega') {
-            if (isUserDestinatario) {
-              shouldInclude = true;
-              cardTitle = 'Troca de Turno Solicitada por Colega';
-              cardSubject = `${sol.solicitante_nome} solicitou trocar o turno de ${dataOrigemFmt} com você!`;
-              cardBody = `
-                <div class="space-y-2">
-                  <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
-                  <p>• <strong>Data Solicitante:</strong> ${dataOrigemFmt}<br>• <strong>Sua Data (Colega):</strong> ${dataDestinoFmt}</p>
-                  <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
-                  <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3">
-                    <button class="btn-aceitar-troca-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
-                      <span>✅ Aceitar Troca</span>
-                    </button>
-                    <button class="btn-recusar-troca-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-rose-950/20" data-sol-id="${sol.id}">
-                      <span>❌ Recusar</span>
-                    </button>
-                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition" data-sol-id="${sol.id}">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                      <span>Ver na Escala</span>
-                    </button>
-                  </div>
-                </div>
-              `;
-            } else if (isUserSolicitante) {
-              shouldInclude = true;
-              isSentItem = true;
-              cardTitle = 'Solicitação de Troca Enviada ao Colega';
-              cardSubject = `Sua solicitação de troca com ${sol.destinatario_nome} (${dataOrigemFmt}) aguarda aceite do colega.`;
-              cardBody = `Você solicitou trocar seu turno de ${dataOrigemFmt} com o turno de ${dataDestinoFmt} de ${sol.destinatario_nome}.`;
-            }
-          } 
-          // 1.1. Proposta enviada pela Gestão pendente de aceite pelo consultor
-          else if (sol.status === 'pendente_consultor') {
-            const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
-            if (isUserDestinatario) {
-              shouldInclude = true;
-              cardTitle = `Proposta da Gestão: ${tipoInfo.label}`;
-              cardSubject = `${sol.solicitante_nome} (Gestão) enviou uma proposta de ${tipoInfo.label.toLowerCase()} para você.`;
-              cardBody = `
-                <div class="space-y-2">
-                  <p><strong>Solicitante (Gestão):</strong> ${sol.solicitante_nome}</p>
-                  <p>• <strong>Período:</strong> ${rangeStr}</p>
-                  <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
-                  <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3">
-                    <button class="btn-aceitar-proposta-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-emerald-950/20" data-sol-id="${sol.id}">
-                      <span>✅ Aceitar Proposta</span>
-                    </button>
-                    <button class="btn-recusar-proposta-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-rose-950/20" data-sol-id="${sol.id}">
-                      <span>❌ Recusar</span>
-                    </button>
-                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition" data-sol-id="${sol.id}">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                      <span>Ver na Escala</span>
-                    </button>
-                  </div>
-                </div>
-              `;
-            } else if (isUserSolicitante || isAdmin) {
-              shouldInclude = true;
-              isSentItem = true;
-              cardTitle = `${tipoInfo.title} Enviada ao Consultor`;
-              cardSubject = `Proposta de ${tipoInfo.label} para ${sol.destinatario_nome || 'Consultor'} aguarda aceite.`;
-              cardBody = `Você/Gestão enviou uma proposta de ${tipoInfo.label} para ${sol.destinatario_nome || 'o consultor'}.`;
-            }
-          }
-          // 1.2. Caso especial: Atendimento no Balcão (Co-Piloto) - Notificação Operacional
-          else if (sol.tipo === 'atendimento_balcao') {
-            const isUserDestinatarioBalcao = (sol.destinatario_id && String(sol.destinatario_id) === String(user.id)) || 
-              (sol.destinatario_nome && perfil?.nome && isSameConsultantName(sol.destinatario_nome, perfil.nome));
-            const isUserQuemAtendeu = (sol.solicitante_id && String(sol.solicitante_id) === String(user.id)) ||
-              (sol.solicitante_nome && perfil?.nome && isSameConsultantName(sol.solicitante_nome, perfil.nome));
-
-            if (isUserDestinatarioBalcao || isUserQuemAtendeu || isAdmin) {
-              shouldInclude = true;
-              if (isUserQuemAtendeu && !isUserDestinatarioBalcao) {
-                isSentItem = true;
-                cardTitle = '🤝 Atendimento Registrado no Balcão';
-                cardSender = 'Você';
-                cardSubject = `Para: ${sol.destinatario_nome || 'Consultor Titular'} • ${sol.motivo || 'Atendimento presencial'}`;
-              } else {
-                isSentItem = false;
-                cardTitle = '🤝 Atendimento no Balcão (Co-Piloto)';
-                cardSender = sol.solicitante_nome || 'Consultor Co-Piloto';
-                cardSubject = sol.motivo || `Seu cliente foi atendido presencialmente no balcão por ${sol.solicitante_nome}.`;
-              }
-              cardBody = `
-                <div class="space-y-2">
-                  <p>🤝 <strong>Atendimento Presencial Registrado</strong></p>
-                  <p>${sol.motivo || `Cliente atendido no balcão por ${sol.solicitante_nome}.`}</p>
-                  <p class="text-[11px] text-slate-400"><strong>Data e Hora:</strong> ${dataOrigemFmt}</p>
-                </div>
-              `;
-            }
-          }
-          // 2. Solicitação pendente de aprovação pela gestão (folga, férias ou troca aceita pelo colega)
-          else if (sol.status === 'pendente_admin') {
-            const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
-            if (isAdmin) {
-              shouldInclude = true;
-              cardTitle = `Aprovação de Escala: ${tipoInfo.label}`;
-              cardSubject = `${tipoInfo.title} - ${sol.solicitante_nome}`;
-              cardBody = `
-                <div class="space-y-2">
-                  <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
-                  <p>${sol.tipo === 'troca' ? `• <strong>Troca com:</strong> ${sol.destinatario_nome}<br>• <strong>Data Solicitante:</strong> ${dataOrigemFmt}<br>• <strong>Data Colega:</strong> ${dataDestinoFmt}` : `• <strong>Período Solicitado:</strong> ${rangeStr}`}</p>
-                  <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
-                  <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3">
-                    <button class="btn-aprovar-escala-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-emerald-950/20" data-sol-id="${sol.id}">
-                      <span>✅ Aprovar</span>
-                    </button>
-                    <button class="btn-recusar-escala-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-rose-950/20" data-sol-id="${sol.id}">
-                      <span>❌ Recusar</span>
-                    </button>
-                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition" data-sol-id="${sol.id}">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                      <span>Ver na Escala</span>
-                    </button>
-                  </div>
-                </div>
-              `;
-            } else if (isUserSolicitante || isUserDestinatario) {
-              shouldInclude = true;
-              isSentItem = true;
-              cardTitle = `${tipoInfo.title} Enviada à Gestão`;
-              cardSubject = `Sua solicitação de ${tipoInfo.label} (${rangeStr}) está sob análise da gestão.`;
-              cardBody = `Sua solicitação de ${tipoInfo.label} enviada em ${new Date(sol.created_at).toLocaleDateString('pt-BR')} foi encaminhada para aprovação final dos administradores.`;
-            }
-          } 
-          // 3. Resposta final da gestão ou recusa pelo colega
-          else if (sol.status === 'aprovado' || sol.status === 'recusado') {
-            const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
-            const statusInfo = formatStatusEscala(sol.status);
-            const isUserEnvolvido = isUserSolicitante || (sol.tipo === 'troca' && isUserDestinatario);
-            const adminMatch = (sol.resposta_admin || '').match(/\(por ([^)]+)\)/);
-            const respPor = sol.respondido_por || (adminMatch ? adminMatch[1] : 'um Administrador');
-            const respEmStr = sol.respondido_em ? new Date(sol.respondido_em).toLocaleString('pt-BR') : '';
-
-            if (isUserEnvolvido) {
-              shouldInclude = true;
-              const isRecusadoPorColega = sol.status === 'recusado' && (sol.resposta_admin || '').toLowerCase().includes('colega');
-              cardTitle = `Resposta da Escala: ${statusInfo.label.toUpperCase()}`;
-              cardSender = isRecusadoPorColega ? (sol.destinatario_nome || 'Colega') : 'Gestão da Agência';
-              cardSubject = isRecusadoPorColega
-                ? `Sua solicitação de troca com ${sol.destinatario_nome} foi recusada pelo colega.`
-                : `Sua solicitação de ${tipoInfo.label} (${rangeStr}) foi ${statusInfo.label} pela gestão.`;
-              cardBody = `
-                <div class="space-y-2">
-                  <p>A solicitação de <strong>${tipoInfo.label}</strong> referente a <strong>${rangeStr}</strong> foi finalizada.</p>
-                  <p>• <strong>Status Final:</strong> <span class="${statusInfo.badgeClass}">${statusInfo.label}</span></p>
-                  <p>• <strong>Respondido Por:</strong> <strong>${respPor}</strong> ${respEmStr ? `em ${respEmStr}` : ''}</p>
-                  <p>• <strong>Observações:</strong> ${sol.resposta_admin || 'Sem observações adicionais.'}</p>
-                </div>
-              `;
-            } else if (isAdmin) {
-              shouldInclude = true;
-              isSentItem = true;
-              cardTitle = `Decisão de Escala: ${tipoInfo.label} (${statusInfo.label})`;
-              cardSubject = `Decisão por ${respPor} para ${sol.solicitante_nome} (${rangeStr}).`;
-              cardBody = `
-                <div class="space-y-2">
-                  <p>A solicitação de ${tipoInfo.label} de <strong>${sol.solicitante_nome}</strong> (${rangeStr}) foi definida como <span class="${statusInfo.badgeClass}">${statusInfo.label}</span>.</p>
-                  <p>• <strong>Respondido Por:</strong> <strong>${respPor}</strong> ${respEmStr ? `em ${respEmStr}` : ''}</p>
-                  <p>• <strong>Observação:</strong> ${sol.resposta_admin || 'Sem observação'}</p>
-                </div>
-              `;
-            }
-          }
-
-          if (shouldInclude) {
-            const isBalcao = sol.tipo === 'atendimento_balcao';
-            const isDecisionItem = !isBalcao && Boolean(isAdmin && (sol.status === 'aprovado' || sol.status === 'recusado'));
-            const uniqueId = `escala-sol-${sol.id}-${isDecisionItem ? 'decisao' : (isSentItem ? 'sent' : 'inbox')}`;
-
-            list.push({
-              id: uniqueId,
-              type: isBalcao ? 'atendimento_balcao' : 'escala_solicitacao',
-              title: cardTitle,
-              sender: cardSender,
-              senderAvatar: senderAvatarReal,
-              dateStr: new Date(sol.created_at).toLocaleDateString('pt-BR'),
-              subject: cardSubject,
-              body: cardBody,
-              targetId: sol.id,
-              arquivado: archivedSet.has(uniqueId) || (isBalcao ? archivedSet.has(`atendimento-balcao-${sol.id}`) : false),
-              isSent: isSentItem,
-              isDecision: isDecisionItem,
-              consultorId: (isBalcao ? sol.destinatario_id : sol.solicitante_id) || '',
-              consultorNome: sol.solicitante_nome || 'Consultor',
-              createdAt: sol.created_at,
-              eventDate: sol.data_origem,
-              solicitacaoStatus: sol.status
-            });
-          }
-        });
-      } catch (errEscala) {
-        console.warn('Erro ao compilar solicitações de escala para o feed do Inbox:', errEscala);
-      }
-
-      // --- PART 9: CONTAS A PAGAR & GESTÃO FINANCEIRA ---
-      try {
-        const podeVerFinanceiro = podeAcessarFinanceiro(perfil);
-
-        if (podeVerFinanceiro) {
-          // Checar se as notificações do financeiro estão ativas nas configurações globais com blindagem contra 42703
-          const { data: stFinanceiro } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
-          const notificacoesFinanceiroAtivas = stFinanceiro ? (stFinanceiro as any).notificacoes_financeiro_ativas !== false : true;
-
-          if (notificacoesFinanceiroAtivas) {
-            const { FinContasPagarService } = await import('./finContasPagarService');
-            const contasCriticas = await FinContasPagarService.obterContasCriticasAlerta(2);
-            const hojeIso = new Date().toISOString().split('T')[0];
-
-          contasCriticas.forEach(conta => {
-            const venc = conta.data_vencimento_operacional || conta.data_vencimento;
-            const uniqueId = `financeiro-conta-${conta.id}`;
-            const isAtrasada = conta.status === 'atrasado' || venc < hojeIso;
-            const isHoje = venc === hojeIso;
-
-            let cardTitle = '';
-            if (isAtrasada) {
-              cardTitle = `🚨 Conta em Atraso: ${conta.descricao}`;
-            } else if (isHoje) {
-              cardTitle = `⏰ Vence Hoje: ${conta.descricao}`;
-            } else {
-              cardTitle = `📅 Vencimento Próximo: ${conta.descricao}`;
-            }
-
-            const valorFmt = (conta.valor_nominal || 0).toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL'
-            });
-
-            const vencFormatado = venc.split('-').reverse().join('/');
-            const cardSubject = `Valor: ${valorFmt} | Vencimento: ${vencFormatado} | Favorecido: ${conta.favorecido || 'Não informado'}`;
-            
-            const cardBody = `
+        if (sol.status === 'pendente_colega') {
+          if (isUserDestinatario) {
+            shouldInclude = true;
+            cardTitle = 'Troca de Turno Solicitada por Colega';
+            cardSubject = `${sol.solicitante_nome} solicitou trocar o turno de ${dataOrigemFmt} com você!`;
+            cardBody = `
               <div class="space-y-2">
-                <p>Conta a pagar pendente de liquidação no módulo financeiro:</p>
-                <p>• <strong>Descrição:</strong> ${conta.descricao || 'Sem descrição'}</p>
-                <p>• <strong>Favorecido / Fornecedor:</strong> ${conta.favorecido || 'Não informado'}</p>
-                <p>• <strong>Valor Nominal:</strong> <span class="font-bold text-rose-600 dark:text-rose-400">${valorFmt}</span></p>
-                <p>• <strong>Vencimento Original:</strong> ${conta.data_vencimento.split('-').reverse().join('/')}</p>
-                <p>• <strong>Vencimento Operacional:</strong> <span class="font-bold">${vencFormatado}</span></p>
-                <p>• <strong>Forma de Pagamento:</strong> ${(conta.forma_pagamento || 'pix').toUpperCase()}</p>
-                ${conta.observacoes ? `<p>• <strong>Observações:</strong> ${conta.observacoes}</p>` : ''}
+                <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
+                <p>• <strong>Data Solicitante:</strong> ${dataOrigemFmt}<br>• <strong>Sua Data (Colega):</strong> ${dataDestinoFmt}</p>
+                <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
+                <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3">
+                  <button class="btn-aceitar-troca-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
+                    <span>✅ Aceitar Troca</span>
+                  </button>
+                  <button class="btn-recusar-troca-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-rose-950/20" data-sol-id="${sol.id}">
+                    <span>❌ Recusar</span>
+                  </button>
+                  <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition" data-sol-id="${sol.id}">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Ver na Escala</span>
+                  </button>
+                </div>
               </div>
             `;
+          } else if (isUserSolicitante) {
+            shouldInclude = true;
+            isSentItem = true;
+            cardTitle = 'Solicitação de Troca Enviada ao Colega';
+            cardSubject = `Sua solicitação de troca com ${sol.destinatario_nome} (${dataOrigemFmt}) aguarda aceite do colega.`;
+            cardBody = `Você solicitou trocar seu turno de ${dataOrigemFmt} com o turno de ${dataDestinoFmt} de ${sol.destinatario_nome}.`;
+          }
+        } else if (sol.status === 'pendente_consultor') {
+          const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
+          if (isUserDestinatario) {
+            shouldInclude = true;
+            cardTitle = `Proposta da Gestão: ${tipoInfo.label}`;
+            cardSubject = `${sol.solicitante_nome} (Gestão) enviou uma proposta de ${tipoInfo.label.toLowerCase()} para você.`;
+            cardBody = `
+              <div class="space-y-2">
+                <p><strong>Solicitante (Gestão):</strong> ${sol.solicitante_nome}</p>
+                <p>• <strong>Período:</strong> ${rangeStr}</p>
+                <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
+                <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3">
+                  <button class="btn-aceitar-proposta-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-emerald-950/20" data-sol-id="${sol.id}">
+                    <span>✅ Aceitar Proposta</span>
+                  </button>
+                  <button class="btn-recusar-proposta-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-rose-950/20" data-sol-id="${sol.id}">
+                    <span>❌ Recusar</span>
+                  </button>
+                  <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition" data-sol-id="${sol.id}">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Ver na Escala</span>
+                  </button>
+                </div>
+              </div>
+            `;
+          } else if (isUserSolicitante || isAdmin) {
+            shouldInclude = true;
+            isSentItem = true;
+            cardTitle = `${tipoInfo.title} Enviada ao Consultor`;
+            cardSubject = `Proposta de ${tipoInfo.label} para ${sol.destinatario_nome || 'Consultor'} aguarda aceite.`;
+            cardBody = `Você/Gestão enviou uma proposta de ${tipoInfo.label} para ${sol.destinatario_nome || 'o consultor'}.`;
+          }
+        } else if (sol.tipo === 'atendimento_balcao') {
+          const isUserDestinatarioBalcao = (sol.destinatario_id && String(sol.destinatario_id) === String(user.id)) || 
+            (sol.destinatario_nome && perfil?.nome && isSameConsultantName(sol.destinatario_nome, perfil.nome));
+          const isUserQuemAtendeu = (sol.solicitante_id && String(sol.solicitante_id) === String(user.id)) ||
+            (sol.solicitante_nome && perfil?.nome && isSameConsultantName(sol.solicitante_nome, perfil.nome));
 
-            list.push({
-              id: uniqueId,
-              type: 'financeiro',
-              title: cardTitle,
-              sender: 'Financeiro PaxFlow',
-              senderAvatar: undefined,
-              dateStr: new Date(conta.created_at || Date.now()).toLocaleDateString('pt-BR'),
-              subject: cardSubject,
-              body: cardBody,
-              targetId: conta.id,
-              arquivado: archivedSet.has(uniqueId),
-              isSent: false,
-              isDecision: false,
-              consultorId: user.id,
-              consultorNome: perfil?.nome || 'Operador Financeiro',
-              createdAt: conta.created_at || new Date().toISOString(),
-              eventDate: venc
-            });
-          });
+          if (isUserDestinatarioBalcao || isUserQuemAtendeu || isAdmin) {
+            shouldInclude = true;
+            if (isUserQuemAtendeu && !isUserDestinatarioBalcao) {
+              isSentItem = true;
+              cardTitle = '🤝 Atendimento Registrado no Balcão';
+              cardSender = 'Você';
+              cardSubject = `Para: ${sol.destinatario_nome || 'Consultor Titular'} • ${sol.motivo || 'Atendimento presencial'}`;
+            } else {
+              isSentItem = false;
+              cardTitle = '🤝 Atendimento no Balcão (Co-Piloto)';
+              cardSender = sol.solicitante_nome || 'Consultor Co-Piloto';
+              cardSubject = sol.motivo || `Seu cliente foi atendido presencialmente no balcão por ${sol.solicitante_nome}.`;
+            }
+            cardBody = `
+              <div class="space-y-2">
+                <p>🤝 <strong>Atendimento Presencial Registrado</strong></p>
+                <p>${sol.motivo || `Cliente atendido no balcão por ${sol.solicitante_nome}.`}</p>
+                <p class="text-[11px] text-slate-400"><strong>Data e Hora:</strong> ${dataOrigemFmt}</p>
+              </div>
+            `;
+          }
+        } else if (sol.status === 'pendente_admin') {
+          const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
+          if (isAdmin) {
+            shouldInclude = true;
+            cardTitle = `Aprovação de Escala: ${tipoInfo.label}`;
+            cardSubject = `${tipoInfo.title} - ${sol.solicitante_nome}`;
+            cardBody = `
+              <div class="space-y-2">
+                <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
+                <p>${sol.tipo === 'troca' ? `• <strong>Troca com:</strong> ${sol.destinatario_nome}<br>• <strong>Data Solicitante:</strong> ${dataOrigemFmt}<br>• <strong>Data Colega:</strong> ${dataDestinoFmt}` : `• <strong>Período Solicitado:</strong> ${rangeStr}`}</p>
+                <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
+                <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3">
+                  <button class="btn-aprovar-escala-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-emerald-950/20" data-sol-id="${sol.id}">
+                    <span>✅ Aprovar</span>
+                  </button>
+                  <button class="btn-recusar-escala-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-rose-950/20" data-sol-id="${sol.id}">
+                    <span>❌ Recusar</span>
+                  </button>
+                  <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition" data-sol-id="${sol.id}">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Ver na Escala</span>
+                  </button>
+                </div>
+              </div>
+            `;
+          } else if (isUserSolicitante || isUserDestinatario) {
+            shouldInclude = true;
+            isSentItem = true;
+            cardTitle = `${tipoInfo.title} Enviada à Gestão`;
+            cardSubject = `Sua solicitação de ${tipoInfo.label} (${rangeStr}) está sob análise da gestão.`;
+            cardBody = `Sua solicitação de ${tipoInfo.label} enviada em ${new Date(sol.created_at).toLocaleDateString('pt-BR')} foi encaminhada para aprovação final dos administradores.`;
+          }
+        } else if (sol.status === 'aprovado' || sol.status === 'recusado') {
+          const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
+          const statusInfo = formatStatusEscala(sol.status);
+          const isUserEnvolvido = isUserSolicitante || (sol.tipo === 'troca' && isUserDestinatario);
+          const adminMatch = (sol.resposta_admin || '').match(/\(por ([^)]+)\)/);
+          const respPor = sol.respondido_por || (adminMatch ? adminMatch[1] : 'um Administrador');
+          const respEmStr = sol.respondido_em ? new Date(sol.respondido_em).toLocaleString('pt-BR') : '';
+
+          if (isUserEnvolvido) {
+            shouldInclude = true;
+            const isRecusadoPorColega = sol.status === 'recusado' && (sol.resposta_admin || '').toLowerCase().includes('colega');
+            cardTitle = `Resposta da Escala: ${statusInfo.label.toUpperCase()}`;
+            cardSender = isRecusadoPorColega ? (sol.destinatario_nome || 'Colega') : 'Gestão da Agência';
+            cardSubject = isRecusadoPorColega
+              ? `Sua solicitação de troca com ${sol.destinatario_nome} foi recusada pelo colega.`
+              : `Sua solicitação de ${tipoInfo.label} (${rangeStr}) foi ${statusInfo.label} pela gestão.`;
+            cardBody = `
+              <div class="space-y-2">
+                <p>A solicitação de <strong>${tipoInfo.label}</strong> referente a <strong>${rangeStr}</strong> foi finalizada.</p>
+                <p>• <strong>Status Final:</strong> <span class="${statusInfo.badgeClass}">${statusInfo.label}</span></p>
+                <p>• <strong>Respondido Por:</strong> <strong>${respPor}</strong> ${respEmStr ? `em ${respEmStr}` : ''}</p>
+                <p>• <strong>Observações:</strong> ${sol.resposta_admin || 'Sem observações adicionais.'}</p>
+              </div>
+            `;
+          } else if (isAdmin) {
+            shouldInclude = true;
+            isSentItem = true;
+            cardTitle = `Decisão de Escala: ${tipoInfo.label} (${statusInfo.label})`;
+            cardSubject = `Decisão por ${respPor} para ${sol.solicitante_nome} (${rangeStr}).`;
+            cardBody = `
+              <div class="space-y-2">
+                <p>A solicitação de ${tipoInfo.label} de <strong>${sol.solicitante_nome}</strong> (${rangeStr}) foi definida como <span class="${statusInfo.badgeClass}">${statusInfo.label}</span>.</p>
+                <p>• <strong>Respondido Por:</strong> <strong>${respPor}</strong> ${respEmStr ? `em ${respEmStr}` : ''}</p>
+                <p>• <strong>Observação:</strong> ${sol.resposta_admin || 'Sem observação'}</p>
+              </div>
+            `;
           }
         }
-      } catch (errFin) {
-        console.warn('Erro ao compilar alertas financeiros para o feed do Inbox:', errFin);
-      }
+
+        if (shouldInclude) {
+          const isBalcao = sol.tipo === 'atendimento_balcao';
+          const isDecisionItem = !isBalcao && Boolean(isAdmin && (sol.status === 'aprovado' || sol.status === 'recusado'));
+          const uniqueId = `escala-sol-${sol.id}-${isDecisionItem ? 'decisao' : (isSentItem ? 'sent' : 'inbox')}`;
+
+          list.push({
+            id: uniqueId,
+            type: isBalcao ? 'atendimento_balcao' : 'escala_solicitacao',
+            title: cardTitle,
+            sender: cardSender,
+            senderAvatar: senderAvatarReal,
+            dateStr: new Date(sol.created_at).toLocaleDateString('pt-BR'),
+            subject: cardSubject,
+            body: cardBody,
+            targetId: sol.id,
+            arquivado: archivedSet.has(uniqueId) || (isBalcao ? archivedSet.has(`atendimento-balcao-${sol.id}`) : false),
+            isSent: isSentItem,
+            isDecision: isDecisionItem,
+            consultorId: (isBalcao ? sol.destinatario_id : sol.solicitante_id) || '',
+            consultorNome: sol.solicitante_nome || 'Consultor',
+            createdAt: sol.created_at,
+            eventDate: sol.data_origem,
+            solicitacaoStatus: sol.status
+          });
+        }
+      });
+
+      // --- PARTE 8: PROCESSAMENTO DE CONTAS A PAGAR & GESTÃO FINANCEIRA ---
+      const contasCriticas: any[] = contasCriticasFinanceiro || [];
+      const hojeIso = new Date().toISOString().split('T')[0];
+
+      contasCriticas.forEach(conta => {
+        const venc = conta.data_vencimento_operacional || conta.data_vencimento;
+        const uniqueId = `financeiro-conta-${conta.id}`;
+        const isAtrasada = conta.status === 'atrasado' || venc < hojeIso;
+        const isHoje = venc === hojeIso;
+
+        let cardTitle = '';
+        if (isAtrasada) {
+          cardTitle = `🚨 Conta em Atraso: ${conta.descricao}`;
+        } else if (isHoje) {
+          cardTitle = `⏰ Vence Hoje: ${conta.descricao}`;
+        } else {
+          cardTitle = `📅 Vencimento Próximo: ${conta.descricao}`;
+        }
+
+        const valorFmt = (conta.valor_nominal || 0).toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        });
+
+        const vencFormatado = venc.split('-').reverse().join('/');
+        const cardSubject = `Valor: ${valorFmt} | Vencimento: ${vencFormatado} | Favorecido: ${conta.favorecido || 'Não informado'}`;
+        
+        const cardBody = `
+          <div class="space-y-2">
+            <p>Conta a pagar pendente de liquidação no módulo financeiro:</p>
+            <p>• <strong>Descrição:</strong> ${conta.descricao || 'Sem descrição'}</p>
+            <p>• <strong>Favorecido / Fornecedor:</strong> ${conta.favorecido || 'Não informado'}</p>
+            <p>• <strong>Valor Nominal:</strong> <span class="font-bold text-rose-600 dark:text-rose-400">${valorFmt}</span></p>
+            <p>• <strong>Vencimento Original:</strong> ${conta.data_vencimento.split('-').reverse().join('/')}</p>
+            <p>• <strong>Vencimento Operacional:</strong> <span class="font-bold">${vencFormatado}</span></p>
+            <p>• <strong>Forma de Pagamento:</strong> ${(conta.forma_pagamento || 'pix').toUpperCase()}</p>
+            ${conta.observacoes ? `<p>• <strong>Observações:</strong> ${conta.observacoes}</p>` : ''}
+          </div>
+        `;
+
+        list.push({
+          id: uniqueId,
+          type: 'financeiro',
+          title: cardTitle,
+          sender: 'Financeiro PaxFlow',
+          senderAvatar: undefined,
+          dateStr: new Date(conta.created_at || Date.now()).toLocaleDateString('pt-BR'),
+          subject: cardSubject,
+          body: cardBody,
+          targetId: conta.id,
+          arquivado: archivedSet.has(uniqueId),
+          isSent: false,
+          isDecision: false,
+          consultorId: user.id,
+          consultorNome: perfil?.nome || 'Operador Financeiro',
+          createdAt: conta.created_at || new Date().toISOString(),
+          eventDate: venc
+        });
+      });
 
     } catch (err) {
       console.error('Erro ao compilar alertas no serviço:', err);

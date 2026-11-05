@@ -35,18 +35,19 @@ Sempre que eu pedir para testar um fluxo, atue como um Engenheiro de Testes Sên
 
 ---
 
-## 🚨 PROTOCOLO MANDATÓRIO DE BANCO DE DADOS (DDL, MIGRAÇÕES E SCHEMA DRIFT)
+## 🚨 PROTOCOLO MANDATÓRIO DE BANCO DE DADOS (GOVERNANÇA ESTRITA & ZERO-DRIFT EXPURGADO)
 
-1. **ALERTA DE DDL OBRIGATÓRIO NO TOPO DA RESPOSTA**:
-   - Se qualquer desenvolvimento demandar criação ou alteração de coluna, tabela, índice, enum ou trigger no Supabase, é **ESTRITAMENTE PROIBIDO** declarar a tarefa como entregue ou pronta para produção sem exibir no início da resposta o bloco SQL completo e mastigado para ser executado no SQL Editor do Supabase.
-   - O assistente DEVE alertar explicitamente o usuário sobre a necessidade de rodar o script no banco antes de considerar o fluxo liberado para a agência.
+1. **GOVERNANÇA ESTRITA DE DDL (EXECUÇÃO EXCLUSIVA PELO USUÁRIO)**:
+   - Quem executa scripts DDL/migrações no Supabase é o **USUÁRIO**, manualmente no SQL Editor do Supabase, antes do deploy do código em produção.
+   - Se qualquer desenvolvimento demandar criação ou alteração de coluna, tabela, índice, enum ou trigger no Supabase, o assistente DEVE obrigatoriamente exibir no topo da resposta o bloco SQL completo, formatado e mastigado para execução manual.
+   - O assistente NUNCA deve tentar rodar migrações automaticamente no banco de dados.
 
-2. **RESILIÊNCIA OBRIGATÓRIA A SCHEMA DRIFT (PADRÃO ZERO-BREAK)**:
-   - Todo serviço que gravar em colunas novas DEVE implementar tratamento nativo de fallback para erro `42703` (coluna inexistente).
-   - A agência não pode parar: se a aplicação for atualizada antes da migração ser rodada no Supabase, o sistema DEVE persistir os dados de forma segura (ex: em campo estruturado existente como `observacoes`) e continuar operando normalmente, sem toasts vermelhos nem travamentos.
+2. **PROIBIÇÃO TOTAL DE ZERO-DRIFT, ZERO-BREAK E FALLBACKS SILENCIOSOS**:
+   - É **ESTRITAMENTE PROIBIDO** implementar fallbacks ou tratamentos de erro (`42703`, `42P01`) que mascarem a ausência de colunas ou tabelas, tais como empacotar dados novos em `observacoes`, `_paxflow_meta` ou JSONs genéricos.
+   - **Padrão Fail-Fast Transparente**: Se o banco de dados não contiver a coluna ou tabela física oficial, a aplicação deve falhar de forma transparente e emitir aviso claro de schema desatualizado ao operador, garantindo integridade transacional absoluta e impedindo a criação de dados fantasmas ou inconsistências.
 
-3. **COBERTURA DE TESTES PARA ERROS DE SCHEMA**:
-   - Os testes subcutâneos de serviços que introduzem colunas novas DEVEM incluir obrigatoriamente um teste simulando o erro `42703`, comprovando que o fallback de banco funciona e a aplicação não quebra em produção.
+3. **COBERTURA DE TESTES COM SCHEMA REAL**:
+   - Os testes subcutâneos devem refletir estritamente o schema oficial das migrações do Supabase, sem suítes simulando ausência de colunas com fallbacks fictícios de persistência mascarada.
 
 ---
 

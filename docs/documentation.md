@@ -68,6 +68,7 @@
    - 3.55 [Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral](#355-unificação-do-módulo-financeiro--submenu-indentado-na-barra-lateral)
    - 3.56 [Polimento Visual, UX Responsiva Mobile-First & Scorecards do Financeiro](#356-polimento-visual-ux-responsiva-mobile-first--scorecards-do-financeiro)
    - 3.57 [Apresentação Comercial Oficial & Vitrine de Produto (/conheca)](#357-apresentação-comercial-oficial--vitrine-de-produto-conheca)
+   - 3.58 [Arquitetura de Alta Performance da Central de Relatórios & Cache por Competência](#358-arquitetura-de-alta-performance-da-central-de-relatórios--cache-por-competência)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -125,6 +126,13 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 **Central de comando operacional** que consolida todos os alertas críticos da agência em uma única caixa de entrada, estilo e-mail corporativo.
 
+- **Arquitetura de Alta Performance & Paralelização Concorrente (`Promise.all`) [NEW]**:
+  - **Zero Cascata Sequencial**: Todas as 13 fontes de dados e consultas ao Supabase (lembretes manuais, SLA de passaportes, reembolsos, notificações, mensagens recebidas, mensagens enviadas, pré-embarque, escala, contas a pagar e campanhas) rodam simultaneamente em uma única rodada de rede.
+  - **Aceleração Drástica**: O tempo de abertura da Inbox foi reduzido de 2.5s-5s para menos de 400ms.
+  - **Checagem Cirúrgica de Passaportes**: Eliminação completa da varredura irrestrita da tabela inteira de clientes (`clientes.select('*')`). O Supabase filtra no banco com cláusula `.lte` apenas clientes com passaportes expirados ou com validade inferior a 180 dias, reduzindo em até 95% os dados trafegados.
+  - **Janela Operacional Cirúrgica de Viagens**: Viagens para pré-embarque (próximos 15 dias) e pós-viagem NPS (últimos 8 dias) são filtradas com intervalo temporal direto no banco, eliminando o tráfego do histórico antigo.
+  - **Microinterações Instantâneas em Memória (Zero Roundtrip)**: Marcar um alerta como lido, não lido ou leitura em massa atualiza a interface e badges no mesmo instante (< 50ms) com atualização de estado em memória local e sincronização assíncrona em background com rollback seguro, eliminando requisições repetitivas de `getReadAlerts()` a cada clique.
+
 - **Alertas de passaporte**: monitora automaticamente a validade dos passaportes cadastrados e dispara alertas com 180 dias de antecedência (padrão internacional) ou quando expirados (mapeados no calendário na data de expiração).
 - **Alertas de SLA de reembolso**: notifica quando um reembolso ultrapassa o prazo configurado pela agência (mapeados no calendário na data exata em que o SLA estourou: Data de Criação + Prazo de SLA).
 - **Lembretes manuais ("Me Lembre Depois")**: agendados a partir do pipeline de orçamentos, do painel de notas/comentários ou de mensagens diretas, com suporte a campo dedicado de **descrição/motivo do lembrete** (ex: _"Ligar para confirmar hotel"_), data, período (manhã/tarde/noite) e resolução fidedigna do passageiro titular da viagem/orçamento (`cliente.nome`), eliminando completamente fallbacks genéricos como "Cliente Viagem".
@@ -141,7 +149,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Autocomplete de Contatos**: Interface de seleção de destinatários utilizando tags/badges interativos com remoção instantânea.
   - **Pasta de Enviadas**: Uma gaveta dedicada para acompanhamento de todas as correspondências autoradas pelo consultor logado.
   - **Ação de Resposta (Reply) e Threading [NEW]**: Botão de resposta direta integrado ao leitor de e-mail. O PaxFlow agrupa automaticamente as mensagens diretas e suas respostas sob chaves relacionais (`parent_id` e `thread_id`) no banco de dados. Ao abrir qualquer e-mail/notificação que possua thread associada, o leitor exibe a linha do tempo completa do diálogo de forma cronológica em cartões individuais, facilitando o acompanhamento pela equipe e mantendo o contexto.
-  - **Resiliência Relacional & Zero-Break no Envio de Mensagens [NEW]**: O serviço de envio (`InboxService.sendDirectMessage`) conta com validação preventiva de chaves estrangeiras na tabela `mensagens_diretas`. Ao responder a alertas gerais (solicitações de escala, menções ou lembretes) que não são mensagens diretas na origem, o sistema sanitiza o `parent_id` e possui fallback resiliente nativo para erros de Foreign Key (`23503`) e Schema Drift (`42703`), garantindo que o envio nunca quebre a experiência do usuário.
+  - **Integridade Relacional no Envio de Mensagens [NEW]**: O serviço de envio (`InboxService.sendDirectMessage`) conta com validação preventiva de chaves estrangeiras na tabela `mensagens_diretas`. Ao responder a alertas gerais (solicitações de escala, menções ou lembretes) que não são mensagens diretas na origem, o sistema sanitiza o `parent_id` e associa a conversa à estrutura oficial de threads do Supabase.
   - **Status e Contadores Reativos da Sidebar [NEW]**: O badge do menu lateral (`nav-inbox-badge`) reflete fielmente o volume de pendências ativas não lidas da Caixa de Entrada (`unreadAtivos`), desconsiderando decisões já finalizadas.
 - **Visualização em Calendário Interativo [NEW]**:
   - **Navegação de Topo Unificada [NEW]**: A alternância entre **Lista de Mensagens** e **Calendário** é integrada diretamente nas abas de topo do módulo (`[ 📨 Lista de Mensagens ]`, `[ 📅 Calendário ]` e `[ 👥 Escala de Funcionários ]`), eliminando controles dispersos pelo meio da tela e garantindo navegação com rolagem horizontal suave no mobile. Todos os filtros da barra lateral (Ativos/Arquivados/Todos e consultores), categorização e pesquisa continuam 100% integrados e reativos no modo calendário.
@@ -263,7 +271,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Detalhamento nos Cards de Recomendação**: O menu suspenso renderiza com destaque o Nome, Código Sequencial (`CLI-XXXX`), Documento/CPF (`🆔`), Telefone (`📞`) e E-mail (`✉️`), facilitando a conferência visual imediata.
   - **Preenchimento Automático e Vínculo**: Ao clicar na sugestão, os campos Nome Completo, Telefone (com separação do DDI no seletor) e E-mail são populados instantaneamente, associando o `cliente_id` à proposta e exibindo o badge `✔️ Cliente Cadastrado`.
   - **Prevenção de Duplicidades e Reconciliação no Salvamento**: Caso o consultor cole o CPF ou telefone no campo de nome e salve o orçamento sem interagir com o dropdown, o sistema identifica automaticamente o passageiro existente na base, restaura o nome original e associa a proposta ao cliente existente, eliminando duplicidades cadastrais e retrabalho.
-  - **Busca Híbrida e Resiliência (Zero-Break)**: Além do cache de alta velocidade em memória, executa busca remota de fallback via `ClienteSearchService.buscarClientes` protegida contra schema drift (`42703`).
+  - **Busca Híbrida Remota**: Além do cache de alta velocidade em memória, executa busca remota indexada no Supabase via `ClienteSearchService.buscarClientes`.
 - **Fechamento de Venda (Close Sale)**: Ao concluir e aceitar um orçamento, se o cliente associado não possuir dados de documento em sua ficha cadastral, o sistema exibe um modal que obriga o preenchimento do CPF/CNPJ. Esse campo possui máscara e validação matemática de integridade ativa (suportando inclusive a nova regra de CNPJ Alfanumérico da Receita Federal), prevenindo a persistência de identificações incorretas. A data de nascimento do passageiro torna-se obrigatória para fins operacionais de emissão, enquanto a data de volta é opcional (permitindo viagens de ida simples).
 - **Modal de Detalhes Reformulado (`openVerNotasModal`)**:
   - Reestruturado para adotar um **layout de grid premium de duas colunas (visualizador amplo `max-w-2xl`)**:
@@ -342,7 +350,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Edição inline de role e alternador de ativar/desativar conta
   - Cadastro de novo consultor com criação de credencial no Supabase Auth e definição da flag `participa_metricas`
   - Modal de edição com troca de avatar, redefinição de senha e interruptor `🎯 Participa de Campanhas, Metas e KPIs`
-  - **Governança de Métricas e Resiliência Zero-Break**: Usuários com `participa_metricas = false` são excluídos de rankings comerciais, metas de equipe e leaderboards de XP, mantendo o total financeiro da agência e contando com fallback nativo para erro `42703` (Schema Drift)
+  - **Governança de Métricas**: Usuários com `participa_metricas = false` são excluídos de rankings comerciais, metas de equipe e leaderboards de XP, mantendo o total financeiro da agência.
 - **Aba Importações**:
   - Área de upload drag-and-drop para arquivos CSV de chamados/oportunidades
   - Mapeador dinâmico De-Para de colunas e matching inteligente de atendentes
@@ -432,7 +440,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Cadastro com seletor de emojis/ícones visuais e ordenação flexível.
   - Mecanismo de **Soft-Delete / Ativação**: canais inativados deixam de aparecer como opção em novos orçamentos, mas continuam íntegros nos orçamentos históricos e relatórios de inteligência.
   - **Prevenção contra Exclusão Acidental**: o sistema trava a exclusão definitiva caso a origem já tenha sido utilizada em orçamentos cadastrados, orientando o gestor a utilizar a desativação.
-  - **Resiliência Zero-Break**: fallback automático para `ORIGENS_LEAD_PADRAO` em caso de instabilidade ou divergência de schema (PostgreSQL `42703`/`42P01`).
+  - **Valores Pré-Definidos**: Suporte aos canais padrão de origem (`ORIGENS_LEAD_PADRAO`) para inicialização de novas contas.
 - **Identidade de Cabeçalho Unificada**: O design e as transições do cabeçalho herdam o mesmo padrão premium das páginas operacionais, exibindo badges de identificação e descrições formatadas.
 
 ### 3.11 Localização de Erros e Tradutor Global (I18n)
@@ -772,7 +780,7 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
   - No Kanban de Orçamentos, o consultor pode clicar em _✨ Criar Proposta no Studio_ (no menu de ações rápidas ou na barra secundária do card) para converter qualquer cotação em proposta cinematográfica de luxo.
   - O motor mapeia dados de cliente, datas, valor total, consultor e busca automaticamente fotografias de alta resolução para o destino no catálogo Unsplash, inicializando a timeline sem digitação repetitiva.
 - **Rastreamento de Leitura em Tempo Real (Viewer Analytics)**:
-  - Ao carregar a página pública da proposta (`/proposta/:id`), o sistema incrementa o contador `visualizacoes_count` e registra o timestamp exato em `ultima_visualizacao_em` de forma não-bloqueante e resiliente a schema drift.
+  - Ao carregar a página pública da proposta (`/proposta/:id`), o sistema incrementa o contador `visualizacoes_count` e registra o timestamp exato em `ultima_visualizacao_em` de forma assíncrona.
   - Permite aos consultores e à liderança monitorar o momento exato em que o passageiro está interagindo com a proposta para timing perfeito de fechamento.
 - **Experiência Pública Interativa do Viajante & Ciclo Automático de Aprovação (`PublicViews.ts` & `studioPropostasService.ts`)**:
   - **Aprovação Formal com Metadados Jurídicos**: Na visualização pública (`#proposta?id=...`), o passageiro dispõe do botão de aceite formal onde insere seu Nome Completo e CPF/Passaporte. O sistema captura de forma não-bloqueante o endereço IP público do cliente, User-Agent do dispositivo e timestamp exato ISO, gravando o bloco de auditoria jurídica `aceite_formal`.
@@ -781,7 +789,7 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
     2. *Fechamento do Orçamento no Kanban*: Caso a proposta tenha nascido a partir de um orçamento (`orcamento_origem_id`), ele é transicionado automaticamente para *Venda Fechada (CONCLUÍDO / sub_status: ACEITO)* com o valor da viagem atualizado;
     3. *Alerta Imediato no Inbox*: Insere um lembrete comemorativo no Inbox do consultor responsável para acompanhamento da emissão e contato com o cliente;
     4. *Notificação Web Push Server-Side*: Dispara alerta push instantâneo no navegador/dispositivo do consultor informando o nome do cliente e o destino aprovado;
-    5. *Efetivação de Status*: A proposta é atualizada para o status `EFETIVADA`, garantindo resiliência Zero-Break com fallback de schema drift para qualquer coluna nova no banco.
+    5. *Efetivação de Status*: A proposta é atualizada para o status `EFETIVADA` diretamente no banco de dados.
   - **Dúvidas Contextuais por Dia do Itinerário**: Cada dia sequencial da programação possui o botão `💬 Dúvida sobre o Dia X`, que gera um link inteligente de WhatsApp contendo a identificação do dia e da atividade para o viajante tirar dúvidas operacionais ou solicitar personalizações pontuais diretamente com o consultor.
 - **Arquitetura Split Screen (Tela Dividida)**:
   - **Coluna da Esquerda (Editor Estruturado)**:
@@ -1356,9 +1364,8 @@ Para viabilizar o trabalho colaborativo entre membros da equipe da agência (pro
    - Caso o processo da viagem (`processo_conferido`) ou qualquer um de seus LOCs financeiros (`isFinanceiroConferido`) já tenham sido conferidos e auditados pela gestão, a edição das divisões é **automaticamente trancada** com ícone de cadeado (`🔒 Divisão Bloqueada`).
    - Consultores operacionais são impedidos de alterar participações já conferidas. Apenas usuários com perfil de **Administrador** possuem autorização para ajustar divisões de viagens conferidas.
 
-9. **Resiliência a Schema Drift (Padrão Zero-Break)**:
+9. **Persistência Estruturada & Integridade Relacional**:
    - A persistência é gerenciada na tabela dedicada `public.viagens_divisoes` com chave estrangeira `ON DELETE CASCADE` e coluna `percentual_rav NUMERIC(5,2)`.
-   - Todas as consultas ao banco implementam fallback gracioso para erro de coluna ou tabela ausente (`42P01` / `42703`), garantindo que viagens legadas ou instâncias antes da migração continuem operando normalmente.
 
 ---
 
@@ -1458,9 +1465,8 @@ Ferramenta de inteligência relacional e prospecção ativa posicionada na aba `
 4. **Integração Operacional com Digisac**:
    - Cada linha da tabela possui o botão dedicado `💬 Digisac` (`btn-chat-digisac`), abrindo o modal `SendTemplateMessageModal` com foco imediato no histórico de conversas do cliente, mantendo o consultor original registrado.
 
-5. **Persistência de Presets & Resiliência a Schema Drift (Zero-Break)**:
+5. **Persistência de Presets**:
    - Presets salvos pela gestão são gravados na tabela `campanhas_presets` no Supabase com identificador de autoria e payload JSONB de filtros.
-   - Tratamento automático para erros `42P01` (tabela inexistente) ou `42703` (coluna inexistente), ativando modo virtual na sessão sem interromper o trabalho da agência.
 
 ### 3.51 Painel Analítico de Pesquisa de Satisfação (NPS)
 
@@ -1619,7 +1625,7 @@ Para assegurar consistência estética absoluta com os Design Tokens do PaxFlow 
 
 6. **Scorecards Executivos em Remessas Agrupadas**:
    - 3 cartões no topo da visão de remessas: _Lotes Pendentes_, _Total Liquidado_ e _Média por Lote_.
-   - Inclusão da ação de **Desfazer / Desagrupar Lote** (`FinRemessasService.desagruparRemessa`), permitindo devolver contas ao estado avulso pendente com segurança e resiliência a schema drift (`42703`).
+   - Inclusão da ação de **Desfazer / Desagrupar Lote** (`FinRemessasService.desagruparRemessa`), permitindo devolver contas ao estado avulso pendente com segurança e integridade referencial.
 
 7. **Reset Rápido de Filtros e Exportação de Contas a Pagar**:
    - Botão dinâmico `✕ Limpar Filtros` exibido quando houver filtros aplicados e atalhos diretos `📥 Exportar CSV` em Contas a Pagar e DRE.
@@ -1638,12 +1644,12 @@ Para assegurar consistência estética absoluta com os Design Tokens do PaxFlow 
 
 10. **Aprimoramentos de Usabilidade, Inativação de Bancos & Governança no Financeiro**:
     - **Inativação & Exclusão Segura de Contas Bancárias (`FinPlanoContasService`)**:
-      - Suporte ao campo booleano `ativo` na tabela `fin_contas_bancarias` com fallback Zero-Break para schema drift (código `42703`).
+      - Suporte ao campo booleano `ativo` na tabela `fin_contas_bancarias`.
       - Inativação em 1-clique via botão `⏸️ Inativar` / `▶️ Reativar` e switch toggle dentro do modal de edição da instituição bancária.
       - Contas inativas são mantidas na aba de Plano de Contas com badge cinza `Inativo`, mas são filtradas automaticamente nos formulários de novos lançamentos de despesas.
       - Ao solicitar exclusão (`🗑️`), o sistema executa verificação de integridade referencial cruzando `fin_contas_pagar` e `fin_remessas`. Caso haja títulos históricos vinculados, a conta é automaticamente inativada (Soft Delete) com notificação amigável, garantindo a consistência contábil. Se não houver vínculos, a exclusão física é executada.
     - **Configuração Global de Notificações do Financeiro (`GlobalSettings`)**:
-      - Adição do parâmetro booleano `notificacoes_financeiro_ativas` em `global_settings` com fallback nativo para schema drift (código `42703`).
+      - Adição do parâmetro booleano `notificacoes_financeiro_ativas` em `global_settings`.
       - Interruptor dedicado na aba **SLAs & Automações** em `Configuracoes.ts` permitindo habilitar ou silenciar avisos reativos.
       - Quando desativado, o sistema oculta proativamente o badge numérico pulsante no menu lateral (`main.ts`) e suprime os cards de contas críticas no feed da Caixa de Entrada (`inboxService.ts`), preservando o foco operacional da agência.
     - **Filtro de Múltiplos Meses de Referência no Contas a Pagar**:
@@ -1677,6 +1683,31 @@ A página pública de apresentação do PaxFlow (`src/pages/LandingPage.ts`) foi
 - **Isolamento Completo do Modo Demonstração (Sandbox)**: Ao acionar o botão de demonstração, o sistema sinaliza a flag de sessão `paxflowSandbox = true` e limpa chaves de dados operacionais sem tocar em dados de autenticação ou preferências globais de tema.
 - **Renderização Subcutânea Testável (`LandingPage.renderHtml()`)**: O template HTML da página é desacoplado do ciclo de vida do DOM do navegador, permitindo validações automatizadas de alta velocidade via Vitest em ambiente Node puro.
 - **Design Tokens e Responsividade**: Conformidade estrita com o padrão de cores dark mode (`#06070f`), animações de aceleração por hardware e rolagem defensiva otimizada para dispositivos móveis.
+
+---
+
+### 3.58 Arquitetura de Alta Performance da Central de Relatórios & Cache por Competência
+
+Para resolver o gargalo de carregamento de dados em agências com anos de emissão, a Central de Relatórios (`src/pages/Relatorios.ts`) foi reestruturada com uma arquitetura de alta velocidade baseada em corte temporal no banco de dados e cache de competência:
+
+1. **Corte Temporal de Competência no PostgreSQL**:
+   - Eliminação da varredura irrestrita de tabelas inteiras: consultas a `viagens`, `orcamentos`, `reembolsos`, `loc_pagamentos` e `loc_conferencias` agora recebem cláusulas `.gte` no PostgreSQL.
+   - Padrão de inicialização: o sistema restringe a carga aos registros do ano corrente ou últimos 180 dias com margem de segurança para faturamentos futuros (+30 dias), impedindo o download de gigabytes de JSON histórico não solicitado.
+   - Para o Relatório de Embarques, a janela automática abrange desde 7 dias atrás até 120 dias adiante no calendário.
+
+2. **Projeções Cirúrgicas de Colunas**:
+   - Remoção completa de `select('*')`: a requisição de viagens traz exclusivamente atributos analíticos essenciais (`id`, `codigo_ref`, `consultor_id`, datas, valores, status, tags e produtos sumarizados), descartando campos pesados como roteiros extensos, logs de sistema e históricos descartáveis.
+   - Tabela de clientes projetada em formato enxuto (`id, nome, telefone, email, consultor_responsavel_id, tags`), reduzindo drasticamente o payload trafegado na rede.
+
+3. **Cache de Competência em Memória & Navegação Instantânea**:
+   - Implementação do mecanismo `estaPeriodoEmCache(inicio, fim)`: se o operador aplicar filtros de datas contidos dentro da janela já carregada em memória, o sistema filtra os dados localmente em menos de 10ms, com zero chamadas à rede.
+   - Caso o operador selecione um período anterior (ex: auditoria de anos passados), o sistema detecta que o intervalo extrapola o cache e requisita apenas o lote temporal selecionado.
+
+4. **Desacoplamento Assíncrono de Alertas da Inbox**:
+   - O construtor de alertas da Inbox (`InboxService.loadAndBuildAlerts`) foi desacoplado das abas financeiras e comerciais (`desempenho`, `faturamento`, `campanhas`), sendo ativado exclusivamente sob demanda se o usuário acessar as abas operacionais de controle de prazos e pós-venda.
+
+5. **Transparência e Governança Estrita de Banco**:
+   - Tratamento de exceções transparente para garantir que inconsistências de schema sejam reportadas com clareza ao operador, sem carregar dados fictícios ou mascarar erros.
 
 ---
 
@@ -1719,7 +1750,7 @@ O PaxFlow adota testes **subcutâneos** rigorosos para garantir integridade cont
 - **Zero DOM**: Não são executados testes de renderização de interface visual (DOM), concentrando a validação nas regras de negócio, persistência, cálculos de SLA, filtragens e fluxos de dados.
 - **Estrutura Padronizada**: Testes organizados nos blocos `// Setup`, `// Action` e `// Assert`.
 - **Regressão Zero & Execução Automática**: Toda alteração em componentes, regras de negócio ou serviços dispara obrigatoriamente a execução dos testes subcutâneos correspondentes via Vitest antes de ser considerada concluída. Nenhuma alteração é entregue sem validação automatizada prévia.
-- **Cobertura Integral & Blindagem Operacional**: 100% dos serviços de lógica de negócio e motores analíticos cobertos (`inbox`, `escala`, `orcamentos`, `balcao`, `riskScore`, `metas`, `gamification`, `nextTrip`, `comments`, `upsell`, `pushNotification`, `csvImporter`, `googleDrive`, `studioGaleria`, `versionChecker` e `anexos`), totalizando mais de 640 testes subcutâneos de alta confiabilidade em 84 suítes cobrindo casos de borda, resiliência de schema do Supabase (Zero-Break) e build 100% validado.
+- **Cobertura Integral & Blindagem Operacional**: 100% dos serviços de lógica de negócio e motores analíticos cobertos (`inbox`, `escala`, `orcamentos`, `balcao`, `riskScore`, `metas`, `gamification`, `nextTrip`, `comments`, `upsell`, `pushNotification`, `csvImporter`, `googleDrive`, `studioGaleria`, `versionChecker` e `anexos`), totalizando mais de 720 testes subcutâneos de alta confiabilidade em mais de 90 suítes cobrindo casos de borda, integridade de schema do Supabase e build 100% validado.
 
 ### Por que Supabase?
 

@@ -130,6 +130,20 @@ export class RelatoriosPage {
   private loading: boolean = false;
   private prazoReembolsoDias: number = 30;
 
+  // Cache de competência temporal e controle de histórico em memória
+  private dadosCarregadosInicio: string = '';
+  private dadosCarregadosFim: string = '';
+  private carregouHistoricoCompleto: boolean = false;
+
+  /**
+   * Verifica se o intervalo de datas solicitado já está coberto pelos dados atualmente em memória
+   */
+  public estaPeriodoEmCache(inicioIso: string, fimIso: string): boolean {
+    if (this.carregouHistoricoCompleto) return true;
+    if (!this.dadosCarregadosInicio || !this.dadosCarregadosFim) return false;
+    return inicioIso >= this.dadosCarregadosInicio && fimIso <= this.dadosCarregadosFim;
+  }
+
   /**
    * Retorna o período padrão para relatórios gerenciais e de fechamento:
    * Do dia 01 do mês corrente até a data atual.
@@ -229,36 +243,133 @@ export class RelatoriosPage {
   }
 
   /**
-   * Loads all tables from Supabase in parallel via Promise.all, drastically reducing load time
+   * Carrega os dados analíticos do Supabase em paralelo aplicando corte temporal e projeções otimizadas.
+   * Evita transferir históricos acumulados de anos e desacopla requisições secundárias pesadas.
    */
-  private async loadData(): Promise<void> {
+  private async loadData(dataInicioParam?: string, dataFimParam?: string, forceReload: boolean = false, todoHistorico: boolean = false): Promise<void> {
+    const inicioAlvo = dataInicioParam || this.dataInicio;
+    const fimAlvo = dataFimParam || this.dataFim;
+
+    if (!forceReload && !todoHistorico && inicioAlvo && fimAlvo && this.estaPeriodoEmCache(inicioAlvo, fimAlvo)) {
+      return;
+    }
+
     try {
       const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
 
-      // 1. Preparar consultas paralelas independentes
+      // 0. Determinação da Janela de Competência no Banco de Dados
+      let janelaInicio = '';
+      let janelaFim = '';
+
+      if (!todoHistorico) {
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        const inicioAnoCorrente = `${anoAtual}-01-01`;
+
+        if (this.activeTab === 'embarques') {
+          // Embarques: 7 dias para trás e até 120 dias para frente (ou dataFim informada)
+          const dInicioEmb = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000);
+          janelaInicio = inicioAlvo && inicioAlvo < dInicioEmb.toISOString().split('T')[0]
+            ? inicioAlvo
+            : dInicioEmb.toISOString().split('T')[0];
+
+          const dFimEmb = new Date(hoje.getTime() + 120 * 24 * 60 * 60 * 1000);
+          const dFimIso = dFimEmb.toISOString().split('T')[0];
+          janelaFim = fimAlvo && fimAlvo > dFimIso ? fimAlvo : dFimIso;
+        } else {
+          // Relatórios gerais: Se o usuário selecionou algo anterior ao ano corrente, usa a data solicitada
+          if (inicioAlvo && inicioAlvo < inicioAnoCorrente) {
+            janelaInicio = inicioAlvo;
+          } else {
+            // Garante ao menos todo o ano corrente ou últimos 180 dias aquecidos no cache
+            janelaInicio = inicioAnoCorrente;
+          }
+
+          if (fimAlvo) {
+            // Folga de 30 dias para frente para considerar pacotes faturados com embarques futuros
+            const dFimDate = new Date(fimAlvo + 'T00:00:00');
+            dFimDate.setDate(dFimDate.getDate() + 30);
+            janelaFim = dFimDate.toISOString().split('T')[0];
+          }
+        }
+
+        this.dadosCarregadosInicio = janelaInicio;
+        this.dadosCarregadosFim = janelaFim || '2099-12-31';
+      } else {
+        this.carregouHistoricoCompleto = true;
+        this.dadosCarregadosInicio = '1970-01-01';
+        this.dadosCarregadosFim = '2099-12-31';
+      }
+
+      // 1. Preparar consultas paralelas com projeções cirúrgicas e cortes temporais
       const pProfiles = isAdmin
-        ? supabase.from('profiles').select('*').order('nome')
+        ? supabase.from('profiles').select('id, nome, email, role, avatar_url, ativo').order('nome')
         : Promise.resolve({ data: this.perfil ? [this.perfil] : [], error: null });
 
       const pSettings = supabase.from('global_settings').select('*');
 
-      let orcQuery = supabase.from('orcamentos').select('*');
+      let orcQuery = supabase.from('orcamentos').select(`
+        id,
+        consultor_id,
+        cliente_id,
+        nome_cliente,
+        contato,
+        destino,
+        data_viagem,
+        temperatura,
+        tags,
+        status,
+        sub_status,
+        valor_proposta,
+        contato_realizado,
+        contato_realizado_em,
+        contato_realizado_por,
+        created_at,
+        updated_at
+      `);
       if (!isAdmin) {
         orcQuery = orcQuery.eq('consultor_id', this.user.id);
       }
+      if (janelaInicio) {
+        orcQuery = orcQuery.gte('created_at', janelaInicio);
+      }
       const pOrcamentos = orcQuery;
 
-      let cliQuery = supabase.from('clientes').select('*');
+      let cliQuery = supabase.from('clientes').select('id, nome, telefone, email, consultor_responsavel_id, created_at, tags');
       if (!isAdmin) {
         cliQuery = cliQuery.eq('consultor_responsavel_id', this.user.id);
       }
       const pClientes = cliQuery;
 
-      const pReembolsos = supabase.from('reembolsos').select('*, viagem:viagens(*), produto:produtos_viagem(*)');
+      let reemQuery = supabase.from('reembolsos').select(`
+        id,
+        codigo_protocolo,
+        status,
+        valor_solicitado,
+        valor_aprovado,
+        created_at,
+        consultor_solicitante_id,
+        viagem_id,
+        produto_id,
+        viagem:viagens (id, consultor_id, consultor_responsavel_id, codigo_ref, destino),
+        produto:produtos_viagem (id, tipo_produto, fornecedor)
+      `);
+      if (janelaInicio) {
+        reemQuery = reemQuery.gte('created_at', janelaInicio);
+      }
+      const pReembolsos = reemQuery;
 
-      const pPagamentos = supabase.from('loc_pagamentos').select('*, formas_recebimento(*)');
+      let pagQuery = supabase.from('loc_pagamentos').select('id, viagem_id, codigo_localizador, valor, status, data_pagamento, forma_pagamento, parcela_numero, created_at, formas_recebimento(*)');
+      if (janelaInicio) {
+        pagQuery = pagQuery.gte('created_at', janelaInicio);
+      }
+      const pPagamentos = pagQuery;
 
-      const pConferencias = supabase.from('loc_conferencias').select('*');
+      let confQuery = supabase.from('loc_conferencias').select('id, viagem_id, loc_codigo, status, valor, created_at');
+      if (janelaInicio) {
+        confQuery = confQuery.gte('created_at', janelaInicio);
+      }
+      const pConferencias = confQuery;
 
       const pFormas = supabase.from('formas_recebimento').select('*');
 
@@ -274,7 +385,7 @@ export class RelatoriosPage {
       }
       const pLembretes = lembretesQuery;
 
-      const pTipos = supabase.from('tipos_produto').select('*').order('nome');
+      const pTipos = supabase.from('tipos_produto').select('id, nome, campos_adicionais').order('nome');
 
       const pMetas = MetasService.obterMetaPeriodos().catch(err => {
         console.warn('Erro defensivo ao carregar metas em RelatoriosPage:', err);
@@ -283,7 +394,11 @@ export class RelatoriosPage {
 
       const pNps = (async () => {
         try {
-          const res = await supabase.from('feedbacks_nps').select('*');
+          let npsQuery = supabase.from('feedbacks_nps').select('*');
+          if (janelaInicio) {
+            npsQuery = npsQuery.gte('created_at', janelaInicio);
+          }
+          const res = await npsQuery;
           return res;
         } catch (errNps) {
           console.warn('Erro defensivo ao carregar feedbacks_nps em RelatoriosPage:', errNps);
@@ -296,25 +411,43 @@ export class RelatoriosPage {
         return [];
       });
 
-      const pDivisoes = (async () => {
-        try {
-          const primaryRes = await supabase
-            .from('viagens_divisoes')
-            .select('viagem_id, consultor_id, percentual, percentual_rav, is_titular');
-          if (primaryRes.error && (primaryRes.error.code === '42703' || primaryRes.error.message?.includes('percentual_rav'))) {
-            return await supabase
-              .from('viagens_divisoes')
-              .select('viagem_id, consultor_id, percentual, is_titular');
-          }
-          return primaryRes;
-        } catch (errDiv) {
-          console.warn('Erro defensivo ao carregar viagens_divisoes em Relatorios:', errDiv);
-          return { data: [], error: null };
-        }
-      })();
+      const pDivisoes = supabase
+        .from('viagens_divisoes')
+        .select('viagem_id, consultor_id, percentual, percentual_rav, is_titular');
 
       const pViagens = (async () => {
-        let viaQuery = supabase.from('viagens').select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)');
+        let viaQuery = supabase.from('viagens').select(`
+          id,
+          codigo_ref,
+          codigo_localizador,
+          consultor_id,
+          consultor_responsavel_id,
+          cliente_id,
+          orcamento_id,
+          data_ida,
+          data_volta,
+          data_financeiro,
+          valor_total,
+          taxa_embarque_total,
+          status,
+          tags,
+          observacoes,
+          processo_conferido,
+          nps_nota,
+          nps_respondido,
+          pos_contato_concluido,
+          destino,
+          created_at,
+          cliente:clientes (id, nome, telefone, email),
+          reembolsos (id, status, valor_solicitado, valor_aprovado, created_at),
+          produtos:produtos_viagem (id, viagem_id, tipo_produto, valor_venda, taxa_embarque, comissao_total, fornecedor, markup, rav),
+          destino_ref:destinos (id, nome)
+        `);
+
+        if (janelaInicio) {
+          viaQuery = viaQuery.or(`data_ida.gte.${janelaInicio},created_at.gte.${janelaInicio}`);
+        }
+
         if (!isAdmin) {
           const parceiroViagemIds = await ViagensDivisoesService.obterViagensDivididasPorConsultor(this.user.id);
           if (parceiroViagemIds.length > 0) {
@@ -326,12 +459,16 @@ export class RelatoriosPage {
         return viaQuery;
       })();
 
-      const pAlertas = InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias).catch(errA => {
-        console.warn('Erro defensivo ao carregar alertas em RelatoriosPage:', errA);
-        return [];
-      });
+      // Desacopla alertas: só executa a carga da Inbox em abas operacionais que utilizam alertas
+      const precisaAlertas = ['prazos', 'posvenda'].includes(this.activeTab);
+      const pAlertas = precisaAlertas
+        ? InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias).catch(errA => {
+            console.warn('Erro defensivo ao carregar alertas em RelatoriosPage:', errA);
+            return [];
+          })
+        : Promise.resolve(this.alertas.length > 0 ? this.alertas : []);
 
-      // 2. Executar TODAS as 17 consultas simultaneamente em paralelo via Promise.all!
+      // 2. Executar TODAS as consultas simultaneamente em paralelo via Promise.all!
       const [
         resProfiles,
         resSettings,
@@ -424,121 +561,19 @@ export class RelatoriosPage {
       this.feedbacksNps = resNps?.data || [];
       this.campanhasPresets = Array.isArray(resPresets) ? resPresets : [];
       this.alertas = Array.isArray(resAlertas) ? resAlertas : [];
-    } catch (err) {
-      console.warn('Erro ao ler tabelas de relatórios. Ativando mocks.', err);
-      this.loadMockData();
+    } catch (err: any) {
+      console.error('Erro ao ler tabelas de relatórios no servidor:', err);
+      this.viagens = [];
+      this.orcamentos = [];
+      this.clientes = [];
+      this.reembolsos = [];
+      this.locPagamentos = [];
+      this.locConferencias = [];
+      const msgErro = err?.message?.includes('42703') || err?.code === '42703'
+        ? 'Erro de schema no banco de dados. Execute a migração pendente no Supabase.'
+        : 'Erro de conexão ao carregar dados do servidor. Verifique a internet e tente novamente.';
+      this.showToast(msgErro, 'error');
     }
-  }
-
-  /**
-   * Offline mock data fallback to ensure reports always look fully interactive
-   */
-  private loadMockData(): void {
-    this.lembretes = [];
-    this.tiposProduto = [
-      { id: '1', nome: 'AÉREO OPERADORA', campos_adicionais: [] },
-      { id: '2', nome: 'AÉREO FACIAL', campos_adicionais: [] }
-    ];
-
-    // Generate mock profiles if empty
-    this.consultores = [
-      { id: '1', nome: 'Amanda Silva', email: 'amanda@agencia.com', role: 'consultor', nivel: 12, xp: 9800 },
-      { id: '2', nome: 'Bruno Costa', email: 'bruno@agencia.com', role: 'consultor', nivel: 4, xp: 1800 },
-      { id: '3', nome: 'Carlos Souza', email: 'carlos@agencia.com', role: 'consultor', nivel: 16, xp: 16500 }
-    ];
-
-    // Generate mock orcamentos
-    this.orcamentos = [
-      { id: 'o1', consultor_id: '1', nome_cliente: 'Felipe Melo', destino: 'Orlando', created_at: '2026-05-10', updated_at: '2026-05-15', status: 'CONCLUIDO', sub_status: 'ACEITO', valor_proposta: 12000, valor_viagem: 12000, tags: [], origem: 'Instagram' },
-      { id: 'o2', consultor_id: '1', nome_cliente: 'Ana Beatriz', destino: 'Paris', created_at: '2026-06-01', updated_at: '2026-06-12', status: 'CONCLUIDO', sub_status: 'DESISTENCIA', valor_proposta: 18000, tags: ['Desistência: Preço Alto'], origem: 'Instagram' },
-      { id: 'o3', consultor_id: '2', nome_cliente: 'Roberto Lima', destino: 'Roma', created_at: '2026-06-10', updated_at: '2026-06-20', status: 'CONCLUIDO', sub_status: 'ACEITO', valor_proposta: 22000, valor_viagem: 21500, tags: [], origem: 'Indicação' },
-      { id: 'o4', consultor_id: '2', nome_cliente: 'Mariana Vaz', destino: 'Gramado', created_at: '2026-07-02', updated_at: '2026-07-05', status: 'CONCLUIDO', sub_status: 'DESISTENCIA', valor_proposta: 4500, tags: ['Desistência: Concorrência'], origem: 'Google' },
-      { id: 'o5', consultor_id: '3', nome_cliente: 'Julia Neto', destino: 'Cancun', created_at: '2026-07-15', updated_at: '2026-07-16', status: 'EM_ANDAMENTO', valor_proposta: 9800, tags: [], origem: 'WhatsApp' },
-      { id: 'o6', consultor_id: '1', nome_cliente: 'Renato Gaúcho', destino: 'Maldivas', created_at: '2026-07-20', updated_at: '2026-07-22', status: 'AGUARDANDO', valor_proposta: 45000, tags: [], origem: 'Google' }
-    ];
-
-    // Generate mock viagens & produtos
-    this.viagens = [
-      {
-        id: 'v1',
-        consultor_id: '1',
-        destino: 'Orlando',
-        data_ida: '2026-07-10',
-        data_volta: '2026-07-20',
-        valor_total: 12000,
-        status: 'confirmada',
-        data_financeiro: '2026-06-15',
-        dataFinanceiro: '2026-06-15',
-        origem: 'Instagram',
-        processo_conferido: true,
-        produtos: [
-          { fornecedor: 'Latam', valorCusto: 3200, valorVenda: 4000, comissao: 200, markup: 600, rav: 0, tipo: 'Voo', codigoReserva: 'LATAM99' },
-          { fornecedor: 'Disney Resort', valorCusto: 6000, valorVenda: 8000, comissao: 800, markup: 1200, rav: 0, tipo: 'Hotel', codigoReserva: 'DISNEY88' }
-        ]
-      },
-      {
-        id: 'v2',
-        consultor_id: '2',
-        destino: 'Roma',
-        data_ida: '2026-08-15',
-        data_volta: '2026-08-25',
-        valor_total: 21500,
-        status: 'confirmada',
-        data_financeiro: '2026-06-22',
-        dataFinanceiro: '2026-06-22',
-        origem: 'Indicação',
-        processo_conferido: false,
-        produtos: [
-          { fornecedor: 'Alitalia', valorCusto: 7000, valorVenda: 8500, comissao: 300, markup: 1200, rav: 0, tipo: 'Voo', codigoReserva: 'AZ123' },
-          { fornecedor: 'Marriott Rome', valorCusto: 10000, valorVenda: 13000, comissao: 1500, markup: 1500, rav: 0, tipo: 'Hotel', codigoReserva: 'MARR44' }
-        ]
-      }
-    ];
-
-    // Generate mock reembolsos
-    this.reembolsos = [
-      { id: 'r1', valor_solicitado: 4000, valor_aprovado: 3800, taxa_retencao: 200, status: 'pago', created_at: '2026-06-15', viagem: { consultor_id: '1' }, produto: { fornecedor: 'Latam' } }
-    ];
-
-    // Generate mock alerts
-    this.alertas = [
-      { id: 'm1', type: 'passport', title: 'SLA Passaporte - Felipe Melo', consultorId: '1', eventDate: '2026-08-10', dateStr: '10/08/2026' }
-    ];
-
-    this.formasRecebimento = [
-      { id: 'f1', nome: 'Pix', icone: '⚡', ativo: true },
-      { id: 'f2', nome: 'Crédito', icone: '💳', ativo: true },
-      { id: 'f3', nome: 'Boleto', icone: '📄', ativo: true },
-      { id: 'f4', nome: 'Transferência', icone: '🏦', ativo: true }
-    ];
-
-    this.locPagamentos = [
-      { id: 'p1', viagem_id: 'v1', codigo_localizador: 'LATAM99', forma_recebimento_id: 'f1', valor: 4000, formas_recebimento: { nome: 'Pix', icone: '⚡' } },
-      { id: 'p2', viagem_id: 'v1', codigo_localizador: 'DISNEY88', forma_recebimento_id: 'f2', valor: 8000, formas_recebimento: { nome: 'Crédito', icone: '💳' } },
-      { id: 'p3', viagem_id: 'v2', codigo_localizador: 'AZ123', forma_recebimento_id: 'f1', valor: 8500, formas_recebimento: { nome: 'Pix', icone: '⚡' } },
-      { id: 'p4', viagem_id: 'v2', codigo_localizador: 'MARR44', forma_recebimento_id: 'f2', valor: 10000, formas_recebimento: { nome: 'Crédito', icone: '💳' } }
-    ];
-
-    this.locConferencias = [
-      { id: 'c1', viagem_id: 'v1', codigo_localizador: 'LATAM99', conferido: true },
-      { id: 'c2', viagem_id: 'v1', codigo_localizador: 'DISNEY88', conferido: true },
-      { id: 'c3', viagem_id: 'v2', codigo_localizador: 'AZ123', conferido: true },
-      { id: 'c4', viagem_id: 'v2', codigo_localizador: 'MARR44', conferido: false }
-    ];
-
-    this.consultoresBadges = [
-      { profile_id: '1', badge_key: 'SLA_CHAMP' },
-      { profile_id: '1', badge_key: 'DRIVE_MASTER' },
-      { profile_id: '1', badge_key: 'COMMUNICATOR' },
-      { profile_id: '2', badge_key: 'FAST_SALE' },
-      { profile_id: '2', badge_key: 'TEAM_PLAYER' },
-      { profile_id: '3', badge_key: 'SLA_CHAMP' },
-      { profile_id: '3', badge_key: 'DRIVE_MASTER' },
-      { profile_id: '3', badge_key: 'COMPLIANCE_HERO' },
-      { profile_id: '3', badge_key: 'VOUCHER_EXPERT' },
-      { profile_id: '3', badge_key: 'GLOBETROTTER' },
-      { profile_id: '3', badge_key: 'HOT_LEAD' }
-    ];
   }
 
   /**
@@ -941,7 +976,7 @@ export class RelatoriosPage {
           this.setupEventListeners();
         }
       },
-      onSelectTab: (tab: RelatorioTab) => {
+      onSelectTab: async (tab: RelatorioTab) => {
         const previousTab = this.activeTab;
         this.activeTab = tab;
         this.menuLateralRecolhido = true;
@@ -957,10 +992,32 @@ export class RelatoriosPage {
           this.dataFim = periodo.fim;
         }
 
+        // Se a nova aba não estiver coberta pelo cache (ex: embarques futuros), busca janela
+        if (!this.estaPeriodoEmCache(this.dataInicio, this.dataFim)) {
+          this.loading = true;
+          this.render();
+          await this.loadData(this.dataInicio, this.dataFim);
+          this.loading = false;
+        }
+
+        // Se a aba necessitar de alertas e eles ainda não foram carregados, busca sob demanda
+        if (['prazos', 'posvenda'].includes(tab) && this.alertas.length === 0) {
+          InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias)
+            .then(alertas => {
+              this.alertas = alertas || [];
+              const container = document.getElementById('report-view-container');
+              if (container && ['prazos', 'posvenda'].includes(this.activeTab)) {
+                container.innerHTML = this.renderActiveTabContent(this.getFilteredData());
+                this.setupEventListeners();
+              }
+            })
+            .catch(err => console.warn('Erro defensivo ao carregar alertas sob demanda para relatórios:', err));
+        }
+
         this.render();
         this.setupEventListeners();
       },
-      onApplyFilters: (dataInicioIso: string, dataFimIso: string, consultorId: string) => {
+      onApplyFilters: async (dataInicioIso: string, dataFimIso: string, consultorId: string) => {
         const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
         this.dataInicio = dataInicioIso;
         this.dataFim = dataFimIso;
@@ -969,10 +1026,19 @@ export class RelatoriosPage {
         } else if (!isAdmin) {
           this.consultorIdFilter = this.user?.id || '';
         }
+
+        // Se o período selecionado extrapolar o que já está em memória, carrega a janela sob demanda
+        if (!this.estaPeriodoEmCache(dataInicioIso, dataFimIso)) {
+          this.loading = true;
+          this.render();
+          await this.loadData(dataInicioIso, dataFimIso);
+          this.loading = false;
+        }
+
         this.render();
         this.setupEventListeners();
       },
-      onClearFilters: () => {
+      onClearFilters: async () => {
         const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
 
         if (this.activeTab === 'embarques') {
@@ -987,6 +1053,13 @@ export class RelatoriosPage {
         }
 
         this.consultorIdFilter = isAdmin ? 'todos' : (this.user?.id || '');
+
+        if (!this.estaPeriodoEmCache(this.dataInicio, this.dataFim)) {
+          this.loading = true;
+          this.render();
+          await this.loadData(this.dataInicio, this.dataFim);
+          this.loading = false;
+        }
         
         this.render();
         this.setupEventListeners();

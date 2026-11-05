@@ -107,24 +107,51 @@ export class InboxPage {
       onBulkRead: async () => {
         if (!this.user?.id) return;
         const ids = Array.from(this.selectedAlertIds);
-        await InboxService.markAllAlertsAsRead(this.user.id, ids);
+        if (ids.length === 0) return;
+
+        // Atualização cirúrgica em memória (zero roundtrip)
+        const previousReadList = [...this.readList];
+        const newReadSet = new Set(this.readList);
+        ids.forEach(id => newReadSet.add(id));
+        this.readList = Array.from(newReadSet);
         this.selectedAlertIds.clear();
-        this.readList = await InboxService.getReadAlerts(this.user.id);
-        this.showToast(`${ids.length} mensagem(ns) marcada(s) como lida(s).`, 'success');
+        this.applyFilters();
         this.render();
         this.setupEventListeners();
+        this.showToast(`${ids.length} mensagem(ns) marcada(s) como lida(s).`, 'success');
+
+        // Persistência em lote no Supabase em segundo plano
+        InboxService.markAllAlertsAsRead(this.user.id, ids).catch(err => {
+          console.error('Erro ao persistir leitura em lote no Supabase:', err);
+          this.readList = previousReadList;
+          this.applyFilters();
+          this.render();
+          this.setupEventListeners();
+        });
       },
       onBulkUnread: async () => {
         if (!this.user?.id) return;
         const ids = Array.from(this.selectedAlertIds);
-        for (const id of ids) {
-          await InboxService.markAlertAsUnread(this.user.id, id);
-        }
+        if (ids.length === 0) return;
+
+        // Atualização cirúrgica em memória (zero roundtrip)
+        const previousReadList = [...this.readList];
+        const idSet = new Set(ids);
+        this.readList = this.readList.filter(id => !idSet.has(id));
         this.selectedAlertIds.clear();
-        this.readList = await InboxService.getReadAlerts(this.user.id);
-        this.showToast(`${ids.length} mensagem(ns) marcada(s) como não lida(s).`, 'success');
+        this.applyFilters();
         this.render();
         this.setupEventListeners();
+        this.showToast(`${ids.length} mensagem(ns) marcada(s) como não lida(s).`, 'success');
+
+        // Persistência no Supabase em segundo plano
+        Promise.all(ids.map(id => InboxService.markAlertAsUnread(this.user.id, id))).catch(err => {
+          console.error('Erro ao persistir status não lido em lote no Supabase:', err);
+          this.readList = previousReadList;
+          this.applyFilters();
+          this.render();
+          this.setupEventListeners();
+        });
       },
       onBulkArchive: async () => {
         const ids = Array.from(this.selectedAlertIds);
@@ -351,14 +378,16 @@ export class InboxPage {
   }
 
   /**
-   * Fetches data and compiles alert items (manual & SLAs)
+   * Fetches data and compiles alert items (manual & SLAs) de forma paralelizada
    */
   private async loadAndBuildAlerts(): Promise<void> {
     try {
-      this.alerts = await InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias);
-      if (this.user?.id) {
-        this.readList = await InboxService.getReadAlerts(this.user.id);
-      }
+      const [alerts, readList] = await Promise.all([
+        InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias),
+        this.user?.id ? InboxService.getReadAlerts(this.user.id) : Promise.resolve([])
+      ]);
+      this.alerts = alerts;
+      this.readList = readList;
     } catch (err) {
       console.error('Erro ao compilar alertas no serviço:', err);
     }
@@ -385,40 +414,81 @@ export class InboxPage {
   }
 
   /**
-   * Marks a specific alert ID as read
+   * Marks a specific alert ID as read com resposta instantânea em memória (< 50ms) e persistência em background
    */
   private async markAlertAsRead(id: string): Promise<void> {
     if (!this.user?.id) return;
-    await InboxService.markAlertAsRead(this.user.id, id);
-    this.readList = await InboxService.getReadAlerts(this.user.id);
+    
+    // Atualização cirúrgica em memória instantânea (zero roundtrip)
+    const previousReadList = [...this.readList];
+    if (!this.readList.includes(id)) {
+      this.readList = [...this.readList, id];
+    }
     this.applyFilters();
     this.render();
     this.setupEventListeners();
+
+    // Persistência no Supabase em segundo plano com rollback defensivo se falhar
+    InboxService.markAlertAsRead(this.user.id, id).catch(err => {
+      console.error('Erro ao persistir leitura no Supabase:', err);
+      this.readList = previousReadList;
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
   }
 
   /**
-   * Marks a specific alert ID as unread
+   * Marks a specific alert ID as unread com resposta instantânea em memória e persistência em background
    */
   private async markAlertAsUnread(id: string): Promise<void> {
     if (!this.user?.id) return;
-    await InboxService.markAlertAsUnread(this.user.id, id);
-    this.readList = await InboxService.getReadAlerts(this.user.id);
-    this.showToast('Mensagem marcada como não lida.', 'success');
+
+    // Atualização cirúrgica em memória instantânea (zero roundtrip)
+    const previousReadList = [...this.readList];
+    this.readList = this.readList.filter(x => x !== id);
+    this.applyFilters();
     this.render();
     this.setupEventListeners();
+    this.showToast('Mensagem marcada como não lida.', 'success');
+
+    // Persistência no Supabase em segundo plano com rollback defensivo se falhar
+    InboxService.markAlertAsUnread(this.user.id, id).catch(err => {
+      console.error('Erro ao persistir status não lido no Supabase:', err);
+      this.readList = previousReadList;
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
   }
 
   /**
-   * Marks all currently displayed alerts as read
+   * Marks all currently displayed alerts as read com atualização cirúrgica instantânea em lote
    */
   private async markAllAlertsAsRead(): Promise<void> {
     if (!this.user?.id) return;
     const idsToMark = this.filteredAlerts.map(a => a.id);
-    await InboxService.markAllAlertsAsRead(this.user.id, idsToMark);
-    this.readList = await InboxService.getReadAlerts(this.user.id);
-    this.showToast('Todas as mensagens exibidas foram marcadas como lidas.', 'success');
+    if (idsToMark.length === 0) return;
+
+    // Atualização cirúrgica em memória instantânea (zero roundtrip)
+    const previousReadList = [...this.readList];
+    const newReadSet = new Set(this.readList);
+    idsToMark.forEach(id => newReadSet.add(id));
+    this.readList = Array.from(newReadSet);
+
+    this.applyFilters();
     this.render();
     this.setupEventListeners();
+    this.showToast('Todas as mensagens exibidas foram marcadas como lidas.', 'success');
+
+    // Persistência em lote no Supabase em segundo plano com rollback defensivo
+    InboxService.markAllAlertsAsRead(this.user.id, idsToMark).catch(err => {
+      console.error('Erro ao persistir leitura em lote no Supabase:', err);
+      this.readList = previousReadList;
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
   }
 
   /**
