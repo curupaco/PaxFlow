@@ -50,7 +50,7 @@ export interface EditTravelModalOptions {
   viagens: any[];
   isFallbackMode: boolean;
   user: any;
-  onUpdate: () => Promise<void>;
+  onUpdate: (viagemAtualizada?: any) => Promise<void>;
   showToast: (message: string, type: 'success' | 'error', err?: any) => void;
   checkSLA: (viagem: any) => { alert: boolean; type: string | null; text: string };
 }
@@ -66,13 +66,15 @@ export class EditTravelModal {
   private globalSettings: any = null;
   private currentActiveTab: 'detalhes' | 'produtos' | 'vouchers' | 'comentarios' | 'reembolsos' = 'detalhes';
   private expandedLocKeys: Set<string> = new Set<string>();
+  private cachedFormasRecebimento: any[] | null = null;
+  private cachedLocPagamentos: any[] | null = null;
 
   constructor(options: EditTravelModalOptions) {
     this.options = options;
   }
 
   /**
-   * Abre o modal buscando os dados atualizados da viagem
+   * Abre o modal buscando os dados atualizados da viagem de forma paralelizada (Promise.all)
    */
   public async open(tripId: string, activeTab: 'detalhes' | 'produtos' | 'vouchers' | 'comentarios' | 'reembolsos' = 'detalhes'): Promise<void> {
     this.tripId = tripId;
@@ -90,34 +92,6 @@ export class EditTravelModal {
         row._autocompletes.forEach((ac: any) => ac.destroy());
       }
     });
-    
-    // Carrega configurações globais se ainda não carregadas
-    if (!this.globalSettings && !this.options.isFallbackMode) {
-      try {
-        const { data: sData } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
-        this.globalSettings = sData || null;
-      } catch (e) {
-        console.warn('Erro ao carregar global_settings no EditTravelModal:', e);
-      }
-    }
-
-    // Carrega conferências do LOC
-    this.locConferenciasMap = {};
-    if (!this.options.isFallbackMode) {
-      try {
-        const { data } = await supabase
-          .from('loc_conferencias')
-          .select('codigo_localizador, conferido')
-          .eq('viagem_id', tripId);
-        if (data) {
-          data.forEach((row: any) => {
-            this.locConferenciasMap[row.codigo_localizador.trim().toUpperCase()] = row.conferido;
-          });
-        }
-      } catch (err) {
-        console.warn('Erro ao carregar conferências do LOC:', err);
-      }
-    }
 
     try {
       const modalWidthClass = 'max-w-5xl lg:max-w-6xl xl:max-w-7xl';
@@ -127,30 +101,103 @@ export class EditTravelModal {
       if (!modalContent) return;
 
       modalContent.innerHTML = `
-        <div class="p-6 text-center text-slate-500 text-sm font-semibold">
-          Carregando dados da viagem...
+        <div class="p-8 text-center text-slate-500 text-sm font-semibold flex flex-col items-center justify-center gap-3">
+          <div class="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <span>Carregando dados da viagem...</span>
         </div>
       `;
 
-      let viagem: any = null;
-      let errViagem: any = null;
-      try {
-        if (!this.options.isFallbackMode) {
-          const { data, error } = await supabase
-            .from('viagens')
-            .select('*, cliente:clientes(*), reembolsos(*, produto:produtos_viagem(*)), produtos:produtos_viagem(*), destino_ref:destinos(*)')
-            .eq('id', tripId)
-            .maybeSingle();
-          viagem = data;
-          if (viagem && viagem.destino_ref) {
-            viagem.destino = `${viagem.destino_ref.nome}, ${viagem.destino_ref.pais}`;
+      // 1. DISPARO PARALELO DAS CONSULTAS PRIMÁRIAS
+      const globalSettingsPromise = (!this.globalSettings && !this.options.isFallbackMode)
+        ? (async () => {
+            try {
+              const { data } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+              return data || null;
+            } catch {
+              return null;
+            }
+          })()
+        : Promise.resolve(this.globalSettings);
+
+      const viagemPromise = (!this.options.isFallbackMode)
+        ? (async () => {
+            try {
+              const { data } = await supabase
+                .from('viagens')
+                .select('*, cliente:clientes(*), reembolsos(*, produto:produtos_viagem(*)), produtos:produtos_viagem(*), destino_ref:destinos(*)')
+                .eq('id', tripId)
+                .maybeSingle();
+              return data || null;
+            } catch {
+              return null;
+            }
+          })()
+        : Promise.resolve((this.options.viagens || []).find(v => v.id === tripId));
+
+      const locConfsPromise = (!this.options.isFallbackMode)
+        ? (async () => {
+            try {
+              const { data } = await supabase
+                .from('loc_conferencias')
+                .select('codigo_localizador, conferido')
+                .eq('viagem_id', tripId);
+              return data || [];
+            } catch {
+              return [];
+            }
+          })()
+        : Promise.resolve([]);
+
+      const formasPromise = (!this.options.isFallbackMode)
+        ? (async () => {
+            try {
+              const { data } = await supabase
+                .from('formas_recebimento')
+                .select('*')
+                .eq('ativo', true);
+              return data || [];
+            } catch {
+              return [];
+            }
+          })()
+        : Promise.resolve([]);
+
+      const locPagsPromise = (!this.options.isFallbackMode)
+        ? (async () => {
+            try {
+              const { data } = await supabase
+                .from('loc_pagamentos')
+                .select('*, formas_recebimento(*)')
+                .eq('viagem_id', tripId);
+              return data || [];
+            } catch {
+              return [];
+            }
+          })()
+        : Promise.resolve([]);
+
+      const [sData, viagemRaw, confData, formasData, pagsData] = await Promise.all([
+        globalSettingsPromise,
+        viagemPromise,
+        locConfsPromise,
+        formasPromise,
+        locPagsPromise
+      ]);
+
+      if (sData) this.globalSettings = sData;
+      this.cachedFormasRecebimento = formasData;
+      this.cachedLocPagamentos = pagsData;
+
+      this.locConferenciasMap = {};
+      if (Array.isArray(confData)) {
+        confData.forEach((row: any) => {
+          if (row.codigo_localizador) {
+            this.locConferenciasMap[row.codigo_localizador.trim().toUpperCase()] = row.conferido;
           }
-          errViagem = error;
-        }
-      } catch (e) {
-        errViagem = e;
+        });
       }
 
+      let viagem = viagemRaw;
       if (!viagem) {
         // Tenta buscar via RPC SECURITY DEFINER (para Co-Piloto sem bloqueio de RLS)
         try {
@@ -168,41 +215,60 @@ export class EditTravelModal {
       }
 
       if (!viagem) {
-        throw errViagem || new Error('Não foi possível carregar os detalhes desta viagem.');
+        throw new Error('Não foi possível carregar os detalhes desta viagem.');
+      }
+
+      if (viagem && viagem.destino_ref) {
+        viagem.destino = `${viagem.destino_ref.nome}, ${viagem.destino_ref.pais}`;
       }
 
       if (viagem && !viagem.produtos) {
         viagem.produtos = [];
       }
 
-      // Busca o consultor de forma separada
-      if (viagem && viagem.consultor_id) {
-        const { data: consultorData, error: errConsultor } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', viagem.consultor_id)
-          .maybeSingle();
-        if (!errConsultor && consultorData) {
-          viagem.consultor = consultorData;
-        } else {
-          viagem.consultor = null;
-        }
-      } else if (viagem) {
-        viagem.consultor = null;
-      }
+      // 2. DISPARO PARALELO DAS CONSULTAS SECUNDÁRIAS
+      const consultorPromise = (viagem.consultor_id && !this.options.isFallbackMode)
+        ? (async () => {
+            try {
+              const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', viagem.consultor_id)
+                .maybeSingle();
+              return data || null;
+            } catch {
+              return null;
+            }
+          })()
+        : Promise.resolve(null);
 
-      if (viagem) {
-        viagem.processo_conferido = !!viagem.processo_conferido;
-
-        // Carrega divisões de consultores parceiros da viagem
+      const divisoesPromise = (async () => {
         try {
           const { ViagensDivisoesService } = await import('../../services/viagensDivisoesService');
-          viagem.divisoes = await ViagensDivisoesService.obterDivisoesPorViagem(tripId, viagem.consultor_id);
+          return await ViagensDivisoesService.obterDivisoesPorViagem(tripId, viagem.consultor_id);
         } catch (errDiv) {
           console.warn('Aviso ao carregar divisões da viagem:', errDiv);
-          viagem.divisoes = [];
+          return [];
         }
-      }
+      })();
+
+      const reembolsosPromise = (viagem.cliente_id && !this.options.isFallbackMode)
+        ? ReembolsosService.obterReembolsosPendentesPorCliente(viagem.cliente_id).catch(e => {
+            console.warn('Erro ao carregar reembolsos do cliente para alertas:', e);
+            return [];
+          })
+        : Promise.resolve([]);
+
+      const [consultorData, divisoesData, reembolsosCliente] = await Promise.all([
+        consultorPromise,
+        divisoesPromise,
+        reembolsosPromise
+      ]);
+
+      viagem.consultor = consultorData || null;
+      viagem.divisoes = divisoesData || [];
+      viagem.processo_conferido = !!viagem.processo_conferido;
+      (viagem as any)._reembolsosPendentesCliente = reembolsosCliente || [];
 
       // Verificação de Atendimento Presencial / Balcão (Modo Co-Piloto)
       const currentUserId = this.options.user?.id;
@@ -237,36 +303,34 @@ export class EditTravelModal {
 
       this.currentLoadedViagem = viagem;
 
-      // Carrega reembolsos pendentes do cliente (para alertas da própria viagem e cross-viagem)
-      let reembolsosCliente: ReembolsoPendenteResumo[] = [];
-      if (viagem && viagem.cliente_id && !this.options.isFallbackMode) {
-        try {
-          reembolsosCliente = await ReembolsosService.obterReembolsosPendentesPorCliente(viagem.cliente_id);
-        } catch (eReemb) {
-          console.warn('Erro ao carregar reembolsos do cliente para alertas:', eReemb);
-        }
-      }
-      (viagem as any)._reembolsosPendentesCliente = reembolsosCliente;
-
-      // Busca lista de clientes
-      const { data: clientesData } = await supabase
-        .from('clientes')
-        .select('id, nome')
-        .order('nome', { ascending: true });
-
-      const listaClientes: any[] = clientesData ? [...clientesData] : [];
-      if (viagem && viagem.cliente_id) {
-        const jaExiste = listaClientes.some(c => c.id === viagem.cliente_id);
-        if (!jaExiste) {
-          const nomeCliente = viagem.cliente?.nome || viagem.cliente_nome || 'Cliente (Atendimento Balcão)';
-          listaClientes.unshift({ id: viagem.cliente_id, nome: nomeCliente });
-        }
-      }
+      // 3. LISTA DE CLIENTES OTIMIZADA: Apenas o titular da viagem é carregado inicialmente
+      const nomeClienteTitular = viagem.cliente?.nome || viagem.cliente_nome || 'Cliente';
+      const listaClientes: any[] = viagem.cliente_id 
+        ? [{ id: viagem.cliente_id, nome: nomeClienteTitular }] 
+        : [{ id: '', nome: 'Selecione o cliente...' }];
 
       // Renderiza a estrutura do Modal com as Abas
       this.renderEdicaoEProdutosModalContent(viagem, listaClientes, activeTab);
+
+      // Lazy-load de outros clientes caso o consultor clique no seletor para trocar
+      const selectCliente = document.getElementById('edit-viagem-cliente') as HTMLSelectElement;
+      selectCliente?.addEventListener('focus', async () => {
+        if (selectCliente.options.length <= 1) {
+          try {
+            const { data } = await supabase.from('clientes').select('id, nome').order('nome', { ascending: true }).limit(200);
+            if (data && data.length > 0) {
+              const currentId = selectCliente.value;
+              selectCliente.innerHTML = data.map(c => `
+                <option value="${c.id}" class="bg-white dark:bg-slate-800" ${c.id === currentId ? 'selected' : ''}>${c.nome}</option>
+              `).join('');
+            }
+          } catch (eCli) {
+            console.warn('Erro ao carregar clientes adicionais:', eCli);
+          }
+        }
+      }, { once: true });
       
-      // Carrega e exibe os produtos da viagem
+      // Carrega e exibe os produtos da viagem (utilizando o cache sem consultas repetidas)
       await this.loadAndRenderProdutosViagem(tripId);
 
     } catch (err: any) {
@@ -881,7 +945,7 @@ export class EditTravelModal {
     // Fechar Modal
     const handleClose = async () => {
       this.closeModal();
-      await this.options.onUpdate();
+      await this.options.onUpdate(this.currentLoadedViagem);
     };
     document.getElementById('btn-close-edit-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-cancel-edit')?.addEventListener('click', handleClose);
@@ -908,7 +972,7 @@ export class EditTravelModal {
         consultorNome: this.options.perfil?.nome || this.options.user?.email || 'Consultor',
         showToast: (msg, tipo) => this.options.showToast(msg, tipo === 'error' ? 'error' : 'success'),
         onSuccess: async () => {
-          await this.options.onUpdate();
+          await this.options.onUpdate(this.currentLoadedViagem);
           await this.open(v.id, 'detalhes');
         }
       });
@@ -944,7 +1008,7 @@ export class EditTravelModal {
             await ContatosEmbarqueService.salvarContatos(v.id, novoContatos);
             v.contatos_embarque = novoContatos;
             this.options.showToast('Contato pré-embarque registrado com sucesso!', 'success');
-            await this.options.onUpdate();
+            await this.options.onUpdate(this.currentLoadedViagem);
             await this.open(v.id, 'detalhes');
           } catch (err) {
             console.error('Erro ao salvar contato pré-embarque:', err);
@@ -995,7 +1059,7 @@ export class EditTravelModal {
         v.pos_contato_concluido = true;
         v.status = 'concluida';
         this.options.showToast('Pós-contato marcado como concluído! SLA finalizado com sucesso.', 'success');
-        await this.options.onUpdate();
+        await this.options.onUpdate(this.currentLoadedViagem);
         await this.open(v.id);
       } catch (err: any) {
         console.error('Erro ao concluir pós-contato:', err);
@@ -1008,7 +1072,7 @@ export class EditTravelModal {
     const handleOpenRisk = async () => {
       const { RiskDiagnosisDrawer } = await import('../risk/RiskDiagnosisDrawer');
       RiskDiagnosisDrawer.open(v.id, this.options.user, this.options.perfil, async () => {
-        await this.options.onUpdate();
+        await this.options.onUpdate(this.currentLoadedViagem);
         await this.open(v.id);
       });
     };
@@ -1027,7 +1091,7 @@ export class EditTravelModal {
         isGestorAdmin: isAdmin,
         onSave: async (novasDivisoes) => {
           v.divisoes = novasDivisoes;
-          await this.options.onUpdate();
+          await this.options.onUpdate(this.currentLoadedViagem);
           await this.open(v.id, activeTab);
         }
       });
@@ -1111,7 +1175,7 @@ export class EditTravelModal {
             showToast: (msg, type, err) => this.options.showToast(msg, type, err),
             onSucesso: async () => {
               await this.open(v.id, 'reembolsos');
-              await this.options.onUpdate();
+              await this.options.onUpdate(this.currentLoadedViagem);
             },
             onCancel: () => {
               statusSelect.value = initialStatus;
@@ -1474,7 +1538,7 @@ export class EditTravelModal {
         }
 
         this.options.showToast('Viagem atualizada com sucesso!', 'success');
-        await this.options.onUpdate();
+        await this.options.onUpdate(this.currentLoadedViagem);
         
         setTimeout(async () => {
           await this.open(v.id, 'detalhes');
@@ -1512,7 +1576,7 @@ export class EditTravelModal {
 
         this.options.showToast('Viagem excluída com sucesso!', 'success');
         this.closeModal();
-        await this.options.onUpdate();
+        await this.options.onUpdate(this.currentLoadedViagem);
       } catch (err: any) {
         console.error('Erro ao excluir viagem:', err);
         this.options.showToast('Erro ao excluir viagem.', 'error', err);
@@ -2023,7 +2087,7 @@ export class EditTravelModal {
         const containerDatas = document.getElementById('container-datas-adicionais');
         if (containerDatas) containerDatas.innerHTML = '';
 
-        await this.options.onUpdate();
+        await this.options.onUpdate(this.currentLoadedViagem);
         await this.open(v.id, 'produtos');
 
         setTimeout(() => {
@@ -2618,7 +2682,7 @@ export class EditTravelModal {
         this.selectedProductId = prodId;
         this.selectedProductDirty = false;
 
-        await this.options.onUpdate();
+        await this.options.onUpdate(this.currentLoadedViagem);
         
         setTimeout(async () => {
           await this.open(v.id, 'produtos');
@@ -2635,69 +2699,67 @@ export class EditTravelModal {
     if (!container) return;
 
     let produtos: any[] = [];
-    let isError = false;
 
-    // 1. Consulta diretamente a tabela produtos_viagem no Supabase
-    try {
-      const { data, error } = await supabase
-        .from('produtos_viagem')
-        .select('*')
-        .eq('viagem_id', tripId)
-        .order('created_at', { ascending: true });
-
-      if (!error && data) {
-        produtos = data;
-      }
-    } catch (err: any) {
-      console.warn('Busca direta de produtos falhou ou foi bloqueada por RLS:', err);
-    }
-
-    // 2. Se vazio e estiver em atendimento compartilhado (Co-Piloto), chama a RPC SECURITY DEFINER
-    if (produtos.length === 0) {
+    // 1. Reutiliza produtos já carregados na consulta principal da viagem se existirem
+    if (this.currentLoadedViagem?.produtos && Array.isArray(this.currentLoadedViagem.produtos) && this.currentLoadedViagem.produtos.length > 0) {
+      produtos = this.currentLoadedViagem.produtos;
+    } else {
+      // Caso contrário, busca na tabela produtos_viagem
       try {
-        const { data: rpcProds, error: rpcErr } = await supabase.rpc('obter_produtos_co_piloto', { p_trip_id: tripId });
-        if (!rpcErr && rpcProds && Array.isArray(rpcProds) && rpcProds.length > 0) {
-          produtos = rpcProds;
-        }
-      } catch (e) {
-        console.warn('RPC obter_produtos_co_piloto nao disponivel:', e);
-      }
-    }
-
-    // Sincroniza o estado em memória da viagem carregada com os produtos reais
-    if (this.currentLoadedViagem) {
-      this.currentLoadedViagem.produtos = produtos;
-    }
-
-    let formasAtivas: any[] = [];
-    let locPagamentos: any[] = [];
-
-    this.locConferenciasMap = {};
-    if (!this.options.isFallbackMode) {
-      try {
-        const { data: dataFormas } = await supabase
-          .from('formas_recebimento')
+        const { data, error } = await supabase
+          .from('produtos_viagem')
           .select('*')
-          .eq('ativo', true);
-        if (dataFormas) formasAtivas = dataFormas;
+          .eq('viagem_id', tripId)
+          .order('created_at', { ascending: true });
 
-        const { data: dataPags } = await supabase
-          .from('loc_pagamentos')
-          .select('*, formas_recebimento(*)')
-          .eq('viagem_id', tripId);
-        if (dataPags) locPagamentos = dataPags;
+        if (!error && data) {
+          produtos = data;
+        }
+      } catch (err: any) {
+        console.warn('Busca direta de produtos falhou ou foi bloqueada por RLS:', err);
+      }
 
-        const { data: dataConf } = await supabase
-          .from('loc_conferencias')
-          .select('codigo_localizador, conferido')
-          .eq('viagem_id', tripId);
-        if (dataConf) {
-          dataConf.forEach((row: any) => {
-            this.locConferenciasMap[row.codigo_localizador.trim().toUpperCase()] = row.conferido;
-          });
+      // Se vazio e estiver em atendimento compartilhado (Co-Piloto), chama a RPC SECURITY DEFINER
+      if (produtos.length === 0) {
+        try {
+          const { data: rpcProds, error: rpcErr } = await supabase.rpc('obter_produtos_co_piloto', { p_trip_id: tripId });
+          if (!rpcErr && rpcProds && Array.isArray(rpcProds) && rpcProds.length > 0) {
+            produtos = rpcProds;
+          }
+        } catch (e) {
+          console.warn('RPC obter_produtos_co_piloto nao disponivel:', e);
+        }
+      }
+
+      // Sincroniza o estado em memória da viagem carregada com os produtos reais
+      if (this.currentLoadedViagem) {
+        this.currentLoadedViagem.produtos = produtos;
+      }
+    }
+
+    // 2. Reutiliza formas de recebimento e loc_pagamentos já obtidos em cache
+    let formasAtivas: any[] = this.cachedFormasRecebimento || [];
+    let locPagamentos: any[] = this.cachedLocPagamentos || [];
+
+    if ((formasAtivas.length === 0 || locPagamentos.length === 0) && !this.options.isFallbackMode) {
+      try {
+        if (formasAtivas.length === 0) {
+          const { data: dataFormas } = await supabase
+            .from('formas_recebimento')
+            .select('*')
+            .eq('ativo', true);
+          if (dataFormas) formasAtivas = dataFormas;
+        }
+
+        if (locPagamentos.length === 0) {
+          const { data: dataPags } = await supabase
+            .from('loc_pagamentos')
+            .select('*, formas_recebimento(*)')
+            .eq('viagem_id', tripId);
+          if (dataPags) locPagamentos = dataPags;
         }
       } catch (err) {
-        console.warn('Erro ao carregar pagamentos/formas/conferencias do Supabase:', err);
+        console.warn('Erro ao carregar pagamentos/formas do Supabase:', err);
       }
     }
 
@@ -3341,7 +3403,7 @@ export class EditTravelModal {
             }
 
             this.options.showToast('Produto removido com sucesso!', 'success');
-            await this.options.onUpdate();
+            await this.options.onUpdate(this.currentLoadedViagem);
             await this.open(this.tripId, 'produtos');
           } catch (err: any) {
             console.error('Erro ao remover produto:', err);
@@ -3512,7 +3574,7 @@ export class EditTravelModal {
       showToast: (msg, type, err) => this.options.showToast(msg, type, err),
       onSucesso: async () => {
         await this.open(this.tripId, 'reembolsos');
-        await this.options.onUpdate();
+        await this.options.onUpdate(this.currentLoadedViagem);
       }
     });
   }
@@ -3548,7 +3610,7 @@ export class EditTravelModal {
           showToast: (msg, type, err) => this.options.showToast(msg, type, err),
           onSucesso: async () => {
             await this.open(this.tripId, 'reembolsos');
-            await this.options.onUpdate();
+            await this.options.onUpdate(this.currentLoadedViagem);
           }
         });
       });
@@ -4032,7 +4094,7 @@ export class EditTravelModal {
         'success'
       );
 
-      await this.options.onUpdate();
+      await this.options.onUpdate(this.currentLoadedViagem);
       return true;
     } catch (err) {
       console.error('Erro na transição automática de status:', err);
@@ -4234,7 +4296,7 @@ export class EditTravelModal {
             await AnexosService.excluirAnexo(id, path || undefined);
             this.options.showToast('Documento removido com sucesso.', 'success');
             await this.atualizarListaDocumentosViagem(viagemId, clienteId);
-            await this.options.onUpdate();
+            await this.options.onUpdate(this.currentLoadedViagem);
           }
         });
       });
@@ -4292,7 +4354,7 @@ export class EditTravelModal {
       showToast: (msg, tipo) => this.options.showToast(msg, tipo === 'error' ? 'error' : 'success'),
       onSuccess: async () => {
         await this.atualizarListaDocumentosViagem(viagemId, clienteId);
-        await this.options.onUpdate();
+        await this.options.onUpdate(this.currentLoadedViagem);
       }
     });
 

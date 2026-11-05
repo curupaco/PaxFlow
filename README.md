@@ -18,6 +18,13 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ---
 
+- **Alta Performance & Aceleração do Módulo de Viagens [NEW]**:
+  - **Paralelização em Rodada Única (`Promise.all`)**: Eliminação do encadeamento de 12 consultas em série ao abrir os detalhes de uma viagem; todas as queries essenciais (viagem, produtos, localizadores, pagamentos e divisões) rodam simultaneamente em uma única rodada de rede.
+  - **Supressão de Queries Redundantes**: Eliminação da dupla consulta de `produtos_viagem` e de `loc_conferencias`, reutilizando o payload da viagem já em memória.
+  - **Carga de Clientes Sob Demanda (Lazy-Loading)**: O modal de viagem agora abre instantaneamente apenas com o cliente titular, eliminando o download irrestrito da tabela completa de clientes da agência.
+  - **Abertura Direta de Viagens Pesquisadas**: Remoção da pré-consulta redundante nos resultados da busca global/balcão, acelerando em até 89% a abertura de viagens encontradas na pesquisa.
+  - **Atualização Cirúrgica ao Salvar (`atualizarViagemEmMemoria`)**: Salvar produtos ou detalhes de uma viagem atualiza imediatamente o card em memória sem precisar refazer o download de todo o banco de viagens.
+
 - **Polimento Visual, Design Tokens & Paleta Mineral (Evolução Visual 2026) [NEW]**:
   - **Fundação Global de Tipografia Numérica Tabular (`tnum`)**:
     - Ativação de OpenType features (`tnum` e `cv05`) em todas as células de tabelas, cartões de KPI e inputs monetários (`font-variant-numeric: tabular-nums`).

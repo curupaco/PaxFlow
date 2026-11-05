@@ -108,10 +108,19 @@ export class BalcaoService {
     } catch (e) {}
 
     try {
-      // 1. Busca Clientes no Supabase
-      const { data: clientesData } = await supabase
-        .from('clientes')
-        .select('*');
+      // 1. Busca Clientes no Supabase de forma direcionada com fallback defensivo para mocks
+      const builder: any = supabase.from('clientes').select('*');
+      let clientesData: any[] | null = null;
+      if (typeof builder.or === 'function') {
+        const queryBuilder = cleanDigits.length >= 3
+          ? builder.or(`nome.ilike.%${query.trim()}%,email.ilike.%${query.trim()}%,documento.ilike.%${cleanDigits}%,telefone.ilike.%${cleanDigits}%`)
+          : builder.or(`nome.ilike.%${query.trim()}%,email.ilike.%${query.trim()}%`);
+        const res = typeof queryBuilder.limit === 'function' ? await queryBuilder.limit(25) : await queryBuilder;
+        clientesData = res.data;
+      } else {
+        const res = typeof builder.limit === 'function' ? await builder.limit(25) : await builder;
+        clientesData = res.data;
+      }
 
       if (clientesData && clientesData.length > 0) {
         clientesData.forEach((c: any) => {
@@ -150,9 +159,19 @@ export class BalcaoService {
     // 2. Busca Produtos de Viagem correspondentes (por codigo_reserva, fornecedor, descricao ou dados_adicionais)
     const produtosPorViagemMap = new Map<string, Array<any>>();
     try {
-      const { data: produtosData } = await supabase
+      const prodBuilder: any = supabase
         .from('produtos_viagem')
         .select('id, viagem_id, tipo, fornecedor, descricao, codigo_reserva, dados_adicionais');
+      
+      let produtosData: any[] | null = null;
+      if (typeof prodBuilder.or === 'function') {
+        const qb = prodBuilder.or(`codigo_reserva.ilike.%${query.trim()}%,fornecedor.ilike.%${query.trim()}%,descricao.ilike.%${query.trim()}%`);
+        const res = typeof qb.limit === 'function' ? await qb.limit(25) : await qb;
+        produtosData = res.data;
+      } else {
+        const res = typeof prodBuilder.limit === 'function' ? await prodBuilder.limit(25) : await prodBuilder;
+        produtosData = res.data;
+      }
 
       if (produtosData && produtosData.length > 0) {
         produtosData.forEach((p: any) => {
@@ -182,9 +201,20 @@ export class BalcaoService {
     // Conjunto de IDs de clientes que deram match direto no critério primário (nome, e-mail, documento, telefone)
     const clientesBuscadosIds = new Set<string>(resultadosMap.keys());
 
-    // 3. Busca Viagens correspondentes
+    // 3. Busca Viagens correspondentes com filtro direcionado
     try {
-      const { data: viagensData } = await supabase.from('viagens').select('*');
+      const vBuilder: any = supabase.from('viagens').select('*');
+      let viagensData: any[] | null = null;
+      if (typeof vBuilder.or === 'function') {
+        const qb = clientesBuscadosIds.size > 0
+          ? vBuilder.or(`destino.ilike.%${query.trim()}%,codigo_localizador.ilike.%${query.trim()}%,codigo_ref.ilike.%${query.trim()}%,cliente_id.in.(${Array.from(clientesBuscadosIds).join(',')})`)
+          : vBuilder.or(`destino.ilike.%${query.trim()}%,codigo_localizador.ilike.%${query.trim()}%,codigo_ref.ilike.%${query.trim()}%`);
+        const res = typeof qb.limit === 'function' ? await qb.limit(30) : await qb;
+        viagensData = res.data;
+      } else {
+        const res = typeof vBuilder.limit === 'function' ? await vBuilder.limit(30) : await vBuilder;
+        viagensData = res.data;
+      }
       if (viagensData && viagensData.length > 0) {
         viagensData.forEach((v: any) => {
           const cId = v.cliente_id;
@@ -250,9 +280,20 @@ export class BalcaoService {
       }
     } catch (e) {}
 
-    // 4. Busca Orçamentos correspondentes
+    // 4. Busca Orçamentos correspondentes com filtro direcionado
     try {
-      const { data: orcData } = await supabase.from('orcamentos').select('*');
+      const orcBuilder: any = supabase.from('orcamentos').select('*');
+      let orcData: any[] | null = null;
+      if (typeof orcBuilder.or === 'function') {
+        const qb = clientesBuscadosIds.size > 0
+          ? orcBuilder.or(`destino.ilike.%${query.trim()}%,nome_cliente.ilike.%${query.trim()}%,codigo_ref.ilike.%${query.trim()}%,cliente_id.in.(${Array.from(clientesBuscadosIds).join(',')})`)
+          : orcBuilder.or(`destino.ilike.%${query.trim()}%,nome_cliente.ilike.%${query.trim()}%,codigo_ref.ilike.%${query.trim()}%`);
+        const res = typeof qb.limit === 'function' ? await qb.limit(20) : await qb;
+        orcData = res.data;
+      } else {
+        const res = typeof orcBuilder.limit === 'function' ? await orcBuilder.limit(20) : await orcBuilder;
+        orcData = res.data;
+      }
       if (orcData && orcData.length > 0) {
         orcData.forEach((o: any) => {
           const cId = o.cliente_id;

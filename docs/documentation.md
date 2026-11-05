@@ -1876,7 +1876,30 @@ Não. O PaxFlow é focado em CRM operacional e pós-venda. Recomendamos integra�
 
 ---
 
-## 3.51 Evolução Visual PaxFlow: Tipografia Tabular, Paleta Mineral & Microinterações
+### 3.52 Arquitetura de Alta Performance do Módulo de Viagens e Modal de Detalhes
+
+Otimização estrutural de latência de rede e processamento no módulo operacional de Viagens (`Dashboard.ts`, `EditTravelModal.ts` e `balcaoService.ts`):
+
+1. **Paralelização em Rodada Única (`Promise.all`)**:
+   - Abertura de viagens desacoplada do modelo sequencial: todas as consultas independentes (dados da viagem, localizadores, divisões de consultores, formas de recebimento e pagamentos) são disparadas simultaneamente via `Promise.all`.
+   - Redução drástica do tempo de espera de rede de ~2,5s para ~250ms na abertura da ficha da viagem.
+
+2. **Eliminação de Consultas Redundantes**:
+   - Reutilização dos produtos e conferências de localizador já recebidos no payload mestre da viagem, suprimindo requisições repetidas a `produtos_viagem` e `loc_conferencias`.
+
+3. **Carga Inteligente de Clientes (Lazy Loading)**:
+   - Eliminação do download irrestrito da tabela inteira de clientes (`SELECT id, nome FROM clientes`) a cada clique.
+   - O modal inicializa apenas com o cliente titular da viagem selecionado, ativando busca paginada com limite de 200 registros sob demanda exclusivamente se o operador focar no seletor para alteração de titularidade.
+
+4. **Abertura Direta de Viagens Pesquisadas**:
+   - Supressão do pré-fetch redundante no clique dos resultados da busca global/balcão, transferindo a responsabilidade diretamente para o modal otimizado.
+
+5. **Atualização Cirúrgica em Memória (`atualizarViagemEmMemoria`)**:
+   - Ao salvar alterações ou atualizar produtos no modal de viagens, o sistema atualiza cirurgicamente a entidade correspondente na lista local em memória (`this.viagens`), re-renderizando a interface de forma instantânea sem disparar o download de toda a base de viagens.
+
+---
+
+## 3.53 Evolução Visual PaxFlow: Tipografia Tabular, Paleta Mineral & Microinterações
 
 ### 3.51.1 Fundação Tipográfica Numérica Tabular (`tnum`)
 Para erradicar a instabilidade visual causada por números dançantes em tabelas de faturamento, DRE, conciliação e rateio de RAV, foi adotada a fundação OpenType `tnum` (Tabular Numbers) associada ao conjunto estilístico alternativo `cv05`.

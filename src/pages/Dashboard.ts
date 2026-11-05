@@ -448,29 +448,90 @@ export class Dashboard {
   private async loadViagens(): Promise<void> {
     try {
       this.isFallbackMode = false;
-      const query = supabase
+
+      // Execução paralela das consultas primárias do Dashboard (Promise.all)
+      const viagensPromise = supabase
         .from('viagens')
         .select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)');
 
-      const { data, error } = await query;
-      if (error) throw error;
+      const locConfsPromise = !this.isFallbackMode
+        ? (async () => {
+            try {
+              const { data } = await supabase
+                .from('loc_conferencias')
+                .select('viagem_id, codigo_localizador, conferido');
+              return data || [];
+            } catch (errConf) {
+              console.warn('Erro ao carregar loc_conferencias:', errConf);
+              return [];
+            }
+          })()
+        : Promise.resolve([]);
 
-      let locConfs: any[] = [];
-      if (!this.isFallbackMode) {
-        try {
-          const { data: confData, error: confError } = await supabase
-            .from('loc_conferencias')
-            .select('viagem_id, codigo_localizador, conferido');
-          if (!confError && confData) {
-            locConfs = confData;
-          }
-        } catch (errConf) {
-          console.warn('Erro ao carregar loc_conferencias:', errConf);
-        }
-      }
+      const locPagsPromise = !this.isFallbackMode
+        ? (async () => {
+            try {
+              const { data, error } = await supabase
+                .from('loc_pagamentos')
+                .select('viagem_id, codigo_localizador, forma_recebimento_id, valor, formas_recebimento(id, nome)');
+              if (!error && data) return data;
+              const fallback = await supabase
+                .from('loc_pagamentos')
+                .select('viagem_id, codigo_localizador, forma_recebimento_id, valor');
+              return fallback.data || [];
+            } catch (errPags) {
+              console.warn('Erro ao carregar loc_pagamentos:', errPags);
+              return [];
+            }
+          })()
+        : Promise.resolve([]);
+
+      const commentsPromise = !this.isFallbackMode
+        ? (async () => {
+            try {
+              const { data } = await supabase
+                .from('comentarios')
+                .select('item_id, tipo_item, texto')
+                .in('tipo_item', ['viagem', 'produto']);
+              return data || [];
+            } catch (errComm) {
+              console.warn('Erro ao carregar comentários para busca:', errComm);
+              return [];
+            }
+          })()
+        : Promise.resolve([]);
+
+      const divisoesPromise = !this.isFallbackMode
+        ? (async () => {
+            try {
+              const { data, error } = await supabase
+                .from('viagens_divisoes')
+                .select('viagem_id, consultor_id, percentual, percentual_rav, is_titular');
+              if (!error && data) return data;
+              const fallback = await supabase
+                .from('viagens_divisoes')
+                .select('viagem_id, consultor_id, percentual, is_titular');
+              return fallback.data || [];
+            } catch (errDiv) {
+              console.warn('Erro defensivo ao carregar viagens_divisoes no Dashboard:', errDiv);
+              return [];
+            }
+          })()
+        : Promise.resolve([]);
+
+      const [viagensRes, locConfs, locPags, comments, divData] = await Promise.all([
+        viagensPromise,
+        locConfsPromise,
+        locPagsPromise,
+        commentsPromise,
+        divisoesPromise
+      ]);
+
+      if (viagensRes.error) throw viagensRes.error;
+      const data = viagensRes.data || [];
 
       const locConfsMap = new Map<string, { [locKey: string]: boolean }>();
-      locConfs.forEach((row: any) => {
+      (locConfs || []).forEach((row: any) => {
         const vId = row.viagem_id;
         const locKey = (row.codigo_localizador || 'SEM LOCALIZADOR').trim().toUpperCase();
         if (!locConfsMap.has(vId)) {
@@ -479,27 +540,8 @@ export class Dashboard {
         locConfsMap.get(vId)![locKey] = row.conferido;
       });
 
-      let locPags: any[] = [];
-      if (!this.isFallbackMode) {
-        try {
-          const { data: pagsData, error: pagsError } = await supabase
-            .from('loc_pagamentos')
-            .select('viagem_id, codigo_localizador, forma_recebimento_id, valor, formas_recebimento(id, nome)');
-          if (!pagsError && pagsData) {
-            locPags = pagsData;
-          } else if (pagsError) {
-            const { data: fallbackData } = await supabase
-              .from('loc_pagamentos')
-              .select('viagem_id, codigo_localizador, forma_recebimento_id, valor');
-            if (fallbackData) locPags = fallbackData;
-          }
-        } catch (errPags) {
-          console.warn('Erro ao carregar loc_pagamentos:', errPags);
-        }
-      }
-
       this.locPagamentosMap = new Map<string, any[]>();
-      locPags.forEach((p: any) => {
+      (locPags || []).forEach((p: any) => {
         const vId = p.viagem_id;
         if (!this.locPagamentosMap.has(vId)) {
           this.locPagamentosMap.set(vId, []);
@@ -514,52 +556,12 @@ export class Dashboard {
         });
       });
 
-      let comments: any[] = [];
-      if (!this.isFallbackMode) {
-        try {
-          const { data: cData, error: cError } = await supabase
-            .from('comentarios')
-            .select('item_id, tipo_item, texto')
-            .in('tipo_item', ['viagem', 'produto']);
-          if (!cError && cData) {
-            comments = cData;
-          }
-        } catch (errComm) {
-          console.warn('Erro ao carregar comentários para busca:', errComm);
-        }
-      }
-
       const divisoesMap = new Map<string, any[]>();
-      if (!this.isFallbackMode) {
-        try {
-          let divData: any[] | null = null;
-          let divError: any = null;
-          
-          const primaryRes = await supabase
-            .from('viagens_divisoes')
-            .select('viagem_id, consultor_id, percentual, percentual_rav, is_titular');
-          divData = primaryRes.data;
-          divError = primaryRes.error;
-          
-          if (divError && (divError.code === '42703' || divError.message?.includes('percentual_rav'))) {
-            const fallbackRes = await supabase
-              .from('viagens_divisoes')
-              .select('viagem_id, consultor_id, percentual, is_titular');
-            divData = fallbackRes.data;
-            divError = fallbackRes.error;
-          }
-
-          if (!divError && divData) {
-            divData.forEach((row: any) => {
-              const arr = divisoesMap.get(row.viagem_id) || [];
-              arr.push(row);
-              divisoesMap.set(row.viagem_id, arr);
-            });
-          }
-        } catch (errDiv) {
-          console.warn('Erro defensivo ao carregar viagens_divisoes no Dashboard:', errDiv);
-        }
-      }
+      (divData || []).forEach((row: any) => {
+        const arr = divisoesMap.get(row.viagem_id) || [];
+        arr.push(row);
+        divisoesMap.set(row.viagem_id, arr);
+      });
 
       const tripCommentsMap = new Map<string, string[]>();
       const productToTripMap = new Map<string, string>();
@@ -724,6 +726,22 @@ export class Dashboard {
   }
 
   /**
+   * Atualiza cirurgicamente uma viagem alterada em memória sem recarregar toda a base
+   */
+  private atualizarViagemEmMemoria(viagemAtualizada: any): void {
+    if (!viagemAtualizada || !viagemAtualizada.id) return;
+    const idx = this.viagens.findIndex(v => v.id === viagemAtualizada.id);
+    if (idx !== -1) {
+      this.viagens[idx] = {
+        ...this.viagens[idx],
+        ...viagemAtualizada
+      };
+    } else {
+      this.viagens.unshift(viagemAtualizada);
+    }
+  }
+
+  /**
    * Abre o Modal Dinâmico de Edição de Viagem e Gestão de Produtos
    */
   private async openEdicaoEProdutosModal(tripId: string, activeTab: 'detalhes' | 'produtos' = 'detalhes'): Promise<void> {
@@ -735,8 +753,12 @@ export class Dashboard {
       viagens: this.viagens,
       isFallbackMode: this.isFallbackMode,
       user: this.user,
-      onUpdate: async () => {
-        await this.loadViagens();
+      onUpdate: async (viagemAtualizada?: any) => {
+        if (viagemAtualizada && viagemAtualizada.id) {
+          this.atualizarViagemEmMemoria(viagemAtualizada);
+        } else {
+          await this.loadViagens();
+        }
         this.render();
       },
       showToast: (message, type, err) => this.showToast(message, type, err),
@@ -1107,24 +1129,8 @@ export class Dashboard {
     });
 
     BalcaoCopilotoSection.attachEvents(this.container, {
-      onOpenTrip: async (tripId) => {
-        let trip = this.viagens.find(v => v.id === tripId);
-        if (!trip) {
-          try {
-            const { data } = await supabase
-              .from('viagens')
-              .select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)')
-              .eq('id', tripId)
-              .maybeSingle();
-            if (data) {
-              trip = data;
-              this.viagens.push(trip);
-            }
-          } catch (err) {}
-        }
-        if (trip) {
-          this.openEdicaoEProdutosModal(tripId);
-        }
+      onOpenTrip: (tripId) => {
+        this.openEdicaoEProdutosModal(tripId);
       },
       onOpenOrcamento: (orcId) => {
         window.location.hash = `#orcamentos?id=${orcId}`;

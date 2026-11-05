@@ -1132,6 +1132,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'O PaxFlow conta com uma fundação de design construída para produtividade máxima em jornadas prolongadas:\n\n1. **Tipografia Numérica Tabular (`tnum`)**: Todos os números de tabelas, relatórios e moedas utilizam largura monospaçada para dígitos (OpenType `tnum`). Isso significa que `1.111,11` e `8.888,88` mantêm prumo vertical perfeito, eliminando o efeito de números dançantes.\n2. **Paleta Mineral de 4 Níveis**: Fundo mineral profundo (`#090d16` no dark e `#fafbfc` no light) acompanhado de micro-bordas iluminadas de 1px com reflexo suave superior, reduzindo em até 70% a fadiga visual.\n3. **Status Dots e Tabelas Calmas**: A tabela operacional de viagens adota pontos cromáticos discretos com micro-pulso (`🟢 Fechado`, `🟡 Pós-Venda`, `🟠 Pré-Embarque`, `🔵 Pós-Viagem`, `🔴 Reembolso Solicitado`) e botões de ação com revelação elegante no hover da linha.'
   },
   {
+    id: 'performance-abertura-viagens',
+    modulo: 'viagens',
+    label: '⚡ Aceleração & Abertura Instantânea de Viagens e Produtos',
+    description: 'Como funciona a arquitetura paralela de alta velocidade para carregar e editar viagens sem lentidão.',
+    details: 'Para garantir agilidade máxima no atendimento diário da agência:\n\n1. **Abertura em Paralelo (Promise.all)**: Ao clicar para gerenciar qualquer viagem, todos os dados essenciais (serviços, produtos, conferências de localizadores, formas de recebimento e divisão de parceiros) são solicitados simultaneamente em uma única rodada de rede, abrindo a ficha em fração de segundo.\n2. **Seleção de Passageiro Otimizada**: A viagem abre imediatamente com o titular selecionado. Caso deseje alterar ou transferir o passageiro responsável, basta focar no seletor para carregar a lista sob demanda.\n3. **Atualização Instantânea ao Salvar**: Ao editar um produto ou alterar qualquer campo da viagem, a alteração é sincronizada cirurgicamente na tela sem precisar recarregar o quadro inteiro de viagens do zero.'
+  },
+  {
     id: 'viagens-split-rav-editor',
     modulo: 'viagens',
     label: '✈️ Divisão de Viagens e Rateio de RAV Aérea (ViagemSplitEditor)',
