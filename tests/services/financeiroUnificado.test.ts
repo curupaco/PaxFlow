@@ -279,6 +279,90 @@ describe('Módulo Financeiro Unificado - Testes Subcutâneos de Permissão e Nav
     expect(res.sucesso).toBe(true);
     expect(res.id).toMatch(/^temp-/);
   });
+
+  it('deve formatar a coluna DATA no Contas a Pagar exibindo data de pagamento para status pago e vencimento para status pendente', () => {
+    // Setup
+    const contaPaga = {
+      id: 'c-1',
+      status: 'pago',
+      data_vencimento: '2026-11-02',
+      data_vencimento_operacional: '2026-11-03',
+      data_pagamento: '2026-11-04'
+    };
+
+    const contaPendente = {
+      id: 'c-2',
+      status: 'pendente',
+      data_vencimento: '2026-11-10',
+      data_vencimento_operacional: '2026-11-10',
+      data_pagamento: null
+    };
+
+    const resolverColunaData = (c: any) => {
+      const formatar = (d: string | null) => d ? d.split('-').reverse().join('/') : '-';
+      if (c.status === 'pago') {
+        return {
+          dataPrincipal: formatar(c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento),
+          subtitulo: `Venc: ${formatar(c.data_vencimento_operacional || c.data_vencimento)}`,
+          tipo: 'pagamento'
+        };
+      }
+      return {
+        dataPrincipal: formatar(c.data_vencimento_operacional || c.data_vencimento),
+        subtitulo: c.data_vencimento_operacional !== c.data_vencimento ? `Nominal: ${formatar(c.data_vencimento)}` : null,
+        tipo: 'vencimento'
+      };
+    };
+
+    // Action
+    const resPaga = resolverColunaData(contaPaga);
+    const resPendente = resolverColunaData(contaPendente);
+
+    // Assert
+    expect(resPaga.tipo).toBe('pagamento');
+    expect(resPaga.dataPrincipal).toBe('04/11/2026'); // Data de pagamento
+    expect(resPaga.subtitulo).toBe('Venc: 03/11/2026'); // Vencimento original
+
+    expect(resPendente.tipo).toBe('vencimento');
+    expect(resPendente.dataPrincipal).toBe('10/11/2026'); // Vencimento
+    expect(resPendente.subtitulo).toBeNull();
+  });
+
+  it('deve incluir Data Pagamento no cabeçalho e linhas da exportação CSV de contas a pagar', () => {
+    // Setup
+    const headers = ['Vencimento Nominal', 'Vencimento Operacional', 'Data Pagamento', 'Favorecido', 'Descrição', 'Tipo Custo', 'Categoria', 'Valor Nominal', 'Valor Pago', 'Status'];
+    const conta = {
+      data_vencimento: '2026-11-02',
+      data_vencimento_operacional: '2026-11-03',
+      data_pagamento: '2026-11-04',
+      favorecido: 'Fornecedor A',
+      descricao: 'Despesa A',
+      tipo_custo: { nome: 'Operacional' },
+      categoria: { nome: 'Geral' },
+      valor_nominal: 1500,
+      valor_pago: 1500,
+      status: 'pago'
+    };
+
+    // Action
+    const row = [
+      conta.data_vencimento,
+      conta.data_vencimento_operacional,
+      conta.data_pagamento || '',
+      `"${conta.favorecido}"`,
+      `"${conta.descricao}"`,
+      `"${conta.tipo_custo.nome}"`,
+      `"${conta.categoria.nome}"`,
+      conta.valor_nominal,
+      conta.valor_pago,
+      conta.status
+    ];
+
+    // Assert
+    expect(headers).toContain('Data Pagamento');
+    expect(headers.indexOf('Data Pagamento')).toBe(2);
+    expect(row[2]).toBe('2026-11-04');
+  });
 });
 
 

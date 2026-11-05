@@ -145,6 +145,7 @@ export class FinRemessasService {
               data_pagamento: params.dataPagamento,
               conta_bancaria_id: params.contaBancariaId || null,
               valor_pago: item.valor_nominal,
+              valor_estimado: false, // Valor realizado e liquidado na remessa
               comprovante_url: params.comprovanteUrl || null,
               baixado_por: params.usuarioId,
               updated_at: new Date().toISOString()

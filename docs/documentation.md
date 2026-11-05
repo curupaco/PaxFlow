@@ -1541,6 +1541,17 @@ O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operan
    - **Recálculo Inteligente de Datas e Prazos Úteis**: A alteração do dia de vencimento nominal atualiza o dia em todos os meses futuros pendentes, reavaliando individualmente cada data com o motor de antecipação tributária ou postergação bancária.
    - **Trilha de Auditoria Granular**: Cada alteração em cascata registra na tabela `fin_auditoria` a quantidade total de títulos afetados, payload de alterações e identificador do usuário responsável.
 
+8. **Contas com Valor Estimado / Variável & Desmarcação Automática na Realização**:
+   - Títulos cadastrados com valor variável ou estimado (folha de pagamento, despesas de consumo ou impostos provisionados) exibem o badge azul `ESTIMADO` na coluna de valor nominal enquanto o título estiver `pendente` ou `atrasado`.
+   - Ao realizar a baixa ou liquidação do título (`status = 'pago'`), o montante é consolidado como valor efetivamente realizado e a flag `valor_estimado` é desmarcada automaticamente (`false`) tanto no banco de dados quanto na renderização da tabela e dos cards mobile, assegurando que despesas liquidadas nunca permaneçam rotuladas como estimadas.
+   - No modal de edição, contas já pagas mantêm a opção de estimativa desativada com aviso indicando que o título já foi liquidado.
+
+9. **Coluna Dinâmica DATA no Contas a Pagar (Pagamento vs Vencimento)**:
+   - O cabeçalho da tabela de despesas adota o nome unificado `DATA`.
+   - **Comportamento quando Pago (`status = 'pago'`)**: Exibe a data de pagamento efetiva (`data_pagamento`) em destaque na linha e nos cards mobile, complementada por um subtítulo discreto indicando o vencimento original (`Venc: DD/MM/AAAA`).
+   - **Comportamento quando Pendente/Atrasado (`status <> 'pago'`)**: Exibe a data de vencimento operacional em destaque com os badges de alerta de prazo (`Atraso`, `Vence Hoje`, `Vence em X dias`) e nominal se houver ajuste útil.
+   - **Exportação CSV Conciliada**: A exportação para planilha CSV incorpora a coluna dedicada `Data Pagamento`, garantindo auditoria completa entre vencimento e liquidação.
+
 ### 3.54 Identificação Visual de Participações & Módulos na Gestão de Equipe
 
 A gestão de colaboradores e consultores em **Configurações -> Equipe de Consultores** adota um padrão de alta densidade informativa e ergonomia sem esticar a altura vertical das linhas da tabela:

@@ -1118,11 +1118,18 @@ export interface FinFiltrosContas {
   ano?: number;
   dataInicio?: string;
   dataFim?: string;
+  tipoDataFiltro?: 'vencimento' | 'pagamento';
   status: 'todos' | FinStatusConta;
   tipoCustoId?: string;
   categoriaId?: string;
   contaBancariaId?: string;
+  formaPagamento?: string;
   buscaFavorecido?: string;
+  buscaGeral?: string;
+  valorMin?: number;
+  valorMax?: number;
+  naturezaLancamento?: 'todos' | 'avulso' | 'recorrente' | 'parcelado' | 'remessa' | 'estimado';
+  ignorarMes?: boolean;
 }
 
 export interface FinResumoLiquidez {

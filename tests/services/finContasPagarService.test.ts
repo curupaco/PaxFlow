@@ -852,6 +852,115 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     expect(payloadBaixa.status).toBe('pago');
     expect(payloadBaixa.valor_pago).toBe(900.00);
     expect(payloadBaixa.desconto).toBe(100.00);
+    expect(payloadBaixa.valor_estimado).toBe(false);
+  });
+
+  it('deve desmarcar valor_estimado automaticamente ao baixar conta cujo valor era estimado (valor realizado não é mais estimado)', async () => {
+    // Setup
+    const contaEstimada = {
+      id: 'conta-salario-estimada-9000',
+      valor_nominal: 9000.00,
+      valor_estimado: true,
+      descricao: 'Folha de Pagamento - Salário',
+      status: 'pendente'
+    };
+
+    let payloadBaixa: any = null;
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: contaEstimada, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: contaEstimada, error: null })
+            })
+          }),
+          update: vi.fn().mockImplementation((payload) => {
+            payloadBaixa = payload;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null })
+            };
+          }),
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: { id: 'res-1' }, error: null })
+            })
+          })
+        } as any;
+      }
+      if (tabela === 'fin_auditoria') {
+        return { insert: vi.fn().mockResolvedValue({ error: null }) } as any;
+      }
+      return {} as any;
+    });
+
+    // Action: O valor era estimado em R$ 9.000, mas foi realizado e liquidado em R$ 7.356,67
+    const res = await FinContasPagarService.baixarConta({
+      contaId: 'conta-salario-estimada-9000',
+      dataPagamento: '2026-11-04',
+      valorPagoTotal: 7356.67,
+      usuarioId: 'admin-uuid-1',
+      usuarioNome: 'Financeiro'
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(payloadBaixa).toBeDefined();
+    expect(payloadBaixa.status).toBe('pago');
+    expect(payloadBaixa.valor_pago).toBe(7356.67);
+    expect(payloadBaixa.valor_estimado).toBe(false);
+  });
+
+  it('deve forçar valor_estimado como false ao editar conta já liquidada/paga', async () => {
+    // Setup
+    const contaPaga = {
+      id: 'conta-ja-paga-7356',
+      valor_nominal: 7356.67,
+      valor_pago: 7356.67,
+      valor_estimado: true,
+      status: 'pago',
+      tipo_lancamento: 'avulso'
+    };
+
+    let payloadEdit: any = null;
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: contaPaga, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: contaPaga, error: null })
+            })
+          }),
+          update: vi.fn().mockImplementation((payload) => {
+            payloadEdit = payload;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null })
+            };
+          })
+        } as any;
+      }
+      if (tabela === 'fin_auditoria') {
+        return { insert: vi.fn().mockResolvedValue({ error: null }) } as any;
+      }
+      return {} as any;
+    });
+
+    // Action: Tenta editar conta que já está paga passando valorEstimado = true
+    const res = await FinContasPagarService.editarConta({
+      contaId: 'conta-ja-paga-7356',
+      modoCascata: 'apenas_esta',
+      valorNominal: 7356.67,
+      valorEstimado: true,
+      usuarioId: 'admin-uuid-1'
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(payloadEdit).toBeDefined();
+    expect(payloadEdit.valor_estimado).toBe(false);
   });
 
   it('deve barrar estorno de pagamento se o usuário não for Administrador (RBAC)', async () => {

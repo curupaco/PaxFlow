@@ -476,12 +476,23 @@ export class FinanceiroPage {
       textoRotuloMeses = `${mesesSelecionados.length} meses selecionados`;
     }
 
+    const qtdFiltrosAvancados = (
+      (this.filtros.dataInicio || this.filtros.dataFim ? 1 : 0) +
+      (this.filtros.buscaGeral?.trim() ? 1 : 0) +
+      (this.filtros.contaBancariaId ? 1 : 0) +
+      (this.filtros.formaPagamento ? 1 : 0) +
+      (this.filtros.valorMin !== undefined || this.filtros.valorMax !== undefined ? 1 : 0) +
+      (this.filtros.naturezaLancamento && this.filtros.naturezaLancamento !== 'todos' ? 1 : 0) +
+      (this.filtros.ignorarMes ? 1 : 0)
+    );
+
     const temFiltroAtivo = 
       this.filtros.status !== 'todos' || 
       Boolean(this.filtros.tipoCustoId) || 
       Boolean(this.filtros.categoriaId) || 
       (this.filtros.meses && this.filtros.meses.length > 1) ||
-      Boolean(this.filtros.buscaFavorecido?.trim());
+      Boolean(this.filtros.buscaFavorecido?.trim()) ||
+      qtdFiltrosAvancados > 0;
 
     const statusColors: Record<string, string> = {
       pendente: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-900/40',
@@ -523,7 +534,18 @@ export class FinanceiroPage {
               </button>
             </div>
 
-            <div class="flex items-center gap-2 self-end sm:self-auto">
+            <div class="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+              <button type="button" id="btn-abrir-filtros-avancados" class="h-[42px] px-3.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border shadow-xs ${
+                qtdFiltrosAvancados > 0 
+                  ? 'bg-indigo-50 border-indigo-300 dark:bg-indigo-950/60 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-black ring-1 ring-indigo-500/30' 
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
+              }" title="Configurar filtros avançados (período de datas, valores, contas bancárias, formas e natureza)">
+                <span>⚡</span>
+                <span>Filtros Avançados</span>
+                ${qtdFiltrosAvancados > 0 ? `
+                  <span class="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-black flex items-center justify-center">${qtdFiltrosAvancados}</span>
+                ` : ''}
+              </button>
               ${temFiltroAtivo ? `
                 <button id="btn-limpar-filtros" class="h-[42px] px-3.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer flex items-center gap-1 border border-rose-200/60 dark:border-rose-900/40">
                   ✕ Limpar Filtros
@@ -636,6 +658,60 @@ export class FinanceiroPage {
               <input id="filtro-busca" type="text" placeholder="Nome do fornecedor..." value="${this.filtros.buscaFavorecido || ''}" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
             </div>
           </div>
+
+          <!-- Linha de Chips de Filtros Avançados Ativos -->
+          ${qtdFiltrosAvancados > 0 ? `
+            <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-slate-100 dark:border-slate-800 animate-in fade-in">
+              <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                <span>⚡</span> Filtros Ativos:
+              </span>
+              ${this.filtros.dataInicio || this.filtros.dataFim ? `
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  <span>📅 ${this.filtros.tipoDataFiltro === 'pagamento' ? 'Pago' : 'Venc'}: ${formatarData(this.filtros.dataInicio || '')} a ${formatarData(this.filtros.dataFim || '')}</span>
+                  <button type="button" data-remover-filtro="periodo" class="btn-remover-chip-filtro hover:text-rose-500 font-black cursor-pointer" title="Remover filtro de período">✕</button>
+                </span>
+              ` : ''}
+              ${this.filtros.buscaGeral ? `
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  <span>🔍 "${this.filtros.buscaGeral}"</span>
+                  <button type="button" data-remover-filtro="buscaGeral" class="btn-remover-chip-filtro hover:text-rose-500 font-black cursor-pointer" title="Remover busca geral">✕</button>
+                </span>
+              ` : ''}
+              ${this.filtros.contaBancariaId ? `
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  <span>🏦 ${this.contasBancarias.find(b => b.id === this.filtros.contaBancariaId)?.nome_banco || 'Conta Bancária'}</span>
+                  <button type="button" data-remover-filtro="contaBancaria" class="btn-remover-chip-filtro hover:text-rose-500 font-black cursor-pointer" title="Remover filtro de banco">✕</button>
+                </span>
+              ` : ''}
+              ${this.filtros.formaPagamento ? `
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  <span>💳 ${this.filtros.formaPagamento.toUpperCase()}</span>
+                  <button type="button" data-remover-filtro="formaPagamento" class="btn-remover-chip-filtro hover:text-rose-500 font-black cursor-pointer" title="Remover filtro de forma de pagamento">✕</button>
+                </span>
+              ` : ''}
+              ${(this.filtros.valorMin !== undefined || this.filtros.valorMax !== undefined) ? `
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  <span>💰 R$ ${this.filtros.valorMin || 0} - R$ ${this.filtros.valorMax || '∞'}</span>
+                  <button type="button" data-remover-filtro="valor" class="btn-remover-chip-filtro hover:text-rose-500 font-black cursor-pointer" title="Remover faixa de valor">✕</button>
+                </span>
+              ` : ''}
+              ${this.filtros.naturezaLancamento && this.filtros.naturezaLancamento !== 'todos' ? `
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  <span>🏷️ ${this.filtros.naturezaLancamento.toUpperCase()}</span>
+                  <button type="button" data-remover-filtro="natureza" class="btn-remover-chip-filtro hover:text-rose-500 font-black cursor-pointer" title="Remover filtro de natureza">✕</button>
+                </span>
+              ` : ''}
+              ${this.filtros.ignorarMes ? `
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                  <span>🌐 Todo o Histórico</span>
+                  <button type="button" data-remover-filtro="ignorarMes" class="btn-remover-chip-filtro hover:text-rose-500 font-black cursor-pointer" title="Restaurar filtro de mês">✕</button>
+                </span>
+              ` : ''}
+              <button type="button" id="btn-limpar-chips-avancados" class="text-[11px] font-bold text-rose-500 hover:text-rose-700 hover:underline cursor-pointer ml-auto">
+                Limpar Todos
+              </button>
+            </div>
+          ` : ''}
         </div>
 
         <!-- Barra de Ação Flutuante para Itens Selecionados -->
@@ -884,7 +960,7 @@ export class FinanceiroPage {
                     <th class="py-3 px-3 w-10 text-center">
                       <input type="checkbox" id="check-selecionar-todas-contas" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" title="Selecionar todos os títulos avulsos pendentes" />
                     </th>
-                    <th class="py-3 px-4">Vencimento</th>
+                    <th class="py-3 px-4">Data</th>
                     <th class="py-3 px-4">Favorecido / Descrição</th>
                     <th class="py-3 px-4">Tipo / Categoria</th>
                     <th class="py-3 px-4 text-right">Valor Nominal</th>
@@ -901,7 +977,7 @@ export class FinanceiroPage {
                       </td>
                     </tr>
                   ` : contasParaExibir.map(c => {
-                    const ehEstimado = c.valor_estimado;
+                    const ehEstimado = !!c.valor_estimado && c.status !== 'pago';
                     const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
                     const podeSelecionar = !c.remessa_id && (c.status === 'pendente' || c.status === 'atrasado');
 
@@ -930,11 +1006,16 @@ export class FinanceiroPage {
                         </td>
 
                         <td class="py-3 px-4 whitespace-nowrap">
-                          <span class="font-extrabold text-slate-900 dark:text-slate-100 block">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
-                          ${chipVencimento ? `<div class="block">${chipVencimento}</div>` : ''}
-                          ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
-                            <span class="text-[9px] text-slate-400 block font-semibold mt-0.5" title="Vencimento nominal no final de semana / feriado">Nominal: ${formatarData(c.data_vencimento)}</span>
-                          ` : ''}
+                          ${c.status === 'pago' ? `
+                            <span class="font-extrabold text-slate-900 dark:text-slate-100 block" title="Data do pagamento">${formatarData(c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento)}</span>
+                            <span class="text-[9px] text-slate-400 block font-semibold mt-0.5" title="Vencimento original da obrigação">Venc: ${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                          ` : `
+                            <span class="font-extrabold text-slate-900 dark:text-slate-100 block">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                            ${chipVencimento ? `<div class="block">${chipVencimento}</div>` : ''}
+                            ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
+                              <span class="text-[9px] text-slate-400 block font-semibold mt-0.5" title="Vencimento nominal no final de semana / feriado">Nominal: ${formatarData(c.data_vencimento)}</span>
+                            ` : ''}
+                          `}
                         </td>
 
                         <td class="py-3 px-4">
@@ -1019,7 +1100,7 @@ export class FinanceiroPage {
                 Nenhuma conta localizada para o período e filtros selecionados.
               </div>
             ` : contasParaExibir.map(c => {
-              const ehEstimado = c.valor_estimado;
+              const ehEstimado = !!c.valor_estimado && c.status !== 'pago';
               const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
               const podeSelecionar = !c.remessa_id && (c.status === 'pendente' || c.status === 'atrasado');
 
@@ -1046,8 +1127,22 @@ export class FinanceiroPage {
                       ${podeSelecionar ? `
                         <input type="checkbox" data-id="${c.id}" class="check-selecionar-conta h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${this.titulosSelecionados.has(c.id) ? 'checked' : ''} />
                       ` : ''}
-                      <span class="text-xs font-black text-slate-900 dark:text-slate-100">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
-                      ${chipVencimentoMobile}
+                      ${c.status === 'pago' ? `
+                        <div class="flex flex-col">
+                          <span class="text-xs font-black text-slate-900 dark:text-slate-100" title="Data do pagamento">${formatarData(c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento)}</span>
+                          <span class="text-[9px] text-slate-400 font-semibold" title="Vencimento original">Venc: ${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                        </div>
+                      ` : `
+                        <div class="flex flex-col">
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-xs font-black text-slate-900 dark:text-slate-100">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                            ${chipVencimentoMobile}
+                          </div>
+                          ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
+                            <span class="text-[9px] text-slate-400 font-semibold mt-0.5">Nominal: ${formatarData(c.data_vencimento)}</span>
+                          ` : ''}
+                        </div>
+                      `}
                       ${c.remessa_id ? `
                         <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/40 inline-flex items-center gap-0.5">
                           📦 Lote
@@ -1919,18 +2014,66 @@ export class FinanceiroPage {
       });
     });
 
-    // Botão Limpar Filtros
-    this.container.querySelector('#btn-limpar-filtros')?.addEventListener('click', async () => {
+    // Botão Abrir Filtros Avançados
+    this.container.querySelector('#btn-abrir-filtros-avancados')?.addEventListener('click', () => {
+      this.abrirModalFiltrosAvancados();
+    });
+
+    // Botão Limpar Filtros (Reset Geral)
+    const limparTodosFiltros = async () => {
       this.filtros.status = 'todos';
       this.filtros.tipoCustoId = undefined;
       this.filtros.categoriaId = undefined;
       this.filtros.buscaFavorecido = undefined;
+      this.filtros.buscaGeral = undefined;
+      this.filtros.dataInicio = undefined;
+      this.filtros.dataFim = undefined;
+      this.filtros.tipoDataFiltro = undefined;
+      this.filtros.contaBancariaId = undefined;
+      this.filtros.formaPagamento = undefined;
+      this.filtros.valorMin = undefined;
+      this.filtros.valorMax = undefined;
+      this.filtros.naturezaLancamento = 'todos';
+      this.filtros.ignorarMes = false;
+      this.filtros.periodoTipo = 'mes';
       this.filtros.meses = [new Date().getMonth() + 1];
       this.filtros.mes = new Date().getMonth() + 1;
       this.dropdownMesesAberto = false;
       await this.carregarDadosAbaAtiva();
       this.render();
       this.setupEventListeners();
+    };
+
+    this.container.querySelector('#btn-limpar-filtros')?.addEventListener('click', limparTodosFiltros);
+    this.container.querySelector('#btn-limpar-chips-avancados')?.addEventListener('click', limparTodosFiltros);
+
+    // Remoção Individual de Chip de Filtro Avançado
+    this.container.querySelectorAll('.btn-remover-chip-filtro').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const tipoChip = btn.getAttribute('data-remover-filtro');
+        if (tipoChip === 'periodo') {
+          this.filtros.dataInicio = undefined;
+          this.filtros.dataFim = undefined;
+          this.filtros.periodoTipo = 'mes';
+        } else if (tipoChip === 'buscaGeral') {
+          this.filtros.buscaGeral = undefined;
+        } else if (tipoChip === 'contaBancaria') {
+          this.filtros.contaBancariaId = undefined;
+        } else if (tipoChip === 'formaPagamento') {
+          this.filtros.formaPagamento = undefined;
+        } else if (tipoChip === 'valor') {
+          this.filtros.valorMin = undefined;
+          this.filtros.valorMax = undefined;
+        } else if (tipoChip === 'natureza') {
+          this.filtros.naturezaLancamento = 'todos';
+        } else if (tipoChip === 'ignorarMes') {
+          this.filtros.ignorarMes = false;
+        }
+        await this.carregarDadosAbaAtiva();
+        this.render();
+        this.setupEventListeners();
+      });
     });
 
     // Botões de Exportar CSV
@@ -2796,9 +2939,9 @@ export class FinanceiroPage {
           </div>
 
           <div class="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800">
-            <input type="checkbox" id="input-edit-estimado" ${c.valor_estimado ? 'checked' : ''} class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
-            <label for="input-edit-estimado" class="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-              Valor Estimado / Variável <span class="text-[10px] text-slate-400 block font-normal">(Sinaliza que o montante final pode variar até o fechamento da fatura)</span>
+            <input type="checkbox" id="input-edit-estimado" ${c.valor_estimado && c.status !== 'pago' ? 'checked' : ''} ${c.status === 'pago' ? 'disabled' : ''} class="w-4 h-4 accent-indigo-600 rounded cursor-pointer ${c.status === 'pago' ? 'opacity-50 cursor-not-allowed' : ''}" />
+            <label for="input-edit-estimado" class="text-xs font-bold text-slate-700 dark:text-slate-300 ${c.status === 'pago' ? 'cursor-not-allowed text-slate-400' : 'cursor-pointer'}">
+              Valor Estimado / Variável ${c.status === 'pago' ? '<span class="text-[10px] text-emerald-600 dark:text-emerald-400 block font-bold">✓ Título já liquidado / realizado (não é mais estimado)</span>' : '<span class="text-[10px] text-slate-400 block font-normal">(Sinaliza que o montante final pode variar até o fechamento da fatura)</span>'}
             </label>
           </div>
 
@@ -2899,7 +3042,7 @@ export class FinanceiroPage {
       const dataVencimento = (overlay.querySelector('#input-edit-vencimento') as HTMLInputElement).value;
       const formaPagamento = (overlay.querySelector('#input-edit-forma') as HTMLSelectElement).value as any;
       const contaBancariaId = (overlay.querySelector('#input-edit-banco') as HTMLSelectElement).value || undefined;
-      const valorEstimado = (overlay.querySelector('#input-edit-estimado') as HTMLInputElement).checked;
+      const valorEstimado = c.status === 'pago' ? false : (overlay.querySelector('#input-edit-estimado') as HTMLInputElement).checked;
 
       const modoCascata = (overlay.querySelector('input[name="modo-cascata"]:checked') as HTMLInputElement)?.value as 'apenas_esta' | 'esta_e_futuras' || 'apenas_esta';
 
@@ -2967,10 +3110,11 @@ export class FinanceiroPage {
       return;
     }
 
-    const headers = ['Vencimento Nominal', 'Vencimento Operacional', 'Favorecido', 'Descrição', 'Tipo Custo', 'Categoria', 'Valor Nominal', 'Valor Pago', 'Status'];
+    const headers = ['Vencimento Nominal', 'Vencimento Operacional', 'Data Pagamento', 'Favorecido', 'Descrição', 'Tipo Custo', 'Categoria', 'Valor Nominal', 'Valor Pago', 'Status'];
     const rows = this.contas.map(c => [
       c.data_vencimento,
       c.data_vencimento_operacional || c.data_vencimento,
+      c.data_pagamento || '',
       `"${(c.favorecido || '').replace(/"/g, '""')}"`,
       `"${(c.descricao || '').replace(/"/g, '""')}"`,
       `"${(c.tipo_custo?.nome || '').replace(/"/g, '""')}"`,

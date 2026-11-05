@@ -117,10 +117,14 @@ export class FinContasPagarService {
 
       const ehBuscaAtrasadas = filtros.status === 'atrasado';
 
-      // Se for busca específica por atrasadas, não filtra por período (traz histórico completo de atraso)
-      if (!ehBuscaAtrasadas) {
+      // Se for busca específica por atrasadas ou ignorar mês ativo, não filtra por período
+      if (!ehBuscaAtrasadas && !filtros.ignorarMes) {
         const anoFiltro = filtros.ano;
-        if (filtros.periodoTipo === 'mes' && anoFiltro) {
+        if (filtros.periodoTipo === 'personalizado') {
+          const campoData = filtros.tipoDataFiltro === 'pagamento' ? 'data_pagamento' : 'data_vencimento';
+          if (filtros.dataInicio) query = query.gte(campoData, filtros.dataInicio);
+          if (filtros.dataFim) query = query.lte(campoData, filtros.dataFim);
+        } else if (filtros.periodoTipo === 'mes' && anoFiltro) {
           const mesesSelecionados = (filtros.meses && filtros.meses.length > 0)
             ? filtros.meses
             : (filtros.mes ? [filtros.mes] : []);
@@ -146,9 +150,6 @@ export class FinContasPagarService {
             }).join(',');
             query = query.or(orConditions);
           }
-        } else if (filtros.periodoTipo === 'personalizado') {
-          if (filtros.dataInicio) query = query.gte('data_vencimento', filtros.dataInicio);
-          if (filtros.dataFim) query = query.lte('data_vencimento', filtros.dataFim);
         }
       }
 
@@ -168,8 +169,21 @@ export class FinContasPagarService {
       if (filtros.contaBancariaId) {
         query = query.eq('conta_bancaria_id', filtros.contaBancariaId);
       }
+      if (filtros.formaPagamento && filtros.formaPagamento.trim() !== '') {
+        query = query.eq('forma_pagamento', filtros.formaPagamento);
+      }
+      if (filtros.valorMin !== undefined && filtros.valorMin > 0) {
+        query = query.gte('valor_nominal', filtros.valorMin);
+      }
+      if (filtros.valorMax !== undefined && filtros.valorMax > 0) {
+        query = query.lte('valor_nominal', filtros.valorMax);
+      }
       if (filtros.buscaFavorecido && filtros.buscaFavorecido.trim() !== '') {
         query = query.ilike('favorecido', `%${filtros.buscaFavorecido.trim()}%`);
+      }
+      if (filtros.buscaGeral && filtros.buscaGeral.trim() !== '') {
+        const termo = filtros.buscaGeral.trim();
+        query = query.or(`favorecido.ilike.%${termo}%,descricao.ilike.%${termo}%,observacoes.ilike.%${termo}%`);
       }
 
       const { data, error } = await query.order('data_vencimento', { ascending: true });
@@ -203,11 +217,31 @@ export class FinContasPagarService {
         };
       });
 
-      if (ehBuscaAtrasadas) {
-        return processadas.filter(c => c.status === 'atrasado');
+      let filtradas = ehBuscaAtrasadas ? processadas.filter(c => c.status === 'atrasado') : processadas;
+
+      // Filtro por Natureza do Lançamento
+      if (filtros.naturezaLancamento && filtros.naturezaLancamento !== 'todos') {
+        filtradas = filtradas.filter(c => {
+          if (filtros.naturezaLancamento === 'avulso') {
+            return !c.recorrente && (!c.parcela_total || c.parcela_total <= 1) && !c.remessa_id;
+          }
+          if (filtros.naturezaLancamento === 'recorrente') {
+            return Boolean(c.recorrente || c.contrato_recorrente_id);
+          }
+          if (filtros.naturezaLancamento === 'parcelado') {
+            return Boolean(c.parcela_total && c.parcela_total > 1);
+          }
+          if (filtros.naturezaLancamento === 'remessa') {
+            return Boolean(c.remessa_id);
+          }
+          if (filtros.naturezaLancamento === 'estimado') {
+            return Boolean(c.valor_estimado && c.status !== 'pago');
+          }
+          return true;
+        });
       }
 
-      return processadas;
+      return filtradas;
     } catch (err) {
       console.error('[FinContasPagarService] Erro ao listar contas a pagar:', err);
       return [];
@@ -448,6 +482,10 @@ export class FinContasPagarService {
       if (params.favorecido !== undefined) camposBaseUpdate.favorecido = params.favorecido.trim();
       if (params.valorNominal !== undefined) camposBaseUpdate.valor_nominal = params.valorNominal;
       if (params.valorEstimado !== undefined) camposBaseUpdate.valor_estimado = params.valorEstimado;
+      // Se a conta já estiver paga ou liquidada, o valor foi realizado e não pode ser estimado
+      if (contaAtual.status === 'pago') {
+        camposBaseUpdate.valor_estimado = false;
+      }
       if (params.formaPagamento) camposBaseUpdate.forma_pagamento = params.formaPagamento;
 
       // 1.1 Se o usuário está convertendo um título avulso em recorrente ou parcelado
@@ -728,6 +766,7 @@ export class FinContasPagarService {
         juros_multa: juros,
         desconto: desc,
         valor_pago: valorEfetivamentePago,
+        valor_estimado: false, // Valor foi realizado e liquidado, não é mais estimado
         comprovante_url: params.comprovanteUrl || conta.comprovante_url,
         observacoes: params.observacoes || conta.observacoes,
         baixado_por: params.usuarioId,
