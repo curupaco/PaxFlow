@@ -743,6 +743,10 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
     - **📊 Exportar Planilha (.csv)**: Exporta arquivo CSV sanitizado contendo colunas comerciais completas (Cliente, Telefone formatado com DDI 55, Destino Recomendado, Motivo/Gatilho e Pontuação).
     - **📋 Copiar Telefones**: Higieniza e copia para a área de transferência todos os números de telefone do lote separados por vírgula para disparo em ferramentas de mensageria da agência.
     - **⏸️ Snooze em Lote (30 dias)**: Aplica carência de 30 dias em lote diretamente na coluna `next_trip_snooze_until` da tabela `clientes` do Supabase com diálogo de confirmação defensivo, removendo as oportunidades da esteira imediata.
+- **Arquitetura de Alta Performance & Lazy Rendering Progressivo**:
+  - **Janela de Recompra Delimitada no Supabase**: As consultas de viagens e orçamentos aplicam filtros temporais diretamente no banco (últimos 24 meses para viagens e últimos 12 meses para orçamentos), eliminando o carregamento arcaico de dados fora do alcance de recompra.
+  - **Projeção Enxuta sem Joins Pesados**: Expurgados os joins relacionais pesados com tabelas satélites desnecessárias ao motor (`produtos_viagem` e `destinos`), resultando em redução drástica de tráfego de dados e latência de rede.
+  - **Paginação Sob Demanda no DOM**: A interface renderiza progressivamente lotes de 20 oportunidades com botão dedicado `[ 🔄 Carregar Mais Oportunidades ]`, garantindo resposta visual instantânea e fluida mesmo em agências com mais de 5.000 passageiros cadastrados.
 - **Governança & Parâmetros Administrativos**:
   - Regras rígidas de bloqueio automático para clientes com viagens futuras ativas ou orçamentos em andamento no funil (SOLICITADO, EM_ANDAMENTO, AGUARDANDO).
   - Consultores visualizam clientes próprios; Administradores possuem visão global de toda a agência de forma irrestrita.

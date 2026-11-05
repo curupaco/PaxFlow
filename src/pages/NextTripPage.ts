@@ -28,12 +28,14 @@ export class NextTripPage {
 
   // Seleção e Ações em Lote
   private oportunidadesSelecionadas: Set<string> = new Set();
+  private limiteExibicao: number = 20;
 
 
   constructor(container: HTMLElement) {
     this.container = container;
     this.debouncedSearch = debounce((val: string) => {
       this.filterBusca = val;
+      this.limiteExibicao = 20;
       this.render();
       this.setupEventListeners();
       const input = this.container?.querySelector('#input-busca-next-trip') as HTMLInputElement;
@@ -72,25 +74,202 @@ export class NextTripPage {
 
   private async loadData(): Promise<void> {
     try {
+      const isAdmin = this.perfil?.role === 'admin' || this.user?.id === 'sandbox-user-id';
+
+      // 1. Janela temporal de viagens (últimos 24 meses até o futuro para detecção de viagens ativas/bloqueios)
+      const dataMinViagem = new Date();
+      dataMinViagem.setMonth(dataMinViagem.getMonth() - 24);
+      const dataMinIso = dataMinViagem.toISOString().split('T')[0];
+
+      // 2. Janela temporal de orçamentos (últimos 12 meses para reativação ou abertos no funil)
+      const dataMinOrc = new Date();
+      dataMinOrc.setMonth(dataMinOrc.getMonth() - 12);
+      const dataMinOrcIso = dataMinOrc.toISOString().split('T')[0];
+
+      // Consultas paralelas concorrentes com projeção enxuta e sem tabelas desnecessárias
+      const pViagens = (async () => {
+        try {
+          let q = supabase
+            .from('viagens')
+            .select(`
+              id,
+              codigo_ref,
+              destino,
+              data_ida,
+              data_volta,
+              status,
+              consultor_id,
+              nps_nota,
+              cliente_id,
+              passageiros,
+              created_at,
+              reembolsos (status),
+              cliente:clientes (id, nome, telefone, email, cpf, next_trip_snooze_until)
+            `);
+
+          if (typeof (q as any).or === 'function') {
+            q = q.or(`data_ida.gte.${dataMinIso},data_volta.gte.${dataMinIso},data_ida.is.null`);
+          }
+
+          if (!isAdmin && this.user?.id) {
+            q = q.eq('consultor_id', this.user.id);
+          }
+
+          const res = await q;
+          if (res && res.error) {
+            let fallbackQ = supabase
+              .from('viagens')
+              .select(`
+                id,
+                codigo_ref,
+                destino,
+                data_ida,
+                data_volta,
+                status,
+                consultor_id,
+                nps_nota,
+                cliente_id,
+                passageiros,
+                created_at,
+                reembolsos (status),
+                cliente:clientes (id, nome, telefone, email, cpf, next_trip_snooze_until)
+              `);
+            if (!isAdmin && this.user?.id) {
+              fallbackQ = fallbackQ.eq('consultor_id', this.user.id);
+            }
+            return await fallbackQ;
+          }
+          return res;
+        } catch (_) {
+          return { data: [] };
+        }
+      })();
+
+      const pClientes = (async () => {
+        try {
+          let q = supabase
+            .from('clientes')
+            .select('id, nome, telefone, email, cpf, consultor_id, next_trip_snooze_until');
+
+          if (!isAdmin && this.user?.id) {
+            q = q.eq('consultor_responsavel_id', this.user.id);
+          }
+          return await q;
+        } catch (_) {
+          return { data: [] };
+        }
+      })();
+
+      const pOrcamentos = (async () => {
+        try {
+          let q = supabase
+            .from('orcamentos')
+            .select(`
+              id,
+              status,
+              destino,
+              cliente_id,
+              cliente_nome,
+              cliente_email,
+              consultor_id,
+              created_at,
+              updated_at
+            `);
+
+          if (typeof (q as any).or === 'function') {
+            q = q.or(`status.in.("SOLICITADO","EM_ANDAMENTO","AGUARDANDO"),created_at.gte.${dataMinOrcIso}`);
+          }
+
+          if (!isAdmin && this.user?.id) {
+            q = q.eq('consultor_id', this.user.id);
+          }
+
+          const res = await q;
+          if (res && res.error) {
+            let fallbackQ = supabase
+              .from('orcamentos')
+              .select(`
+                id,
+                status,
+                destino,
+                cliente_id,
+                cliente_nome,
+                cliente_email,
+                consultor_id,
+                created_at,
+                updated_at
+              `);
+            if (!isAdmin && this.user?.id) {
+              fallbackQ = fallbackQ.eq('consultor_id', this.user.id);
+            }
+            return await fallbackQ;
+          }
+          return res;
+        } catch (_) {
+          return { data: [] };
+        }
+      })();
+
+      const pConsultores = (async () => {
+        try {
+          return await supabase
+            .from('profiles')
+            .select('id, nome, email, role, ativo')
+            .eq('ativo', true)
+            .order('nome');
+        } catch (_) {
+          return { data: [] };
+        }
+      })();
+
+      const pSettings = (async () => {
+        try {
+          return await supabase
+            .from('global_settings')
+            .select('*')
+            .limit(1)
+            .maybeSingle();
+        } catch (_) {
+          return { data: {} };
+        }
+      })();
+
       const [
-        { data: clientesData },
-        { data: viagensData },
-        { data: orcamentosData },
-        { data: consultoresData },
-        { data: settingsData }
+        viagensRes,
+        clientesRes,
+        orcamentosRes,
+        consultoresRes,
+        settingsRes
       ] = await Promise.all([
-        supabase.from('clientes').select('*'),
-        supabase.from('viagens').select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)'),
-        supabase.from('orcamentos').select('*'),
-        supabase.from('profiles').select('*').eq('ativo', true),
-        supabase.from('global_settings').select('*').limit(1).maybeSingle()
+        pViagens,
+        pClientes,
+        pOrcamentos,
+        pConsultores,
+        pSettings
       ]);
 
-      this.clientes = clientesData || [];
-      this.viagens = viagensData || [];
-      this.orcamentos = orcamentosData || [];
-      this.consultores = consultoresData || [];
-      this.settings = settingsData || {};
+      const viagensData = viagensRes?.data || [];
+      const clientesData = clientesRes?.data || [];
+      const orcamentosData = orcamentosRes?.data || [];
+      const consultoresData = consultoresRes?.data || [];
+      const settingsData = settingsRes?.data || {};
+
+      // Mescla clientes diretos e aninhados das viagens elegíveis para garantir completude
+      const clientesMap = new Map<string, any>();
+      clientesData.forEach((c: any) => {
+        if (c.id) clientesMap.set(c.id, c);
+      });
+      viagensData.forEach((v: any) => {
+        if (v.cliente && v.cliente.id && !clientesMap.has(v.cliente.id)) {
+          clientesMap.set(v.cliente.id, v.cliente);
+        }
+      });
+
+      this.clientes = Array.from(clientesMap.values());
+      this.viagens = viagensData;
+      this.orcamentos = orcamentosData;
+      this.consultores = (consultoresData as any[]) || [];
+      this.settings = settingsData;
 
       this.calcularOportunidades();
     } catch (e) {
@@ -139,6 +318,7 @@ export class NextTripPage {
   private render(): void {
     const isAdmin = this.perfil?.role === 'admin';
     const filtradas = this.getFilteredOportunidades();
+    const oportunidadesExibidas = filtradas.slice(0, this.limiteExibicao);
     const opsConsultor = this.filterConsultor === 'todos'
       ? this.oportunidades
       : this.oportunidades.filter(o => o.consultorId === this.filterConsultor);
@@ -270,7 +450,7 @@ export class NextTripPage {
             </div>
 
             <span class="text-xs font-extrabold text-slate-400 shrink-0">
-              Exibindo <strong class="text-indigo-600 dark:text-indigo-400 font-black">${filtradas.length}</strong> de ${totalOps}
+              Exibindo <strong class="text-indigo-600 dark:text-indigo-400 font-black">${oportunidadesExibidas.length}</strong> de ${filtradas.length} (Total: ${totalOps})
             </span>
           </div>
 
@@ -319,8 +499,15 @@ export class NextTripPage {
             </div>
           ` : `
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              ${filtradas.map(op => this.renderOpportunityCard(op)).join('')}
+              ${oportunidadesExibidas.map(op => this.renderOpportunityCard(op)).join('')}
             </div>
+            ${filtradas.length > this.limiteExibicao ? `
+              <div class="col-span-full flex justify-center pt-4 pb-2">
+                <button type="button" id="btn-carregar-mais-next-trip" class="h-[42px] px-6 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-indigo-500 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer active:scale-95">
+                  <span>🔄</span> Carregar Mais Oportunidades (Exibindo ${oportunidadesExibidas.length} de ${filtradas.length})
+                </button>
+              </div>
+            ` : ''}
           `}
 
         </main>
@@ -471,18 +658,28 @@ export class NextTripPage {
     // Filtros
     this.container.querySelector('#select-filter-prontidao')?.addEventListener('change', (e: any) => {
       this.filterProntidao = e.target.value;
+      this.limiteExibicao = 20;
       this.render();
       this.setupEventListeners();
     });
 
     this.container.querySelector('#select-filter-categoria')?.addEventListener('change', (e: any) => {
       this.filterCategoria = e.target.value;
+      this.limiteExibicao = 20;
       this.render();
       this.setupEventListeners();
     });
 
     this.container.querySelector('#select-filter-consultor')?.addEventListener('change', (e: any) => {
       this.filterConsultor = e.target.value;
+      this.limiteExibicao = 20;
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // Carregar Mais Oportunidades (Paginação Sob Demanda)
+    this.container.querySelector('#btn-carregar-mais-next-trip')?.addEventListener('click', () => {
+      this.limiteExibicao += 20;
       this.render();
       this.setupEventListeners();
     });
