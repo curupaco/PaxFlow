@@ -459,7 +459,8 @@ export class Dashboard {
             try {
               const { data } = await supabase
                 .from('loc_conferencias')
-                .select('viagem_id, codigo_localizador, conferido');
+                .select('viagem_id, codigo_localizador, conferido')
+                .limit(50000);
               return data || [];
             } catch (errConf) {
               console.warn('Erro ao carregar loc_conferencias:', errConf);
@@ -714,41 +715,37 @@ export class Dashboard {
   }
 
   /**
-   * Determina com precisão se a conferência financeira e de processo estão validadas.
-   * Viagens que já avançaram de 'fechado' para 'pos_venda', 'pre_embarque' ou 'pos_viagem'
-   * são por definição viagens já validadas operacionalmente pelo financeiro e gestão.
+   * Determina com fidelidade absoluta as conferências de Financeiro e de Processo.
+   * Totalmente desacoplado de status ou etapa operacional da viagem:
+   * - isFinanceiroConferido: Todos os LOCs dos produtos da viagem estão conferidos em loc_conferencias.
+   * - isProcessoConferido: O campo processo_conferido da viagem é verdadeiro.
    */
   private calcularConferenciasViagem(
     v: any,
     locConfsMap?: Map<string, { [locKey: string]: boolean }>
   ): { isFinanceiroConferido: boolean; isProcessoConferido: boolean } {
-    const isStatusValidado = v.status !== 'fechado' && v.status !== 'reembolso_solicitado';
-    if (isStatusValidado) {
-      return { isFinanceiroConferido: true, isProcessoConferido: true };
-    }
-
     const produtos = v.produtos || [];
-    const totalProdutos = produtos.reduce((sum: number, p: any) => sum + (Number(p.valor_venda) || 0), 0);
-    const valorViagem = Number(v.valor_total) || 0;
-    const saldoPendente = valorViagem - totalProdutos;
-    const isSaldoZerado = Math.abs(saldoPendente) <= 0.01;
-    const hasProdutos = produtos.length > 0;
-    const todosDetalhados = produtos.every((p: any) => calcularFinanceiroProduto(p).isDetalhado);
+    let confMap = locConfsMap?.get(v.id);
 
-    const confMap = locConfsMap?.get(v.id) || {};
-    const locsReais = Array.from(new Set<string>(
-      produtos.map((p: any) => (p.codigo_reserva || '').trim().toUpperCase()).filter(Boolean)
+    if (!confMap && Array.isArray(v.loc_conferencias)) {
+      confMap = {};
+      v.loc_conferencias.forEach((row: any) => {
+        const locKey = (row.codigo_localizador || 'SEM LOCALIZADOR').trim().toUpperCase();
+        confMap![locKey] = !!row.conferido;
+      });
+    }
+    if (!confMap) confMap = {};
+
+    const locKeys = Array.from(new Set<string>(
+      produtos.map((p: any) => (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase())
     ));
-    const todosLocsConferidos = locsReais.length > 0
-      ? locsReais.every((k: string) => !!confMap[k])
-      : (!!confMap['SEM LOCALIZADOR'] || hasProdutos);
 
-    const financeiroOk = hasProdutos && isSaldoZerado && todosDetalhados && todosLocsConferidos;
-    const processoOk = !!v.processo_conferido;
+    const isFinanceiroConferido = locKeys.length > 0 && locKeys.every((k: string) => !!confMap![k]);
+    const isProcessoConferido = !!v.processo_conferido;
 
     return {
-      isFinanceiroConferido: financeiroOk,
-      isProcessoConferido: processoOk
+      isFinanceiroConferido,
+      isProcessoConferido
     };
   }
 

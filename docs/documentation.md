@@ -2037,6 +2037,16 @@ Essa prática foi **100% expurgada**:
    - Resgate dos metadados de 11 documentos reais armazenados no legado de `viagens.observacoes` (`<!-- PAXFLOW_ANEXOS -->`), migrando-os diretamente para a tabela física `documentos_anexos`.
    - Ajuste de políticas de segurança (RLS) em `storage.objects` para o bucket `documentos-clientes`, garantindo autorização de leitura e upload para consultores autenticados e eliminando o erro de `Object not found`.
 
+## 3.55 Desacoplamento Total dos Filtros de Conferência (Financeiro e Processo)
+1. **Independência Operacional Absoluta**:
+   - Os filtros de conferência (`⏳ Fin. Pendente`, `✅ Fin. OK`, `⏳ Proc. Pendente`, `✅ Proc. OK`) foram 100% desacoplados do status ou etapa da viagem (seja Fechado, Pós-Venda, Pré-Embarque ou Pós-Viagem).
+2. **Fidelidade da Conferência Financeira (`isFinanceiroConferido`)**:
+   - Uma viagem é considerada com `isFinanceiroConferido = true` exclusivamente quando possui produtos cadastrados e todos os seus Localizadores (LOCs) únicos possuem auditoria confirmada (`loc_conferencias` com `conferido = true`), refletindo com exatidão o indicador visual `💸 FINANCEIRO (N/N)` do modal de viagem.
+3. **Fidelidade da Conferência de Processo (`isProcessoConferido`)**:
+   - Uma viagem é considerada com `isProcessoConferido = true` exclusivamente com base no valor real do campo `processo_conferido = true` da viagem.
+4. **Sincronização Reativa em Tempo Real**:
+   - As ações de marcar ou desmarcar a conferência de um LOC ou do processo disparam a atualização imediata em memória no Dashboard (`onUpdate`), garantindo que listagens e filtros reflitam o estado auditado em tempo real sem demandar recarregamento de página.
+
 ---
 
 > **PaxFlow** — Gestão de Pós-Venda e Fluxo de Passageiros

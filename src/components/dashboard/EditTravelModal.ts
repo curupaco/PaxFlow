@@ -1121,6 +1121,11 @@ export class EditTravelModal {
               .eq('id', this.tripId);
             if (error) throw error;
             v.processo_conferido = nextStatus;
+            if (this.currentLoadedViagem) {
+              this.currentLoadedViagem.processo_conferido = nextStatus;
+              this.currentLoadedViagem.isProcessoConferido = nextStatus;
+            }
+            await this.options.onUpdate(this.currentLoadedViagem || v);
             
             this.options.showToast(
               nextStatus ? 'Viagem marcada como Processo Conferido!' : 'Conferência de processo da viagem removida!',
@@ -3268,6 +3273,16 @@ export class EditTravelModal {
           
           await this.loadAndRenderProdutosViagem(this.tripId);
 
+          if (this.currentLoadedViagem) {
+            const prods = this.currentLoadedViagem.produtos || [];
+            const locKeys = Array.from(new Set<string>(
+              prods.map((p: any) => (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase())
+            ));
+            const isFinOk = locKeys.length > 0 && locKeys.every((k: string) => !!this.locConferenciasMap[k]);
+            this.currentLoadedViagem.isFinanceiroConferido = isFinOk;
+            await this.options.onUpdate(this.currentLoadedViagem);
+          }
+
           const transicaoRealizada = await this.verificarEExecutarTransicaoAutomatica();
           
           if (this.selectedProductId || transicaoRealizada) {
@@ -4048,6 +4063,16 @@ export class EditTravelModal {
       );
       
       await this.loadAndRenderProdutosViagem(this.tripId);
+
+      if (this.currentLoadedViagem) {
+        const prods = this.currentLoadedViagem.produtos || [];
+        const locKeys = Array.from(new Set<string>(
+          prods.map((p: any) => (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase())
+        ));
+        const isFinOk = locKeys.length > 0 && locKeys.every((k: string) => !!this.locConferenciasMap[k]);
+        this.currentLoadedViagem.isFinanceiroConferido = isFinOk;
+        await this.options.onUpdate(this.currentLoadedViagem);
+      }
 
       const transicaoRealizada = await this.verificarEExecutarTransicaoAutomatica();
       

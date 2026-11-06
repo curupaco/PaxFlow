@@ -204,6 +204,32 @@ describe('DashboardController - Testes Subcutâneos', () => {
     expect(resultado.some(v => v.id === 'v-pre-embarque-validada')).toBe(false);
     expect(resultado.some(v => v.id === 'v-fechado-validado')).toBe(false);
   });
+
+  it('deve filtrar conferências de forma 100% pura e desacoplada do status da viagem', () => {
+    // Setup - Viagens em diferentes status e com diferentes combinações reais de conferência
+    const viagens: ViagemMock[] = [
+      { id: 'v-fechado-fin-ok', status: 'fechado', isFinanceiroConferido: true, isProcessoConferido: false },
+      { id: 'v-fechado-ambos-pendentes', status: 'fechado', isFinanceiroConferido: false, isProcessoConferido: false },
+      { id: 'v-pos-venda-fin-pendente', status: 'pos_venda', isFinanceiroConferido: false, isProcessoConferido: true },
+      { id: 'v-pos-venda-ambos-ok', status: 'pos_venda', isFinanceiroConferido: true, isProcessoConferido: true },
+    ];
+
+    // Action 1: Filtrar apenas Financeiro OK
+    const resFinOk = filtrarViagensOperacionais(viagens, { confFilters: { finOk: true } });
+    expect(resFinOk.map(v => v.id)).toEqual(['v-fechado-fin-ok', 'v-pos-venda-ambos-ok']);
+
+    // Action 2: Filtrar apenas Financeiro Pendente
+    const resFinPendente = filtrarViagensOperacionais(viagens, { confFilters: { finPendente: true } });
+    expect(resFinPendente.map(v => v.id)).toEqual(['v-fechado-ambos-pendentes', 'v-pos-venda-fin-pendente']);
+
+    // Action 3: Filtrar apenas Processo OK
+    const resProcOk = filtrarViagensOperacionais(viagens, { confFilters: { procOk: true } });
+    expect(resProcOk.map(v => v.id)).toEqual(['v-pos-venda-fin-pendente', 'v-pos-venda-ambos-ok']);
+
+    // Action 4: Filtrar apenas Processo Pendente
+    const resProcPendente = filtrarViagensOperacionais(viagens, { confFilters: { procPendente: true } });
+    expect(resProcPendente.map(v => v.id)).toEqual(['v-fechado-fin-ok', 'v-fechado-ambos-pendentes']);
+  });
 });
 
 
