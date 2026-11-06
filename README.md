@@ -19,6 +19,8 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 ---
 
 - **Governança Estrita, Saneamento Geral de Schema & Padrão Fail-Fast [NEW]**:
+  - **Erradicação Total de Mocks e Fallbacks**: Eliminadas simulações de CRUD em `localStorage` (`metasService`, `avatars.ts`), constantes estáticas de dados fictícios (`finPlanoContasService`) e perfis de demonstração em runtime (`main.ts`). Toda a persistência é real e exclusiva no Supabase.
+  - **Resgate e Migração de Anexos Legados**: Script SQL oficial para migrar anexos históricos das tags de observações de viagens para `documentos_anexos` e conceder permissões RLS em `storage.objects` para o bucket `documentos-clientes`, solucionando erros de `Object not found`.
   - **Expurgo Total de Zero-Drift**: Removidos 100% dos tratamentos defensivos que capturavam erros 42703/42P01 para empacotar dados em `observacoes` ou fingir sucesso em memória. Toda persistência é oficial no PostgreSQL do Supabase.
   - **Fail-Fast Transparente no Dashboard & Módulos**: Consultas de faturamento e comissões agora apontam diretamente para colunas físicas de `produtos_viagem` (`tipo`, `comissao`, `markup`, `rav`, `valor_venda`) com normalização de datas `YYYY-MM-DD`, exibindo alertas visíveis claros caso o banco precise de migração em vez de silenciar falhas com faturamento zerado.
   - **Migração DDL Oficial Consolidada**: Script DDL único (`20261105_saneamento_schema_e_tabelas_oficiais.sql`) cobrindo todas as tabelas e colunas físicas do ecossistema (`studio_propostas`, `documentos_anexos`, `viagens_divisoes`, `origens_lead`, `campanhas_presets`, `gamification_celebrations`, etc.).

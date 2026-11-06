@@ -302,46 +302,25 @@ export function getAvatarSvg(avatarId: string | undefined, initials: string = 'C
 }
 
 /**
- * Salva localmente o avatar de um usuário como fallback se o banco de dados não suportar a coluna
+ * Persistência de avatares é exclusiva no banco de dados Supabase (profiles.avatar_url).
+ * Mantido como no-op para compatibilidade de assinatura sem uso de localStorage.
  */
-export function salvarAvatarLocal(userId: string, avatarId: string): void {
-  try {
-    const localAvatars = JSON.parse(localStorage.getItem('paxflow-user-avatars') || '{}');
-    localAvatars[userId] = avatarId;
-    localStorage.setItem('paxflow-user-avatars', JSON.stringify(localAvatars));
-  } catch (e) {
-    console.error('Erro ao salvar avatar localmente:', e);
-  }
+export function salvarAvatarLocal(_userId: string, _avatarId: string): void {
+  // Supabase é a única fonte da verdade. Nenhuma persistência em localStorage.
 }
 
 /**
- * Recupera o avatar de um usuário salvo localmente
+ * Avatares são obtidos diretamente da coluna profiles.avatar_url no Supabase.
  */
-export function obterAvatarLocal(userId: string): string | undefined {
-  try {
-    const localAvatars = JSON.parse(localStorage.getItem('paxflow-user-avatars') || '{}');
-    return localAvatars[userId];
-  } catch (e) {
-    return undefined;
-  }
+export function obterAvatarLocal(_userId: string): string | undefined {
+  return undefined;
 }
 
 /**
- * Mescla a lista de perfis do Supabase com os avatares locais
+ * Retorna os perfis diretamente do banco, sem injeção de localStorage.
  */
 export function mesclarAvataresLocais(perfis: any[]): any[] {
-  return perfis.map(p => {
-    if (p && p.id) {
-      // Prioriza o avatar vindo do banco, usando o localStorage como fallback se não houver avatar cadastrado no banco
-      if (!p.avatar_url) {
-        const local = obterAvatarLocal(p.id);
-        if (local) {
-          p.avatar_url = local;
-        }
-      }
-    }
-    return p;
-  });
+  return perfis || [];
 }
 
 /**

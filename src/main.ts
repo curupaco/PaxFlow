@@ -251,18 +251,12 @@ class App {
 
       if (!isSandbox && (error || !user)) {
         this.renderLogin();
+      } else if (!isSandbox && !perfil) {
+        console.error('Perfil de consultor não encontrado no Supabase para o usuário:', user?.id);
+        this.renderLogin('Perfil de consultor não localizado no banco de dados. Contate o administrador da agência.');
       } else {
-        const currentUser = user || { id: 'sandbox-user-id', email: 'consultor.fake@paxflowdemo.com' };
-        const currentPerfil: PerfilConsultor = perfil || {
-          id: 'sandbox-user-id',
-          nome: 'Consultor Demonstrativo',
-          email: 'consultor.fake@paxflowdemo.com',
-          role: 'admin',
-          ativo: true,
-          xp: 1500,
-          nivel: 4,
-          avatar_url: 'lion'
-        };
+        const currentUser = user!;
+        const currentPerfil: PerfilConsultor = perfil!;
 
         // Detecção de rotas por hash na URL (ex: #inbox, #orcamentos, #inbox?extraId=xxx)
         let initialPage = (currentPerfil && currentPerfil.role === 'admin') ? 'analytics' : 'inbox';
@@ -473,7 +467,7 @@ class App {
   /**
    * Renderiza a tela de login premium com recuperação de senha
    */
-  private renderLogin(): void {
+  private renderLogin(errorMessage?: string): void {
     const loginPage = new LoginPage(this.container, {
       onLoginSuccess: async (user, perfil) => {
         try {
@@ -485,6 +479,11 @@ class App {
       showToast: (message, type) => this.showToast(message, type)
     });
     loginPage.init();
+    if (errorMessage) {
+      setTimeout(() => {
+        this.showToast(errorMessage, 'error');
+      }, 100);
+    }
   }
 
   /**

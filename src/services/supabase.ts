@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import { PerfilConsultor } from '../types';
-import { obterAvatarLocal } from './avatars';
 
 declare const process: any;
 
@@ -793,18 +792,6 @@ export async function loginConsultor(email: string, password: string): Promise<{
         error: null, // Retorna null no erro para que o login prossiga com sucesso
       };
     }
-    
-    if (perfilData) {
-      // Prioriza o avatar vindo do banco de dados. Caso seja nulo/indefinido, busca no localStorage como fallback
-      if (!perfilData.avatar_url) {
-        const local = obterAvatarLocal(perfilData.id) || 
-                      obterAvatarLocal(perfilData.email) || 
-                      obterAvatarLocal('mock-id-' + perfilData.email.replace(/[^a-zA-Z0-9]/g, ''));
-        if (local) {
-          (perfilData as PerfilConsultor).avatar_url = local;
-        }
-      }
-    }
 
     return {
       user: authData.user,
@@ -891,18 +878,6 @@ export async function getSessaoAtual(): Promise<{
         perfil: fallbackPerfil,
         error: null, // Retorna null para prosseguir a sessão ativa sem travar a interface
       };
-    }
-    
-    if (perfilData) {
-      // Prioriza o avatar vindo do banco de dados. Caso seja nulo/indefinido, busca no localStorage como fallback
-      if (!perfilData.avatar_url) {
-        const local = obterAvatarLocal(perfilData.id) || 
-                      obterAvatarLocal(perfilData.email) || 
-                      obterAvatarLocal('mock-id-' + perfilData.email.replace(/[^a-zA-Z0-9]/g, ''));
-        if (local) {
-          (perfilData as PerfilConsultor).avatar_url = local;
-        }
-      }
     }
 
     cachedSessionResult = {

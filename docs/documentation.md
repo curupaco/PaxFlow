@@ -2025,6 +2025,16 @@ Essa prática foi **100% expurgada**:
 2. **Schema Real Consolidado**: Todas as entidades do PaxFlow (`studio_propostas`, `documentos_anexos`, `viagens_divisoes`, `origens_lead`, `campanhas_presets`, `gamification_celebrations`, `profiles.participa_metricas`, `profiles.acesso_financeiro`, etc.) possuem colunas físicas oficiais formalizadas em migração DDL.
 3. **Alinhamento do Painel Comercial e Dashboard**: As consultas do Dashboard de Resultados foram corrigidas para consultar estritamente as colunas existentes de `produtos_viagem` (`tipo`, `comissao`, `markup`, `rav`, `valor_venda`) com formatação temporal ISO `YYYY-MM-DD`, garantindo que todas as vendas e faturamento de períodos correntes e históricos sejam apurados e exibidos com precisão cirúrgica.
 
+### 3.54.2 Erradicação de Dados Mockados, Fallbacks Locais e Migração de Anexos
+1. **Expurgo Total de Mocks e Fallbacks Inventados**:
+   - `metasService`: Eliminada a rotina de simulação em memória (`initialMetas`) e CRUD local em `localStorage` (`sandbox-meta-periodos`). Metas e faixas de premiação são persistidas e lidas estritamente do banco de dados remoto (`campaigns` / `faixas_premiacao`).
+   - `finPlanoContasService`: Eliminadas as constantes estáticas (`TIPOS_CUSTO_FALLBACK`, `CATEGORIAS_FALLBACK`, `CONTAS_BANCARIAS_FALLBACK`). Se o banco estiver vazio, o sistema exibe estado limpo em vez de inventar contas fictícias.
+   - `main.ts`: Eliminado perfil demonstrativo fictício (`Consultor Demonstrativo / admin`) no fluxo de autenticação.
+   - `avatars.ts` e `supabase.ts`: Expurgo de `paxflow-user-avatars` em `localStorage`. A fonte exclusiva para imagem ou ícone de consultor é a coluna `profiles.avatar_url`.
+2. **Recuperação e Migração de Anexos Legados**:
+   - Resgate dos metadados de 11 documentos reais armazenados no legado de `viagens.observacoes` (`<!-- PAXFLOW_ANEXOS -->`), migrando-os diretamente para a tabela física `documentos_anexos`.
+   - Ajuste de políticas de segurança (RLS) em `storage.objects` para o bucket `documentos-clientes`, garantindo autorização de leitura e upload para consultores autenticados e eliminando o erro de `Object not found`.
+
 ---
 
 > **PaxFlow** — Gestão de Pós-Venda e Fluxo de Passageiros

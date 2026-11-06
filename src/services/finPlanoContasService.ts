@@ -1,73 +1,6 @@
 import { supabase } from './supabase';
 import { FinTipoCusto, FinCategoria, FinSubcategoria, FinContaBancaria } from '../types';
 
-/**
- * Tipos de Custo estáticos de contingência caso a migração ainda não tenha sido executada (Zero-Break)
- */
-export const TIPOS_CUSTO_FALLBACK: FinTipoCusto[] = [
-  { id: 'tipo-1', codigo: 1, nome: 'Custos Diretos', ativo: true, ordem: 1 },
-  { id: 'tipo-2', codigo: 2, nome: 'Despesas Fixas', ativo: true, ordem: 2 },
-  { id: 'tipo-3', codigo: 3, nome: 'Despesas Variáveis', ativo: true, ordem: 3 },
-  { id: 'tipo-4', codigo: 4, nome: 'Investimentos', ativo: true, ordem: 4 },
-  { id: 'tipo-5', codigo: 5, nome: 'Gastos Não Operacionais', ativo: true, ordem: 5 }
-];
-
-export const CATEGORIAS_FALLBACK: FinCategoria[] = [
-  // 1. Custos Diretos
-  { id: 'cat-1', tipo_custo_id: 'tipo-1', nome: 'COMISSÕES', ativo: true, ordem: 1 },
-  { id: 'cat-2', tipo_custo_id: 'tipo-1', nome: 'PREMIAÇÕES + CAMPANHAS', ativo: true, ordem: 2 },
-  { id: 'cat-3', tipo_custo_id: 'tipo-1', nome: 'ROYALTIES', ativo: true, ordem: 3 },
-  { id: 'cat-4', tipo_custo_id: 'tipo-1', nome: 'TAXA MARKETING', ativo: true, ordem: 4 },
-  { id: 'cat-5', tipo_custo_id: 'tipo-1', nome: 'IMPOSTO', ativo: true, ordem: 5 },
-  { id: 'cat-6', tipo_custo_id: 'tipo-1', nome: 'IMPOSTO PARCELADO', ativo: true, ordem: 6 },
-  // 2. Despesas Fixas
-  { id: 'cat-7', tipo_custo_id: 'tipo-2', nome: 'ALUGUEL', ativo: true, ordem: 1 },
-  { id: 'cat-8', tipo_custo_id: 'tipo-2', nome: 'BENEFÍCIOS', ativo: true, ordem: 2 },
-  { id: 'cat-9', tipo_custo_id: 'tipo-2', nome: 'CONDOMÍNIO', ativo: true, ordem: 3 },
-  { id: 'cat-10', tipo_custo_id: 'tipo-2', nome: 'CONTABILIDADE', ativo: true, ordem: 4 },
-  { id: 'cat-11', tipo_custo_id: 'tipo-2', nome: 'ENERGIA ELÉTRICA', ativo: true, ordem: 5 },
-  { id: 'cat-12', tipo_custo_id: 'tipo-2', nome: 'FÉRIAS', ativo: true, ordem: 6 },
-  { id: 'cat-13', tipo_custo_id: 'tipo-2', nome: 'FGTS', ativo: true, ordem: 7 },
-  { id: 'cat-14', tipo_custo_id: 'tipo-2', nome: 'IMPRESSORA', ativo: true, ordem: 8 },
-  { id: 'cat-15', tipo_custo_id: 'tipo-2', nome: 'INTERNET', ativo: true, ordem: 9 },
-  { id: 'cat-16', tipo_custo_id: 'tipo-2', nome: 'IPTU', ativo: true, ordem: 10 },
-  { id: 'cat-17', tipo_custo_id: 'tipo-2', nome: 'MÁQUINA CAFÉ', ativo: true, ordem: 11 },
-  { id: 'cat-18', tipo_custo_id: 'tipo-2', nome: 'MATERIAL DE ESCRITÓRIO', ativo: true, ordem: 12 },
-  { id: 'cat-19', tipo_custo_id: 'tipo-2', nome: 'MATERIAL DE LIMPEZA', ativo: true, ordem: 13 },
-  { id: 'cat-20', tipo_custo_id: 'tipo-2', nome: 'PLANO DE SAÚDE', ativo: true, ordem: 14 },
-  { id: 'cat-21', tipo_custo_id: 'tipo-2', nome: 'SALÁRIO', ativo: true, ordem: 15 },
-  { id: 'cat-22', tipo_custo_id: 'tipo-2', nome: 'SISTEMA', ativo: true, ordem: 16 },
-  { id: 'cat-23', tipo_custo_id: 'tipo-2', nome: 'TARIFA BANCÁRIA', ativo: true, ordem: 17 },
-  { id: 'cat-24', tipo_custo_id: 'tipo-2', nome: 'TELEFONE', ativo: true, ordem: 18 },
-  { id: 'cat-25', tipo_custo_id: 'tipo-2', nome: 'LIMPEZA LOJA', ativo: true, ordem: 19 },
-  { id: 'cat-26', tipo_custo_id: 'tipo-2', nome: 'SEGURO', ativo: true, ordem: 20 },
-  { id: 'cat-27', tipo_custo_id: 'tipo-2', nome: 'INSS/IRPF', ativo: true, ordem: 21 },
-  // 3. Despesas Variáveis
-  { id: 'cat-28', tipo_custo_id: 'tipo-3', nome: 'BRINDE CLIENTE', ativo: true, ordem: 1 },
-  { id: 'cat-29', tipo_custo_id: 'tipo-3', nome: 'BENFEITORIAS', ativo: true, ordem: 2 },
-  { id: 'cat-30', tipo_custo_id: 'tipo-3', nome: 'COMEMORAÇÕES/REUNIÕES', ativo: true, ordem: 3 },
-  { id: 'cat-31', tipo_custo_id: 'tipo-3', nome: 'MEDICINA DO TRABALHO', ativo: true, ordem: 4 },
-  { id: 'cat-32', tipo_custo_id: 'tipo-3', nome: 'PREJUÍZO', ativo: true, ordem: 5 },
-  { id: 'cat-33', tipo_custo_id: 'tipo-3', nome: 'UNIFORMES', ativo: true, ordem: 6 },
-  { id: 'cat-34', tipo_custo_id: 'tipo-3', nome: 'REEMBOLSO PAX', ativo: true, ordem: 7 },
-  { id: 'cat-35', tipo_custo_id: 'tipo-3', nome: 'PEDALADAS', ativo: true, ordem: 8 },
-  { id: 'cat-36', tipo_custo_id: 'tipo-3', nome: 'REPASSE AGAXTUR', ativo: true, ordem: 9 },
-  // 4. Investimentos
-  { id: 'cat-37', tipo_custo_id: 'tipo-4', nome: 'SOCIAL MÍDEA', ativo: true, ordem: 1 },
-  { id: 'cat-38', tipo_custo_id: 'tipo-4', nome: 'PATROCÍNIO DIGITAL', ativo: true, ordem: 2 },
-  { id: 'cat-39', tipo_custo_id: 'tipo-4', nome: 'CURSOS E TREINAMENTOS', ativo: true, ordem: 3 },
-  { id: 'cat-40', tipo_custo_id: 'tipo-4', nome: 'PARCERIAS / EVENTOS', ativo: true, ordem: 4 },
-  // 5. Gastos Não Operacionais
-  { id: 'cat-41', tipo_custo_id: 'tipo-5', nome: 'Despesas MKP', ativo: true, ordem: 1 }
-];
-
-export const CONTAS_BANCARIAS_FALLBACK: FinContaBancaria[] = [
-  { id: 'banco-1', nome_banco: 'Banco Itaú', tipo: 'corrente', saldo_inicial: 0, ativo: true },
-  { id: 'banco-2', nome_banco: 'Banco Cora', tipo: 'corrente', saldo_inicial: 0, ativo: true },
-  { id: 'banco-3', nome_banco: 'Banco Santander', tipo: 'corrente', saldo_inicial: 0, ativo: true },
-  { id: 'banco-4', nome_banco: 'Caixa Físico Loja', tipo: 'caixa', saldo_inicial: 0, ativo: true }
-];
-
 export class FinPlanoContasService {
   /**
    * Busca todos os Tipos de Custo ativos ordenados alfabeticamente
@@ -82,7 +15,7 @@ export class FinPlanoContasService {
       if (error) {
         throw error;
       }
-      const lista = data && data.length > 0 ? data : TIPOS_CUSTO_FALLBACK;
+      const lista = data || [];
       return [...lista].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     } catch (err) {
       console.error('[FinPlanoContasService] Erro ao carregar tipos de custo:', err);
@@ -108,9 +41,7 @@ export class FinPlanoContasService {
       if (error) {
         throw error;
       }
-      const base = data && data.length > 0 
-        ? data 
-        : (tipoCustoId ? CATEGORIAS_FALLBACK.filter(c => c.tipo_custo_id === tipoCustoId) : CATEGORIAS_FALLBACK);
+      const base = data || [];
       return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     } catch (err) {
       console.error('[FinPlanoContasService] Erro ao carregar categorias:', err);
@@ -159,7 +90,7 @@ export class FinPlanoContasService {
       if (error) {
         throw error;
       }
-      return data && data.length > 0 ? data : CONTAS_BANCARIAS_FALLBACK;
+      return data || [];
     } catch (err) {
       console.error('[FinPlanoContasService] Erro ao carregar contas bancárias:', err);
       throw err;
