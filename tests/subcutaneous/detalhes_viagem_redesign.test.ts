@@ -158,5 +158,31 @@ describe('Redesign Detalhes da Viagem - Testes Subcutâneos', () => {
     expect(totalAbertos).toBe(3);
     expect(totalAposRecolher).toBe(0);
   });
+
+  it('deve renderizar o campo Fornecedor como opcional no formulário de edição lateral (sem required e sem asterisco)', () => {
+    // Setup
+    const mockProduto = {
+      id: 'prod-456',
+      tipo: 'Passeio',
+      fornecedor: '',
+      descricao: 'City Tour Histórico',
+      codigo_reserva: 'LOC123',
+      valor_venda: 250.00,
+      taxas: 0,
+      comissao_loja: 25.00,
+      status: 'emitido'
+    };
+    const tiposProduto = [{ nome: 'Passeio', ativo: true }];
+    const getIconForType = () => '🗺️';
+
+    // Action
+    const html = renderLateralEditorPaneHTML(mockProduto, 'produtos', tiposProduto, getIconForType, false);
+
+    // Assert
+    expect(html).toContain('id="edit-prod-fornecedor-prod-456"');
+    expect(html).not.toContain('id="edit-prod-fornecedor-prod-456" type="text" required');
+    expect(html).not.toContain('Fornecedor *');
+    expect(html).toContain('Fornecedor</label>');
+  });
 });
 

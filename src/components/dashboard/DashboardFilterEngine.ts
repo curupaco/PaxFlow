@@ -533,7 +533,8 @@ export class DashboardFilterEngine {
         if (v.status !== activeStatusTab) return false;
       }
 
-      if (perfil?.role === 'admin') {
+      // Filtro de Conferência (aplicável sempre que acionado nos filtros)
+      if (confFilters) {
         const { finPendente, finOk, procPendente, procOk } = confFilters;
         const isFinOk = !!v.isFinanceiroConferido;
         const isProcOk = !!v.isProcessoConferido;

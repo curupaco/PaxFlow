@@ -323,8 +323,8 @@ export function renderLateralEditorPaneHTML(
                 </div>
 
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Fornecedor *</label>
-                  <input id="edit-prod-fornecedor-${selectedProduct.id}" type="text" required ${disabledAttr} value="${selectedProduct.fornecedor || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Fornecedor</label>
+                  <input id="edit-prod-fornecedor-${selectedProduct.id}" type="text" ${disabledAttr} value="${selectedProduct.fornecedor || ''}" placeholder="ex: LATAM, Hilton" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
                 </div>
 
                 <div>

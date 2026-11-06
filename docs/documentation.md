@@ -1410,6 +1410,8 @@ A tela de Gerenciar/Editar Viagem (`EditTravelModal` e `DashboardTemplates`) pas
 
 5. **Transição Fluida entre Novo Serviço e Edição**:
    - A coluna direita da aba de produtos alterna instantaneamente entre o formulário de novo produto e a edição do serviço selecionado. O botão `✕ Cancelar Edição` e o atalho `➕ Novo Serviço` no topo da lista restabelecem imediatamente o formulário de criação sem necessidade de recarregar o diálogo.
+   - **Fornecedor Opcional nos Detalhes do Serviço**: O campo de Fornecedor tanto no formulário de inclusão quanto no editor lateral é 100% opcional, permitindo o registro ágil de serviços locais, taxas ou adicionais sem obrigatoriedade de fornecedor cadastrado.
+   - **Sincronização Reativa do Painel Financeiro**: Qualquer alteração no valor total da viagem efetuada na aba "Geral & Passageiro" é recalculada e refletida instantaneamente no painel de conciliação financeira da aba "Produtos & Serviços" sem necessidade de fechar e reabrir a viagem.
 
 ---
 

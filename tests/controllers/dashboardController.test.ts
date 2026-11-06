@@ -182,6 +182,28 @@ describe('DashboardController - Testes Subcutâneos', () => {
     expect(resNenhum).toHaveLength(1);
     expect(resNenhum[0].id).toBe('2');
   });
+
+  it('deve garantir que viagens com financeiro conferido/validado sejam rigorosamente excluídas do filtro finPendente', () => {
+    // Setup
+    const viagens: ViagemMock[] = [
+      { id: 'v-fechado-pendente', status: 'fechado', isFinanceiroConferido: false, isProcessoConferido: false },
+      { id: 'v-pos-venda-validada', status: 'pos_venda', isFinanceiroConferido: true, isProcessoConferido: true },
+      { id: 'v-pre-embarque-validada', status: 'pre_embarque', isFinanceiroConferido: true, isProcessoConferido: true },
+      { id: 'v-fechado-validado', status: 'fechado', isFinanceiroConferido: true, isProcessoConferido: false },
+    ];
+
+    // Action - Solicita estritamente FINANCEIRO PENDENTE
+    const resultado = filtrarViagensOperacionais(viagens, {
+      confFilters: { finPendente: true }
+    });
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].id).toBe('v-fechado-pendente');
+    expect(resultado.some(v => v.id === 'v-pos-venda-validada')).toBe(false);
+    expect(resultado.some(v => v.id === 'v-pre-embarque-validada')).toBe(false);
+    expect(resultado.some(v => v.id === 'v-fechado-validado')).toBe(false);
+  });
 });
 
 

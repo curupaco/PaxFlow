@@ -592,19 +592,7 @@ export class Dashboard {
       this.viagens = (data || []).map((v: any) => {
         v.divisoes = divisoesMap.get(v.id) || [];
         const produtos = v.produtos || [];
-        const totalProdutos = produtos.reduce((sum: number, p: any) => sum + (Number(p.valor_venda) || 0), 0);
-        const valorViagem = Number(v.valor_total) || 0;
-        const saldoPendente = valorViagem - totalProdutos;
-        const isSaldoZerado = Math.abs(saldoPendente) <= 0.01;
-        const hasProdutos = produtos.length > 0;
-        const todosDetalhados = produtos.every((p: any) => calcularFinanceiroProduto(p).isDetalhado);
-
-        const locKeys = Array.from(new Set(produtos.map((p: any) => (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase())));
-        const confMap = locConfsMap.get(v.id) || {};
-        const todosLocsConferidos = locKeys.length > 0 && locKeys.every((k: any) => !!confMap[k]);
-
-        const financeiroOk = hasProdutos && isSaldoZerado && todosDetalhados && todosLocsConferidos;
-        const processoOk = !!v.processo_conferido;
+        const { isFinanceiroConferido, isProcessoConferido } = this.calcularConferenciasViagem(v, locConfsMap);
         const pagsViagem = this.locPagamentosMap.get(v.id) || [];
         const isTotalmentePago = verificarViagemTotalmentePaga(produtos, pagsViagem);
 
@@ -617,8 +605,8 @@ export class Dashboard {
           destino_ref: v.destino_ref,
           destinoRef: v.destino_ref,
           comentarios_busca: tripCommentsMap.get(v.id) || [],
-          isFinanceiroConferido: financeiroOk,
-          isProcessoConferido: processoOk,
+          isFinanceiroConferido,
+          isProcessoConferido,
           isTotalmentePago
         };
       });
@@ -726,18 +714,63 @@ export class Dashboard {
   }
 
   /**
+   * Determina com precisão se a conferência financeira e de processo estão validadas.
+   * Viagens que já avançaram de 'fechado' para 'pos_venda', 'pre_embarque' ou 'pos_viagem'
+   * são por definição viagens já validadas operacionalmente pelo financeiro e gestão.
+   */
+  private calcularConferenciasViagem(
+    v: any,
+    locConfsMap?: Map<string, { [locKey: string]: boolean }>
+  ): { isFinanceiroConferido: boolean; isProcessoConferido: boolean } {
+    const isStatusValidado = v.status !== 'fechado' && v.status !== 'reembolso_solicitado';
+    if (isStatusValidado) {
+      return { isFinanceiroConferido: true, isProcessoConferido: true };
+    }
+
+    const produtos = v.produtos || [];
+    const totalProdutos = produtos.reduce((sum: number, p: any) => sum + (Number(p.valor_venda) || 0), 0);
+    const valorViagem = Number(v.valor_total) || 0;
+    const saldoPendente = valorViagem - totalProdutos;
+    const isSaldoZerado = Math.abs(saldoPendente) <= 0.01;
+    const hasProdutos = produtos.length > 0;
+    const todosDetalhados = produtos.every((p: any) => calcularFinanceiroProduto(p).isDetalhado);
+
+    const confMap = locConfsMap?.get(v.id) || {};
+    const locsReais = Array.from(new Set<string>(
+      produtos.map((p: any) => (p.codigo_reserva || '').trim().toUpperCase()).filter(Boolean)
+    ));
+    const todosLocsConferidos = locsReais.length > 0
+      ? locsReais.every((k: string) => !!confMap[k])
+      : (!!confMap['SEM LOCALIZADOR'] || hasProdutos);
+
+    const financeiroOk = hasProdutos && isSaldoZerado && todosDetalhados && todosLocsConferidos;
+    const processoOk = !!v.processo_conferido;
+
+    return {
+      isFinanceiroConferido: financeiroOk,
+      isProcessoConferido: processoOk
+    };
+  }
+
+  /**
    * Atualiza cirurgicamente uma viagem alterada em memória sem recarregar toda a base
    */
   private atualizarViagemEmMemoria(viagemAtualizada: any): void {
     if (!viagemAtualizada || !viagemAtualizada.id) return;
+    const confs = this.calcularConferenciasViagem(viagemAtualizada);
+    const viagemComConfs = {
+      ...viagemAtualizada,
+      isFinanceiroConferido: viagemAtualizada.isFinanceiroConferido !== undefined ? viagemAtualizada.isFinanceiroConferido : confs.isFinanceiroConferido,
+      isProcessoConferido: viagemAtualizada.isProcessoConferido !== undefined ? viagemAtualizada.isProcessoConferido : confs.isProcessoConferido
+    };
     const idx = this.viagens.findIndex(v => v.id === viagemAtualizada.id);
     if (idx !== -1) {
       this.viagens[idx] = {
         ...this.viagens[idx],
-        ...viagemAtualizada
+        ...viagemComConfs
       };
     } else {
-      this.viagens.unshift(viagemAtualizada);
+      this.viagens.unshift(viagemComConfs);
     }
   }
 

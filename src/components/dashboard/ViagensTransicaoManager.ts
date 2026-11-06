@@ -111,7 +111,8 @@ export class ViagensTransicaoManager {
       });
 
       if (produtoNaoDetalhado) {
-        showToast(`Não é possível avançar para Pós-Venda. O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" não está com seus valores 100% detalhados (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda do produto).`, 'error');
+        const fornTxt = produtoNaoDetalhado.fornecedor ? `${produtoNaoDetalhado.fornecedor} - ` : '';
+        showToast(`Não é possível avançar para Pós-Venda. O produto "${fornTxt}${produtoNaoDetalhado.descricao || 'Serviço'}" não está com seus valores 100% detalhados (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda do produto).`, 'error');
         return false;
       }
     }

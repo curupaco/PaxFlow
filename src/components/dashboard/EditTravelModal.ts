@@ -393,9 +393,10 @@ export class EditTravelModal {
         const icon = this.getIconForType(p.tipo);
 
         if (p.data_servico) {
+          const fornLabel = p.fornecedor ? `${p.fornecedor} &bull; ` : '';
           cronograma.push({
             data: p.data_servico,
-            rotulo: `${icon} [${prodTipoUpper}] ${p.fornecedor} &bull; ${p.descricao} (Data Principal)`,
+            rotulo: `${icon} [${prodTipoUpper}] ${fornLabel}${p.descricao || 'Serviço'} (Data Principal)`,
             tipo: 'produto',
             cor: 'bg-indigo-50 dark:bg-indigo-950/35 text-indigo-700 dark:text-indigo-400 border border-indigo-200/30 dark:border-indigo-900/30'
           });
@@ -426,9 +427,10 @@ export class EditTravelModal {
 
         if (p.datas_adicionais && p.datas_adicionais.length > 0) {
           p.datas_adicionais.forEach((d: any) => {
+            const fornLabel = p.fornecedor ? `${p.fornecedor} &bull; ` : '';
             cronograma.push({
               data: d.data,
-              rotulo: `${icon} [${prodTipoUpper}] ${p.fornecedor} &bull; ${p.descricao} (${d.rotulo})`,
+              rotulo: `${icon} [${prodTipoUpper}] ${fornLabel}${p.descricao || 'Serviço'} (${d.rotulo})`,
               tipo: 'produto-adicional',
               cor: 'bg-slate-100/80 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-800/40'
             });
@@ -1252,6 +1254,10 @@ export class EditTravelModal {
       tabVouchersContent?.classList.toggle('hidden', tab !== 'vouchers');
       tabComentariosContent?.classList.toggle('hidden', tab !== 'comentarios');
       tabReembolsosContent?.classList.toggle('hidden', tab !== 'reembolsos');
+
+      if (tab === 'produtos') {
+        this.atualizarPainelFinanceiroProdutos();
+      }
     };
 
     tabDetalhesBtn?.addEventListener('click', () => setActiveTab('detalhes'));
@@ -1468,7 +1474,8 @@ export class EditTravelModal {
           const produtoNaoDetalhado = produtos.find(p => !calcularFinanceiroProduto(p).isDetalhado);
 
           if (produtoNaoDetalhado) {
-            this.options.showToast(`Não é possível alterar para Pós-Venda. O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" precisa estar 100% detalhado financeiramente.`, 'error');
+            const fornTxt = produtoNaoDetalhado.fornecedor ? `${produtoNaoDetalhado.fornecedor} - ` : '';
+            this.options.showToast(`Não é possível alterar para Pós-Venda. O produto "${fornTxt}${produtoNaoDetalhado.descricao || 'Serviço'}" precisa estar 100% detalhado financeiramente.`, 'error');
             return;
           }
         }
@@ -1506,7 +1513,25 @@ export class EditTravelModal {
 
         if (error) throw error;
 
-        // Atualização local
+        // Atualização em memória da viagem carregada no modal
+        if (this.currentLoadedViagem) {
+          this.currentLoadedViagem.cliente_id = clienteId;
+          this.currentLoadedViagem.consultor_id = consultorId;
+          this.currentLoadedViagem.destino = destino;
+          this.currentLoadedViagem.destino_id = selectedDestinoId || null;
+          this.currentLoadedViagem.codigo_localizador = loc || null;
+          this.currentLoadedViagem.valor_total = valor;
+          this.currentLoadedViagem.data_ida = dataIda;
+          this.currentLoadedViagem.data_volta = dataVolta;
+          this.currentLoadedViagem.data_financeiro = dataFinanceiro;
+          this.currentLoadedViagem.status = status;
+          this.currentLoadedViagem.observacoes = obs || null;
+        }
+        v.valor_total = valor;
+        v.destino = destino;
+        v.status = status;
+
+        // Atualização local na lista geral de viagens
         const clientObj = clientes.find(c => c.id === clienteId);
         const viagemIdx = this.options.viagens.findIndex(item => item.id === v.id);
         if (viagemIdx !== -1) {
@@ -1529,6 +1554,9 @@ export class EditTravelModal {
             updated_at: new Date().toISOString()
           };
         }
+
+        // Sincroniza imediatamente o painel financeiro da aba Produtos
+        this.atualizarPainelFinanceiroProdutos();
 
         const submitBtn = formEditar.querySelector('button[type="submit"]') as HTMLButtonElement;
         if (submitBtn) {
@@ -1907,7 +1935,7 @@ export class EditTravelModal {
       e.preventDefault();
 
       const tipo = (document.getElementById('prod-tipo') as HTMLSelectElement).value;
-      let fornecedor = (document.getElementById('prod-fornecedor') as HTMLInputElement).value.trim() || 'Não informado';
+      let fornecedor = (document.getElementById('prod-fornecedor') as HTMLInputElement).value.trim();
       let descricao = (document.getElementById('prod-descricao') as HTMLInputElement).value.trim() || 'Sem descrição';
 
       // Coleta campos dinâmicos
@@ -2488,7 +2516,7 @@ export class EditTravelModal {
       e.preventDefault();
 
       const editTipo = editTipoSelect.value;
-      const editFornecedor = editFornecedorInput.value.trim() || 'Não informado';
+      const editFornecedor = editFornecedorInput.value.trim();
       const editDescricao = (document.getElementById(`edit-prod-descricao-${prodId}`) as HTMLInputElement).value.trim() || 'Sem descrição';
       const editReserva = (document.getElementById(`edit-prod-reserva-${prodId}`) as HTMLInputElement).value.trim();
       
@@ -2694,6 +2722,86 @@ export class EditTravelModal {
     });
   }
 
+  /**
+   * Recalcula e atualiza instantaneamente no DOM todos os indicadores financeiros
+   * da aba de produtos (Valor da Viagem, Total em Produtos, Alocação e Rentabilidade)
+   */
+  public atualizarPainelFinanceiroProdutos(): void {
+    const tripId = this.tripId;
+    const viagem = this.options.viagens.find(x => x.id === tripId);
+    const valorTotalViagem = this.currentLoadedViagem?.valor_total !== undefined && this.currentLoadedViagem?.valor_total !== null
+      ? (Number(this.currentLoadedViagem.valor_total) || 0)
+      : (viagem ? (Number(viagem.valor_total) || 0) : 0);
+
+    const produtos = (this.currentLoadedViagem?.produtos && Array.isArray(this.currentLoadedViagem.produtos))
+      ? this.currentLoadedViagem.produtos
+      : (viagem?.produtos || []);
+
+    const totalProdutos = produtos.reduce((sum: number, p: any) => sum + (Number(p.valor_venda) || 0), 0);
+    let totalRentabilidade = 0;
+    let totalMarkup = 0;
+    let totalRav = 0;
+    produtos.forEach((p: any) => {
+      const calc = calcularFinanceiroProduto(p);
+      totalRentabilidade += calc.rentabilidade;
+      totalMarkup += calc.markup;
+      totalRav += calc.rav;
+    });
+
+    let saldoPendente = valorTotalViagem - totalProdutos;
+    if (Math.abs(saldoPendente) < 0.01) {
+      saldoPendente = 0;
+    }
+
+    const finValorVenda = document.getElementById('fin-valor-venda');
+    const finValorProdutos = document.getElementById('fin-valor-produtos');
+    const finValorPendente = document.getElementById('fin-valor-pendente');
+    const finLabelPendente = document.getElementById('fin-label-pendente');
+    const finValorRentabilidade = document.getElementById('fin-valor-rentabilidade');
+    if (finValorVenda) {
+      finValorVenda.textContent = `R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    if (finValorProdutos) {
+      finValorProdutos.textContent = `R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    if (finValorPendente) {
+      if (Math.abs(saldoPendente) < 0.01) {
+        finValorPendente.textContent = '100% Alocado (R$ 0,00)';
+        finValorPendente.className = 'text-sm font-black text-emerald-600 dark:text-emerald-400';
+        if (finLabelPendente) finLabelPendente.textContent = 'Alocação de Produtos';
+      } else if (saldoPendente < 0) {
+        const excedente = Math.abs(saldoPendente);
+        finValorPendente.textContent = `+ R$ ${excedente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        finValorPendente.className = 'text-sm font-black text-amber-600 dark:text-amber-400';
+        if (finLabelPendente) finLabelPendente.textContent = 'Excedente em Produtos';
+      } else {
+        finValorPendente.textContent = `Faltam R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        finValorPendente.className = 'text-sm font-black text-blue-600 dark:text-blue-400';
+        if (finLabelPendente) finLabelPendente.textContent = 'Aguardando Alocação';
+      }
+    }
+    if (finValorRentabilidade) {
+      finValorRentabilidade.textContent = `R$ ${totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    const finValorMkpRav = document.getElementById('fin-valor-mkp-rav');
+    if (finValorMkpRav) {
+      if (totalMarkup > 0 || totalRav > 0) {
+        const parts: string[] = [];
+        if (totalMarkup > 0) {
+          parts.push(`MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+        }
+        if (totalRav > 0) {
+          parts.push(`RAV: R$ ${totalRav.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+        }
+        finValorMkpRav.innerHTML = parts.map(p => `<span>${p}</span>`).join('');
+        finValorMkpRav.classList.remove('hidden');
+      } else {
+        finValorMkpRav.innerHTML = '';
+        finValorMkpRav.classList.add('hidden');
+      }
+    }
+  }
+
   private async loadAndRenderProdutosViagem(tripId: string): Promise<void> {
     const container = document.getElementById('lista-produtos-viagem-container');
     if (!container) return;
@@ -2763,70 +2871,8 @@ export class EditTravelModal {
       }
     }
 
-    const viagem = this.options.viagens.find(x => x.id === tripId);
-    const valorTotalViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
-    const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
-    let totalRentabilidade = 0;
-    let totalMarkup = 0;
-    let totalRav = 0;
-    produtos.forEach(p => {
-      const calc = calcularFinanceiroProduto(p);
-      totalRentabilidade += calc.rentabilidade;
-      totalMarkup += calc.markup;
-      totalRav += calc.rav;
-    });
-    let saldoPendente = valorTotalViagem - totalProdutos;
-    if (Math.abs(saldoPendente) < 0.01) {
-      saldoPendente = 0;
-    }
-
-    const finValorVenda = document.getElementById('fin-valor-venda');
-    const finValorProdutos = document.getElementById('fin-valor-produtos');
-    const finValorPendente = document.getElementById('fin-valor-pendente');
-    const finLabelPendente = document.getElementById('fin-label-pendente');
-    const finValorRentabilidade = document.getElementById('fin-valor-rentabilidade');
-    if (finValorVenda) {
-      finValorVenda.textContent = `R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-    if (finValorProdutos) {
-      finValorProdutos.textContent = `R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-    if (finValorPendente) {
-      if (Math.abs(saldoPendente) < 0.01) {
-        finValorPendente.textContent = '100% Alocado (R$ 0,00)';
-        finValorPendente.className = 'text-sm font-black text-emerald-600 dark:text-emerald-400';
-        if (finLabelPendente) finLabelPendente.textContent = 'Alocação de Produtos';
-      } else if (saldoPendente < 0) {
-        const excedente = Math.abs(saldoPendente);
-        finValorPendente.textContent = `+ R$ ${excedente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        finValorPendente.className = 'text-sm font-black text-amber-600 dark:text-amber-400';
-        if (finLabelPendente) finLabelPendente.textContent = 'Excedente em Produtos';
-      } else {
-        finValorPendente.textContent = `Faltam R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        finValorPendente.className = 'text-sm font-black text-blue-600 dark:text-blue-400';
-        if (finLabelPendente) finLabelPendente.textContent = 'Aguardando Alocação';
-      }
-    }
-    if (finValorRentabilidade) {
-      finValorRentabilidade.textContent = `R$ ${totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-    const finValorMkpRav = document.getElementById('fin-valor-mkp-rav');
-    if (finValorMkpRav) {
-      if (totalMarkup > 0 || totalRav > 0) {
-        const parts: string[] = [];
-        if (totalMarkup > 0) {
-          parts.push(`MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-        }
-        if (totalRav > 0) {
-          parts.push(`RAV: R$ ${totalRav.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-        }
-        finValorMkpRav.innerHTML = parts.map(p => `<span>${p}</span>`).join('');
-        finValorMkpRav.classList.remove('hidden');
-      } else {
-        finValorMkpRav.innerHTML = '';
-        finValorMkpRav.classList.add('hidden');
-      }
-    }
+    // Atualiza os cards superiores de métricas financeiras da aba de produtos
+    this.atualizarPainelFinanceiroProdutos();
 
     if (produtos.length === 0) {
       container.innerHTML = `
