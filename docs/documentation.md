@@ -2047,6 +2047,16 @@ Essa prática foi **100% expurgada**:
 4. **Sincronização Reativa em Tempo Real**:
    - As ações de marcar ou desmarcar a conferência de um LOC ou do processo disparam a atualização imediata em memória no Dashboard (`onUpdate`), garantindo que listagens e filtros reflitam o estado auditado em tempo real sem demandar recarregamento de página.
 
+## 3.56 Harmonização e Integridade de Fechamento Contábil & Rateio de Divisões de Vendas
+1. **Rateio Proporcional em Relatórios de Faturamento (`calcularFaturamentoLucratividade`)**:
+   - O cálculo financeiro de Faturamento e Lucratividade do Painel de Relatórios Gerenciais passa a integrar obrigatoriamente o `ViagensDivisoesService`.
+   - Ao filtrar por consultor específico, as métricas de Venda, Taxas, Comissão, Markup, RAV e Rentabilidade Líquida são rigorosamente multiplicadas pelas respectivas fatias de participação (`fatiaVenda` e `fatiaRav`), erradicando a soma de 100% indevida em viagens compartilhadas.
+2. **Competência Financeira Estrita em Relatórios**:
+   - Nas abas financeiras de faturamento e auditoria, a agregação temporal respeita exclusivamente o campo `data_financeiro`, impedindo que viagens sem competência financeira fechada poluam o resultado contábil do mês.
+3. **Desmembramento de Cotas na Exportação Geral CSV para Excel**:
+   - Na exportação geral consolidada do Dashboard (`DashboardExportManager`), viagens que possuem divisão de vendas entre múltiplos consultores são desdobradas em linhas dedicadas por consultor participante, estampando o nome do respectivo parceiro, a cota percentual no identificador (`VIA-XXXX (50%)`) e os valores rateados de venda e rentabilidade.
+   - Isso garante que a Tabela Dinâmica do Excel agrupando por `Consultor Responsável` coincida rigorosamente ao centavo com o Dashboard Operacional e o Painel de Relatórios Gerenciais.
+
 ---
 
 > **PaxFlow** — Gestão de Pós-Venda e Fluxo de Passageiros

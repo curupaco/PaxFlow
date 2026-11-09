@@ -436,7 +436,8 @@ export class Dashboard {
       user: this.user,
       consultores: this.consultores,
       locPagamentosMap: this.locPagamentosMap,
-      getTripFinancialTotals: (v) => DashboardFilterEngine.getTripFinancialTotals(v, consultorContextoId),
+      getTripFinancialTotals: (v, cid) => DashboardFilterEngine.getTripFinancialTotals(v, cid !== undefined ? cid : consultorContextoId),
+      consultorContextoId,
       onSuccess: (msg) => this.showToast(msg, 'success'),
       onError: (msg) => this.showToast(msg, 'error')
     });

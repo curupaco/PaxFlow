@@ -2,6 +2,7 @@
  * RelatoriosController
  * Funções puras de controle e consolidação de inteligência comercial e relatórios.
  */
+import { ViagensDivisoesService } from '../services/viagensDivisoesService';
 
 export function calcularTaxaConversao(totalOrcamentos: number, orcamentosConcluidos: number): number {
   if (!totalOrcamentos || totalOrcamentos <= 0) return 0;
@@ -200,6 +201,7 @@ export function processarExtratoRecebimentos(
 export interface FiltrosFaturamento {
   tipoProduto?: string;
   filtroRav?: 'todos' | 'com_rav' | 'sem_rav';
+  consultorId?: string | null;
 }
 
 export interface CategoriaFaturamentoStat {
@@ -238,6 +240,7 @@ export function calcularFaturamentoLucratividade(
 ): ResultadoFaturamentoLucratividade {
   const tipoFiltro = (filtros.tipoProduto || 'todos').trim().toLowerCase();
   const filtroRav = filtros.filtroRav || 'todos';
+  const consultorId = filtros.consultorId && filtros.consultorId !== 'todos' ? filtros.consultorId : null;
 
   let faturamentoBruto = 0;
   let taxasTotal = 0;
@@ -253,19 +256,28 @@ export function calcularFaturamentoLucratividade(
   (viagens || []).forEach((v: any) => {
     if (v.status === 'cancelada' || v.status === 'cancelado') return;
 
+    let fatiaVenda = 1;
+    let fatiaRav = 1;
+    if (consultorId) {
+      fatiaVenda = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId);
+      fatiaRav = ViagensDivisoesService.calcularParticipacaoRavConsultor(v, consultorId);
+      if (fatiaVenda === 0 && fatiaRav === 0) return;
+    }
+
     const vPayments = (locPagamentos || []).filter((p: any) => 
       (p.viagem_id === v.id || p.viagemId === v.id) &&
       p.formas_recebimento &&
       ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
     );
-    const subViagem = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
+    const subViagem = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0) * fatiaVenda;
 
     const prods = (v.produtos || []).filter((p: any) => p.status !== 'cancelado');
 
     prods.forEach((p: any) => {
       const tipoProd = p.tipo || 'Outros';
       const tipoProdLower = tipoProd.trim().toLowerCase();
-      const pRav = Number(p.rav) || 0;
+      const pRavOriginal = Number(p.rav) || 0;
+      const pRav = pRavOriginal * fatiaRav;
 
       // 1. Filtro por Produto / Categoria
       if (tipoFiltro !== 'todos' && tipoProdLower !== tipoFiltro) {
@@ -273,19 +285,19 @@ export function calcularFaturamentoLucratividade(
       }
 
       // 2. Filtro por RAV (<> 0)
-      if (filtroRav === 'com_rav' && pRav === 0) {
+      if (filtroRav === 'com_rav' && pRavOriginal === 0) {
         return;
       }
-      if (filtroRav === 'sem_rav' && pRav !== 0) {
+      if (filtroRav === 'sem_rav' && pRavOriginal !== 0) {
         return;
       }
 
       totalProdutosFiltrados++;
 
-      const pVenda = Number(p.valor_venda ?? p.valorVenda ?? 0);
-      const pTaxa = Number(p.taxa) || 0;
-      const pComissao = Number(p.comissao) || 0;
-      const pMarkup = Number(p.markup) || 0;
+      const pVenda = Number(p.valor_venda ?? p.valorVenda ?? 0) * fatiaVenda;
+      const pTaxa = (Number(p.taxa) || 0) * fatiaVenda;
+      const pComissao = (Number(p.comissao) || 0) * fatiaVenda;
+      const pMarkup = (Number(p.markup) || 0) * fatiaVenda;
       const pRavLiquido = pRav * 0.88;
       const pLucro = pComissao + pMarkup + pRavLiquido;
 
@@ -322,7 +334,7 @@ export function calcularFaturamentoLucratividade(
     });
 
     if (!isFiltroAtivo) {
-      faturamentoBruto += Number(v.valor_total || v.valorTotal || 0);
+      faturamentoBruto += Number(v.valor_total || v.valorTotal || 0) * fatiaVenda;
       totalSubtrair += subViagem;
     }
   });

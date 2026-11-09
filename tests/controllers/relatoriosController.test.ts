@@ -500,6 +500,47 @@ describe('RelatoriosController - Faturamento e Lucratividade com Filtro de Produ
     expect(csv).toContain('Receita Realizada (R$);Rentabilidade (R$);Tiquete Medio (R$)');
     expect(csv).toContain('"Instagram";1;1;"100%";10000;1800;10000');
   });
+
+  it('deve ratear faturamento e comissão proporcionalmente para consultor com participação em viagens divididas', () => {
+    // Setup
+    const viagens = [
+      {
+        id: 'via-individual',
+        consultor_id: 'c-guto',
+        valor_total: 10000,
+        status: 'fechado',
+        divisoes: [],
+        produtos: [
+          { tipo: 'Hotel', valor_venda: 10000, taxa: 0, comissao: 1000, markup: 0, rav: 0 }
+        ]
+      },
+      {
+        id: 'via-dividida',
+        consultor_id: 'c-marinna',
+        valor_total: 20000,
+        status: 'fechado',
+        divisoes: [
+          { consultor_id: 'c-marinna', percentual: 50, percentual_rav: 50 },
+          { consultor_id: 'c-guto', percentual: 50, percentual_rav: 50 }
+        ],
+        produtos: [
+          { tipo: 'Pacote', valor_venda: 20000, taxa: 0, comissao: 2000, markup: 500, rav: 0 }
+        ]
+      }
+    ];
+
+    // Action - Guto filtrado
+    const resGuto = calcularFaturamentoLucratividade(viagens, [], { consultorId: 'c-guto' });
+
+    // Assert
+    // Guto deve receber 100% da viagem individual (10.000 venda, 1.000 comissao)
+    // + 50% da viagem dividida (10.000 venda, 1.000 comissao, 250 markup)
+    // Total Venda = 20.000 | Total Comissão = 2.000 | Total Markup = 250 | Rentabilidade = 2.250
+    expect(resGuto.faturamentoBruto).toBe(20000);
+    expect(resGuto.comissaoTotal).toBe(2000);
+    expect(resGuto.markupTotal).toBe(250);
+    expect(resGuto.lucroLiquidoReal).toBe(2250);
+  });
 });
 
 

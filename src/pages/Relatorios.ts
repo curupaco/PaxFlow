@@ -614,7 +614,11 @@ export class RelatoriosPage {
     };
 
     const filteredViagens = this.viagens.filter(v => {
-      const date = v.data_financeiro || v.dataFinanceiro || v.data_ida || v.dataIda;
+      // Para relatórios de faturamento e auditoria, a competência contábil de fechamento é estritamente data_financeiro
+      const isAbaFinanceira = this.activeTab === 'faturamento' || this.activeTab === 'auditoria';
+      const date = isAbaFinanceira
+        ? (v.data_financeiro || v.dataFinanceiro)
+        : (v.data_financeiro || v.dataFinanceiro || v.data_ida || v.dataIda);
       return inRange(date) && matchViagemConsultant(v);
     });
     const travelIds = new Set(filteredViagens.map(v => v.id));
@@ -802,6 +806,7 @@ export class RelatoriosPage {
         self.filtroFaturamentoRav = val;
       },
       activeTab: this.activeTab,
+      consultorIdFilter: this.consultorIdFilter,
       showToast: (m, t, err) => this.showToast(m, t, err),
       onStateChange: () => {
         const container = document.getElementById('report-view-container');

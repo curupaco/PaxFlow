@@ -23,6 +23,7 @@ export interface RelatoriosFinanceiroContext {
   filtroFaturamentoProduto: string;
   filtroFaturamentoRav: 'todos' | 'com_rav' | 'sem_rav';
   activeTab: string;
+  consultorIdFilter?: string;
   showToast: (message: string, type?: 'success' | 'error', err?: any) => void;
   onStateChange: () => void;
   abrirModalOrcamento: (orcId: string) => void;
@@ -57,7 +58,8 @@ export class RelatoriosFinanceiroView {
       categorias
     } = calcularFaturamentoLucratividade(data.viagens, data.locPagamentos, {
       tipoProduto: ctx.filtroFaturamentoProduto,
-      filtroRav: ctx.filtroFaturamentoRav
+      filtroRav: ctx.filtroFaturamentoRav,
+      consultorId: ctx.consultorIdFilter
     });
 
     return `
@@ -812,7 +814,8 @@ export class RelatoriosFinanceiroView {
       
       const resFat = calcularFaturamentoLucratividade(data.viagens, data.locPagamentos, {
         tipoProduto: ctx.filtroFaturamentoProduto,
-        filtroRav: ctx.filtroFaturamentoRav
+        filtroRav: ctx.filtroFaturamentoRav,
+        consultorId: ctx.consultorIdFilter
       });
 
       // Linhas detalhadas por categoria

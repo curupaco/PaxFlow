@@ -6,7 +6,8 @@ export interface DashboardExportOptions {
   user: any;
   consultores: PerfilConsultor[];
   locPagamentosMap: Map<string, any[]>;
-  getTripFinancialTotals: (v: any) => { totalVenda: number; totalRentabilidade: number };
+  getTripFinancialTotals: (v: any, consultorId?: string | null) => { totalVenda: number; totalRentabilidade: number };
+  consultorContextoId?: string | null;
   onSuccess?: (msg: string) => void;
   onError?: (msg: string) => void;
 }
@@ -22,6 +23,7 @@ export class DashboardExportManager {
       consultores,
       locPagamentosMap,
       getTripFinancialTotals,
+      consultorContextoId,
       onSuccess,
       onError
     } = options;
@@ -68,12 +70,13 @@ export class DashboardExportManager {
       return val.toFixed(2).replace('.', ',');
     };
 
-    const rows = viagensParaExportar.map(v => {
+    const rows: string[] = [];
+
+    viagensParaExportar.forEach(v => {
       const prods = Array.isArray(v.produtos) ? v.produtos : [];
       const prodNomes = prods.map((p: any) => `${p.tipo || 'Item'}: ${p.descricao || p.nome || ''}`.trim()).join(' | ');
       const fornecedores = Array.from(new Set(prods.map((p: any) => (p.fornecedor || '').trim()).filter(Boolean))).join(', ');
       const locs = Array.from(new Set(prods.map((p: any) => (p.codigo_reserva || '').trim()).filter(Boolean))).join(', ');
-      const consultorNome = v.consultor_id === user?.id ? 'Você' : (consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor');
 
       const pags = locPagamentosMap.get(v.id) || [];
       const formasNomes = Array.from(new Set(pags.map((p: any) => (p.forma_nome || p.forma_recebimento_id || '').trim()).filter(Boolean))).join(', ');
@@ -81,33 +84,107 @@ export class DashboardExportManager {
       const paxCount = Array.isArray(v.passageiros) && v.passageiros.length > 0 ? v.passageiros.length : (Number(v.pax_count) || 1);
       const tagsList = Array.from(new Set([...(v.cliente?.classificacoes || []), ...(v.tags || [])])).join(', ');
 
-      const finTotals = getTripFinancialTotals(v);
+      // Caso 1: Exportação com consultor específico ativo no filtro
+      if (consultorContextoId) {
+        const finTotals = getTripFinancialTotals(v, consultorContextoId);
+        const consultorNome = consultorContextoId === user?.id ? 'Você' : (consultores.find(c => c.id === consultorContextoId)?.nome || 'Consultor');
 
-      return [
-        escapeCsv(v.codigo_ref || v.id?.substring(0, 8) || ''),
-        escapeCsv(v.cliente?.nome || 'Cliente não identificado'),
-        escapeCsv(v.cliente?.documento || ''),
-        escapeCsv(v.cliente?.telefone || ''),
-        escapeCsv(v.cliente?.email || ''),
-        escapeCsv(origemLead),
-        escapeCsv(paxCount),
-        escapeCsv(tagsList),
-        escapeCsv(v.destino || ''),
-        escapeCsv(v.data_financeiro ? formatIsoDateToBr(v.data_financeiro) : ''),
-        escapeCsv(v.data_ida ? formatIsoDateToBr(v.data_ida) : ''),
-        escapeCsv(v.data_volta ? formatIsoDateToBr(v.data_volta) : ''),
-        escapeCsv(prodNomes),
-        escapeCsv(fornecedores),
-        escapeCsv(locs),
-        escapeCsv(formasNomes),
-        escapeCsv(formatMoedaCsv(finTotals.totalVenda)),
-        escapeCsv(formatMoedaCsv(finTotals.totalRentabilidade)),
-        escapeCsv(consultorNome),
-        escapeCsv(v.status || ''),
-        escapeCsv(v.isFinanceiroConferido ? 'OK' : 'Pendente'),
-        escapeCsv(v.isProcessoConferido ? 'OK' : 'Pendente'),
-        escapeCsv(v.voucher_geral_anexado ? 'SIM' : 'NÃO')
-      ].join(';');
+        rows.push([
+          escapeCsv(v.codigo_ref || v.id?.substring(0, 8) || ''),
+          escapeCsv(v.cliente?.nome || 'Cliente não identificado'),
+          escapeCsv(v.cliente?.documento || ''),
+          escapeCsv(v.cliente?.telefone || ''),
+          escapeCsv(v.cliente?.email || ''),
+          escapeCsv(origemLead),
+          escapeCsv(paxCount),
+          escapeCsv(tagsList),
+          escapeCsv(v.destino || ''),
+          escapeCsv(v.data_financeiro ? formatIsoDateToBr(v.data_financeiro) : ''),
+          escapeCsv(v.data_ida ? formatIsoDateToBr(v.data_ida) : ''),
+          escapeCsv(v.data_volta ? formatIsoDateToBr(v.data_volta) : ''),
+          escapeCsv(prodNomes),
+          escapeCsv(fornecedores),
+          escapeCsv(locs),
+          escapeCsv(formasNomes),
+          escapeCsv(formatMoedaCsv(finTotals.totalVenda)),
+          escapeCsv(formatMoedaCsv(finTotals.totalRentabilidade)),
+          escapeCsv(consultorNome),
+          escapeCsv(v.status || ''),
+          escapeCsv(v.isFinanceiroConferido ? 'OK' : 'Pendente'),
+          escapeCsv(v.isProcessoConferido ? 'OK' : 'Pendente'),
+          escapeCsv(v.voucher_geral_anexado ? 'SIM' : 'NÃO')
+        ].join(';'));
+        return;
+      }
+
+      // Caso 2: Exportação geral consolidada (toda a agência para fechamento)
+      const temDivisoes = Array.isArray(v.divisoes) && v.divisoes.length > 0;
+
+      if (temDivisoes) {
+        // Desmembra cada cota por consultor participante para garantir que a Tabela Dinâmica do Excel reflita exatamente o fechamento
+        v.divisoes.forEach((d: any) => {
+          const cId = d.consultor_id;
+          const cNome = cId === user?.id ? 'Você' : (consultores.find(c => c.id === cId)?.nome || 'Consultor');
+          const finTotals = getTripFinancialTotals(v, cId);
+          const percentualFormatado = `${Math.round(d.percentual || 0)}%`;
+
+          rows.push([
+            escapeCsv(v.codigo_ref ? `${v.codigo_ref} (${percentualFormatado})` : `${v.id?.substring(0, 8)} (${percentualFormatado})`),
+            escapeCsv(v.cliente?.nome || 'Cliente não identificado'),
+            escapeCsv(v.cliente?.documento || ''),
+            escapeCsv(v.cliente?.telefone || ''),
+            escapeCsv(v.cliente?.email || ''),
+            escapeCsv(origemLead),
+            escapeCsv(paxCount),
+            escapeCsv(tagsList),
+            escapeCsv(v.destino || ''),
+            escapeCsv(v.data_financeiro ? formatIsoDateToBr(v.data_financeiro) : ''),
+            escapeCsv(v.data_ida ? formatIsoDateToBr(v.data_ida) : ''),
+            escapeCsv(v.data_volta ? formatIsoDateToBr(v.data_volta) : ''),
+            escapeCsv(prodNomes),
+            escapeCsv(fornecedores),
+            escapeCsv(locs),
+            escapeCsv(formasNomes),
+            escapeCsv(formatMoedaCsv(finTotals.totalVenda)),
+            escapeCsv(formatMoedaCsv(finTotals.totalRentabilidade)),
+            escapeCsv(cNome),
+            escapeCsv(v.status || ''),
+            escapeCsv(v.isFinanceiroConferido ? 'OK' : 'Pendente'),
+            escapeCsv(v.isProcessoConferido ? 'OK' : 'Pendente'),
+            escapeCsv(v.voucher_geral_anexado ? 'SIM' : 'NÃO')
+          ].join(';'));
+        });
+      } else {
+        // Viagem 100% individual (sem divisão)
+        const consultorNome = v.consultor_id === user?.id ? 'Você' : (consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor');
+        const finTotals = getTripFinancialTotals(v, null);
+
+        rows.push([
+          escapeCsv(v.codigo_ref || v.id?.substring(0, 8) || ''),
+          escapeCsv(v.cliente?.nome || 'Cliente não identificado'),
+          escapeCsv(v.cliente?.documento || ''),
+          escapeCsv(v.cliente?.telefone || ''),
+          escapeCsv(v.cliente?.email || ''),
+          escapeCsv(origemLead),
+          escapeCsv(paxCount),
+          escapeCsv(tagsList),
+          escapeCsv(v.destino || ''),
+          escapeCsv(v.data_financeiro ? formatIsoDateToBr(v.data_financeiro) : ''),
+          escapeCsv(v.data_ida ? formatIsoDateToBr(v.data_ida) : ''),
+          escapeCsv(v.data_volta ? formatIsoDateToBr(v.data_volta) : ''),
+          escapeCsv(prodNomes),
+          escapeCsv(fornecedores),
+          escapeCsv(locs),
+          escapeCsv(formasNomes),
+          escapeCsv(formatMoedaCsv(finTotals.totalVenda)),
+          escapeCsv(formatMoedaCsv(finTotals.totalRentabilidade)),
+          escapeCsv(consultorNome),
+          escapeCsv(v.status || ''),
+          escapeCsv(v.isFinanceiroConferido ? 'OK' : 'Pendente'),
+          escapeCsv(v.isProcessoConferido ? 'OK' : 'Pendente'),
+          escapeCsv(v.voucher_geral_anexado ? 'SIM' : 'NÃO')
+        ].join(';'));
+      }
     });
 
     const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
