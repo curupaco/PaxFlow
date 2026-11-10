@@ -2195,7 +2195,7 @@ export class ConfiguracoesPage {
 
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Token de Acesso Pessoal (API) *</label>
-                <input id="input-digisac-token" type="password" placeholder="••••••••••••••••" value="${this.settings.digisacToken || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+                <input id="input-digisac-token" type="password" autocomplete="off" placeholder="••••••••••••••••" value="${this.settings.digisacToken || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
                 <p class="text-[9px] text-slate-400 mt-1">Token gerado em Menu > Conta > API.</p>
               </div>
             </div>
@@ -2711,7 +2711,12 @@ export class ConfiguracoesPage {
         this.setupEventListeners();
       } catch (err: any) {
         console.error('Erro ao salvar automações:', err);
-        this.showToast('Falha ao salvar as configurações de automações.', 'error');
+        const errMsg = err?.message || err?.details || '';
+        if (errMsg.includes('upsell_config') || err?.code === 'PGRST204' || err?.code === '42703') {
+          this.showToast('Schema desatualizado no Supabase: execute a migração SQL para restaurar a coluna "upsell_config" na View global_settings.', 'error');
+        } else {
+          this.showToast(err?.message ? `Falha ao salvar automações: ${err.message}` : 'Falha ao salvar as configurações de automações.', 'error');
+        }
       }
     });
   }
