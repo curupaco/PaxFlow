@@ -610,13 +610,31 @@ export class DashboardFilterEngine {
         if (!matches) return false;
       }
 
-      // Filtros de Datas
-      if (dataFinStart && (!v.data_financeiro || v.data_financeiro < dataFinStart)) return false;
-      if (dataFinEnd && (!v.data_financeiro || v.data_financeiro > dataFinEnd)) return false;
-      if (dataIdaStart && (!v.data_ida || v.data_ida < dataIdaStart)) return false;
-      if (dataIdaEnd && (!v.data_ida || v.data_ida > dataIdaEnd)) return false;
-      if (dataVoltaStart && (!v.data_volta || v.data_volta < dataVoltaStart)) return false;
-      if (dataVoltaEnd && (!v.data_volta || v.data_volta > dataVoltaEnd)) return false;
+      // Filtros de Datas (compatíveis com timestamps ISO e datas brutas YYYY-MM-DD)
+      if (dataFinStart) {
+        const vFin = (v.data_financeiro || '').substring(0, 10);
+        if (!vFin || vFin < dataFinStart) return false;
+      }
+      if (dataFinEnd) {
+        const vFin = (v.data_financeiro || '').substring(0, 10);
+        if (!vFin || vFin > dataFinEnd) return false;
+      }
+      if (dataIdaStart) {
+        const vIda = (v.data_ida || '').substring(0, 10);
+        if (!vIda || vIda < dataIdaStart) return false;
+      }
+      if (dataIdaEnd) {
+        const vIda = (v.data_ida || '').substring(0, 10);
+        if (!vIda || vIda > dataIdaEnd) return false;
+      }
+      if (dataVoltaStart) {
+        const vVolta = (v.data_volta || '').substring(0, 10);
+        if (!vVolta || vVolta < dataVoltaStart) return false;
+      }
+      if (dataVoltaEnd) {
+        const vVolta = (v.data_volta || '').substring(0, 10);
+        if (!vVolta || vVolta > dataVoltaEnd) return false;
+      }
 
       // Filtro Mês/Ano Competência
       if (advMesAno) {

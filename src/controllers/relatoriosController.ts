@@ -334,7 +334,13 @@ export function calcularFaturamentoLucratividade(
     });
 
     if (!isFiltroAtivo) {
-      faturamentoBruto += Number(v.valor_total || v.valorTotal || 0) * fatiaVenda;
+      const prodsNaoCancelados = (v.produtos || []).filter((p: any) => p.status !== 'cancelado');
+      if (prodsNaoCancelados.length > 0) {
+        const totalVendaProds = prodsNaoCancelados.reduce((acc: number, p: any) => acc + (Number(p.valor_venda ?? p.valorVenda ?? 0) * fatiaVenda), 0);
+        faturamentoBruto += totalVendaProds;
+      } else {
+        faturamentoBruto += Number(v.valor_total || v.valorTotal || 0) * fatiaVenda;
+      }
       totalSubtrair += subViagem;
     }
   });

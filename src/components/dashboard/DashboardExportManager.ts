@@ -72,6 +72,16 @@ export class DashboardExportManager {
 
     const rows: string[] = [];
 
+    const resolverNomeConsultor = (id?: string): string => {
+      if (!id) return 'Consultor';
+      const found = consultores.find(c => c.id === id);
+      if (found?.nome) return found.nome;
+      if (id === user?.id) {
+        return user.user_metadata?.nome || user.user_metadata?.name || user.email || 'Consultor';
+      }
+      return 'Consultor';
+    };
+
     viagensParaExportar.forEach(v => {
       const prods = Array.isArray(v.produtos) ? v.produtos : [];
       const prodNomes = prods.map((p: any) => `${p.tipo || 'Item'}: ${p.descricao || p.nome || ''}`.trim()).join(' | ');
@@ -87,7 +97,7 @@ export class DashboardExportManager {
       // Caso 1: Exportação com consultor específico ativo no filtro
       if (consultorContextoId) {
         const finTotals = getTripFinancialTotals(v, consultorContextoId);
-        const consultorNome = consultorContextoId === user?.id ? 'Você' : (consultores.find(c => c.id === consultorContextoId)?.nome || 'Consultor');
+        const consultorNome = resolverNomeConsultor(consultorContextoId);
 
         rows.push([
           escapeCsv(v.codigo_ref || v.id?.substring(0, 8) || ''),
@@ -124,7 +134,7 @@ export class DashboardExportManager {
         // Desmembra cada cota por consultor participante para garantir que a Tabela Dinâmica do Excel reflita exatamente o fechamento
         v.divisoes.forEach((d: any) => {
           const cId = d.consultor_id;
-          const cNome = cId === user?.id ? 'Você' : (consultores.find(c => c.id === cId)?.nome || 'Consultor');
+          const cNome = resolverNomeConsultor(cId);
           const finTotals = getTripFinancialTotals(v, cId);
           const percentualFormatado = `${Math.round(d.percentual || 0)}%`;
 
@@ -156,7 +166,7 @@ export class DashboardExportManager {
         });
       } else {
         // Viagem 100% individual (sem divisão)
-        const consultorNome = v.consultor_id === user?.id ? 'Você' : (consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor');
+        const consultorNome = resolverNomeConsultor(v.consultor_id);
         const finTotals = getTripFinancialTotals(v, null);
 
         rows.push([

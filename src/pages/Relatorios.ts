@@ -440,7 +440,7 @@ export class RelatoriosPage {
         `);
 
         if (janelaInicio) {
-          viaQuery = viaQuery.or(`data_ida.gte.${janelaInicio},created_at.gte.${janelaInicio}`);
+          viaQuery = viaQuery.or(`data_financeiro.gte.${janelaInicio},data_ida.gte.${janelaInicio},created_at.gte.${janelaInicio}`);
         }
 
         if (!isAdmin) {

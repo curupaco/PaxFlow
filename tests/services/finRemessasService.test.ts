@@ -111,6 +111,7 @@ describe('FinRemessasService - Testes Subcutâneos', () => {
       remessaId: 'remessa-uuid-123',
       dataPagamento: '2026-11-10',
       contaBancariaId: 'banco-itau-id',
+      formaPagamento: 'pix',
       comprovanteUrl: 'https://storage/comprovante.pdf',
       usuarioId: 'admin-id'
     });

@@ -7,6 +7,7 @@ import {
   FinCategoria, 
   FinSubcategoria, 
   FinContaBancaria,
+  FinFornecedor,
   FinFiltrosContas,
   FinResumoLiquidez,
   FinPrevistoVsRealizadoItem
@@ -14,6 +15,7 @@ import {
 import { FinContasPagarService } from '../services/finContasPagarService';
 import { FinPlanoContasService } from '../services/finPlanoContasService';
 import { FinRemessasService } from '../services/finRemessasService';
+import { FinFornecedoresService } from '../services/finFornecedoresService';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { renderHelpIcon } from '../utils/helpHelper';
 import { ConciliacaoPage } from './Conciliacao';
@@ -33,14 +35,25 @@ export class FinanceiroPage {
   // Listagens de dados
   private contas: FinContaPagar[] = [];
   private remessas: FinRemessa[] = [];
+  private fornecedores: FinFornecedor[] = [];
   private tiposCusto: FinTipoCusto[] = [];
   private categorias: FinCategoria[] = [];
   private subcategorias: FinSubcategoria[] = [];
   private contasBancarias: FinContaBancaria[] = [];
 
   // Modo de visualização de agrupamento em Contas a Pagar
-  private filtroAgrupamento: 'todos' | 'avulsos' | 'remessas' = 'todos';
+  private filtroAgrupamento: 'todos' | 'avulsos' = 'todos';
   private titulosSelecionados: Set<string> = new Set();
+  private buscaFornecedorTermo: string = '';
+
+  private escapeHtml(s: any): string {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
   // Indicadores de liquidez
   private resumo: FinResumoLiquidez = {
@@ -129,7 +142,7 @@ export class FinanceiroPage {
       'plano-contas': 'plano'
     };
     if (slug === 'remessas' || slug === 'remessas-agrupadas') {
-      this.filtroAgrupamento = 'remessas';
+      this.filtroAgrupamento = 'todos';
     }
     const target = mapa[slug] || 'contas';
     if (this.activeTab !== target) {
@@ -147,14 +160,16 @@ export class FinanceiroPage {
   }
 
   private async carregarCadastrosBase(): Promise<void> {
-    const [tipos, categorias, bancos] = await Promise.all([
+    const [tipos, categorias, bancos, fornecedores] = await Promise.all([
       FinPlanoContasService.listarTiposCusto(),
       FinPlanoContasService.listarCategorias(),
-      FinPlanoContasService.listarContasBancarias(false) // Carrega todas (ativas e inativas) para gestão no Plano de Contas
+      FinPlanoContasService.listarContasBancarias(false), // Carrega todas (ativas e inativas) para gestão no Plano de Contas
+      FinFornecedoresService.listarFornecedores().catch(() => [])
     ]);
     this.tiposCusto = tipos;
     this.categorias = categorias;
     this.contasBancarias = bancos;
+    this.fornecedores = fornecedores;
   }
 
   private async carregarDadosAbaAtiva(): Promise<void> {
@@ -172,6 +187,8 @@ export class FinanceiroPage {
         // O card KPI de títulos em atraso reflete o passivo global acumulado da agência
         this.resumo.totalAtrasadas = metricasAtraso.totalAtrasadas;
         this.resumo.qtdAtrasadas = metricasAtraso.qtdAtrasadas;
+      } else if (this.activeTab === 'plano') {
+        this.fornecedores = await FinFornecedoresService.listarFornecedores().catch(() => []);
       }
     } catch (err) {
       console.error('[FinanceiroPage] Erro ao carregar dados:', err);
@@ -449,6 +466,46 @@ export class FinanceiroPage {
       ? contasAvulsas 
       : this.contas;
 
+    type LinhaTabelaItem = 
+      | { tipo: 'lote'; id: string; remessa: FinRemessa; itens: FinContaPagar[]; dataRef: string }
+      | { tipo: 'avulso'; id: string; conta: FinContaPagar; dataRef: string };
+
+    const linhasParaExibir: LinhaTabelaItem[] = [];
+    const remessasProcessadas = new Set<string>();
+
+    for (const c of contasParaExibir) {
+      if (c.remessa_id) {
+        if (this.filtroAgrupamento === 'todos' && !remessasProcessadas.has(c.remessa_id)) {
+          remessasProcessadas.add(c.remessa_id);
+          const rem = this.remessas.find(r => r.id === c.remessa_id) || {
+            id: c.remessa_id,
+            favorecido: c.favorecido,
+            data_prevista: c.data_vencimento,
+            valor_total: c.valor_nominal,
+            status: c.status === 'pago' ? 'paga' : 'aberta'
+          } as FinRemessa;
+
+          const itensDoLote = this.contas.filter(it => it.remessa_id === c.remessa_id);
+          linhasParaExibir.push({
+            tipo: 'lote',
+            id: rem.id,
+            remessa: rem,
+            itens: itensDoLote.length > 0 ? itensDoLote : [c],
+            dataRef: rem.data_pagamento || rem.data_prevista || c.data_vencimento
+          });
+        }
+      } else {
+        linhasParaExibir.push({
+          tipo: 'avulso',
+          id: c.id,
+          conta: c,
+          dataRef: c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento
+        });
+      }
+    }
+
+    linhasParaExibir.sort((a, b) => (b.dataRef || '').localeCompare(a.dataRef || ''));
+
     const totalSelecionado = Array.from(this.titulosSelecionados).reduce((acc, id) => {
       const conta = this.contas.find(c => c.id === id);
       return acc + (conta ? Number(conta.valor_nominal || 0) : 0);
@@ -528,9 +585,6 @@ export class FinanceiroPage {
               </button>
               <button data-modo="avulsos" class="btn-filtro-agrupamento flex-1 sm:flex-initial px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${this.filtroAgrupamento === 'avulsos' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'}">
                 <span>📄</span> Apenas Avulsos (${contasAvulsas.length})
-              </button>
-              <button data-modo="remessas" class="btn-filtro-agrupamento flex-1 sm:flex-initial px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${this.filtroAgrupamento === 'remessas' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'}">
-                <span>📦</span> Lotes de Remessa (${this.remessas.length})
               </button>
             </div>
 
@@ -737,658 +791,452 @@ export class FinanceiroPage {
           </div>
         ` : ''}
 
-        ${this.filtroAgrupamento === 'remessas' ? `
-          <!-- VISÃO DE LOTES DE REMESSA CONSOLIDADOS (ACCORDION MESTRE-DETALHE) -->
-          <!-- Cards de Indicadores de Remessas -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Lotes Pendentes</span>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 whitespace-nowrap">
-                  ${qtdRemessasAbertas} lotes
-                </span>
-              </div>
-              <div class="mt-3">
-                <span class="block text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                  ${formatarMoeda(totalRemessasAbertas)}
-                </span>
-                <span class="block text-[11px] text-slate-400 font-medium mt-1">Aguardando liquidação conjunta</span>
-              </div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Total Liquidado</span>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 whitespace-nowrap">
-                  ${qtdRemessasPagas} pagas
-                </span>
-              </div>
-              <div class="mt-3">
-                <span class="block text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                  ${formatarMoeda(totalRemessasPagas)}
-                </span>
-                <span class="block text-[11px] text-slate-400 font-medium mt-1">Lotes de remessa com baixa concluída</span>
-              </div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div class="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400">Média por Lote</span>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 whitespace-nowrap">
-                  ${this.remessas.length} total
-                </span>
-              </div>
-              <div class="mt-3">
-                <span class="block text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
-                  ${formatarMoeda(mediaPorRemessa)}
-                </span>
-                <span class="block text-[11px] text-slate-400 font-medium mt-1">Ticket médio das remessas consolidadas</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tabela Desktop de Lotes de Remessa -->
-          <div class="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-            <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
-              <table class="w-full text-left border-collapse min-w-[800px]">
-                <thead>
-                  <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
-                    <th class="py-3 px-4 w-10 text-center"></th>
-                    <th class="py-3 px-4">Favorecido Principal / Nome do Lote</th>
-                    <th class="py-3 px-4">Data Prevista</th>
-                    <th class="py-3 px-4 text-center">Qtd. Títulos</th>
-                    <th class="py-3 px-4 text-right">Valor Consolidado</th>
-                    <th class="py-3 px-4 text-center">Status</th>
-                    <th class="py-3 px-4 w-36 text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300">
-                  ${this.remessas.length === 0 ? `
-                    <tr>
-                      <td colspan="7" class="py-12 text-center text-slate-400 font-bold">
-                        Nenhum lote de remessa cadastrado. Selecione títulos avulsos na visão "Avulsos" e clique em "Agrupar em Lote de Remessa".
-                      </td>
-                    </tr>
-                  ` : this.remessas.map(rem => {
-                    const expandida = this.remessasExpandidas.has(rem.id);
-                    const itens = rem.itens || [];
-
-                    return `
-                      <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                        <td class="py-3 px-2 text-center">
-                          <button data-remessa-id="${rem.id}" class="btn-toggle-accordion p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition cursor-pointer">
-                            ${expandida ? '▼' : '▶'}
-                          </button>
-                        </td>
-                        <td class="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
-                          ${rem.favorecido}
-                          ${rem.observacoes ? `<span class="text-[10px] text-slate-400 block font-normal">${rem.observacoes}</span>` : ''}
-                        </td>
-                        <td class="py-3 px-4 whitespace-nowrap">${formatarData(rem.data_prevista)}</td>
-                        <td class="py-3 px-4 text-center whitespace-nowrap font-bold">${itens.length || 0}</td>
-                        <td class="py-3 px-4 text-right font-black text-slate-900 dark:text-slate-100 whitespace-nowrap">${formatarMoeda(rem.valor_total)}</td>
-                        <td class="py-3 px-4 text-center whitespace-nowrap">
-                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase ${rem.status === 'paga' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-                            ${rem.status}
-                          </span>
-                        </td>
-                        <td class="py-3 px-4 w-36 text-center whitespace-nowrap">
-                          <div class="flex items-center justify-center gap-1.5">
-                            ${rem.status !== 'paga' ? `
-                              <button data-remessa-id="${rem.id}" class="btn-baixar-remessa px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition cursor-pointer">
-                                Baixar
-                              </button>
-                              <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa px-2 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 rounded-lg font-bold text-[10px] transition cursor-pointer" title="Desfazer lote e devolver contas">
-                                Desfazer
-                              </button>
-                            ` : `
-                              <span class="text-[10px] text-slate-400 font-bold">Liquidada</span>
-                            `}
-                          </div>
-                        </td>
-                      </tr>
-
-                      ${expandida ? `
-                        <tr class="bg-slate-50/70 dark:bg-slate-950/60">
-                          <td colspan="7" class="p-4">
-                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-xs">
-                              <span class="text-[10px] uppercase tracking-wider font-black text-indigo-600 dark:text-indigo-400 block mb-2">Títulos Componentes Desta Remessa</span>
-                              <div class="space-y-2">
-                                ${itens.map(it => `
-                                  <div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-none">
-                                    <div>
-                                      <span class="font-bold text-slate-800 dark:text-slate-200">${it.descricao || 'Item de pagamento'}</span>
-                                      <span class="text-[10px] text-slate-400 block">${it.categoria?.nome || 'Geral'}</span>
-                                    </div>
-                                    <div class="text-right">
-                                      <span class="font-black text-slate-900 dark:text-slate-100">${formatarMoeda(it.valor_nominal)}</span>
-                                      <span class="text-[9px] block uppercase font-bold ${it.status === 'pago' ? 'text-emerald-600' : 'text-amber-600'}">${it.status}</span>
-                                    </div>
-                                  </div>
-                                `).join('')}
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      ` : ''}
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Visão Mobile: Lista de Cartões de Remessas -->
-          <div class="block md:hidden space-y-3">
-            ${this.remessas.length === 0 ? `
-              <div class="p-8 text-center text-slate-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
-                Nenhum lote de remessa cadastrado.
-              </div>
-            ` : this.remessas.map(rem => {
-              const expandida = this.remessasExpandidas.has(rem.id);
-              const itens = rem.itens || [];
-
-              return `
-                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
-                  <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                    <span class="text-xs font-black text-slate-900 dark:text-slate-100">Previsto: ${formatarData(rem.data_prevista)}</span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${rem.status === 'paga' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-                      ${rem.status}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span class="font-extrabold text-slate-900 dark:text-slate-100 text-sm block">${rem.favorecido}</span>
-                    ${rem.observacoes ? `<span class="text-xs text-slate-500 dark:text-slate-400 block mt-0.5">${rem.observacoes}</span>` : ''}
-                    <span class="text-[11px] text-slate-400 font-bold block mt-1">Lote com ${itens.length} título(s)</span>
-                  </div>
-
-                  <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <div>
-                      <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Consolidado</span>
-                      <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(rem.valor_total)}</span>
-                    </div>
-
-                    <div class="flex items-center gap-1.5">
-                      <button data-remessa-id="${rem.id}" class="btn-toggle-accordion h-[36px] px-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer">
-                        ${expandida ? 'Fechar' : 'Itens'}
-                      </button>
-
-                      ${rem.status !== 'paga' ? `
-                        <button data-remessa-id="${rem.id}" class="btn-baixar-remessa h-[36px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer">
-                          Baixar
-                        </button>
-                        <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa h-[36px] px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 rounded-xl font-bold text-xs transition cursor-pointer" title="Desfazer lote">
-                          Desfazer
-                        </button>
-                      ` : ''}
-                    </div>
-                  </div>
-
-                  ${expandida ? `
-                    <div class="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3 border border-slate-200/60 dark:border-slate-800 space-y-2 mt-2">
-                      <span class="text-[10px] uppercase tracking-wider font-black text-indigo-600 dark:text-indigo-400 block">Títulos Deste Lote:</span>
-                      ${itens.map(it => `
-                        <div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-none">
-                          <div>
-                            <span class="font-bold text-slate-800 dark:text-slate-200 block">${it.descricao || 'Item de pagamento'}</span>
-                            <span class="text-[10px] text-slate-400">${it.categoria?.nome || 'Geral'}</span>
-                          </div>
-                          <div class="text-right">
-                            <span class="font-black text-slate-900 dark:text-slate-100">${formatarMoeda(it.valor_nominal)}</span>
-                            <span class="text-[9px] block uppercase font-bold ${it.status === 'pago' ? 'text-emerald-600' : 'text-amber-600'}">${it.status}</span>
-                          </div>
-                        </div>
-                      `).join('')}
-                    </div>
-                  ` : ''}
-                </div>
-              `;
-            }).join('')}
-          </div>
-        ` : `
-          <!-- VISÃO PADRÃO: LISTAGEM DE TÍTULOS (TODOS OU APENAS AVULSOS) -->
-          <!-- 1. Visão Desktop: Tabela com Rolagem Defensiva (hidden md:block) -->
-          <div class="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-            <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
-              <table class="w-full text-left border-collapse min-w-[900px]">
-                <thead>
-                  <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
-                    <th class="py-3 px-3 w-10 text-center">
-                      <input type="checkbox" id="check-selecionar-todas-contas" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" title="Selecionar todos os títulos avulsos pendentes" />
-                    </th>
-                    <th class="py-3 px-4">Data</th>
-                    <th class="py-3 px-4">Favorecido / Descrição</th>
-                    <th class="py-3 px-4">Tipo / Categoria</th>
-                    <th class="py-3 px-4 text-right">Valor Nominal</th>
-                    <th class="py-3 px-4 text-right">Valor Pago</th>
-                    <th class="py-3 px-4 text-center">Status</th>
-                    <th class="py-3 px-4 w-32 text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300">
-                  ${contasParaExibir.length === 0 ? `
-                    <tr>
-                      <td colspan="8" class="py-12 text-center text-slate-400 font-bold">
-                        Nenhuma conta localizada para o período e filtros selecionados.
-                      </td>
-                    </tr>
-                  ` : contasParaExibir.map(c => {
-                    const ehEstimado = !!c.valor_estimado && c.status !== 'pago';
-                    const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
-                    const podeSelecionar = !c.remessa_id && (c.status === 'pendente' || c.status === 'atrasado');
-
-                    const hojeIso = new Date().toISOString().split('T')[0];
-                    const dataVencIso = (c.data_vencimento_operacional || c.data_vencimento || '').split('T')[0];
-                    let chipVencimento = '';
-                    if (c.status !== 'pago' && c.status !== 'cancelado' && dataVencIso) {
-                      const diffTime = new Date(dataVencIso + 'T12:00:00').getTime() - new Date(hojeIso + 'T12:00:00').getTime();
-                      const diffDias = Math.round(diffTime / (1000 * 60 * 60 * 24));
-                      if (diffDias < 0) {
-                        const atraso = Math.abs(diffDias);
-                        chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 inline-flex items-center gap-1 shadow-2xs">🔴 ${atraso}d em atraso</span>`;
-                      } else if (diffDias === 0) {
-                        chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1 animate-pulse shadow-2xs">🚨 Vence Hoje</span>`;
-                      } else if (diffDias <= 3) {
-                        chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 inline-flex items-center gap-1">⏳ Vence em ${diffDias}d</span>`;
-                      }
-                    }
-
-                    return `
-                      <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                        <td class="py-3 px-3 text-center">
-                          ${podeSelecionar ? `
-                            <input type="checkbox" data-id="${c.id}" class="check-selecionar-conta h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${this.titulosSelecionados.has(c.id) ? 'checked' : ''} />
-                          ` : ''}
-                        </td>
-
-                        <td class="py-3 px-4 whitespace-nowrap">
-                          ${c.status === 'pago' ? `
-                            <span class="font-extrabold text-slate-900 dark:text-slate-100 block" title="Data do pagamento">${formatarData(c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento)}</span>
-                            <span class="text-[9px] text-slate-400 block font-semibold mt-0.5" title="Vencimento original da obrigação">Venc: ${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
-                          ` : `
-                            <span class="font-extrabold text-slate-900 dark:text-slate-100 block">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
-                            ${chipVencimento ? `<div class="block">${chipVencimento}</div>` : ''}
-                            ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
-                              <span class="text-[9px] text-slate-400 block font-semibold mt-0.5" title="Vencimento nominal no final de semana / feriado">Nominal: ${formatarData(c.data_vencimento)}</span>
-                            ` : ''}
-                          `}
-                        </td>
-
-                        <td class="py-3 px-4">
-                          <div class="flex items-center gap-1.5 flex-wrap">
-                            <span class="font-bold text-slate-800 dark:text-slate-100 truncate max-w-xs">${c.favorecido}</span>
-                            ${c.remessa_id ? `
-                              <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/40 inline-flex items-center gap-0.5" title="Agrupado em Lote de Remessa">
-                                📦 Lote
-                              </span>
-                            ` : ''}
-                          </div>
-                          <span class="text-[10px] text-slate-400 block truncate max-w-xs">${c.descricao || 'Despesa'} ${parcelaLabel}</span>
-                        </td>
-
-                        <td class="py-3 px-4 whitespace-nowrap">
-                          <span class="font-bold text-slate-700 dark:text-slate-300 block">${c.categoria?.nome || 'Geral'}</span>
-                          <span class="text-[10px] text-slate-400 block">${c.tipo_custo?.nome || 'Operacional'}</span>
-                        </td>
-
-                        <td class="py-3 px-4 text-right whitespace-nowrap">
-                          <span class="font-extrabold text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
-                          ${ehEstimado ? `
-                            <span class="ml-1 text-[9px] bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 px-1 py-0.5 rounded font-black uppercase">Estimado</span>
-                          ` : ''}
-                        </td>
-
-                        <td class="py-3 px-4 text-right whitespace-nowrap">
-                          <span class="font-extrabold ${c.status === 'pago' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
-                            ${c.valor_pago && c.valor_pago > 0 ? formatarMoeda(c.valor_pago) : '-'}
-                          </span>
-                        </td>
-
-                        <td class="py-3 px-4 text-center whitespace-nowrap">
-                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
-                            ${c.status}
-                          </span>
-                        </td>
-
-                        <td class="py-3 px-4 w-32 text-center whitespace-nowrap">
-                          <div class="flex items-center justify-center gap-1">
-                            ${c.status !== 'pago' && c.status !== 'cancelado' ? `
-                              <button data-id="${c.id}" class="btn-baixar-conta p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg transition cursor-pointer" title="Dar Baixa Inteligente">
-                                ✅
-                              </button>
-                            ` : ''}
-
-                            <button data-id="${c.id}" class="btn-editar-conta p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg transition cursor-pointer" title="Editar Título">
-                              ✏️
-                            </button>
-
-                            ${c.comprovante_url ? `
-                              <a href="${c.comprovante_url}" target="_blank" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg transition cursor-pointer" title="Ver Comprovante Anexo">
-                                📎
-                              </a>
-                            ` : ''}
-
-                            ${c.status === 'pago' && isAdmin ? `
-                              <button data-id="${c.id}" class="btn-estornar-conta p-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-lg transition cursor-pointer" title="Estornar Baixa (Admin)">
-                                ↩️
-                              </button>
-                            ` : ''}
-
-                            ${c.status !== 'cancelado' && isAdmin ? `
-                              <button data-id="${c.id}" class="btn-cancelar-conta p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-lg transition cursor-pointer" title="Cancelar Título (Admin)">
-                                🚫
-                              </button>
-                            ` : ''}
-                          </div>
-                        </td>
-                      </tr>
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 2. Visão Mobile: Lista de Cards de Pagamento Otimizados (block md:hidden) -->
-          <div class="block md:hidden space-y-3">
-            ${contasParaExibir.length === 0 ? `
-              <div class="p-8 text-center text-slate-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
-                Nenhuma conta localizada para o período e filtros selecionados.
-              </div>
-            ` : contasParaExibir.map(c => {
-              const ehEstimado = !!c.valor_estimado && c.status !== 'pago';
-              const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : '';
-              const podeSelecionar = !c.remessa_id && (c.status === 'pendente' || c.status === 'atrasado');
-
-              const hojeIsoMobile = new Date().toISOString().split('T')[0];
-              const dataVencIsoMobile = (c.data_vencimento_operacional || c.data_vencimento || '').split('T')[0];
-              let chipVencimentoMobile = '';
-              if (c.status !== 'pago' && c.status !== 'cancelado' && dataVencIsoMobile) {
-                const diffTime = new Date(dataVencIsoMobile + 'T12:00:00').getTime() - new Date(hojeIsoMobile + 'T12:00:00').getTime();
-                const diffDias = Math.round(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDias < 0) {
-                  const atraso = Math.abs(diffDias);
-                  chipVencimentoMobile = `<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 inline-flex items-center gap-1 shadow-2xs">🔴 ${atraso}d em atraso</span>`;
-                } else if (diffDias === 0) {
-                  chipVencimentoMobile = `<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1 animate-pulse shadow-2xs">🚨 Vence Hoje</span>`;
-                } else if (diffDias <= 3) {
-                  chipVencimentoMobile = `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 inline-flex items-center gap-1">⏳ Vence em ${diffDias}d</span>`;
-                }
-              }
-
-              return `
-                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
-                  <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                    <div class="flex items-center gap-2 flex-wrap">
-                      ${podeSelecionar ? `
-                        <input type="checkbox" data-id="${c.id}" class="check-selecionar-conta h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${this.titulosSelecionados.has(c.id) ? 'checked' : ''} />
-                      ` : ''}
-                      ${c.status === 'pago' ? `
-                        <div class="flex flex-col">
-                          <span class="text-xs font-black text-slate-900 dark:text-slate-100" title="Data do pagamento">${formatarData(c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento)}</span>
-                          <span class="text-[9px] text-slate-400 font-semibold" title="Vencimento original">Venc: ${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
-                        </div>
-                      ` : `
-                        <div class="flex flex-col">
-                          <div class="flex items-center gap-1.5 flex-wrap">
-                            <span class="text-xs font-black text-slate-900 dark:text-slate-100">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
-                            ${chipVencimentoMobile}
-                          </div>
-                          ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
-                            <span class="text-[9px] text-slate-400 font-semibold mt-0.5">Nominal: ${formatarData(c.data_vencimento)}</span>
-                          ` : ''}
-                        </div>
-                      `}
-                      ${c.remessa_id ? `
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/40 inline-flex items-center gap-0.5">
-                          📦 Lote
-                        </span>
-                      ` : ''}
-                    </div>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
-                      ${c.status}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span class="font-extrabold text-slate-900 dark:text-slate-100 text-sm block">${c.favorecido}</span>
-                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">${c.descricao || 'Despesa'} ${parcelaLabel}</span>
-                    <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                        ${c.categoria?.nome || 'Geral'}
-                      </span>
-                      <span class="text-[10px] text-slate-400 font-semibold">• ${c.tipo_custo?.nome || 'Operacional'}</span>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <div>
-                      <span class="text-[10px] uppercase font-bold text-slate-400 block">Valor</span>
-                      <div class="flex items-baseline gap-1">
-                        <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
-                        ${ehEstimado ? `<span class="text-[9px] text-sky-600 font-bold uppercase">(Estimado)</span>` : ''}
-                      </div>
-                      ${c.valor_pago && c.valor_pago > 0 ? `
-                        <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">Pago: ${formatarMoeda(c.valor_pago)}</span>
-                      ` : ''}
-                    </div>
-
-                    <div class="flex items-center gap-1.5">
-                      ${c.status !== 'pago' && c.status !== 'cancelado' ? `
-                        <button data-id="${c.id}" class="btn-baixar-conta h-[36px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1" title="Dar Baixa">
-                          <span>✓</span> Baixar
-                        </button>
-                      ` : ''}
-
-                      <button data-id="${c.id}" class="btn-editar-conta h-[36px] w-[36px] flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer" title="Editar">
-                        ✏️
-                      </button>
-
-                      ${c.comprovante_url ? `
-                        <a href="${c.comprovante_url}" target="_blank" class="h-[36px] w-[36px] flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl transition cursor-pointer" title="Comprovante">
-                          📎
-                        </a>
-                      ` : ''}
-
-                      ${c.status === 'pago' && isAdmin ? `
-                        <button data-id="${c.id}" class="btn-estornar-conta h-[36px] w-[36px] flex items-center justify-center bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl transition cursor-pointer" title="Estornar Baixa">
-                          ↩️
-                        </button>
-                      ` : ''}
-
-                      ${c.status !== 'cancelado' && isAdmin ? `
-                        <button data-id="${c.id}" class="btn-cancelar-conta h-[36px] w-[36px] flex items-center justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl transition cursor-pointer" title="Cancelar Título">
-                          🚫
-                        </button>
-                      ` : ''}
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `}
-      </div>
-    `;
-  }
-
-  // ==========================================================================
-  // ABA 2: REMESSAS AGRUPADAS (MESTRE-DETALHE ACCORDION)
-  // ==========================================================================
-  private renderAbaRemessas(): string {
-    const formatarMoeda = (val: number) => 
-      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
-
-    const formatarData = (dStr?: string) => {
-      if (!dStr) return '-';
-      const [y, m, d] = dStr.split('-');
-      return `${d}/${m}/${y}`;
-    };
-
-    return `
-      <div class="space-y-4">
-        <!-- 1. Visão Desktop: Tabela de Remessas com Rolagem Defensiva -->
+        <!-- VISÃO UNIFICADA: LISTAGEM DE TÍTULOS E LOTES DE REMESSA (ACCORDION MESTRE-DETALHE) -->
+        <!-- 1. Visão Desktop: Tabela com Rolagem Defensiva (hidden md:block) -->
         <div class="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
           <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
-            <table class="w-full text-left border-collapse min-w-[800px]">
+            <table class="w-full text-left border-collapse min-w-[950px]">
               <thead>
                 <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
-                  <th class="py-3 px-4 w-10 text-center"></th>
-                  <th class="py-3 px-4">Favorecido Principal</th>
-                  <th class="py-3 px-4">Data Prevista</th>
-                  <th class="py-3 px-4 text-center">Qtd. Títulos</th>
-                  <th class="py-3 px-4 text-right">Valor Consolidado</th>
+                  <th class="py-3 px-3 w-10 text-center">
+                    <input type="checkbox" id="check-selecionar-todas-contas" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" title="Selecionar todos os títulos avulsos pendentes" />
+                  </th>
+                  <th class="py-3 px-4">Data</th>
+                  <th class="py-3 px-4">Favorecido / Descrição</th>
+                  <th class="py-3 px-4">Tipo / Categoria</th>
+                  <th class="py-3 px-4 text-right">Valor Nominal</th>
+                  <th class="py-3 px-4 text-right">Valor Pago</th>
                   <th class="py-3 px-4 text-center">Status</th>
                   <th class="py-3 px-4 w-36 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300">
-                ${this.remessas.length === 0 ? `
+                ${linhasParaExibir.length === 0 ? `
                   <tr>
-                    <td colspan="7" class="py-12 text-center text-slate-400 font-bold">
-                      Nenhuma remessa agrupada encontrada. Clique em "+ Agrupar Nova Remessa" para consolidar pagamentos.
+                    <td colspan="8" class="py-12 text-center text-slate-400 font-bold">
+                      Nenhuma conta ou lote localizado para o período e filtros selecionados.
                     </td>
                   </tr>
-                ` : this.remessas.map(rem => {
-                  const expandida = this.remessasExpandidas.has(rem.id);
-                  const itens = rem.itens || [];
+                ` : linhasParaExibir.map(item => {
+                  if (item.tipo === "lote") {
+                    const rem = item.remessa;
+                    const itens = item.itens;
+                    const expandida = this.remessasExpandidas.has(rem.id);
+                    const totalItens = itens.reduce((acc, it) => acc + Number(it.valor_nominal || 0), 0);
+                    const totalPagoItens = itens.reduce((acc, it) => acc + Number(it.valor_pago || 0), 0);
 
-                  return `
-                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                      <td class="py-3 px-2 text-center">
-                        <button data-remessa-id="${rem.id}" class="btn-toggle-accordion p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition cursor-pointer">
-                          ${expandida ? '▼' : '▶'}
-                        </button>
-                      </td>
-                      <td class="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
-                        ${rem.favorecido}
-                        ${rem.observacoes ? `<span class="text-[10px] text-slate-400 block font-normal">${rem.observacoes}</span>` : ''}
-                      </td>
-                      <td class="py-3 px-4 whitespace-nowrap">${formatarData(rem.data_prevista)}</td>
-                      <td class="py-3 px-4 text-center whitespace-nowrap font-bold">${itens.length || 0}</td>
-                      <td class="py-3 px-4 text-right font-black text-slate-900 dark:text-slate-100 whitespace-nowrap">${formatarMoeda(rem.valor_total)}</td>
-                      <td class="py-3 px-4 text-center whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase ${rem.status === 'paga' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-                          ${rem.status}
-                        </span>
-                      </td>
-                      <td class="py-3 px-4 w-36 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center gap-1.5">
-                          ${rem.status !== 'paga' ? `
-                            <button data-remessa-id="${rem.id}" class="btn-baixar-remessa px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition cursor-pointer">
-                              Baixar
-                            </button>
-                            <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa px-2 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 rounded-lg font-bold text-[10px] transition cursor-pointer" title="Desfazer lote e devolver contas">
-                              Desfazer
-                            </button>
-                          ` : `
-                            <span class="text-[10px] text-slate-400 font-bold">Liquidada</span>
-                          `}
-                        </div>
-                      </td>
-                    </tr>
+                    return `
+                      <!-- LINHA MESTRE DO LOTE CONSOLIDADO -->
+                      <tr class="bg-indigo-50/60 dark:bg-indigo-950/40 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 transition-colors border-y border-indigo-100/80 dark:border-indigo-900/50 font-semibold">
+                        <td class="py-3 px-3 text-center">
+                          <span class="text-sm select-none" title="Lote de Remessa Agrupada">📦</span>
+                        </td>
 
-                    ${expandida ? `
-                      <tr class="bg-slate-50/70 dark:bg-slate-950/60">
-                        <td colspan="7" class="p-4">
-                          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-xs">
-                            <span class="text-[10px] uppercase tracking-wider font-black text-indigo-600 dark:text-indigo-400 block mb-2">Títulos Componentes Desta Remessa</span>
-                            <div class="space-y-2">
-                              ${itens.map(it => `
-                                <div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-none">
-                                  <div>
-                                    <span class="font-bold text-slate-800 dark:text-slate-200">${it.descricao || 'Item de pagamento'}</span>
-                                    <span class="text-[10px] text-slate-400 block">${it.categoria?.nome || 'Geral'}</span>
-                                  </div>
-                                  <div class="text-right">
-                                    <span class="font-black text-slate-900 dark:text-slate-100">${formatarMoeda(it.valor_nominal)}</span>
-                                    <span class="text-[9px] block uppercase font-bold ${it.status === 'pago' ? 'text-emerald-600' : 'text-amber-600'}">${it.status}</span>
-                                  </div>
-                                </div>
-                              `).join('')}
-                            </div>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                          <button type="button" data-remessa-id="${rem.id}" class="btn-toggle-remessa inline-flex items-center gap-1.5 text-xs font-black text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100 cursor-pointer">
+                            <span class="transform transition-transform text-[10px] ${expandida ? "rotate-90" : ""}">▶</span>
+                            <span>${formatarData(rem.data_pagamento || rem.data_prevista)}</span>
+                          </button>
+                          <span class="text-[9px] text-slate-400 block font-semibold mt-0.5">
+                            ${rem.status === "paga" ? "Data Pagamento Lote" : "Previsão do Lote"}
+                          </span>
+                        </td>
+
+                        <td class="py-3 px-4">
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-black text-slate-900 dark:text-slate-100 text-xs">📦 LOTE: ${rem.favorecido}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-indigo-100 dark:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                              ${itens.length} títulos
+                            </span>
+                          </div>
+                          <span class="text-[10px] text-slate-500 dark:text-slate-400 block truncate max-w-sm mt-0.5">${rem.observacoes || "Pagamento unificado em lote"}</span>
+                        </td>
+
+                        <td class="py-3 px-4 whitespace-nowrap">
+                          <span class="font-bold text-slate-700 dark:text-slate-300 block">Lote Consolidado</span>
+                          <span class="text-[10px] text-slate-400 block">${rem.forma_pagamento ? rem.forma_pagamento.toUpperCase() : "Pagamento Unificado"}</span>
+                        </td>
+
+                        <td class="py-3 px-4 text-right whitespace-nowrap">
+                          <span class="font-black text-slate-900 dark:text-slate-100 text-sm">${formatarMoeda(rem.valor_total || totalItens)}</span>
+                        </td>
+
+                        <td class="py-3 px-4 text-right whitespace-nowrap">
+                          <span class="font-black ${rem.status === "paga" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}">
+                            ${rem.status === "paga" ? formatarMoeda(rem.valor_total || totalPagoItens || totalItens) : "-"}
+                          </span>
+                        </td>
+
+                        <td class="py-3 px-4 text-center whitespace-nowrap">
+                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border ${rem.status === "paga" ? statusColors.pago : statusColors.pendente} uppercase">
+                            ${rem.status === "paga" ? "Pago" : "Aberto"}
+                          </span>
+                        </td>
+
+                        <td class="py-3 px-4 w-36 text-center whitespace-nowrap">
+                          <div class="flex items-center justify-center gap-1">
+                            ${rem.status !== "paga" ? `
+                              <button data-remessa-id="${rem.id}" class="btn-abrir-baixa-remessa px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition cursor-pointer shadow-xs flex items-center gap-1" title="Liquidar pagamento do lote (escolher banco e forma)">
+                                💳 Pagar
+                              </button>
+                              <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa px-2 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 rounded-lg font-bold text-[10px] transition cursor-pointer" title="Desfazer lote e devolver contas">
+                                Desfazer
+                              </button>
+                            ` : `
+                              <button data-remessa-id="${rem.id}" class="btn-reverter-remessa px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[10px] transition cursor-pointer shadow-xs flex items-center gap-1" title="Reverter baixa do lote inteiro (retornar todos os itens para pendente)">
+                                ↩ Reverter
+                              </button>
+                              ${rem.comprovante_url ? `
+                                <a href="${rem.comprovante_url}" target="_blank" class="p-1 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg transition" title="Ver Comprovante">
+                                  📎
+                                </a>
+                              ` : ""}
+                            `}
                           </div>
                         </td>
                       </tr>
-                    ` : ''}
+
+                      <!-- LINHAS FILHAS INDENTADAS DO LOTE (SE EXPANDIDO) -->
+                      ${expandida ? itens.map(c => `
+                        <tr class="bg-indigo-50/25 dark:bg-indigo-950/20 border-b border-indigo-100/50 dark:border-indigo-900/30 text-xs hover:bg-indigo-50/40 dark:hover:bg-indigo-950/30 transition-colors">
+                          <td class="py-2.5 px-3 text-center">
+                            <span class="text-indigo-400 font-black text-xs select-none">↳</span>
+                          </td>
+                          <td class="py-2.5 px-4 whitespace-nowrap pl-6">
+                            <span class="font-bold text-slate-800 dark:text-slate-200 block">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                            <span class="text-[9px] text-indigo-500 font-semibold block">Vencimento Título</span>
+                          </td>
+                          <td class="py-2.5 px-4">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                              <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-100 dark:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300">
+                                LOTE '${rem.favorecido}'
+                              </span>
+                              <span class="font-bold text-slate-800 dark:text-slate-200 truncate max-w-xs">${c.favorecido}</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block truncate max-w-xs mt-0.5">${c.descricao || "Despesa"}</span>
+                          </td>
+                          <td class="py-2.5 px-4 whitespace-nowrap">
+                            <span class="font-bold text-slate-600 dark:text-slate-400 block">${c.categoria?.nome || "Geral"}</span>
+                            <span class="text-[10px] text-slate-400 block">${c.tipo_custo?.nome || "Operacional"}</span>
+                          </td>
+                          <td class="py-2.5 px-4 text-right whitespace-nowrap">
+                            <span class="font-bold text-slate-800 dark:text-slate-200">${formatarMoeda(c.valor_nominal)}</span>
+                          </td>
+                          <td class="py-2.5 px-4 text-right whitespace-nowrap">
+                            <span class="font-bold ${c.status === "pago" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}">
+                              ${c.valor_pago && c.valor_pago > 0 ? formatarMoeda(c.valor_pago) : "-"}
+                            </span>
+                          </td>
+                          <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
+                              ${c.status === "pago" ? "Pago no Lote" : c.status}
+                            </span>
+                          </td>
+                          <td class="py-2.5 px-4 text-center whitespace-nowrap text-[10px] text-slate-400 italic">
+                            Item do Lote
+                          </td>
+                        </tr>
+                      `).join("") : ""}
+                    `;
+                  }
+
+                  // ITEM AVULSO NORMAL
+                  const c = item.conta;
+                  const ehEstimado = !!c.valor_estimado && c.status !== "pago";
+                  const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : "";
+                  const podeSelecionar = !c.remessa_id && (c.status === "pendente" || c.status === "atrasado");
+
+                  const hojeIso = new Date().toISOString().split("T")[0];
+                  const dataVencIso = (c.data_vencimento_operacional || c.data_vencimento || "").split("T")[0];
+                  let chipVencimento = "";
+                  if (c.status !== "pago" && c.status !== "cancelado" && dataVencIso) {
+                    const diffTime = new Date(dataVencIso + "T12:00:00").getTime() - new Date(hojeIso + "T12:00:00").getTime();
+                    const diffDias = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDias < 0) {
+                      const atraso = Math.abs(diffDias);
+                      chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 inline-flex items-center gap-1 shadow-2xs">🔴 ${atraso}d em atraso</span>`;
+                    } else if (diffDias === 0) {
+                      chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1 animate-pulse shadow-2xs">🚨 Vence Hoje</span>`;
+                    } else if (diffDias <= 3) {
+                      chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 inline-flex items-center gap-1">⏳ Vence em ${diffDias}d</span>`;
+                    }
+                  }
+
+                  return `
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                      <td class="py-3 px-3 text-center">
+                        ${podeSelecionar ? `
+                          <input type="checkbox" data-id="${c.id}" class="check-selecionar-conta h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${this.titulosSelecionados.has(c.id) ? "checked" : ""} />
+                        ` : ""}
+                      </td>
+
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        ${c.status === "pago" ? `
+                          <span class="font-extrabold text-slate-900 dark:text-slate-100 block" title="Data do pagamento">${formatarData(c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento)}</span>
+                          <span class="text-[9px] text-slate-400 block font-semibold mt-0.5" title="Vencimento original da obrigação">Venc: ${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                        ` : `
+                          <span class="font-extrabold text-slate-900 dark:text-slate-100 block">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                          ${chipVencimento ? `<div class="block">${chipVencimento}</div>` : ""}
+                          ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
+                            <span class="text-[9px] text-slate-400 block font-semibold mt-0.5" title="Vencimento nominal no final de semana / feriado">Nominal: ${formatarData(c.data_vencimento)}</span>
+                          ` : ""}
+                        `}
+                      </td>
+
+                      <td class="py-3 px-4">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <span class="font-bold text-slate-800 dark:text-slate-100 truncate max-w-xs">${c.favorecido}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 block truncate max-w-xs">${c.descricao || "Despesa"} ${parcelaLabel}</span>
+                      </td>
+
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        <span class="font-bold text-slate-700 dark:text-slate-300 block">${c.categoria?.nome || "Geral"}</span>
+                        <span class="text-[10px] text-slate-400 block">${c.tipo_custo?.nome || "Operacional"}</span>
+                      </td>
+
+                      <td class="py-3 px-4 text-right whitespace-nowrap">
+                        <span class="font-extrabold text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
+                        ${ehEstimado ? `
+                          <span class="ml-1 text-[9px] bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 px-1 py-0.5 rounded font-black uppercase">Estimado</span>
+                        ` : ""}
+                      </td>
+
+                      <td class="py-3 px-4 text-right whitespace-nowrap">
+                        <span class="font-extrabold ${c.status === "pago" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}">
+                          ${c.valor_pago && c.valor_pago > 0 ? formatarMoeda(c.valor_pago) : "-"}
+                        </span>
+                      </td>
+
+                      <td class="py-3 px-4 text-center whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
+                          ${c.status}
+                        </span>
+                      </td>
+
+                      <td class="py-3 px-4 w-36 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1">
+                          ${c.status !== "pago" && c.status !== "cancelado" ? `
+                            <button data-id="${c.id}" class="btn-baixar-conta p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg transition cursor-pointer" title="Dar Baixa Inteligente">
+                              ✅
+                            </button>
+                          ` : ""}
+
+                          <button data-id="${c.id}" class="btn-editar-conta p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg transition cursor-pointer" title="Editar Título">
+                            ✏️
+                          </button>
+
+                          ${c.comprovante_url ? `
+                            <a href="${c.comprovante_url}" target="_blank" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg transition cursor-pointer" title="Ver Comprovante Anexo">
+                              📎
+                            </a>
+                          ` : ""}
+
+                          ${c.status === "pago" && isAdmin ? `
+                            <button data-id="${c.id}" class="btn-estornar-conta p-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-lg transition cursor-pointer" title="Estornar Baixa (Admin)">
+                              ↩️
+                            </button>
+                          ` : ""}
+
+                          ${c.status !== "cancelado" && isAdmin ? `
+                            <button data-id="${c.id}" class="btn-cancelar-conta p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-lg transition cursor-pointer" title="Cancelar Título (Admin)">
+                              🚫
+                            </button>
+                          ` : ""}
+                        </div>
+                      </td>
+                    </tr>
                   `;
-                }).join('')}
+                }).join("")}
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- 2. Visão Mobile: Lista de Cartões de Remessas (block md:hidden) -->
+        <!-- 2. Visão Mobile: Lista de Cards Unificados (block md:hidden) -->
         <div class="block md:hidden space-y-3">
-          ${this.remessas.length === 0 ? `
+          ${linhasParaExibir.length === 0 ? `
             <div class="p-8 text-center text-slate-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
-              Nenhuma remessa agrupada encontrada. Clique em "+ Agrupar Nova Remessa" para consolidar pagamentos.
+              Nenhuma conta ou lote localizado para o período e filtros selecionados.
             </div>
-          ` : this.remessas.map(rem => {
-            const expandida = this.remessasExpandidas.has(rem.id);
-            const itens = rem.itens || [];
+          ` : linhasParaExibir.map(item => {
+            if (item.tipo === "lote") {
+              const rem = item.remessa;
+              const itens = item.itens;
+              const expandida = this.remessasExpandidas.has(rem.id);
+              const totalItens = itens.reduce((acc, it) => acc + Number(it.valor_nominal || 0), 0);
+
+              return `
+                <div class="bg-indigo-50/40 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/60 rounded-2xl p-4 shadow-sm space-y-3">
+                  <div class="flex items-center justify-between gap-2 border-b border-indigo-100 dark:border-indigo-900/40 pb-2.5">
+                    <div class="flex items-center gap-2">
+                      <span class="text-base">📦</span>
+                      <div>
+                        <span class="text-xs font-black text-indigo-700 dark:text-indigo-300">LOTE: ${rem.favorecido}</span>
+                        <span class="text-[9px] text-slate-400 block">${formatarData(rem.data_pagamento || rem.data_prevista)}</span>
+                      </div>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${rem.status === "paga" ? statusColors.pago : statusColors.pendente} uppercase">
+                      ${rem.status === "paga" ? "Pago" : "Aberto"}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-[10px] text-slate-400 font-bold uppercase block">Total do Lote</span>
+                      <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(rem.valor_total || totalItens)}</span>
+                      <span class="text-[10px] text-slate-500 block font-medium mt-0.5">${itens.length} título(s) agrupado(s)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      ${rem.status !== "paga" ? `
+                        <button data-remessa-id="${rem.id}" class="btn-abrir-baixa-remessa h-[36px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1" title="Pagar Lote">
+                          💳 Pagar
+                        </button>
+                        <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa h-[36px] px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 rounded-xl font-bold text-xs transition cursor-pointer" title="Desfazer Lote">
+                          Desfazer
+                        </button>
+                      ` : `
+                        <button data-remessa-id="${rem.id}" class="btn-reverter-remessa h-[36px] px-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1" title="Reverter Lote">
+                          ↩ Reverter
+                        </button>
+                        ${rem.comprovante_url ? `
+                          <a href="${rem.comprovante_url}" target="_blank" class="h-[36px] w-[36px] flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl transition cursor-pointer" title="Comprovante">
+                            📎
+                          </a>
+                        ` : ""}
+                      `}
+                    </div>
+                  </div>
+
+                  <button type="button" data-remessa-id="${rem.id}" class="btn-toggle-remessa w-full py-2 px-3 bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/50 rounded-xl text-xs font-black text-indigo-600 dark:text-indigo-400 flex items-center justify-between cursor-pointer">
+                    <span>${expandida ? "▲ Recolher Títulos" : "▼ Ver " + itens.length + " Título(s) do Lote"}</span>
+                    <span class="text-[10px] text-slate-400">LOTE '${rem.favorecido}'</span>
+                  </button>
+
+                  ${expandida ? `
+                    <div class="space-y-2 pt-2 border-t border-indigo-100/60 dark:border-indigo-900/40 pl-2">
+                      ${itens.map(c => `
+                        <div class="p-2.5 bg-white dark:bg-slate-900/80 rounded-xl border border-indigo-100/50 dark:border-indigo-900/40 text-xs space-y-1">
+                          <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800 dark:text-slate-200">${c.favorecido}</span>
+                            <span class="font-black text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
+                          </div>
+                          <p class="text-[10px] text-slate-400 truncate">${c.descricao || "Despesa"} • Venc: ${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</p>
+                        </div>
+                      `).join("")}
+                    </div>
+                  ` : ""}
+                </div>
+              `;
+            }
+
+            // ITEM AVULSO NO MOBILE
+            const c = item.conta;
+            const ehEstimado = !!c.valor_estimado && c.status !== "pago";
+            const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : "";
+            const podeSelecionar = !c.remessa_id && (c.status === "pendente" || c.status === "atrasado");
+
+            const hojeIsoMobile = new Date().toISOString().split("T")[0];
+            const dataVencIsoMobile = (c.data_vencimento_operacional || c.data_vencimento || "").split("T")[0];
+            let chipVencimentoMobile = "";
+            if (c.status !== "pago" && c.status !== "cancelado" && dataVencIsoMobile) {
+              const diffTime = new Date(dataVencIsoMobile + "T12:00:00").getTime() - new Date(hojeIsoMobile + "T12:00:00").getTime();
+              const diffDias = Math.round(diffTime / (1000 * 60 * 60 * 24));
+              if (diffDias < 0) {
+                const atraso = Math.abs(diffDias);
+                chipVencimentoMobile = `<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 inline-flex items-center gap-1 shadow-2xs">🔴 ${atraso}d em atraso</span>`;
+              } else if (diffDias === 0) {
+                chipVencimentoMobile = `<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1 animate-pulse shadow-2xs">🚨 Vence Hoje</span>`;
+              } else if (diffDias <= 3) {
+                chipVencimentoMobile = `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 inline-flex items-center gap-1">⏳ Vence em ${diffDias}d</span>`;
+              }
+            }
 
             return `
               <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
                 <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                  <span class="text-xs font-black text-slate-900 dark:text-slate-100">Previsto: ${formatarData(rem.data_prevista)}</span>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${rem.status === 'paga' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-                    ${rem.status}
+                  <div class="flex items-center gap-2 flex-wrap">
+                    ${podeSelecionar ? `
+                      <input type="checkbox" data-id="${c.id}" class="check-selecionar-conta h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${this.titulosSelecionados.has(c.id) ? "checked" : ""} />
+                    ` : ""}
+                    ${c.status === "pago" ? `
+                      <div class="flex flex-col">
+                        <span class="text-xs font-black text-slate-900 dark:text-slate-100" title="Data do pagamento">${formatarData(c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento)}</span>
+                        <span class="text-[9px] text-slate-400 font-semibold" title="Vencimento original">Venc: ${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                      </div>
+                    ` : `
+                      <div class="flex flex-col">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <span class="text-xs font-black text-slate-900 dark:text-slate-100">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                          ${chipVencimentoMobile}
+                        </div>
+                        ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
+                          <span class="text-[9px] text-slate-400 font-semibold mt-0.5">Nominal: ${formatarData(c.data_vencimento)}</span>
+                        ` : ""}
+                      </div>
+                    `}
+                  </div>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
+                    ${c.status}
                   </span>
                 </div>
 
                 <div>
-                  <span class="font-extrabold text-slate-900 dark:text-slate-100 text-sm block">${rem.favorecido}</span>
-                  ${rem.observacoes ? `<span class="text-xs text-slate-500 dark:text-slate-400 block mt-0.5">${rem.observacoes}</span>` : ''}
-                  <span class="text-[11px] text-slate-400 font-bold block mt-1">Lote com ${itens.length} título(s)</span>
+                  <span class="font-extrabold text-slate-900 dark:text-slate-100 text-sm block">${c.favorecido}</span>
+                  <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">${c.descricao || "Despesa"} ${parcelaLabel}</span>
+                  <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                      ${c.categoria?.nome || "Geral"}
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-semibold">• ${c.tipo_custo?.nome || "Operacional"}</span>
+                  </div>
                 </div>
 
                 <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div>
-                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Consolidado</span>
-                    <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(rem.valor_total)}</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Valor</span>
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
+                      ${ehEstimado ? `<span class="text-[9px] text-sky-600 font-bold uppercase">(Estimado)</span>` : ""}
+                    </div>
+                    ${c.valor_pago && c.valor_pago > 0 ? `
+                      <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">Pago: ${formatarMoeda(c.valor_pago)}</span>
+                    ` : ""}
                   </div>
 
                   <div class="flex items-center gap-1.5">
-                    <button data-remessa-id="${rem.id}" class="btn-toggle-accordion h-[36px] px-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer">
-                      ${expandida ? 'Fechar Itens' : 'Ver Itens'}
+                    ${c.status !== "pago" && c.status !== "cancelado" ? `
+                      <button data-id="${c.id}" class="btn-baixar-conta h-[36px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1" title="Dar Baixa">
+                        <span>✓</span> Baixar
+                      </button>
+                    ` : ""}
+
+                    <button data-id="${c.id}" class="btn-editar-conta h-[36px] w-[36px] flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer" title="Editar">
+                      ✏️
                     </button>
 
-                    ${rem.status !== 'paga' ? `
-                      <button data-remessa-id="${rem.id}" class="btn-baixar-remessa h-[36px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition cursor-pointer">
-                        Baixar
+                    ${c.comprovante_url ? `
+                      <a href="${c.comprovante_url}" target="_blank" class="h-[36px] w-[36px] flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl transition cursor-pointer" title="Comprovante">
+                        📎
+                      </a>
+                    ` : ""}
+
+                    ${c.status === "pago" && isAdmin ? `
+                      <button data-id="${c.id}" class="btn-estornar-conta h-[36px] w-[36px] flex items-center justify-center bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl transition cursor-pointer" title="Estornar Baixa">
+                        ↩️
                       </button>
-                      <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa h-[36px] px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40 rounded-xl font-bold text-xs transition cursor-pointer" title="Desfazer lote">
-                        Desfazer
+                    ` : ""}
+
+                    ${c.status !== "cancelado" && isAdmin ? `
+                      <button data-id="${c.id}" class="btn-cancelar-conta h-[36px] w-[36px] flex items-center justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl transition cursor-pointer" title="Cancelar Título">
+                        🚫
                       </button>
-                    ` : ''}
+                    ` : ""}
                   </div>
                 </div>
-
-                ${expandida ? `
-                  <div class="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3 border border-slate-200/60 dark:border-slate-800 space-y-2 mt-2">
-                    <span class="text-[10px] uppercase tracking-wider font-black text-indigo-600 dark:text-indigo-400 block">Títulos Deste Lote:</span>
-                    ${itens.map(it => `
-                      <div class="flex items-center justify-between text-xs py-1 border-b border-slate-200/60 dark:border-slate-800/60 last:border-none">
-                        <div>
-                          <span class="font-bold text-slate-800 dark:text-slate-200">${it.descricao || 'Item de pagamento'}</span>
-                          <span class="text-[10px] text-slate-400 block">${it.categoria?.nome || 'Geral'}</span>
-                        </div>
-                        <div class="text-right">
-                          <span class="font-black text-slate-900 dark:text-slate-100">${formatarMoeda(it.valor_nominal)}</span>
-                          <span class="text-[9px] block uppercase font-bold ${it.status === 'pago' ? 'text-emerald-600' : 'text-amber-600'}">${it.status}</span>
-                        </div>
-                      </div>
-                    `).join('')}
-                  </div>
-                ` : ''}
               </div>
             `;
-          }).join('')}
+          }).join("")}
         </div>
       </div>
     `;
@@ -1711,6 +1559,68 @@ export class FinanceiroPage {
                 </div>
               `;
             }).join('')}
+          </div>
+        </div>
+
+        <!-- Fornecedores & Favorecidos -->
+        <div class="col-span-1 md:col-span-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">🏢 Fornecedores & Favorecidos Cadastrados</h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
+                  ${this.fornecedores.filter(f => !this.buscaFornecedorTermo || f.nome.toLowerCase().includes(this.buscaFornecedorTermo.toLowerCase()) || (f.cpf_cnpj && f.cpf_cnpj.includes(this.buscaFornecedorTermo))).length} cadastrado(s)
+                </span>
+              </div>
+              <p class="text-[10px] text-slate-400">Favorecidos oficiais para autocomplete e padronização contábil em Contas a Pagar e Lotes.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="text" id="busca-fornecedor-input" value="${this.escapeHtml(this.buscaFornecedorTermo)}" placeholder="🔍 Filtrar fornecedor..." class="h-[36px] px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44 sm:w-60" />
+              <button id="btn-novo-fornecedor" class="h-[36px] px-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5 active:scale-95">
+                <span>+</span> Novo Fornecedor
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            ${(() => {
+              const filtrados = this.fornecedores.filter(f => 
+                !this.buscaFornecedorTermo || 
+                f.nome.toLowerCase().includes(this.buscaFornecedorTermo.toLowerCase()) || 
+                (f.cpf_cnpj && f.cpf_cnpj.includes(this.buscaFornecedorTermo)) ||
+                (f.observacoes && f.observacoes.toLowerCase().includes(this.buscaFornecedorTermo.toLowerCase()))
+              );
+
+              if (filtrados.length === 0) {
+                return `
+                  <div class="col-span-full p-6 text-center text-xs text-slate-400 italic border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                    Nenhum fornecedor encontrado. Clique em "+ Novo Fornecedor".
+                  </div>
+                `;
+              }
+
+              return filtrados.map(f => `
+                <div class="p-3.5 border border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl flex items-start justify-between gap-2 hover:border-slate-200 dark:hover:border-slate-700 transition">
+                  <div class="min-w-0 space-y-1">
+                    <span class="font-bold text-xs text-slate-800 dark:text-slate-100 truncate block">${this.escapeHtml(f.nome)}</span>
+                    ${f.cpf_cnpj ? `
+                      <span class="text-[10px] font-mono font-semibold text-slate-500 dark:text-slate-400 block">${this.escapeHtml(f.cpf_cnpj)}</span>
+                    ` : ''}
+                    ${f.observacoes ? `
+                      <p class="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5">${this.escapeHtml(f.observacoes)}</p>
+                    ` : ''}
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0">
+                    <button class="btn-editar-fornecedor text-slate-400 hover:text-indigo-600 cursor-pointer text-xs p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition" data-forn-id="${f.id}" title="Editar fornecedor">
+                      ✏️
+                    </button>
+                    <button class="btn-excluir-fornecedor text-slate-400 hover:text-rose-600 cursor-pointer text-xs p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" data-forn-id="${f.id}" data-nome="${this.escapeHtml(f.nome)}" title="Excluir fornecedor">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              `).join('');
+            })()}
           </div>
         </div>
       </div>
@@ -2110,28 +2020,37 @@ export class FinanceiroPage {
       });
     });
 
-    this.container.querySelectorAll('.btn-baixar-remessa').forEach(btn => {
-      btn.addEventListener('click', async () => {
+    // Expansão e recolhimento de itens do Lote (Accordion)
+    this.container.querySelectorAll('.btn-toggle-remessa').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const remId = btn.getAttribute('data-remessa-id');
         if (!remId) return;
-        const confirmou = await showCustomConfirm('Confirmar a liquidação / baixa consolidada de TODOS os títulos desta remessa?');
-        if (confirmou) {
-          const res = await FinRemessasService.baixarRemessaConsolidada({
-            remessaId: remId,
-            dataPagamento: new Date().toISOString().split('T')[0],
-            usuarioId: this.user.id,
-            usuarioNome: this.perfil?.nome
-          });
-          if (res.sucesso) {
-            window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
-            await showCustomAlert('Remessa liquidada com sucesso!', 'Sucesso');
-            await this.carregarDadosAbaAtiva();
-            this.render();
-            this.setupEventListeners();
-          } else {
-            await showCustomAlert(res.erro || 'Falha ao liquidar remessa', 'Erro');
-          }
+        if (this.remessasExpandidas.has(remId)) {
+          this.remessasExpandidas.delete(remId);
+        } else {
+          this.remessasExpandidas.add(remId);
         }
+        this.render();
+        this.setupEventListeners();
+      });
+    });
+
+    // Abrir Modal de Baixa Consolidada do Lote
+    this.container.querySelectorAll('.btn-abrir-baixa-remessa, .btn-baixar-remessa').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const remId = btn.getAttribute('data-remessa-id');
+        if (remId) this.abrirModalBaixaRemessa(remId);
+      });
+    });
+
+    // Reverter Baixa do Lote
+    this.container.querySelectorAll('.btn-reverter-remessa').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const remId = btn.getAttribute('data-remessa-id');
+        if (remId) await this.reverterLoteRemessa(remId);
       });
     });
 
@@ -2140,10 +2059,10 @@ export class FinanceiroPage {
       this.abrirModalNovaConta();
     });
 
-    // Alternador de Filtro de Agrupamento (Todos, Avulsos, Remessas)
+    // Alternador de Filtro de Agrupamento (Todos, Avulsos)
     this.container.querySelectorAll('.btn-filtro-agrupamento').forEach(btn => {
       btn.addEventListener('click', () => {
-        const modo = btn.getAttribute('data-modo') as 'todos' | 'avulsos' | 'remessas';
+        const modo = btn.getAttribute('data-modo') as 'todos' | 'avulsos';
         if (modo && modo !== this.filtroAgrupamento) {
           this.filtroAgrupamento = modo;
           this.render();
@@ -2311,6 +2230,43 @@ export class FinanceiroPage {
         e.stopPropagation();
         const tipoId = btn.getAttribute('data-tipo-id');
         this.abrirModalNovaCategoria(undefined, tipoId || undefined);
+      });
+    });
+
+    // Eventos de Fornecedores & Favorecidos na aba Plano de Contas
+    const inputBuscaForn = this.container.querySelector('#busca-fornecedor-input') as HTMLInputElement;
+    if (inputBuscaForn) {
+      inputBuscaForn.addEventListener('input', () => {
+        this.buscaFornecedorTermo = inputBuscaForn.value;
+        this.render();
+        this.setupEventListeners();
+        const reInput = this.container.querySelector('#busca-fornecedor-input') as HTMLInputElement;
+        if (reInput) {
+          reInput.focus();
+          reInput.setSelectionRange(reInput.value.length, reInput.value.length);
+        }
+      });
+    }
+
+    this.container.querySelector('#btn-novo-fornecedor')?.addEventListener('click', () => {
+      this.abrirModalNovoFornecedor();
+    });
+
+    this.container.querySelectorAll('.btn-editar-fornecedor').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const fornId = btn.getAttribute('data-forn-id');
+        const forn = this.fornecedores.find(f => f.id === fornId);
+        if (forn) this.abrirModalEditarFornecedor(forn);
+      });
+    });
+
+    this.container.querySelectorAll('.btn-excluir-fornecedor').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const fornId = btn.getAttribute('data-forn-id');
+        const nome = btn.getAttribute('data-nome') || 'Fornecedor';
+        if (fornId) await this.excluirFornecedor(fornId, nome);
       });
     });
 
@@ -2984,8 +2940,16 @@ export class FinanceiroPage {
           </div>
 
           <div>
-            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Favorecido / Fornecedor *</label>
-            <input type="text" id="input-nova-favorecido" required placeholder="Nome da empresa ou prestador" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400">Favorecido / Fornecedor *</label>
+              <button type="button" id="btn-cadastrar-forn-rapido-nova" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer flex items-center gap-1">
+                <span>+</span> Cadastrar Favorecido
+              </button>
+            </div>
+            <input type="text" id="input-nova-favorecido" list="datalist-fornecedores-nova" required placeholder="Nome da empresa ou prestador" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+            <datalist id="datalist-fornecedores-nova">
+              ${this.fornecedores.map(f => `<option value="${this.escapeHtml(f.nome)}">${f.cpf_cnpj ? `Doc: ${this.escapeHtml(f.cpf_cnpj)}` : ''}</option>`).join('')}
+            </datalist>
           </div>
 
           <div>
@@ -3048,6 +3012,18 @@ export class FinanceiroPage {
     const fechar = () => overlay.remove();
     overlay.querySelector('#btn-fechar-modal-nova')?.addEventListener('click', fechar);
     overlay.querySelector('#btn-cancelar-nova')?.addEventListener('click', fechar);
+
+    // Cadastro ágil de favorecido direto pelo modal
+    overlay.querySelector('#btn-cadastrar-forn-rapido-nova')?.addEventListener('click', () => {
+      const inputFav = overlay.querySelector('#input-nova-favorecido') as HTMLInputElement;
+      this.abrirModalNovoFornecedor(inputFav?.value, (novoForn) => {
+        if (inputFav) inputFav.value = novoForn.nome;
+        const dl = overlay.querySelector('#datalist-fornecedores-nova');
+        if (dl) {
+          dl.innerHTML = this.fornecedores.map(f => `<option value="${this.escapeHtml(f.nome)}">${f.cpf_cnpj ? `Doc: ${this.escapeHtml(f.cpf_cnpj)}` : ''}</option>`).join('');
+        }
+      });
+    });
 
     // Anexa máscara monetária brasileira em tempo real no valor nominal
     const inputValor = overlay.querySelector('#input-nova-valor') as HTMLInputElement;
@@ -3223,8 +3199,16 @@ export class FinanceiroPage {
           </div>
 
           <div>
-            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Favorecido / Fornecedor *</label>
-            <input type="text" id="input-edit-favorecido" required value="${c.favorecido || ''}" placeholder="Nome da empresa ou prestador" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400">Favorecido / Fornecedor *</label>
+              <button type="button" id="btn-cadastrar-forn-rapido-edit" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer flex items-center gap-1">
+                <span>+</span> Cadastrar Favorecido
+              </button>
+            </div>
+            <input type="text" id="input-edit-favorecido" list="datalist-fornecedores-edit" required value="${this.escapeHtml(c.favorecido || '')}" placeholder="Nome da empresa ou prestador" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200" />
+            <datalist id="datalist-fornecedores-edit">
+              ${this.fornecedores.map(f => `<option value="${this.escapeHtml(f.nome)}">${f.cpf_cnpj ? `Doc: ${this.escapeHtml(f.cpf_cnpj)}` : ''}</option>`).join('')}
+            </datalist>
           </div>
 
           <div>
@@ -3354,6 +3338,18 @@ export class FinanceiroPage {
       } else {
         boxEditParcelas?.classList.add('hidden');
       }
+    });
+
+    // Cadastro ágil de favorecido direto pelo modal de edição
+    overlay.querySelector('#btn-cadastrar-forn-rapido-edit')?.addEventListener('click', () => {
+      const inputFav = overlay.querySelector('#input-edit-favorecido') as HTMLInputElement;
+      this.abrirModalNovoFornecedor(inputFav?.value, (novoForn) => {
+        if (inputFav) inputFav.value = novoForn.nome;
+        const dl = overlay.querySelector('#datalist-fornecedores-edit');
+        if (dl) {
+          dl.innerHTML = this.fornecedores.map(f => `<option value="${this.escapeHtml(f.nome)}">${f.cpf_cnpj ? `Doc: ${this.escapeHtml(f.cpf_cnpj)}` : ''}</option>`).join('');
+        }
+      });
     });
 
     const form = overlay.querySelector('#form-editar-conta') as HTMLFormElement;
@@ -3847,7 +3843,7 @@ export class FinanceiroPage {
 
         fechar();
         this.titulosSelecionados.clear();
-        this.filtroAgrupamento = 'remessas';
+        this.filtroAgrupamento = 'todos';
         window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
         await showCustomAlert('Lote de remessa agrupado com sucesso!', 'Sucesso');
 
@@ -3863,5 +3859,389 @@ export class FinanceiroPage {
         }
       }
     });
+  }
+
+  private abrirModalBaixaRemessa(remessaId: string): void {
+    const remessa = this.remessas.find(r => r.id === remessaId);
+    if (!remessa) return;
+
+    const esc = (s: any) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const itensRemessa = this.contas.filter(c => c.remessa_id === remessaId);
+    const totalRemessa = remessa.valor_total || itensRemessa.reduce((acc, c) => acc + (Number(c.valor_nominal) || 0), 0);
+    const bancosAtivos = this.contasBancarias.filter(b => b.ativo !== false);
+    const hoje = new Date().toISOString().split('T')[0];
+
+    const backdrop = document.createElement('div');
+    backdrop.id = 'modal-baixa-remessa-backdrop';
+    backdrop.className = 'fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in';
+
+    backdrop.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-scale-up">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl font-bold">📦</span>
+            <div>
+              <h3 class="text-base font-black text-slate-800 dark:text-slate-100">Baixar Pagamento do Lote</h3>
+              <p class="text-xs text-slate-500 font-semibold">${esc(remessa.favorecido)} • ${itensRemessa.length} lançamento(s)</p>
+            </div>
+          </div>
+          <button type="button" id="btn-fechar-modal-baixa-remessa" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 font-bold transition cursor-pointer">✕</button>
+        </div>
+
+        <form id="form-baixa-remessa" class="p-6 space-y-4">
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <span class="text-xs font-black uppercase tracking-wider text-slate-500">Valor Total do Lote</span>
+            <strong class="text-lg font-black text-emerald-600 dark:text-emerald-400">R$ ${totalRemessa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Conta Bancária / Caixa de Origem *</label>
+            <select id="baixa-remessa-conta-bancaria" required class="w-full h-[42px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="">Selecione o banco de saída...</option>
+              ${bancosAtivos.map(b => `<option value="${b.id}">${esc(b.nome_banco)} (${esc(b.tipo)})</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Forma de Pagamento *</label>
+              <select id="baixa-remessa-forma-pagamento" required class="w-full h-[42px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="pix">PIX</option>
+                <option value="transferencia">TED / Transferência</option>
+                <option value="boleto">Boleto Bancário</option>
+                <option value="debito">Débito em Conta</option>
+                <option value="dinheiro">Dinheiro / Espécie</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Data do Pagamento *</label>
+              <input type="date" id="baixa-remessa-data" required value="${hoje}" class="w-full h-[42px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Comprovante de Quitação (URL ou Anexo)</label>
+            <input type="text" id="baixa-remessa-comprovante" placeholder="Link do comprovante ou drive..." class="w-full h-[42px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Observações do Pagamento</label>
+            <textarea id="baixa-remessa-obs" rows="2" placeholder="Informações adicionais do pagamento do lote..." class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+          </div>
+
+          <div class="pt-2 flex items-center justify-end gap-2.5">
+            <button type="button" id="btn-cancelar-baixa-remessa" class="h-[42px] px-4 rounded-xl text-xs font-black text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">Cancelar</button>
+            <button type="submit" id="btn-confirmar-baixa-remessa" class="h-[42px] px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md shadow-emerald-600/20 transition active:scale-95 cursor-pointer">Confirmar Baixa do Lote</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+
+    const fechar = () => backdrop.remove();
+    backdrop.querySelector('#btn-fechar-modal-baixa-remessa')?.addEventListener('click', fechar);
+    backdrop.querySelector('#btn-cancelar-baixa-remessa')?.addEventListener('click', fechar);
+
+    const form = backdrop.querySelector('#form-baixa-remessa') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const bancoId = (document.getElementById('baixa-remessa-conta-bancaria') as HTMLSelectElement).value;
+      const formaPag = (document.getElementById('baixa-remessa-forma-pagamento') as HTMLSelectElement).value;
+      const dataPag = (document.getElementById('baixa-remessa-data') as HTMLInputElement).value;
+      const comprovante = (document.getElementById('baixa-remessa-comprovante') as HTMLInputElement).value.trim();
+      const obs = (document.getElementById('baixa-remessa-obs') as HTMLTextAreaElement).value.trim();
+
+      if (!bancoId) {
+        await showCustomAlert('Por favor, selecione a conta bancária de saída.', 'Atenção');
+        return;
+      }
+
+      const btnSubmit = backdrop.querySelector('#btn-confirmar-baixa-remessa') as HTMLButtonElement;
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Baixando lote...';
+      }
+
+      try {
+        const res = await FinRemessasService.baixarRemessaConsolidada({
+          remessaId,
+          contaBancariaId: bancoId,
+          formaPagamento: formaPag as any,
+          dataPagamento: dataPag,
+          comprovanteUrl: comprovante || undefined,
+          observacoes: obs || undefined,
+          usuarioId: this.user.id,
+          usuarioNome: this.perfil?.nome
+        });
+
+        if (!res.sucesso) {
+          throw new Error(res.erro || 'Falha ao baixar remessa');
+        }
+
+        fechar();
+        window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
+        const qtdBaixada = itensRemessa.length;
+        await showCustomAlert(`Lote baixado com sucesso! Todos os ${qtdBaixada} itens foram liquidados com o mesmo banco e forma de pagamento.`, 'Sucesso');
+        await this.carregarDadosAbaAtiva();
+        this.render();
+        await this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro na baixa da remessa:', err);
+        await showCustomAlert(err.message || 'Erro ao processar baixa consolidada da remessa.', 'Erro');
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Confirmar Baixa do Lote';
+        }
+      }
+    });
+  }
+
+  private async reverterLoteRemessa(remessaId: string): Promise<void> {
+    const remessa = this.remessas.find(r => r.id === remessaId);
+    if (!remessa) return;
+
+    const itensRemessa = this.contas.filter(c => c.remessa_id === remessaId);
+    const confirmou = await showCustomConfirm(
+      `Deseja realmente reverter a baixa do Lote "${remessa.favorecido}"?\n\nEsta ação irá estornar o lote e TODOS os ${itensRemessa.length} lançamentos vinculados a ele, retornando seu status para Pendente e limpando os dados de pagamento.`,
+      'Reverter Baixa do Lote',
+      { isDestructive: true, confirmText: 'Sim, Reverter Lote', cancelText: 'Cancelar' }
+    );
+
+    if (!confirmou) return;
+
+    try {
+      const res = await FinRemessasService.reverterBaixaRemessa({
+        remessaId,
+        usuarioId: this.user.id,
+        usuarioNome: this.perfil?.nome
+      });
+
+      if (!res.sucesso) {
+        throw new Error(res.erro || 'Falha ao reverter remessa');
+      }
+
+      window.dispatchEvent(new CustomEvent('paxflow-financeiro-updated'));
+      const qtdRev = itensRemessa.length;
+      await showCustomAlert(`Lote revertido com sucesso! ${qtdRev} títulos retornaram para o status Pendente.`, 'Sucesso');
+      await this.carregarDadosAbaAtiva();
+      this.render();
+      await this.setupEventListeners();
+    } catch (err: any) {
+      console.error('Erro ao reverter remessa:', err);
+      await showCustomAlert(err.message || 'Erro ao reverter baixa do lote.', 'Erro');
+    }
+  }
+
+  private abrirModalNovoFornecedor(nomeInicial?: string, callback?: (forn: FinFornecedor) => void): void {
+    const esc = (s: any) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const backdrop = document.createElement('div');
+    backdrop.id = 'modal-novo-fornecedor-backdrop';
+    backdrop.className = 'fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in';
+
+    backdrop.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-up">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl font-bold">🏢</span>
+            <div>
+              <h3 class="text-base font-black text-slate-800 dark:text-slate-100">Novo Fornecedor / Favorecido</h3>
+              <p class="text-xs text-slate-500 font-semibold">Cadastro ágil de parceiros e credores</p>
+            </div>
+          </div>
+          <button type="button" id="btn-fechar-modal-fornecedor" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 font-bold transition cursor-pointer">✕</button>
+        </div>
+
+        <form id="form-novo-fornecedor" class="p-6 space-y-4">
+          <div class="space-y-1">
+            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Nome / Razão Social *</label>
+            <input type="text" id="fornecedor-input-nome" required value="${esc(nomeInicial || '')}" placeholder="Ex: CVC Consolidadora, Hotel Copacabana..." class="w-full h-[42px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">CPF / CNPJ</label>
+            <input type="text" id="fornecedor-input-documento" placeholder="00.000.000/0000-00 ou 000.000.000-00" class="w-full h-[42px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Observações / Chave PIX / Contato</label>
+            <textarea id="fornecedor-input-obs" rows="2" placeholder="Dados bancários, contato financeiro, chave pix..." class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+
+          <div class="pt-2 flex items-center justify-end gap-2.5">
+            <button type="button" id="btn-cancelar-fornecedor" class="h-[42px] px-4 rounded-xl text-xs font-black text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">Cancelar</button>
+            <button type="submit" id="btn-salvar-fornecedor" class="h-[42px] px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md shadow-indigo-600/20 transition active:scale-95 cursor-pointer">Cadastrar Fornecedor</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+
+    const fechar = () => backdrop.remove();
+    backdrop.querySelector('#btn-fechar-modal-fornecedor')?.addEventListener('click', fechar);
+    backdrop.querySelector('#btn-cancelar-fornecedor')?.addEventListener('click', fechar);
+
+    const form = backdrop.querySelector('#form-novo-fornecedor') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = (document.getElementById('fornecedor-input-nome') as HTMLInputElement).value.trim();
+      const documento = (document.getElementById('fornecedor-input-documento') as HTMLInputElement).value.trim();
+      const obs = (document.getElementById('fornecedor-input-obs') as HTMLTextAreaElement).value.trim();
+
+      if (!nome) {
+        await showCustomAlert('Por favor, preencha o nome do fornecedor.', 'Atenção');
+        return;
+      }
+
+      const btnSubmit = backdrop.querySelector('#btn-salvar-fornecedor') as HTMLButtonElement;
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Salvando...';
+      }
+
+      try {
+        const { FinFornecedoresService } = await import('../services/finFornecedoresService');
+        const res = await FinFornecedoresService.criarFornecedor({
+          nome,
+          cpf_cnpj: documento || undefined,
+          observacoes: obs || undefined
+        });
+
+        if (!res.sucesso || !res.fornecedor) {
+          throw new Error(res.erro || 'Falha ao cadastrar fornecedor.');
+        }
+
+        fechar();
+        const novo = res.fornecedor;
+        this.fornecedores.push(novo);
+        this.fornecedores.sort((a, b) => a.nome.localeCompare(b.nome));
+
+        if (callback) {
+          callback(novo);
+        } else {
+          await showCustomAlert(`Fornecedor "${novo.nome}" cadastrado com sucesso!`, 'Sucesso');
+          this.render();
+          await this.setupEventListeners();
+        }
+      } catch (err: any) {
+        console.error('Erro ao cadastrar fornecedor:', err);
+        await showCustomAlert(err.message || 'Erro ao cadastrar fornecedor.', 'Erro');
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Cadastrar Fornecedor';
+        }
+      }
+    });
+  }
+
+  private abrirModalEditarFornecedor(forn: FinFornecedor): void {
+    const esc = (s: any) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const backdrop = document.createElement('div');
+    backdrop.id = 'modal-editar-fornecedor-backdrop';
+    backdrop.className = 'fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in';
+
+    backdrop.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-up">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl font-bold">✏️</span>
+            <div>
+              <h3 class="text-base font-black text-slate-800 dark:text-slate-100">Editar Fornecedor</h3>
+              <p class="text-xs text-slate-500 font-semibold">${esc(forn.nome)}</p>
+            </div>
+          </div>
+          <button type="button" id="btn-fechar-modal-editar-fornecedor" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 font-bold transition cursor-pointer">✕</button>
+        </div>
+
+        <form id="form-editar-fornecedor" class="p-6 space-y-4">
+          <div class="space-y-1">
+            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Nome / Razão Social *</label>
+            <input type="text" id="fornecedor-edit-nome" required value="${esc(forn.nome)}" class="w-full h-[42px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">CPF / CNPJ</label>
+            <input type="text" id="fornecedor-edit-documento" value="${esc(forn.cpf_cnpj || '')}" class="w-full h-[42px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Observações / Chave PIX</label>
+            <textarea id="fornecedor-edit-obs" rows="2" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">${esc(forn.observacoes || '')}</textarea>
+          </div>
+
+          <div class="pt-2 flex items-center justify-end gap-2.5">
+            <button type="button" id="btn-cancelar-editar-fornecedor" class="h-[42px] px-4 rounded-xl text-xs font-black text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">Cancelar</button>
+            <button type="submit" id="btn-salvar-editar-fornecedor" class="h-[42px] px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md shadow-indigo-600/20 transition active:scale-95 cursor-pointer">Salvar Alterações</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+
+    const fechar = () => backdrop.remove();
+    backdrop.querySelector('#btn-fechar-modal-editar-fornecedor')?.addEventListener('click', fechar);
+    backdrop.querySelector('#btn-cancelar-editar-fornecedor')?.addEventListener('click', fechar);
+
+    const form = backdrop.querySelector('#form-editar-fornecedor') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = (document.getElementById('fornecedor-edit-nome') as HTMLInputElement).value.trim();
+      const documento = (document.getElementById('fornecedor-edit-documento') as HTMLInputElement).value.trim();
+      const obs = (document.getElementById('fornecedor-edit-obs') as HTMLTextAreaElement).value.trim();
+
+      if (!nome) {
+        await showCustomAlert('Por favor, informe o nome do fornecedor.', 'Atenção');
+        return;
+      }
+
+      try {
+        const { FinFornecedoresService } = await import('../services/finFornecedoresService');
+        const res = await FinFornecedoresService.atualizarFornecedor(forn.id, {
+          nome,
+          cpf_cnpj: documento || undefined,
+          observacoes: obs || undefined
+        });
+
+        if (!res.sucesso || !res.fornecedor) {
+          throw new Error(res.erro || 'Falha ao atualizar fornecedor.');
+        }
+
+        fechar();
+        const atualizado = res.fornecedor;
+        const idx = this.fornecedores.findIndex(f => f.id === forn.id);
+        if (idx !== -1) {
+          this.fornecedores[idx] = atualizado;
+        }
+        await showCustomAlert(`Fornecedor "${atualizado.nome}" atualizado com sucesso!`, 'Sucesso');
+        this.render();
+        await this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao atualizar fornecedor:', err);
+        await showCustomAlert(err.message || 'Erro ao salvar alterações do fornecedor.', 'Erro');
+      }
+    });
+  }
+
+  private async excluirFornecedor(id: string, nome: string): Promise<void> {
+    const confirmou = await showCustomConfirm(
+      `Deseja realmente excluir o fornecedor "${nome}"?`,
+      'Excluir Fornecedor',
+      { isDestructive: true, confirmText: 'Excluir', cancelText: 'Cancelar' }
+    );
+    if (!confirmou) return;
+
+    try {
+      const { FinFornecedoresService } = await import('../services/finFornecedoresService');
+      await FinFornecedoresService.excluirFornecedor(id);
+      this.fornecedores = this.fornecedores.filter(f => f.id !== id);
+      await showCustomAlert(`Fornecedor "${nome}" excluído com sucesso!`, 'Sucesso');
+      this.render();
+      await this.setupEventListeners();
+    } catch (err: any) {
+      console.error('Erro ao excluir fornecedor:', err);
+      await showCustomAlert(err.message || 'Erro ao excluir fornecedor.', 'Erro');
+    }
   }
 }

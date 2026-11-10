@@ -1,9 +1,9 @@
 import { supabase } from './supabase';
-import { FinRemessa, FinStatusRemessa } from '../types';
+import { FinRemessa, FinStatusRemessa, FinFormaPagamento } from '../types';
 
 export class FinRemessasService {
   /**
-   * Lista as remessas agrupadas com seus itens associados
+   * Lista as remessas agrupadas com seus itens associados e conta bancária
    */
   public static async listarRemessas(status?: 'todas' | FinStatusRemessa): Promise<FinRemessa[]> {
     try {
@@ -11,6 +11,7 @@ export class FinRemessasService {
         .from('fin_remessas')
         .select(`
           *,
+          conta_bancaria:fin_contas_bancarias(*),
           itens:fin_contas_pagar(
             *,
             tipo_custo:fin_tipos_custo(*),
@@ -103,23 +104,42 @@ export class FinRemessasService {
   }
 
   /**
-   * Baixa consolidada da Remessa inteira: liquida todos os títulos e replica comprovante
+   * Baixa consolidada da Remessa inteira: liquida todos os títulos com a mesma forma de pagamento e conta bancária
    */
   public static async baixarRemessaConsolidada(params: {
     remessaId: string;
     dataPagamento: string;
-    contaBancariaId?: string;
+    contaBancariaId: string;
+    formaPagamento: FinFormaPagamento | string;
     comprovanteUrl?: string;
+    observacoes?: string;
     usuarioId: string;
     usuarioNome?: string;
   }): Promise<{ sucesso: boolean; erro?: string }> {
     try {
+      if (!params.remessaId) {
+        return { sucesso: false, erro: 'ID da remessa não fornecido' };
+      }
+      if (!params.contaBancariaId) {
+        return { sucesso: false, erro: 'Selecione a conta bancária de saída do pagamento.' };
+      }
+      if (!params.formaPagamento) {
+        return { sucesso: false, erro: 'Selecione a forma de pagamento do lote.' };
+      }
+      if (!params.dataPagamento) {
+        return { sucesso: false, erro: 'Informe a data do pagamento.' };
+      }
+
       // 1. Atualiza a Remessa mestre como Paga
       const { error: remErr } = await supabase
         .from('fin_remessas')
         .update({
           status: 'paga',
+          data_pagamento: params.dataPagamento,
+          conta_bancaria_id: params.contaBancariaId,
+          forma_pagamento: params.formaPagamento,
           comprovante_url: params.comprovanteUrl || null,
+          baixado_por: params.usuarioId,
           updated_at: new Date().toISOString()
         })
         .eq('id', params.remessaId);
@@ -130,12 +150,11 @@ export class FinRemessasService {
       const { data: itens, error: itensErr } = await supabase
         .from('fin_contas_pagar')
         .select('id, valor_nominal')
-        .eq('remessa_id', params.remessaId)
-        .neq('status', 'pago');
+        .eq('remessa_id', params.remessaId);
 
       if (itensErr) throw itensErr;
 
-      // 3. Liquida cada título filho registrando valor_pago = valor_nominal
+      // 3. Liquida cada título filho registrando a mesma forma de pagamento e conta
       if (itens && itens.length > 0) {
         for (const item of itens) {
           await supabase
@@ -143,7 +162,8 @@ export class FinRemessasService {
             .update({
               status: 'pago',
               data_pagamento: params.dataPagamento,
-              conta_bancaria_id: params.contaBancariaId || null,
+              conta_bancaria_id: params.contaBancariaId,
+              forma_pagamento: params.formaPagamento,
               valor_pago: item.valor_nominal,
               valor_estimado: false, // Valor realizado e liquidado na remessa
               comprovante_url: params.comprovanteUrl || null,
@@ -151,6 +171,24 @@ export class FinRemessasService {
               updated_at: new Date().toISOString()
             })
             .eq('id', item.id);
+
+          try {
+            await supabase.from('fin_auditoria').insert({
+              conta_id: item.id,
+              usuario_id: params.usuarioId,
+              acao: 'baixa',
+              detalhes: {
+                tipo: 'baixa_lote_remessa',
+                remessa_id: params.remessaId,
+                data_pagamento: params.dataPagamento,
+                forma_pagamento: params.formaPagamento,
+                conta_bancaria_id: params.contaBancariaId,
+                usuario_nome: params.usuarioNome
+              }
+            });
+          } catch (auditErr) {
+            console.warn('[FinRemessasService] Falha não bloqueante ao registrar auditoria:', auditErr);
+          }
         }
       }
 
@@ -158,6 +196,96 @@ export class FinRemessasService {
     } catch (err: any) {
       console.error('[FinRemessasService] Erro ao baixar remessa consolidada:', err);
       return { sucesso: false, erro: err.message || 'Falha ao liquidar remessa agrupada' };
+    }
+  }
+
+  /**
+   * Reversão consolidada de um Lote / Remessa baixado
+   * Reverte a remessa mestre para 'aberta' e todos os seus títulos filhos de volta para pendente/atrasado
+   */
+  public static async reverterBaixaRemessa(params: {
+    remessaId: string;
+    usuarioId: string;
+    usuarioRole?: string;
+    motivo?: string;
+    usuarioNome?: string;
+  }): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      if (!params.remessaId) return { sucesso: false, erro: 'ID da remessa não fornecido' };
+
+      // 1. Atualiza a Remessa mestre de volta para 'aberta'
+      const { error: remErr } = await supabase
+        .from('fin_remessas')
+        .update({
+          status: 'aberta',
+          data_pagamento: null,
+          conta_bancaria_id: null,
+          forma_pagamento: null,
+          comprovante_url: null,
+          baixado_por: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', params.remessaId);
+
+      if (remErr) throw remErr;
+
+      // 2. Busca todos os títulos da remessa
+      const { data: itens, error: itensErr } = await supabase
+        .from('fin_contas_pagar')
+        .select('id, data_vencimento, data_vencimento_operacional, observacoes, valor_nominal')
+        .eq('remessa_id', params.remessaId);
+
+      if (itensErr) throw itensErr;
+
+      // 3. Reverte cada título para pendente (ou atrasado se vencimento passou)
+      const hojeIso = new Date().toISOString().split('T')[0];
+      if (itens && itens.length > 0) {
+        for (const item of itens) {
+          const vDate = (item.data_vencimento_operacional || item.data_vencimento || '').split('T')[0];
+          const novoStatus = (vDate && vDate < hojeIso) ? 'atrasado' : 'pendente';
+          const motivoFmt = params.motivo 
+            ? `[ESTORNO LOTE ${new Date().toLocaleDateString('pt-BR')}] ${params.motivo}` 
+            : `[ESTORNO LOTE ${new Date().toLocaleDateString('pt-BR')}] Baixa do lote revertida`;
+
+          await supabase
+            .from('fin_contas_pagar')
+            .update({
+              status: novoStatus,
+              data_pagamento: null,
+              conta_bancaria_id: null,
+              forma_pagamento: null,
+              valor_pago: 0.00,
+              juros_multa: 0.00,
+              desconto: 0.00,
+              comprovante_url: null,
+              baixado_por: null,
+              observacoes: item.observacoes ? `${item.observacoes}\n${motivoFmt}` : motivoFmt,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', item.id);
+
+          try {
+            await supabase.from('fin_auditoria').insert({
+              conta_id: item.id,
+              usuario_id: params.usuarioId,
+              acao: 'estorno',
+              detalhes: {
+                tipo: 'estorno_lote_remessa',
+                remessa_id: params.remessaId,
+                motivo: params.motivo || 'Estorno consolidado do lote',
+                usuario_nome: params.usuarioNome
+              }
+            });
+          } catch (auditErr) {
+            console.warn('[FinRemessasService] Falha não bloqueante ao registrar auditoria de estorno:', auditErr);
+          }
+        }
+      }
+
+      return { sucesso: true };
+    } catch (err: any) {
+      console.error('[FinRemessasService] Erro ao reverter baixa de remessa:', err);
+      return { sucesso: false, erro: err.message || 'Falha ao reverter lote de pagamento' };
     }
   }
 
@@ -196,4 +324,3 @@ export class FinRemessasService {
     }
   }
 }
-

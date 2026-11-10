@@ -1313,6 +1313,21 @@ export class EditTravelModal {
       }, selectedDestinoId);
     }
 
+    // Sincronização em tempo real do Valor Total com o Painel da Aba Produtos
+    const inputValorViagem = document.getElementById('edit-viagem-valor') as HTMLInputElement | null;
+    if (inputValorViagem) {
+      const sincronizarValor = () => {
+        const val = parseDoubleBr(inputValorViagem.value);
+        if (this.currentLoadedViagem) {
+          this.currentLoadedViagem.valor_total = val;
+        }
+        v.valor_total = val;
+        this.atualizarPainelFinanceiroProdutos();
+      };
+      inputValorViagem.addEventListener('input', sincronizarValor);
+      inputValorViagem.addEventListener('change', sincronizarValor);
+    }
+
     const editStatus = document.getElementById('edit-viagem-status') as HTMLSelectElement;
     const inputFinEdit = document.getElementById('edit-viagem-data-financeiro') as HTMLInputElement;
     const labelFinEdit = document.getElementById('label-edit-viagem-data-financeiro');
@@ -1568,14 +1583,16 @@ export class EditTravelModal {
           const originalBtnHtml = submitBtn.innerHTML;
           submitBtn.innerHTML = `<span>✅ Salvo com Sucesso!</span>`;
           submitBtn.className = submitBtn.className.replace(/bg-indigo-600 hover:bg-indigo-700/g, 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30');
+          setTimeout(() => {
+            if (submitBtn) {
+              submitBtn.innerHTML = originalBtnHtml;
+              submitBtn.className = submitBtn.className.replace(/bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600\/30/g, 'bg-indigo-600 hover:bg-indigo-700');
+            }
+          }, 3000);
         }
 
         this.options.showToast('Viagem atualizada com sucesso!', 'success');
         await this.options.onUpdate(this.currentLoadedViagem);
-        
-        setTimeout(async () => {
-          await this.open(v.id, 'detalhes');
-        }, 500);
       } catch (err: any) {
         console.error('Erro ao editar viagem:', err);
         this.options.showToast('Erro ao editar viagem.', 'error', err);
@@ -2734,9 +2751,16 @@ export class EditTravelModal {
   public atualizarPainelFinanceiroProdutos(): void {
     const tripId = this.tripId;
     const viagem = this.options.viagens.find(x => x.id === tripId);
-    const valorTotalViagem = this.currentLoadedViagem?.valor_total !== undefined && this.currentLoadedViagem?.valor_total !== null
-      ? (Number(this.currentLoadedViagem.valor_total) || 0)
-      : (viagem ? (Number(viagem.valor_total) || 0) : 0);
+    const inputValorViagem = document.getElementById('edit-viagem-valor') as HTMLInputElement | null;
+    let valorTotalViagem = 0;
+
+    if (inputValorViagem && inputValorViagem.value && inputValorViagem.value.trim() !== '') {
+      valorTotalViagem = parseDoubleBr(inputValorViagem.value);
+    } else if (this.currentLoadedViagem?.valor_total !== undefined && this.currentLoadedViagem?.valor_total !== null) {
+      valorTotalViagem = Number(this.currentLoadedViagem.valor_total) || 0;
+    } else if (viagem) {
+      valorTotalViagem = Number(viagem.valor_total) || 0;
+    }
 
     const produtos = (this.currentLoadedViagem?.produtos && Array.isArray(this.currentLoadedViagem.produtos))
       ? this.currentLoadedViagem.produtos

@@ -1050,12 +1050,27 @@ export interface FinRemessa {
   data_prevista: string;
   valor_total: number;
   status: FinStatusRemessa;
+  forma_pagamento?: FinFormaPagamento;
+  conta_bancaria_id?: string;
+  conta_bancaria?: FinContaBancaria;
+  data_pagamento?: string;
+  baixado_por?: string;
   comprovante_url?: string;
   observacoes?: string;
   criado_por?: string;
   created_at?: string;
   updated_at?: string;
   itens?: FinContaPagar[];
+}
+
+export interface FinFornecedor {
+  id: string;
+  nome: string;
+  cpf_cnpj?: string;
+  observacoes?: string;
+  ativo: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export type FinFormaPagamento = 'pix' | 'boleto' | 'transferencia' | 'debito' | 'dinheiro';
