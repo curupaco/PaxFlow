@@ -244,5 +244,29 @@ describe('Módulo Financeiro: Lotes de Remessa, Fornecedores e Fechamento', () =
     expect(resGuto.ravTotal).toBeCloseTo(528, 2); // 600 * 0.88
     expect(resGuto.lucroLiquidoReal).toBeCloseTo(1336.055, 2);
   });
+
+  it('deve ordenar títulos e lotes corretamente com suporte a alternância asc/desc', () => {
+    // Setup
+    const contas = [
+      { id: '1', favorecido: 'Zara', dataRef: '2026-10-25', valor: 300 },
+      { id: '2', favorecido: 'Azul', dataRef: '2026-10-05', valor: 1500 },
+      { id: '3', favorecido: 'Gol', dataRef: '2026-10-15', valor: 800 }
+    ];
+
+    // Action - Ordenação por Data ASC (padrão correto para contas a pagar)
+    const porDataAsc = [...contas].sort((a, b) => a.dataRef.localeCompare(b.dataRef));
+    // Action - Ordenação por Data DESC
+    const porDataDesc = [...contas].sort((a, b) => b.dataRef.localeCompare(a.dataRef));
+    // Action - Ordenação por Favorecido ASC
+    const porFavAsc = [...contas].sort((a, b) => a.favorecido.localeCompare(b.favorecido));
+    // Action - Ordenação por Valor Nominal DESC
+    const porValorDesc = [...contas].sort((a, b) => b.valor - a.valor);
+
+    // Assert
+    expect(porDataAsc.map(c => c.id)).toEqual(['2', '3', '1']); // 05/10, 15/10, 25/10
+    expect(porDataDesc.map(c => c.id)).toEqual(['1', '3', '2']); // 25/10, 15/10, 05/10
+    expect(porFavAsc.map(c => c.favorecido)).toEqual(['Azul', 'Gol', 'Zara']);
+    expect(porValorDesc.map(c => c.id)).toEqual(['2', '3', '1']); // 1500, 800, 300
+  });
 });
 

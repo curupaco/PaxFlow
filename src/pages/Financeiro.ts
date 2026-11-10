@@ -45,6 +45,8 @@ export class FinanceiroPage {
   private filtroAgrupamento: 'todos' | 'avulsos' = 'todos';
   private titulosSelecionados: Set<string> = new Set();
   private buscaFornecedorTermo: string = '';
+  private ordenacaoColuna: 'data' | 'favorecido' | 'categoria' | 'valor_nominal' | 'valor_pago' | 'status' = 'data';
+  private ordenacaoSentido: 'asc' | 'desc' = 'asc';
 
   private escapeHtml(s: any): string {
     return String(s ?? '')
@@ -504,7 +506,52 @@ export class FinanceiroPage {
       }
     }
 
-    linhasParaExibir.sort((a, b) => (b.dataRef || '').localeCompare(a.dataRef || ''));
+    // Ordenação interativa das linhas exibidas na tabela
+    const sentido = this.ordenacaoSentido === 'asc' ? 1 : -1;
+
+    linhasParaExibir.sort((a, b) => {
+      if (this.ordenacaoColuna === 'data') {
+        const dataA = a.dataRef || '';
+        const dataB = b.dataRef || '';
+        return dataA.localeCompare(dataB) * sentido;
+      }
+
+      if (this.ordenacaoColuna === 'favorecido') {
+        const favA = a.tipo === 'lote' ? a.remessa.favorecido : a.conta.favorecido;
+        const favB = b.tipo === 'lote' ? b.remessa.favorecido : b.conta.favorecido;
+        return (favA || '').localeCompare(favB || '', 'pt-BR', { sensitivity: 'base' }) * sentido;
+      }
+
+      if (this.ordenacaoColuna === 'categoria') {
+        const catA = a.tipo === 'lote' ? 'Lote Consolidado' : (a.conta.categoria?.nome || a.conta.tipo_custo?.nome || 'Geral');
+        const catB = b.tipo === 'lote' ? 'Lote Consolidado' : (b.conta.categoria?.nome || b.conta.tipo_custo?.nome || 'Geral');
+        return catA.localeCompare(catB, 'pt-BR', { sensitivity: 'base' }) * sentido;
+      }
+
+      if (this.ordenacaoColuna === 'valor_nominal') {
+        const valA = a.tipo === 'lote' ? (Number(a.remessa.valor_total) || 0) : (Number(a.conta.valor_nominal) || 0);
+        const valB = b.tipo === 'lote' ? (Number(b.remessa.valor_total) || 0) : (Number(b.conta.valor_nominal) || 0);
+        return (valA - valB) * sentido;
+      }
+
+      if (this.ordenacaoColuna === 'valor_pago') {
+        const valA = a.tipo === 'lote' 
+          ? (a.remessa.status === 'paga' ? Number(a.remessa.valor_total || 0) : 0) 
+          : (Number(a.conta.valor_pago) || 0);
+        const valB = b.tipo === 'lote' 
+          ? (b.remessa.status === 'paga' ? Number(b.remessa.valor_total || 0) : 0) 
+          : (Number(b.conta.valor_pago) || 0);
+        return (valA - valB) * sentido;
+      }
+
+      if (this.ordenacaoColuna === 'status') {
+        const stA = a.tipo === 'lote' ? (a.remessa.status === 'paga' ? 'pago' : 'aberto') : a.conta.status;
+        const stB = b.tipo === 'lote' ? (b.remessa.status === 'paga' ? 'pago' : 'aberto') : b.conta.status;
+        return (stA || '').localeCompare(stB || '') * sentido;
+      }
+
+      return 0;
+    });
 
     const totalSelecionado = Array.from(this.titulosSelecionados).reduce((acc, id) => {
       const conta = this.contas.find(c => c.id === id);
@@ -795,19 +842,61 @@ export class FinanceiroPage {
         <!-- 1. Visão Desktop: Tabela com Rolagem Defensiva (hidden md:block) -->
         <div class="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
           <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade w-full">
-            <table class="w-full text-left border-collapse min-w-[950px]">
+            <table class="w-full text-left border-collapse table-auto">
               <thead>
                 <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
-                  <th class="py-3 px-3 w-10 text-center">
+                  <th class="py-2.5 px-2.5 w-10 text-center">
                     <input type="checkbox" id="check-selecionar-todas-contas" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" title="Selecionar todos os títulos avulsos pendentes" />
                   </th>
-                  <th class="py-3 px-4">Data</th>
-                  <th class="py-3 px-4">Favorecido / Descrição</th>
-                  <th class="py-3 px-4">Tipo / Categoria</th>
-                  <th class="py-3 px-4 text-right">Valor Nominal</th>
-                  <th class="py-3 px-4 text-right">Valor Pago</th>
-                  <th class="py-3 px-4 text-center">Status</th>
-                  <th class="py-3 px-4 w-36 text-center">Ações</th>
+                  <th class="py-2.5 px-2.5 th-ordenavel cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition select-none w-28 whitespace-nowrap" data-coluna="data">
+                    <div class="flex items-center gap-1">
+                      <span>Data</span>
+                      <span class="text-[10px] font-black ${this.ordenacaoColuna === 'data' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'}">
+                        ${this.ordenacaoColuna === 'data' ? (this.ordenacaoSentido === 'asc' ? '▲' : '▼') : '↕'}
+                      </span>
+                    </div>
+                  </th>
+                  <th class="py-2.5 px-3 th-ordenavel cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition select-none min-w-[180px]" data-coluna="favorecido">
+                    <div class="flex items-center gap-1">
+                      <span>Favorecido / Descrição</span>
+                      <span class="text-[10px] font-black ${this.ordenacaoColuna === 'favorecido' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'}">
+                        ${this.ordenacaoColuna === 'favorecido' ? (this.ordenacaoSentido === 'asc' ? '▲' : '▼') : '↕'}
+                      </span>
+                    </div>
+                  </th>
+                  <th class="py-2.5 px-2.5 th-ordenavel cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition select-none w-32 whitespace-nowrap" data-coluna="categoria">
+                    <div class="flex items-center gap-1">
+                      <span>Tipo / Categoria</span>
+                      <span class="text-[10px] font-black ${this.ordenacaoColuna === 'categoria' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'}">
+                        ${this.ordenacaoColuna === 'categoria' ? (this.ordenacaoSentido === 'asc' ? '▲' : '▼') : '↕'}
+                      </span>
+                    </div>
+                  </th>
+                  <th class="py-2.5 px-2.5 th-ordenavel cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition select-none w-28 text-right whitespace-nowrap" data-coluna="valor_nominal">
+                    <div class="flex items-center justify-end gap-1">
+                      <span>Valor Nominal</span>
+                      <span class="text-[10px] font-black ${this.ordenacaoColuna === 'valor_nominal' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'}">
+                        ${this.ordenacaoColuna === 'valor_nominal' ? (this.ordenacaoSentido === 'asc' ? '▲' : '▼') : '↕'}
+                      </span>
+                    </div>
+                  </th>
+                  <th class="py-2.5 px-2.5 th-ordenavel cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition select-none w-28 text-right whitespace-nowrap" data-coluna="valor_pago">
+                    <div class="flex items-center justify-end gap-1">
+                      <span>Valor Pago</span>
+                      <span class="text-[10px] font-black ${this.ordenacaoColuna === 'valor_pago' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'}">
+                        ${this.ordenacaoColuna === 'valor_pago' ? (this.ordenacaoSentido === 'asc' ? '▲' : '▼') : '↕'}
+                      </span>
+                    </div>
+                  </th>
+                  <th class="py-2.5 px-2 th-ordenavel cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition select-none w-24 text-center whitespace-nowrap" data-coluna="status">
+                    <div class="flex items-center justify-center gap-1">
+                      <span>Status</span>
+                      <span class="text-[10px] font-black ${this.ordenacaoColuna === 'status' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'}">
+                        ${this.ordenacaoColuna === 'status' ? (this.ordenacaoSentido === 'asc' ? '▲' : '▼') : '↕'}
+                      </span>
+                    </div>
+                  </th>
+                  <th class="py-2.5 px-2 w-28 text-center whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -828,62 +917,62 @@ export class FinanceiroPage {
                     return `
                       <!-- LINHA MESTRE DO LOTE CONSOLIDADO -->
                       <tr class="bg-indigo-50/60 dark:bg-indigo-950/40 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 transition-colors border-y border-indigo-100/80 dark:border-indigo-900/50 font-semibold">
-                        <td class="py-3 px-3 text-center">
+                        <td class="py-2.5 px-2.5 text-center">
                           <span class="text-sm select-none" title="Lote de Remessa Agrupada">📦</span>
                         </td>
 
-                        <td class="py-3 px-4 whitespace-nowrap">
+                        <td class="py-2.5 px-2.5 whitespace-nowrap">
                           <button type="button" data-remessa-id="${rem.id}" class="btn-toggle-remessa inline-flex items-center gap-1.5 text-xs font-black text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100 cursor-pointer">
                             <span class="transform transition-transform text-[10px] ${expandida ? "rotate-90" : ""}">▶</span>
                             <span>${formatarData(rem.data_pagamento || rem.data_prevista)}</span>
                           </button>
                           <span class="text-[9px] text-slate-400 block font-semibold mt-0.5">
-                            ${rem.status === "paga" ? "Data Pagamento Lote" : "Previsão do Lote"}
+                            ${rem.status === "paga" ? "Pago no Lote" : "Previsão Lote"}
                           </span>
                         </td>
 
-                        <td class="py-3 px-4">
-                          <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-black text-slate-900 dark:text-slate-100 text-xs">📦 LOTE: ${rem.favorecido}</span>
+                        <td class="py-2.5 px-3 min-w-0">
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="font-black text-slate-900 dark:text-slate-100 text-xs">📦 LOTE: ${this.escapeHtml(rem.favorecido)}</span>
                             <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-indigo-100 dark:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                               ${itens.length} títulos
                             </span>
                           </div>
-                          <span class="text-[10px] text-slate-500 dark:text-slate-400 block truncate max-w-sm mt-0.5">${rem.observacoes || "Pagamento unificado em lote"}</span>
+                          <span class="text-[10px] text-slate-500 dark:text-slate-400 block truncate max-w-xs md:max-w-sm mt-0.5">${this.escapeHtml(rem.observacoes || "Pagamento unificado em lote")}</span>
                         </td>
 
-                        <td class="py-3 px-4 whitespace-nowrap">
+                        <td class="py-2.5 px-2.5 whitespace-nowrap">
                           <span class="font-bold text-slate-700 dark:text-slate-300 block">Lote Consolidado</span>
                           <span class="text-[10px] text-slate-400 block">${rem.forma_pagamento ? rem.forma_pagamento.toUpperCase() : "Pagamento Unificado"}</span>
                         </td>
 
-                        <td class="py-3 px-4 text-right whitespace-nowrap">
-                          <span class="font-black text-slate-900 dark:text-slate-100 text-sm">${formatarMoeda(rem.valor_total || totalItens)}</span>
+                        <td class="py-2.5 px-2.5 text-right whitespace-nowrap">
+                          <span class="font-black text-slate-900 dark:text-slate-100 text-xs">${formatarMoeda(rem.valor_total || totalItens)}</span>
                         </td>
 
-                        <td class="py-3 px-4 text-right whitespace-nowrap">
-                          <span class="font-black ${rem.status === "paga" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}">
+                        <td class="py-2.5 px-2.5 text-right whitespace-nowrap">
+                          <span class="font-black text-xs ${rem.status === "paga" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}">
                             ${rem.status === "paga" ? formatarMoeda(rem.valor_total || totalPagoItens || totalItens) : "-"}
                           </span>
                         </td>
 
-                        <td class="py-3 px-4 text-center whitespace-nowrap">
-                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border ${rem.status === "paga" ? statusColors.pago : statusColors.pendente} uppercase">
+                        <td class="py-2.5 px-2 text-center whitespace-nowrap">
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-extrabold border ${rem.status === "paga" ? statusColors.pago : statusColors.pendente} uppercase">
                             ${rem.status === "paga" ? "Pago" : "Aberto"}
                           </span>
                         </td>
 
-                        <td class="py-3 px-4 w-36 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-2 w-28 text-center whitespace-nowrap">
                           <div class="flex items-center justify-center gap-1">
                             ${rem.status !== "paga" ? `
-                              <button data-remessa-id="${rem.id}" class="btn-abrir-baixa-remessa px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition cursor-pointer shadow-xs flex items-center gap-1" title="Liquidar pagamento do lote (escolher banco e forma)">
+                              <button data-remessa-id="${rem.id}" class="btn-abrir-baixa-remessa px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition cursor-pointer shadow-xs flex items-center gap-1" title="Liquidar pagamento do lote (escolher banco e forma)">
                                 💳 Pagar
                               </button>
-                              <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa px-2 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 rounded-lg font-bold text-[10px] transition cursor-pointer" title="Desfazer lote e devolver contas">
+                              <button data-remessa-id="${rem.id}" class="btn-desagrupar-remessa px-1.5 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 rounded-lg font-bold text-[10px] transition cursor-pointer" title="Desfazer lote e devolver contas">
                                 Desfazer
                               </button>
                             ` : `
-                              <button data-remessa-id="${rem.id}" class="btn-reverter-remessa px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[10px] transition cursor-pointer shadow-xs flex items-center gap-1" title="Reverter baixa do lote inteiro (retornar todos os itens para pendente)">
+                              <button data-remessa-id="${rem.id}" class="btn-reverter-remessa px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[10px] transition cursor-pointer shadow-xs flex items-center gap-1" title="Reverter baixa do lote inteiro (retornar todos os itens para pendente)">
                                 ↩ Reverter
                               </button>
                               ${rem.comprovante_url ? `
@@ -899,40 +988,40 @@ export class FinanceiroPage {
                       <!-- LINHAS FILHAS INDENTADAS DO LOTE (SE EXPANDIDO) -->
                       ${expandida ? itens.map(c => `
                         <tr class="bg-indigo-50/25 dark:bg-indigo-950/20 border-b border-indigo-100/50 dark:border-indigo-900/30 text-xs hover:bg-indigo-50/40 dark:hover:bg-indigo-950/30 transition-colors">
-                          <td class="py-2.5 px-3 text-center">
+                          <td class="py-2 px-2.5 text-center">
                             <span class="text-indigo-400 font-black text-xs select-none">↳</span>
                           </td>
-                          <td class="py-2.5 px-4 whitespace-nowrap pl-6">
-                            <span class="font-bold text-slate-800 dark:text-slate-200 block">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
-                            <span class="text-[9px] text-indigo-500 font-semibold block">Vencimento Título</span>
+                          <td class="py-2 px-2.5 whitespace-nowrap pl-4">
+                            <span class="font-bold text-slate-800 dark:text-slate-200 block text-xs">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                            <span class="text-[9px] text-indigo-500 font-semibold block">Vencimento</span>
                           </td>
-                          <td class="py-2.5 px-4">
+                          <td class="py-2 px-3 min-w-0">
                             <div class="flex items-center gap-1.5 flex-wrap">
                               <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-100 dark:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300">
-                                LOTE '${rem.favorecido}'
+                                LOTE '${this.escapeHtml(rem.favorecido)}'
                               </span>
-                              <span class="font-bold text-slate-800 dark:text-slate-200 truncate max-w-xs">${c.favorecido}</span>
+                              <span class="font-bold text-slate-800 dark:text-slate-200 truncate max-w-xs block">${this.escapeHtml(c.favorecido)}</span>
                             </div>
-                            <span class="text-[10px] text-slate-400 block truncate max-w-xs mt-0.5">${c.descricao || "Despesa"}</span>
+                            <span class="text-[10px] text-slate-400 block truncate max-w-xs mt-0.5">${this.escapeHtml(c.descricao || "Despesa")}</span>
                           </td>
-                          <td class="py-2.5 px-4 whitespace-nowrap">
+                          <td class="py-2 px-2.5 whitespace-nowrap">
                             <span class="font-bold text-slate-600 dark:text-slate-400 block">${c.categoria?.nome || "Geral"}</span>
                             <span class="text-[10px] text-slate-400 block">${c.tipo_custo?.nome || "Operacional"}</span>
                           </td>
-                          <td class="py-2.5 px-4 text-right whitespace-nowrap">
-                            <span class="font-bold text-slate-800 dark:text-slate-200">${formatarMoeda(c.valor_nominal)}</span>
+                          <td class="py-2 px-2.5 text-right whitespace-nowrap">
+                            <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${formatarMoeda(c.valor_nominal)}</span>
                           </td>
-                          <td class="py-2.5 px-4 text-right whitespace-nowrap">
-                            <span class="font-bold ${c.status === "pago" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}">
+                          <td class="py-2 px-2.5 text-right whitespace-nowrap">
+                            <span class="font-bold text-xs ${c.status === "pago" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}">
                               ${c.valor_pago && c.valor_pago > 0 ? formatarMoeda(c.valor_pago) : "-"}
                             </span>
                           </td>
-                          <td class="py-2.5 px-4 text-center whitespace-nowrap">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
+                          <td class="py-2 px-2 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
                               ${c.status === "pago" ? "Pago no Lote" : c.status}
                             </span>
                           </td>
-                          <td class="py-2.5 px-4 text-center whitespace-nowrap text-[10px] text-slate-400 italic">
+                          <td class="py-2 px-2 w-28 text-center whitespace-nowrap text-[10px] text-slate-400 italic">
                             Item do Lote
                           </td>
                         </tr>
@@ -954,28 +1043,28 @@ export class FinanceiroPage {
                     const diffDias = Math.round(diffTime / (1000 * 60 * 60 * 24));
                     if (diffDias < 0) {
                       const atraso = Math.abs(diffDias);
-                      chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 inline-flex items-center gap-1 shadow-2xs">🔴 ${atraso}d em atraso</span>`;
+                      chipVencimento = `<span class="mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 inline-flex items-center gap-1 shadow-2xs">🔴 ${atraso}d em atraso</span>`;
                     } else if (diffDias === 0) {
-                      chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1 animate-pulse shadow-2xs">🚨 Vence Hoje</span>`;
+                      chipVencimento = `<span class="mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1 animate-pulse shadow-2xs">🚨 Vence Hoje</span>`;
                     } else if (diffDias <= 3) {
-                      chipVencimento = `<span class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 inline-flex items-center gap-1">⏳ Vence em ${diffDias}d</span>`;
+                      chipVencimento = `<span class="mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 inline-flex items-center gap-1">⏳ Vence em ${diffDias}d</span>`;
                     }
                   }
 
                   return `
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                      <td class="py-3 px-3 text-center">
+                      <td class="py-2.5 px-2.5 text-center">
                         ${podeSelecionar ? `
                           <input type="checkbox" data-id="${c.id}" class="check-selecionar-conta h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${this.titulosSelecionados.has(c.id) ? "checked" : ""} />
                         ` : ""}
                       </td>
 
-                      <td class="py-3 px-4 whitespace-nowrap">
+                      <td class="py-2.5 px-2.5 whitespace-nowrap">
                         ${c.status === "pago" ? `
-                          <span class="font-extrabold text-slate-900 dark:text-slate-100 block" title="Data do pagamento">${formatarData(c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento)}</span>
+                          <span class="font-extrabold text-slate-900 dark:text-slate-100 block text-xs" title="Data do pagamento">${formatarData(c.data_pagamento || c.data_vencimento_operacional || c.data_vencimento)}</span>
                           <span class="text-[9px] text-slate-400 block font-semibold mt-0.5" title="Vencimento original da obrigação">Venc: ${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
                         ` : `
-                          <span class="font-extrabold text-slate-900 dark:text-slate-100 block">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
+                          <span class="font-extrabold text-slate-900 dark:text-slate-100 block text-xs">${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</span>
                           ${chipVencimento ? `<div class="block">${chipVencimento}</div>` : ""}
                           ${c.data_vencimento_operacional && c.data_vencimento_operacional !== c.data_vencimento ? `
                             <span class="text-[9px] text-slate-400 block font-semibold mt-0.5" title="Vencimento nominal no final de semana / feriado">Nominal: ${formatarData(c.data_vencimento)}</span>
@@ -983,38 +1072,36 @@ export class FinanceiroPage {
                         `}
                       </td>
 
-                      <td class="py-3 px-4">
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                          <span class="font-bold text-slate-800 dark:text-slate-100 truncate max-w-xs">${c.favorecido}</span>
-                        </div>
-                        <span class="text-[10px] text-slate-400 block truncate max-w-xs">${c.descricao || "Despesa"} ${parcelaLabel}</span>
+                      <td class="py-2.5 px-3 min-w-0">
+                        <span class="font-bold text-slate-800 dark:text-slate-100 truncate block max-w-xs md:max-w-sm text-xs">${this.escapeHtml(c.favorecido)}</span>
+                        <span class="text-[10px] text-slate-400 block truncate max-w-xs md:max-w-sm mt-0.5">${this.escapeHtml(c.descricao || "Despesa")} ${parcelaLabel}</span>
                       </td>
 
-                      <td class="py-3 px-4 whitespace-nowrap">
-                        <span class="font-bold text-slate-700 dark:text-slate-300 block">${c.categoria?.nome || "Geral"}</span>
+                      <td class="py-2.5 px-2.5 whitespace-nowrap">
+                        <span class="font-bold text-slate-700 dark:text-slate-300 block text-xs">${c.categoria?.nome || "Geral"}</span>
                         <span class="text-[10px] text-slate-400 block">${c.tipo_custo?.nome || "Operacional"}</span>
                       </td>
 
-                      <td class="py-3 px-4 text-right whitespace-nowrap">
-                        <span class="font-extrabold text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
+                      <td class="py-2.5 px-2.5 text-right whitespace-nowrap">
+                        <span class="font-extrabold text-slate-900 dark:text-slate-100 text-xs">${formatarMoeda(c.valor_nominal)}</span>
                         ${ehEstimado ? `
-                          <span class="ml-1 text-[9px] bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 px-1 py-0.5 rounded font-black uppercase">Estimado</span>
+                          <span class="ml-1 text-[9px] bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 px-1 py-0.2 rounded font-black uppercase">Estimado</span>
                         ` : ""}
                       </td>
 
-                      <td class="py-3 px-4 text-right whitespace-nowrap">
-                        <span class="font-extrabold ${c.status === "pago" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}">
+                      <td class="py-2.5 px-2.5 text-right whitespace-nowrap">
+                        <span class="font-extrabold text-xs ${c.status === "pago" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}">
                           ${c.valor_pago && c.valor_pago > 0 ? formatarMoeda(c.valor_pago) : "-"}
                         </span>
                       </td>
 
-                      <td class="py-3 px-4 text-center whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
+                      <td class="py-2.5 px-2 text-center whitespace-nowrap">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${statusColors[c.status] || statusColors.pendente} uppercase">
                           ${c.status}
                         </span>
                       </td>
 
-                      <td class="py-3 px-4 w-36 text-center whitespace-nowrap">
+                      <td class="py-2.5 px-2 w-28 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center gap-1">
                           ${c.status !== "pago" && c.status !== "cancelado" ? `
                             <button data-id="${c.id}" class="btn-baixar-conta p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg transition cursor-pointer" title="Dar Baixa Inteligente">
@@ -2065,6 +2152,23 @@ export class FinanceiroPage {
         const modo = btn.getAttribute('data-modo') as 'todos' | 'avulsos';
         if (modo && modo !== this.filtroAgrupamento) {
           this.filtroAgrupamento = modo;
+          this.render();
+          this.setupEventListeners();
+        }
+      });
+    });
+
+    // Ordenação clicável pelas colunas da tabela de Contas a Pagar
+    this.container.querySelectorAll('.th-ordenavel').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.getAttribute('data-coluna') as any;
+        if (col) {
+          if (this.ordenacaoColuna === col) {
+            this.ordenacaoSentido = this.ordenacaoSentido === 'asc' ? 'desc' : 'asc';
+          } else {
+            this.ordenacaoColuna = col;
+            this.ordenacaoSentido = (col === 'valor_nominal' || col === 'valor_pago') ? 'desc' : 'asc';
+          }
           this.render();
           this.setupEventListeners();
         }
