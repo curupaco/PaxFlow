@@ -225,7 +225,7 @@ describe('Painel Comercial - Otimização de Performance e Janela Temporal Subcu
     await (dashboard as any).loadData();
 
     // Assert
-    expect(selectVia).toContain('produtos:produtos_viagem(id, viagem_id, tipo, valor_venda, comissao, markup, rav)');
+    expect(selectVia).toContain('produtos:produtos_viagem(id, viagem_id, tipo, valor_venda, tarifa, taxa, comissao, markup, rav, fornecedor, descricao, codigo_reserva)');
     expect(selectVia).not.toContain('tipo_produto');
     expect(selectVia).not.toContain('comissao_total');
     expect(selectVia).not.toContain('taxa_embarque');
