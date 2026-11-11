@@ -32,7 +32,12 @@ export class ContatosEmbarqueService {
     // Helper para verificar se um produto é do tipo aéreo/voo
     const isAereo = (p: any): boolean => {
       const pTipoUpper = (p.tipo || '').trim().toUpperCase();
-      return pTipoUpper.includes('AÉREO') || pTipoUpper.includes('VOO') || pTipoUpper === 'AEREO';
+      return pTipoUpper.includes('AÉR') || 
+             pTipoUpper.includes('AER') || 
+             pTipoUpper.includes('VOO') || 
+             pTipoUpper.includes('BILHETE') || 
+             pTipoUpper.includes('AVIA') || 
+             pTipoUpper.includes('PASSAGEM');
     };
 
     const extrairLocProduto = (p: any): string => {
@@ -47,6 +52,12 @@ export class ContatosEmbarqueService {
       prodsAereos.map(extrairLocProduto).filter(Boolean)
     ));
     const locAereoPadrao = locsAereosCadastrados.length > 0 ? locsAereosCadastrados.join(' / ') : '';
+
+    // Todos os LOCs de quaisquer produtos cadastrados na viagem como fallback defensivo geral
+    const todosLocsViagem = Array.from(new Set(
+      (Array.isArray(prods) ? prods : []).map(extrairLocProduto).filter(Boolean)
+    ));
+    const locQualquerProduto = todosLocsViagem.length > 0 ? todosLocsViagem.join(' / ') : '';
 
     // 1. Coletar trechos de produtos aéreos
     const trechosAereos: { produto: any; trecho: any; idx: number }[] = [];
@@ -69,7 +80,7 @@ export class ContatosEmbarqueService {
         
         // LOC: prioriza sempre o LOC do produto aéreo cadastrado
         const locProd = extrairLocProduto(p);
-        const loc = locProd || (t.loc ? String(t.loc).trim().toUpperCase() : '') || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || 'S/ LOC';
+        const loc = locProd || (t.loc ? String(t.loc).trim().toUpperCase() : '') || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || locQualquerProduto || 'S/ LOC';
 
         if (t.dataIda) {
           items.push({
@@ -111,8 +122,8 @@ export class ContatosEmbarqueService {
         return prodData ? extrairLocProduto(prodData) : '';
       };
 
-      const locIda = extrairLocDeData(viagem.data_ida) || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || 'S/ LOC';
-      const locVolta = extrairLocDeData(viagem.data_volta) || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || 'S/ LOC';
+      const locIda = extrairLocDeData(viagem.data_ida) || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || locQualquerProduto || 'S/ LOC';
+      const locVolta = extrairLocDeData(viagem.data_volta) || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || locQualquerProduto || 'S/ LOC';
 
       if (viagem.data_ida) {
         items.push({

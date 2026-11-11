@@ -450,15 +450,15 @@ export class DashboardFilterEngine {
       advRavMax,
       advRentabilidadeMin,
       advRentabilidadeMax,
-      advMarkupRav,
-      advAnexos,
-      advSla,
-      advRiskScore,
-      advConsultores,
-      advFormasRecebimento,
-      advOrigensLead,
-      advPaxFaixas,
-      advTags,
+      advMarkupRav = 'todos',
+      advAnexos = 'todos',
+      advSla = 'todos',
+      advRiskScore = [],
+      advConsultores = [],
+      advFormasRecebimento = [],
+      advOrigensLead = [],
+      advPaxFaixas = [],
+      advTags = [],
       sortField,
       sortDirection,
       locPagamentosMap,
@@ -475,7 +475,9 @@ export class DashboardFilterEngine {
       advConsultores
     );
 
-    // 1. Filtragem por consultor e Mês Corrente
+    // 1. Filtragem por consultor e Mês Corrente (desativa trava de mês corrente caso haja filtro explícito de data)
+    const hasExplicitDateFilter = !!(dataFinStart || dataFinEnd || dataIdaStart || dataIdaEnd || dataVoltaStart || dataVoltaEnd || advMesAno);
+
     const totalPorConsultor = viagens.filter(v => {
       const vConsultorId = v.consultor_id || (v as any).consultorId;
       const vRespId = v.consultor_responsavel_id || (v as any).consultorResponsavelId;
@@ -492,7 +494,7 @@ export class DashboardFilterEngine {
         if (!isMatchSelected) return false;
       }
 
-      if (!buscaTermo) {
+      if (!buscaTermo && !hasExplicitDateFilter) {
         if (viewModeMonth === 'current' && !this.isCurrentMonthTrip(v)) return false;
       }
       return true;
@@ -525,7 +527,7 @@ export class DashboardFilterEngine {
         if (!isMatchSelected) return false;
       }
 
-      if (!buscaTermo) {
+      if (!buscaTermo && !hasExplicitDateFilter) {
         if (viewModeMonth === 'current' && !this.isCurrentMonthTrip(v)) return false;
       }
 

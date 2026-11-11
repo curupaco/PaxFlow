@@ -2055,11 +2055,17 @@ Essa prática foi **100% expurgada**:
 1. **Rateio Proporcional em Relatórios de Faturamento (`calcularFaturamentoLucratividade`)**:
    - O cálculo financeiro de Faturamento e Lucratividade do Painel de Relatórios Gerenciais passa a integrar obrigatoriamente o `ViagensDivisoesService`.
    - Ao filtrar por consultor específico, as métricas de Venda, Taxas, Comissão, Markup, RAV e Rentabilidade Líquida são rigorosamente multiplicadas pelas respectivas fatias de participação (`fatiaVenda` e `fatiaRav`), erradicando a soma de 100% indevida em viagens compartilhadas.
-2. **Competência Financeira Estrita em Relatórios**:
+2. **Competência Financeira Estrita em Relatórios & Desativação de Conflito de Mês Corrente**:
    - Nas abas financeiras de faturamento e auditoria, a agregação temporal respeita exclusivamente o campo `data_financeiro`, impedindo que viagens sem competência financeira fechada poluam o resultado contábil do mês.
-3. **Desmembramento de Cotas na Exportação Geral CSV para Excel**:
+   - Quando o operador aplica um filtro de período explícito (ex: Data Financeira no menu Avançado do Dashboard), a trava de Mês Corrente é automaticamente desativada, evitando que viagens da competência solicitada sejam excluídas por não terem sido criadas no mês de calendário atual.
+3. **Unificação Integral do Motor Financeiro (Comissão, Markup e RAV)**:
+   - Em todos os módulos (`calcularFinanceiroProduto`, Painel Operacional, Relatórios e Exportação CSV), a rentabilidade líquida consolida de forma unificada: `Rentabilidade = Comissão + Markup + (RAV × 0.88)` para qualquer tipo de produto cadastrado. Se uma passagem aérea ou pacote possuir Markup ou RAV, estes valores são computados com fidelidade ao centavo em todas as visões.
+4. **Desmembramento de Cotas na Exportação Geral CSV para Excel**:
    - Na exportação geral consolidada do Dashboard (`DashboardExportManager`), viagens que possuem divisão de vendas entre múltiplos consultores são desdobradas em linhas dedicadas por consultor participante, estampando o nome do respectivo parceiro, a cota percentual no identificador (`VIA-XXXX (50%)`) e os valores rateados de venda e rentabilidade.
    - Isso garante que a Tabela Dinâmica do Excel agrupando por `Consultor Responsável` coincida rigorosamente ao centavo com o Dashboard Operacional e o Painel de Relatórios Gerenciais.
+5. **Propagação de LOC no Pré-Embarque e Auto-Recuperação de Tipos de Produto**:
+   - O serviço de contatos de pré-embarque reconhece variações de tipos aéreos (`Cias aéreas`, `Passagem aérea`, etc.) e propaga o LOC do lote/aéreo para trechos de ida e volta, impedindo a exibição de "S/ LOC".
+   - O modal de edição de viagem e produtos (`EditTravelModal`) executa auto-recuperação direta do banco caso a lista de tipos chegue vazia, impedindo que o seletor fique em branco.
 
 ---
 

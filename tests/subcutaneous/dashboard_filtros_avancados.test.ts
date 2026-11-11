@@ -373,22 +373,20 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
     expect(res.isDetalhado).toBe(true);
   });
 
-  it('deve zerar markup e rav em produtos padrão de Aéreo ou Hotel', () => {
+  it('deve preservar markup e rav em produtos padrão de Aéreo ou Hotel somando à rentabilidade', () => {
     // Setup
-    const prodAereo = { tipo: 'Aéreo Facial', valor_venda: 3000, tarifa: 2500, taxa: 200, comissao: 300, markup: 50, rav: 50 };
+    const prodAereo = { tipo: 'Aéreo Facial', valor_venda: 3000, tarifa: 2406, taxa: 200, comissao: 300, markup: 50, rav: 50 };
 
     // Action
     const res = calcularFinanceiroProduto(prodAereo);
 
     // Assert
     expect(res.venda).toBe(3000);
-    expect(res.tarifa).toBe(2500);
     expect(res.taxa).toBe(200);
     expect(res.comissao).toBe(300);
-    expect(res.markup).toBe(0); // markup ignorado em produto aéreo
-    expect(res.rav).toBe(0); // rav ignorada em produto aéreo
-    expect(res.rentabilidade).toBe(300);
-    expect(res.isDetalhado).toBe(true);
+    expect(res.markup).toBe(50);
+    expect(res.rav).toBe(50);
+    expect(res.rentabilidade).toBeCloseTo(394, 2);
   });
 
   it('deve filtrar apenas viagens cujos produtos possuem Markup (> R$ 0)', () => {

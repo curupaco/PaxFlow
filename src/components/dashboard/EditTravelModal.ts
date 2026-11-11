@@ -176,13 +176,32 @@ export class EditTravelModal {
           })()
         : Promise.resolve([]);
 
-      const [sData, viagemRaw, confData, formasData, pagsData] = await Promise.all([
+      const tiposProdutoPromise = (!this.options.tiposProduto || this.options.tiposProduto.length === 0)
+        ? (async () => {
+            try {
+              const { data } = await supabase
+                .from('tipos_produto')
+                .select('*')
+                .order('nome', { ascending: true });
+              return data || [];
+            } catch {
+              return [];
+            }
+          })()
+        : Promise.resolve(this.options.tiposProduto);
+
+      const [sData, viagemRaw, confData, formasData, pagsData, tiposData] = await Promise.all([
         globalSettingsPromise,
         viagemPromise,
         locConfsPromise,
         formasPromise,
-        locPagsPromise
+        locPagsPromise,
+        tiposProdutoPromise
       ]);
+
+      if (tiposData && tiposData.length > 0) {
+        this.options.tiposProduto = tiposData;
+      }
 
       if (sData) this.globalSettings = sData;
       this.cachedFormasRecebimento = formasData;
@@ -2445,13 +2464,15 @@ export class EditTravelModal {
       } else {
         taxa = editTaxaInput ? (parseDoubleBr(editTaxaInput.value) || 0) : 0;
         comissao = editComissaoInput ? (parseDoubleBr(editComissaoInput.value) || 0) : 0;
-        tarifa = venda - (taxa + comissao);
+        markup = editMarkupInput ? (parseDoubleBr(editMarkupInput.value) || 0) : 0;
+        rav = editRavInput ? (parseDoubleBr(editRavInput.value) || 0) : 0;
+        tarifa = venda - (taxa + comissao + markup + rav);
         if (Math.abs(tarifa) < 0.01) {
           tarifa = 0;
         }
-        totalDist = tarifa + taxa + comissao;
+        totalDist = tarifa + taxa + comissao + markup + rav;
         saldoPend = Math.abs(venda - totalDist) < 0.01 ? 0 : venda - totalDist;
-        rentabilidade = comissao;
+        rentabilidade = comissao + markup + (rav * 0.88);
         if (editTarifaInput) {
           editTarifaInput.value = formatCurrencyValue(tarifa);
         }

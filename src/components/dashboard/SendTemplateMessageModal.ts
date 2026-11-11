@@ -369,14 +369,39 @@ export class SendTemplateMessageModal {
         return;
       }
 
+      if (!settings?.digisac_domain || !settings?.digisac_token) {
+        chatContainer.innerHTML = `
+          <div class="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500 text-xs font-semibold text-center p-6 space-y-2">
+            <span class="text-3xl opacity-60">⚙️</span>
+            <p class="font-bold text-slate-600 dark:text-slate-300">Integração Digisac não configurada</p>
+            <p class="text-[11px] font-normal text-slate-400 dark:text-slate-500 max-w-[280px] leading-relaxed">
+              Configure o domínio e token da API Digisac nas Configurações da agência para ativar o histórico.
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      chatContainer.innerHTML = `
+        <div class="flex items-center justify-center h-full text-slate-400 dark:text-slate-500 text-xs font-semibold">
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>Sincronizando com o Digisac...</span>
+          </div>
+        </div>
+      `;
+
       try {
-        let cleanDomain = settings.digisac_domain.replace(/\/$/, '');
+        let cleanDomain = settings.digisac_domain.trim().replace(/\/$/, '');
         if (cleanDomain.endsWith('/api/v1')) {
           cleanDomain = cleanDomain.slice(0, -7);
         } else if (cleanDomain.endsWith('/api/v1/')) {
           cleanDomain = cleanDomain.slice(0, -8);
         } else if (cleanDomain.endsWith('/api')) {
           cleanDomain = cleanDomain.slice(0, -4);
+        }
+        if (!cleanDomain.startsWith('http://') && !cleanDomain.startsWith('https://')) {
+          cleanDomain = 'https://' + cleanDomain;
         }
 
         const url = `${cleanDomain}/api/v1/messages?number=${cleanNumber}&limit=20`;
@@ -420,38 +445,20 @@ export class SendTemplateMessageModal {
         chatContainer.scrollTop = chatContainer.scrollHeight;
 
       } catch (err) {
-        console.warn('Erro ao carregar mensagens da API Digisac (usando mock sandbox/fallback):', err);
-        
-        // Mock Sandbox com as mensagens passadas
+        console.warn('Erro ao carregar mensagens da API Digisac:', err);
         chatContainer.innerHTML = `
-          <div class="flex flex-col gap-2.5">
-            <div class="flex flex-col items-start max-w-[85%] self-start">
-              <div class="bg-white dark:bg-slate-900 border-slate-200/50 dark:border-slate-800 text-slate-800 dark:text-slate-200 p-2.5 rounded-2xl rounded-tl-none shadow-sm text-xs font-medium border leading-relaxed">
-                Olá, gostaria de saber se vocês têm propostas para Buenos Aires em agosto. 😊
-              </div>
-              <span class="text-[8px] text-slate-400 mt-1 px-1 font-bold">14:02</span>
-            </div>
-            
-            <div class="flex flex-col items-end max-w-[85%] self-end">
-              <div class="bg-[#d9fdd3] dark:bg-[#0b141a] border-emerald-100/30 dark:border-slate-800 text-slate-800 dark:text-slate-200 p-2.5 rounded-2xl rounded-tr-none shadow-sm text-xs font-medium border leading-relaxed">
-                Olá! Temos sim, acabei de cadastrar o seu orçamento no sistema. Vou te mandar a proposta com os voos e hotéis.
-              </div>
-              <span class="text-[8px] text-slate-400 mt-1 px-1 font-bold">14:05</span>
-            </div>
-
-            <div class="flex flex-col items-start max-w-[85%] self-start">
-              <div class="bg-white dark:bg-slate-900 border-slate-200/50 dark:border-slate-800 text-slate-800 dark:text-slate-200 p-2.5 rounded-2xl rounded-tl-none shadow-sm text-xs font-medium border leading-relaxed">
-                Perfeito, fico no aguardo!
-              </div>
-              <span class="text-[8px] text-slate-400 mt-1 px-1 font-bold">14:06</span>
-            </div>
-
-            <div class="py-1 px-2.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-400 dark:text-slate-500 text-[8px] font-bold uppercase tracking-wider text-center select-none">
-              Visualização offline da conversa (Sandbox/Fallback)
-            </div>
+          <div class="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500 text-xs font-semibold text-center p-6 space-y-2">
+            <span class="text-3xl opacity-60">💬</span>
+            <p class="font-bold text-slate-600 dark:text-slate-300">Histórico de conversas indisponível</p>
+            <p class="text-[11px] font-normal text-slate-400 dark:text-slate-500 max-w-[280px] leading-relaxed">
+              Não foi possível conectar ao canal do Digisac. O histórico pode exigir conexão segura de servidor ou o canal pode estar offline.
+            </p>
+            <button id="btn-recarregar-chat-digisac" type="button" class="mt-2 px-3 py-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg transition border border-emerald-200/60 dark:border-emerald-800/60 cursor-pointer">
+              Tentar Novamente 🔄
+            </button>
           </div>
         `;
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+        document.getElementById('btn-recarregar-chat-digisac')?.addEventListener('click', carregarHistoricoDigisac);
       }
     };
 
@@ -516,13 +523,16 @@ export class SendTemplateMessageModal {
         try {
           const cleanNumber = finalPhone.replace(/\D/g, '');
           
-          let cleanDomain = settings.digisac_domain.replace(/\/$/, '');
+          let cleanDomain = settings.digisac_domain.trim().replace(/\/$/, '');
           if (cleanDomain.endsWith('/api/v1')) {
             cleanDomain = cleanDomain.slice(0, -7);
           } else if (cleanDomain.endsWith('/api/v1/')) {
             cleanDomain = cleanDomain.slice(0, -8);
           } else if (cleanDomain.endsWith('/api')) {
             cleanDomain = cleanDomain.slice(0, -4);
+          }
+          if (!cleanDomain.startsWith('http://') && !cleanDomain.startsWith('https://')) {
+            cleanDomain = 'https://' + cleanDomain;
           }
           
           const url = `${cleanDomain}/api/v1/messages`;
@@ -563,10 +573,15 @@ export class SendTemplateMessageModal {
           fechar();
         } catch (err: any) {
           console.error('Erro ao enviar mensagem via Digisac API:', err);
-          options.showToast(`Erro ao disparar Digisac: ${err.message || 'Verifique as configurações.'}`, 'error');
           if (btnSend) {
             btnSend.disabled = false;
             btnSend.textContent = 'Enviar via Digisac 💬';
+          }
+          const isCorsOrNetwork = err.name === 'TypeError' || (err.message && err.message.toLowerCase().includes('failed to fetch'));
+          if (isCorsOrNetwork) {
+            options.showToast('A API do Digisac não permitiu a conexão direta pelo navegador (bloqueio CORS/rede). Utilize o botão "Abrir Link WhatsApp 📱" para enviar diretamente.', 'error');
+          } else {
+            options.showToast(`Erro ao disparar via Digisac: ${err.message || 'Verifique as configurações.'}`, 'error');
           }
         }
       });

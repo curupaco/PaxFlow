@@ -101,17 +101,19 @@ export function calcularFinanceiroProduto(p: any): ProdutoFinanceiroCalculado {
     // Para todos os demais tipos de produto (Aéreo, Hotel, etc.)
     taxa = parseFinancialNumber(p?.taxa);
     comissao = parseFinancialNumber(p?.comissao);
+    markup = parseFinancialNumber(p?.markup);
+    rav = parseFinancialNumber(p?.rav);
     const rawTarifa = parseFinancialNumber(p?.tarifa);
 
     if (rawTarifa > 0) {
       tarifa = rawTarifa;
-    } else if (venda > 0 && (taxa > 0 || comissao > 0)) {
-      tarifa = Math.max(0, venda - (taxa + comissao));
+    } else if (venda > 0 && (taxa > 0 || comissao > 0 || markup > 0 || rav > 0)) {
+      tarifa = Math.max(0, venda - (taxa + comissao + markup + rav));
     }
 
-    totalDistribuido = tarifa + taxa + comissao;
+    totalDistribuido = tarifa + taxa + comissao + markup + rav;
     saldoPendente = Math.abs(venda - totalDistribuido) < 0.01 ? 0 : venda - totalDistribuido;
-    rentabilidade = comissao;
+    rentabilidade = comissao + markup + (rav * 0.88);
   }
 
   const isDetalhado = venda <= 0 || (venda > 0 && totalDistribuido > 0 && Math.abs(saldoPendente) < 0.01);

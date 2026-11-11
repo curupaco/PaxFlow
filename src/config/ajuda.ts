@@ -284,6 +284,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Diferente de sistemas que registram datas em UTC puro (fazendo com que vendas lançadas no início da noite caiam no faturamento do dia anterior), o PaxFlow trata strings date-only (`YYYY-MM-DD`) fixadas no fuso horário local (`T00:00:00`). Isso garante precisão absoluta no cálculo de comissões e fechamento mensal.'
   },
   {
+    id: 'fechamento-unificado-rentabilidade',
+    modulo: 'dashboard',
+    label: '📊 Fechamento Unificado & Consistência de Rentabilidade (Painel, Relatórios e Excel)',
+    description: 'Entenda como o PaxFlow sincroniza faturamento, comissão, markup e RAV ao centavo em todas as visões.',
+    details: 'Para garantir integridade contábil e eliminar divergências entre telas:\n\n1. **Unificação do Motor de Rentabilidade**: Todos os produtos cadastrados (inclusive aéreos, hotéis e pacotes) acumulam com precisão `Comissão + Markup + RAV Líquido (RAV × 0,88)`. Se uma passagem aérea possuir Markup ou RAV, o montante é somado tanto no Painel Operacional quanto no Relatório Gerencial e na Exportação CSV para o Excel.\n2. **Prioridade de Filtros de Período**: Ao definir um intervalo de datas explícito (ex: Data Financeira no menu Avançado), o PaxFlow desativa automaticamente a trava do filtro de Mês Corrente, garantindo que todas as viagens da competência selecionada sejam exibidas e somadas.\n3. **Propagação Inteligente de LOC no Pré-Embarque**: Viagens com múltiplos produtos ou lotes aéreos propagam automaticamente seu código de reserva para trechos de ida e volta, impedindo a exibição de "S/ LOC" na volta.\n4. **Auto-Recuperação de Tipos de Produto**: O modal de edição de viagem e produtos sempre carrega diretamente os tipos cadastrados no Supabase, assegurando que o seletor de tipo nunca fique vazio.'
+  },
+  {
     id: 'filtros-conferencia-popover',
     modulo: 'dashboard',
     label: 'Filtros de Conferência (Financeiro e Processo com Pills)',

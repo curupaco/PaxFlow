@@ -286,5 +286,43 @@ describe('ContatosEmbarqueService (Subcutâneo)', () => {
       expect(embarques[0].loc).toBe('LAT111');
       expect(embarques[1].loc).toBe('GOL222');
     });
+
+    it('deve atribuir o LOC do lote/aéreo para a volta mesmo quando tipo for "Cias aéreas" e sem data_servico específica para a volta (caso Nagib Massad / QNLIYB)', () => {
+      // Setup
+      const viagem = {
+        id: 'via-0334',
+        destino: 'Florianópolis, Brasil',
+        data_ida: '2026-11-05',
+        data_volta: '2026-11-11',
+        codigo_localizador: '',
+        produtos: [
+          {
+            id: 'prod-1',
+            tipo: 'Cias aéreas - Assento/bagagem',
+            fornecedor: 'LATAM',
+            codigo_reserva: 'QNLIYB',
+            data_servico: '2026-11-05'
+          },
+          {
+            id: 'prod-2',
+            tipo: 'Passagem aérea',
+            fornecedor: 'LATAM',
+            codigo_reserva: 'QNLIYB',
+            data_servico: null
+          }
+        ]
+      };
+
+      // Action
+      const embarques = ContatosEmbarqueService.obterEmbarquesViagem(viagem);
+
+      // Assert
+      expect(embarques).toHaveLength(2);
+      expect(embarques[0].tipo).toBe('ida');
+      expect(embarques[0].loc).toBe('QNLIYB');
+      expect(embarques[1].tipo).toBe('volta');
+      expect(embarques[1].loc).toBe('QNLIYB');
+      expect(embarques[1].loc).not.toBe('S/ LOC');
+    });
   });
 });
