@@ -436,7 +436,7 @@ export class RelatoriosPage {
           created_at,
           cliente:clientes (id, nome, telefone, email),
           reembolsos (id, status, valor_solicitado, valor_aprovado, created_at),
-          produtos:produtos_viagem (id, viagem_id, tipo, valor_venda, taxa, comissao, fornecedor, markup, rav)
+          produtos:produtos_viagem (id, viagem_id, tipo, valor_venda, taxa, comissao, fornecedor, markup, rav, codigo_reserva, dados_adicionais, data_servico, status)
         `);
 
         if (janelaInicio) {

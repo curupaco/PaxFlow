@@ -29,22 +29,36 @@ export class ContatosEmbarqueService {
     const items: ItemEmbarqueViagem[] = [];
     const prods = produtosViagem || viagem.produtos || [];
 
+    // Helper para verificar se um produto é do tipo aéreo/voo
+    const isAereo = (p: any): boolean => {
+      const pTipoUpper = (p.tipo || '').trim().toUpperCase();
+      return pTipoUpper.includes('AÉREO') || pTipoUpper.includes('VOO') || pTipoUpper === 'AEREO';
+    };
+
+    const extrairLocProduto = (p: any): string => {
+      return (p?.codigo_reserva || p?.codigoReserva || p?.codigo_localizador || '').trim().toUpperCase();
+    };
+
+    // Coletar produtos aéreos da viagem
+    const prodsAereos = Array.isArray(prods) ? prods.filter(isAereo) : [];
+
+    // Todos os LOCs de produtos aéreos cadastrados na viagem (sem duplicatas)
+    const locsAereosCadastrados = Array.from(new Set(
+      prodsAereos.map(extrairLocProduto).filter(Boolean)
+    ));
+    const locAereoPadrao = locsAereosCadastrados.length > 0 ? locsAereosCadastrados.join(' / ') : '';
+
     // 1. Coletar trechos de produtos aéreos
     const trechosAereos: { produto: any; trecho: any; idx: number }[] = [];
-    if (Array.isArray(prods)) {
-      prods.forEach((p: any) => {
-        const pTipoUpper = (p.tipo || '').trim().toUpperCase();
-        if (pTipoUpper.includes('AÉREO') || pTipoUpper.includes('VOO') || pTipoUpper === 'AEREO') {
-          if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
-            p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
-              if (t.dataIda || t.dataVolta) {
-                trechosAereos.push({ produto: p, trecho: t, idx });
-              }
-            });
+    prodsAereos.forEach((p: any) => {
+      if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+        p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+          if (t.dataIda || t.dataVolta) {
+            trechosAereos.push({ produto: p, trecho: t, idx });
           }
-        }
-      });
-    }
+        });
+      }
+    });
 
     // 2. Se houver trechos aéreos, prioriza exclusivamente os trechos de voo
     if (trechosAereos.length > 0) {
@@ -52,7 +66,10 @@ export class ContatosEmbarqueService {
         const prodId = p.id || '';
         const fornecedor = p.fornecedor ? ` - ${p.fornecedor}` : '';
         const rota = (t.origem && t.destino) ? `${t.origem} ➔ ${t.destino}` : (viagem.destino || 'Destino');
-        const loc = p.codigo_reserva || viagem.codigo_localizador || 'S/ LOC';
+        
+        // LOC: prioriza sempre o LOC do produto aéreo cadastrado
+        const locProd = extrairLocProduto(p);
+        const loc = locProd || (t.loc ? String(t.loc).trim().toUpperCase() : '') || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || 'S/ LOC';
 
         if (t.dataIda) {
           items.push({
@@ -82,17 +99,31 @@ export class ContatosEmbarqueService {
         }
       });
     } else {
-      // 3. Caso não haja produtos aéreos cadastrados com trechos, usa as datas gerais da viagem
+      // 3. Caso não haja produtos aéreos com trechos cadastrados em dados_adicionais
+      // Se houver produtos aéreos cadastrados na viagem, o LOC dos embarques DEVE SEMPRE refletir o LOC do produto aéreo
+      const produtoAereoPrincipal = prodsAereos[0];
+      const prodId = produtoAereoPrincipal?.id || '';
+      const fornecedorAereo = produtoAereoPrincipal?.fornecedor ? ` - ${produtoAereoPrincipal.fornecedor}` : '';
+
+      const extrairLocDeData = (dataAlvo: string): string => {
+        if (!dataAlvo) return '';
+        const prodData = prodsAereos.find(p => p.data_servico === dataAlvo);
+        return prodData ? extrairLocProduto(prodData) : '';
+      };
+
+      const locIda = extrairLocDeData(viagem.data_ida) || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || 'S/ LOC';
+      const locVolta = extrairLocDeData(viagem.data_volta) || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || 'S/ LOC';
+
       if (viagem.data_ida) {
         items.push({
           chave: 'viagem-ida',
           rotulo: `Ida (${viagem.destino || 'Viagem'})`,
           dataStr: viagem.data_ida,
           tipo: 'ida',
-          tipoDesc: '✈️ Ida da Viagem',
+          tipoDesc: prodsAereos.length > 0 ? `✈️ Voo (Ida)${fornecedorAereo}` : '✈️ Ida da Viagem',
           destino: viagem.destino || 'Destino',
-          loc: viagem.codigo_localizador || 'S/ LOC',
-          productId: ''
+          loc: locIda,
+          productId: prodId
         });
       }
       if (viagem.data_volta) {
@@ -101,10 +132,27 @@ export class ContatosEmbarqueService {
           rotulo: `Volta (${viagem.destino || 'Retorno'})`,
           dataStr: viagem.data_volta,
           tipo: 'volta',
-          tipoDesc: '✈️ Volta da Viagem',
+          tipoDesc: prodsAereos.length > 0 ? `✈️ Voo (Volta)${fornecedorAereo}` : '✈️ Volta da Viagem',
           destino: viagem.destino || 'Destino',
-          loc: viagem.codigo_localizador || 'S/ LOC',
-          productId: ''
+          loc: locVolta,
+          productId: prodId
+        });
+      }
+
+      if (!viagem.data_ida && !viagem.data_volta && prodsAereos.length > 0) {
+        prodsAereos.forEach((p, idx) => {
+          if (p.data_servico) {
+            items.push({
+              chave: `prod-aereo-${p.id || idx}`,
+              rotulo: `${viagem.destino || 'Voo'} (Embarque)`,
+              dataStr: p.data_servico,
+              tipo: 'ida',
+              tipoDesc: `✈️ Voo${p.fornecedor ? ` - ${p.fornecedor}` : ''}`,
+              destino: viagem.destino || 'Destino',
+              loc: extrairLocProduto(p) || locAereoPadrao || 'S/ LOC',
+              productId: p.id || ''
+            });
+          }
         });
       }
     }

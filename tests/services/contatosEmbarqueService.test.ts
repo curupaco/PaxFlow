@@ -222,5 +222,69 @@ describe('ContatosEmbarqueService (Subcutâneo)', () => {
         destino: 'São Paulo, Brasil ➔ Paris, França'
       }));
     });
+
+    it('deve exibir sempre o LOC do produto aéreo cadastrado quando o produto não tiver trechos estruturados em dados_adicionais', () => {
+      // Setup
+      const viagem = {
+        id: 'trip-aereo-simples',
+        destino: 'Miami, EUA',
+        data_ida: '2026-11-20',
+        data_volta: '2026-11-28',
+        codigo_localizador: 'LOC-VIAGEM-AGENCIA',
+        produtos: [
+          {
+            id: 'prod-aereo-aa',
+            tipo: 'AÉREO FACIAL',
+            fornecedor: 'American Airlines',
+            codigo_reserva: 'AA9988'
+          }
+        ]
+      };
+
+      // Action
+      const embarques = ContatosEmbarqueService.obterEmbarquesViagem(viagem);
+
+      // Assert
+      expect(embarques).toHaveLength(2);
+      expect(embarques[0].loc).toBe('AA9988');
+      expect(embarques[0].tipoDesc).toBe('✈️ Voo (Ida) - American Airlines');
+      expect(embarques[1].loc).toBe('AA9988');
+      expect(embarques[1].tipoDesc).toBe('✈️ Voo (Volta) - American Airlines');
+    });
+
+    it('deve priorizar o LOC do produto aéreo específico de cada trecho por data_servico quando houver produtos aéreos separados', () => {
+      // Setup
+      const viagem = {
+        id: 'trip-dois-aereos',
+        destino: 'Orlando, EUA',
+        data_ida: '2026-12-01',
+        data_volta: '2026-12-10',
+        codigo_localizador: 'LOC-GERAL-AGENCIA',
+        produtos: [
+          {
+            id: 'prod-ida',
+            tipo: 'Aéreo Operadora',
+            fornecedor: 'CVC / LATAM',
+            codigo_reserva: 'LAT111',
+            data_servico: '2026-12-01'
+          },
+          {
+            id: 'prod-volta',
+            tipo: 'Aéreo Operadora',
+            fornecedor: 'CVC / GOL',
+            codigo_reserva: 'GOL222',
+            data_servico: '2026-12-10'
+          }
+        ]
+      };
+
+      // Action
+      const embarques = ContatosEmbarqueService.obterEmbarquesViagem(viagem);
+
+      // Assert
+      expect(embarques).toHaveLength(2);
+      expect(embarques[0].loc).toBe('LAT111');
+      expect(embarques[1].loc).toBe('GOL222');
+    });
   });
 });

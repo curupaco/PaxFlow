@@ -771,8 +771,10 @@ export class RelatoriosOperacoesView {
             </button>
             ${trechoDesc ? `<span class="block text-[11px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">${trechoDesc}</span>` : ''}
           </td>
-          <td class="p-2.5 whitespace-nowrap text-xs font-mono font-bold text-slate-500 dark:text-slate-400">
-            ${item.loc || '<span class="text-slate-300 dark:text-slate-600 font-normal italic">N/I</span>'}
+          <td class="p-2.5 whitespace-nowrap text-xs">
+            ${item.loc && item.loc !== 'S/ LOC' 
+              ? `<span class="inline-block px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono font-bold text-xs rounded-lg border border-slate-200/60 dark:border-slate-700/60">${item.loc}</span>` 
+              : '<span class="text-slate-300 dark:text-slate-600 font-normal italic">N/I</span>'}
           </td>
           <td class="p-2.5 whitespace-nowrap text-xs font-bold text-slate-700 dark:text-slate-200" title="Consultor: ${item.consultor}">
             ${primeiroNomeConsultor}

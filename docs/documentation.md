@@ -699,6 +699,10 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Se a viagem possui **produtos aéreos cadastrados com trechos**, o relatório prioriza e exibe **exclusivamente os trechos de voo** (com Cia aérea, rota `Origem ➔ Destino` e código localizador/reserva), eliminando qualquer duplicidade visual com as datas gerais do card.
   - Para viagens que **não possuem produtos aéreos** (ex: reservas apenas de hotel, rodoviário ou cruzeiro), o sistema utiliza automaticamente as datas gerais de Ida e Volta da viagem.
   - O sistema audita o status de contato de cada trecho de forma independente no banco de dados (`viagens.contatos_embarque`).
+- **Resolução do Código Localizador (LOC) do Produto Aéreo**:
+  - A coluna **CÓDIGO (LOC)** exibe rigorosamente o localizador (`codigo_reserva`) do produto aéreo cadastrado nos produtos da viagem (`produtos_viagem`), garantindo fidelidade com o bilhete e reserva emitidos na companhia aérea.
+  - Para viagens com múltiplos produtos aéreos (ex: ida e volta emitidos em companhias distintas), cada trecho apresenta o LOC do seu respectivo produto aéreo ou a consolidação dos localizadores cadastrados.
+  - Em viagens sem produtos aéreos (ex: apenas hotel ou rodoviário), o sistema exibe o localizador geral da viagem ou fallback `N/I`.
 - **Coluna CONTATO com Botão Toggle em 1-Clique**:
   - Posicionada entre as colunas **Alerta** e **Ações**, exibe botões visuais interativos:
     - `⏳ Pendente`: estilo âmbar com ícone de relógio indicando pendência de contato.
