@@ -162,8 +162,6 @@ export class ReembolsosPage {
           valor_solicitado,
           valor_aprovado,
           valor_utilizado_pax,
-          saldo_cliente,
-          comprovante_url,
           forma_devolucao,
           data_solicitacao,
           data_resolucao,

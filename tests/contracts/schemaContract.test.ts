@@ -245,8 +245,6 @@ describe('Testes de Contrato de Schema do Supabase (Prevenção de Schema Drift)
       'motivo_cancelamento',
       'status_tratativa',
       'valor_utilizado_pax',
-      'saldo_cliente',
-      'comprovante_url',
       'forma_devolucao'
     ]);
 
@@ -258,8 +256,6 @@ describe('Testes de Contrato de Schema do Supabase (Prevenção de Schema Drift)
       motivo_cancelamento: 'Solicitação do cliente',
       status_tratativa: 'pendente',
       valor_utilizado_pax: 0,
-      saldo_cliente: 500,
-      comprovante_url: null,
       forma_devolucao: 'pix'
     };
 
