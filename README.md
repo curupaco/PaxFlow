@@ -7,7 +7,7 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 ## Stack
 
 | Camada | Tecnologia |
-| --- | --- |
+| -- | -- |
 | Frontend | TypeScript, Vite 5, Tailwind CSS 3 |
 | Backend & BD | Supabase (PostgreSQL + Auth + Realtime) |
 | Upload & Armazenamento | Supabase Storage + Canvas API (Compactação Client-side) |
