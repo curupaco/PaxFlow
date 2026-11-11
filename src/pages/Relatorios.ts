@@ -321,6 +321,8 @@ export class RelatoriosPage {
         status,
         sub_status,
         valor_proposta,
+        valor_viagem,
+        origem,
         contato_realizado,
         contato_realizado_em,
         contato_realizado_por,
@@ -354,8 +356,8 @@ export class RelatoriosPage {
         consultor_solicitante_id,
         viagem_id,
         produto_viagem_id,
-        viagem:viagens (id, consultor_id, codigo_ref, destino),
-        produto:produtos_viagem (id, tipo, fornecedor)
+        viagem:viagens (id, consultor_id, codigo_ref, codigo_localizador, destino),
+        produto:produtos_viagem (id, tipo, fornecedor, descricao, codigo_reserva)
       `);
       if (janelaInicio) {
         reemQuery = reemQuery.gte('created_at', janelaInicio);
@@ -431,6 +433,8 @@ export class RelatoriosPage {
           valor_total,
           status,
           observacoes,
+          origem,
+          contatos_embarque,
           processo_conferido,
           destino,
           created_at,

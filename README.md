@@ -19,6 +19,8 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 ---
 
 - **Governança Estrita, Saneamento Geral de Schema & Padrão Fail-Fast [NEW]**:
+  - **Blindagem e Integridade de Consultas Relacionais**: Projeções cirúrgicas do Supabase revisadas em 100% dos módulos (Reembolsos, Relatórios de Operações e Inteligência, Painel Comercial, Edição de Viagens e Copiloto de Balcão). Garantida a inclusão de campos essenciais (`codigo_localizador`, `codigo_reserva`, `descricao`, `origem`, `contatos_embarque`, `tipo`) eliminando falhas de dados ausentes em relatórios, reconciliação e validações de pós-venda.
+  - **Relatório de Embarque com LOC do Produto Aéreo**: Exibição prioritária e consolidada do código localizador do produto aéreo de cada trecho nos relatórios operacionais, eliminando ambiguidades e duplicidades.
   - **Erradicação Total de Mocks e Fallbacks**: Eliminadas simulações de CRUD em `localStorage` (`metasService`, `avatars.ts`), constantes estáticas de dados fictícios (`finPlanoContasService`) e perfis de demonstração em runtime (`main.ts`). Toda a persistência é real e exclusiva no Supabase.
   - **Resgate e Migração de Anexos Legados**: Script SQL oficial para migrar anexos históricos das tags de observações de viagens para `documentos_anexos` e conceder permissões RLS em `storage.objects` para o bucket `documentos-clientes`, solucionando erros de `Object not found`.
   - **Expurgo Total de Zero-Drift**: Removidos 100% dos tratamentos defensivos que capturavam erros 42703/42P01 para empacotar dados em `observacoes` ou fingir sucesso em memória. Toda persistência é oficial no PostgreSQL do Supabase.

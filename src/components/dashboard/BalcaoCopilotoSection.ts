@@ -39,13 +39,13 @@ export class BalcaoCopilotoSection {
     // Filtra balcaoResultados removendo os itens do próprio usuário ou que já estejam na lista principal
     const resultadosFiltrados = balcaoResultados.map(res => {
       const viagensOutros = (res.viagens || []).filter((v: any) => {
-        const isMinhaViagem = v.consultorId === currentUserId;
+        const isMinhaViagem = (v.consultorId || v.consultor_id) === currentUserId;
         const jaEstaNaListaPrincipal = mainListTripIds.has(v.id);
         return !isMinhaViagem && !jaEstaNaListaPrincipal;
       });
 
       const orcamentosOutros = (res.orcamentos || []).filter((o: any) => {
-        const isMeuOrcamento = o.consultorId === currentUserId;
+        const isMeuOrcamento = (o.consultorId || o.consultor_id) === currentUserId;
         return !isMeuOrcamento;
       });
 

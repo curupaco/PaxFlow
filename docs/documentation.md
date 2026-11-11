@@ -2067,6 +2067,15 @@ Essa prática foi **100% expurgada**:
    - O serviço de contatos de pré-embarque reconhece variações de tipos aéreos (`Cias aéreas`, `Passagem aérea`, etc.) e propaga o LOC do lote/aéreo para trechos de ida e volta, impedindo a exibição de "S/ LOC".
    - O modal de edição de viagem e produtos (`EditTravelModal`) executa auto-recuperação direta do banco caso a lista de tipos chegue vazia, impedindo que o seletor fique em branco.
 
+## 3.57 Blindagem de Projeções Relacionais e Consistência de Dados em Tempo Real
+1. **Auditoria Cirúrgica de Projeções do Supabase**:
+   - Varredura e enriquecimento de consultas em todos os módulos onde selects restritivos causavam omissão de dados no frontend.
+   - **Central de Reembolsos e Relatórios Financeiros**: Inclusão mandatória de `codigo_localizador` de viagens e `descricao, codigo_reserva, status` de produtos em selects diretos e de viagens órfãs, eliminando campos em branco nas tabelas e no modal de edição de reembolsos.
+   - **Relatório de Embarque e Contatos Pré-Embarque**: Seleção explícita de `contatos_embarque` e priorização absoluta do código localizador (`codigo_reserva` do produto aéreo) sobre o localizador geral da viagem, garantindo fidelidade operacional por trecho.
+   - **Relatório de Inteligência e Origem de Aquisição**: Inclusão de `origem` e `valor_viagem` no select de orçamentos e viagens, permitindo a classificação precisa dos canais de captação de clientes sem agrupamento indevido em "Outros".
+   - **Validação de Transição para Pós-Venda**: Adição do campo `tipo` no select de validação de `produtos_viagem` em `EditTravelModal`, assegurando que produtos com RAV ou Markup não bloqueiem a transição por cálculo financeiro incompleto.
+   - **Normalização Snake-Case & Compatibilidade**: Ajuste em `ViagensTableView` e `BalcaoCopilotoSection` para ler consistentemente `codigo_ref` e `consultor_id`, eliminando discrepâncias visuais de tags e duplicações no co-piloto.
+
 ---
 
 > **PaxFlow** — Gestão de Pós-Venda e Fluxo de Passageiros

@@ -173,6 +173,7 @@ export class ReembolsosPage {
           viagem:viagens (
             id,
             codigo_ref,
+            codigo_localizador,
             destino,
             data_ida,
             data_volta,
@@ -180,7 +181,7 @@ export class ReembolsosPage {
             consultor_id,
             cliente:clientes (id, nome, telefone, email)
           ),
-          produto:produtos_viagem (id, viagem_id, tipo, fornecedor, valor_venda)
+          produto:produtos_viagem (id, viagem_id, tipo, fornecedor, descricao, codigo_reserva, valor_venda, status)
         `)
         .order('created_at', { ascending: false });
 

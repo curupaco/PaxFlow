@@ -331,7 +331,7 @@ export class ComercialDashboard {
 
       // 2. Carregar Viagens do banco com projeção cirúrgica e corte temporal (schema oficial: tipo, comissao, markup, rav)
       let queryVia = supabase.from('viagens').select(
-        'id, codigo_ref, cliente_id, consultor_id, destino, data_ida, data_volta, valor_total, status, codigo_localizador, created_at, updated_at, data_financeiro, produtos:produtos_viagem(id, viagem_id, tipo, valor_venda, comissao, markup, rav)'
+        'id, codigo_ref, cliente_id, consultor_id, destino, data_ida, data_volta, valor_total, status, codigo_localizador, origem, created_at, updated_at, data_financeiro, produtos:produtos_viagem(id, viagem_id, tipo, valor_venda, tarifa, taxa, comissao, markup, rav, fornecedor, descricao, codigo_reserva)'
       );
       if (this.perfil?.role !== 'admin' && this.user?.id) {
         const parceiroViagemIds = await ViagensDivisoesService.obterViagensDivididasPorConsultor(this.user.id);

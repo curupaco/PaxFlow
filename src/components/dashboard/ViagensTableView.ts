@@ -180,10 +180,10 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
         <!-- Cliente -->
         <td class="px-5 py-4 min-w-[200px]">
           <div class="font-black text-slate-800 dark:text-slate-100">${highlightMatch(v.cliente?.nome || 'Cliente Desconhecido', ctx.buscaTermo)}</div>
-          ${v.codigoRef ? `
+          ${(v.codigo_ref || v.codigoRef) ? `
             <div class="flex flex-wrap items-center gap-1.5 mt-1">
               <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-655 dark:text-indigo-400 font-mono font-bold text-[9px] rounded tracking-wider border border-indigo-200/40 dark:border-indigo-850 uppercase">
-                ${highlightMatch(v.codigoRef, ctx.buscaTermo)}
+                ${highlightMatch(v.codigo_ref || v.codigoRef, ctx.buscaTermo)}
               </span>
             </div>
           ` : ''}
@@ -382,9 +382,9 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
           <div class="space-y-1">
             <div class="font-black text-sm text-slate-800 dark:text-slate-100">${highlightMatch(v.cliente?.nome || 'Cliente Desconhecido', ctx.buscaTermo)}</div>
             <div class="flex flex-wrap items-center gap-1.5">
-              ${v.codigoRef ? `
+              ${(v.codigo_ref || v.codigoRef) ? `
                 <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-655 dark:text-indigo-400 font-mono font-bold text-[9px] rounded tracking-wider border border-indigo-200/40 dark:border-indigo-850 uppercase">
-                  REF: ${highlightMatch(v.codigoRef, ctx.buscaTermo)}
+                  REF: ${highlightMatch(v.codigo_ref || v.codigoRef, ctx.buscaTermo)}
                 </span>
               ` : ''}
               ${(() => {

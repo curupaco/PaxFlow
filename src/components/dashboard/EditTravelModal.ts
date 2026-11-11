@@ -1500,7 +1500,7 @@ export class EditTravelModal {
           try {
             const { data, error } = await supabase
               .from('produtos_viagem')
-              .select('valor_venda, tarifa, taxa, comissao, markup, rav, fornecedor, descricao')
+              .select('tipo, valor_venda, tarifa, taxa, comissao, markup, rav, fornecedor, descricao')
               .eq('viagem_id', v.id);
             if (!error && data) {
               produtos = data;
