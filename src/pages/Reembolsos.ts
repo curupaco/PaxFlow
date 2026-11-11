@@ -166,7 +166,6 @@ export class ReembolsosPage {
           data_solicitacao,
           data_resolucao,
           created_at,
-          updated_at,
           observacoes_financeiras,
           consultor_solicitante_id,
           viagem_id,
