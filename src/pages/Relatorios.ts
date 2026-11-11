@@ -362,13 +362,13 @@ export class RelatoriosPage {
       }
       const pReembolsos = reemQuery;
 
-      let pagQuery = supabase.from('loc_pagamentos').select('id, viagem_id, codigo_localizador, valor, status, data_pagamento, forma_pagamento, parcela_numero, created_at, formas_recebimento(*)');
+      let pagQuery = supabase.from('loc_pagamentos').select('id, viagem_id, codigo_localizador, valor, created_at, formas_recebimento(*)');
       if (janelaInicio) {
         pagQuery = pagQuery.gte('created_at', janelaInicio);
       }
       const pPagamentos = pagQuery;
 
-      let confQuery = supabase.from('loc_conferencias').select('id, viagem_id, loc_codigo, status, valor, created_at');
+      let confQuery = supabase.from('loc_conferencias').select('id, viagem_id, codigo_localizador, conferido, created_at');
       if (janelaInicio) {
         confQuery = confQuery.gte('created_at', janelaInicio);
       }

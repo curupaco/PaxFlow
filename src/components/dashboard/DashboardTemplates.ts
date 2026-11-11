@@ -188,10 +188,36 @@ export function renderReembolsosTabHTML(reembolsos: any[]): string {
   `;
 }
 
+export const TIPOS_PRODUTO_PADRAO = [
+  { nome: 'Aéreo Facial', icone: '✈️', ativo: true },
+  { nome: 'Aéreo Operadora', icone: '✈️', ativo: true },
+  { nome: 'Hotel', icone: '🏨', ativo: true },
+  { nome: 'Carro', icone: '🚗', ativo: true },
+  { nome: 'Circuito', icone: '🗺️', ativo: true },
+  { nome: 'Cruzeiro', icone: '🚢', ativo: true },
+  { nome: 'Passeios', icone: '🎟️', ativo: true },
+  { nome: 'Seguro Viagem', icone: '🛡️', ativo: true },
+  { nome: 'Ingressos', icone: '🎫', ativo: true },
+  { nome: 'Transfer', icone: '🚐', ativo: true },
+  { nome: 'Trem', icone: '🚂', ativo: true },
+  { nome: 'Cias aéreas - Assento/bagagem', icone: '🧳', ativo: true },
+  { nome: 'Cias aéreas - Emissão Com Pontos', icone: '🪙', ativo: true },
+  { nome: 'MARKUP', icone: '💎', ativo: true },
+  { nome: 'RAV - 12%', icone: '⚡', ativo: true },
+  { nome: 'Diversos', icone: '📦', ativo: true }
+];
+
+export function obterTiposProdutoValidos(tiposProduto?: any[]): any[] {
+  const lista = Array.isArray(tiposProduto) && tiposProduto.length > 0 ? tiposProduto : TIPOS_PRODUTO_PADRAO;
+  const filtrados = lista.filter((t: any) => t && t.ativo !== false && t.nome && t.nome !== 'MUDAR!');
+  return filtrados.length > 0 ? filtrados : TIPOS_PRODUTO_PADRAO;
+}
+
 /**
  * Renderiza o formulário de cadastro de novo produto
  */
 export function renderNovoProdutoFormHTML(tiposProduto: any[]): string {
+  const tiposValidos = obterTiposProdutoValidos(tiposProduto);
   return `
     <div class="flex items-center justify-between mb-3">
       <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide flex items-center gap-1">➕ Adicionar Produto / Serviço</h4>
@@ -206,7 +232,7 @@ export function renderNovoProdutoFormHTML(tiposProduto: any[]): string {
           <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Tipo *</label>
           <select id="prod-tipo" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
             <option value="" disabled selected class="bg-white dark:bg-slate-800 text-slate-400">Selecione o tipo...</option>
-            ${tiposProduto.filter((t: any) => t.ativo && t.nome !== 'MUDAR!').map((t: any) => `
+            ${tiposValidos.map((t: any) => `
               <option value="${t.nome}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">${t.nome}</option>
             `).join('')}
           </select>
@@ -316,9 +342,17 @@ export function renderLateralEditorPaneHTML(
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Tipo *</label>
                   <select id="edit-prod-tipo-${selectedProduct.id}" required ${disabledAttr} class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
-                    ${tiposProduto.filter((t: any) => t.ativo && t.nome !== 'MUDAR!').map((t: any) => `
-                      <option value="${t.nome}" ${t.nome === selectedProduct.tipo ? 'selected' : ''}>${t.nome}</option>
-                    `).join('')}
+                    ${(() => {
+                      const tiposValidos = obterTiposProdutoValidos(tiposProduto);
+                      const nomesTipos = tiposValidos.map((t: any) => t.nome);
+                      let listaFinal = [...tiposValidos];
+                      if (selectedProduct.tipo && !nomesTipos.includes(selectedProduct.tipo)) {
+                        listaFinal.unshift({ nome: selectedProduct.tipo, ativo: true });
+                      }
+                      return listaFinal.map((t: any) => `
+                        <option value="${t.nome}" ${t.nome === selectedProduct.tipo ? 'selected' : ''}>${t.nome}</option>
+                      `).join('');
+                    })()}
                   </select>
                 </div>
 

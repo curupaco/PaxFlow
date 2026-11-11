@@ -109,7 +109,7 @@ export class SendTemplateMessageModal {
           if (travelData.consultor_id) {
             const { data: pData } = await supabase
               .from('profiles')
-              .select('nome, contato')
+              .select('nome, email')
               .eq('id', travelData.consultor_id)
               .maybeSingle();
             consultorData = pData;
@@ -320,9 +320,15 @@ export class SendTemplateMessageModal {
     };
 
     select.addEventListener('change', atualizarVisualizacao);
+    let debouncePhoneTimer: any = null;
     phoneInput.addEventListener('input', () => {
       customPhone = phoneInput.value;
-      carregarHistoricoDigisac();
+      if (showChatHistory) {
+        if (debouncePhoneTimer) clearTimeout(debouncePhoneTimer);
+        debouncePhoneTimer = setTimeout(() => {
+          carregarHistoricoDigisac();
+        }, 1200);
+      }
     });
 
     // Inicializa o preview
@@ -579,7 +585,16 @@ export class SendTemplateMessageModal {
           }
           const isCorsOrNetwork = err.name === 'TypeError' || (err.message && err.message.toLowerCase().includes('failed to fetch'));
           if (isCorsOrNetwork) {
-            options.showToast('A API do Digisac não permitiu a conexão direta pelo navegador (bloqueio CORS/rede). Utilize o botão "Abrir Link WhatsApp 📱" para enviar diretamente.', 'error');
+            // Se o Digisac foi bloqueado por CORS pelo navegador, abre o link do WhatsApp para garantir a entrega sem atrito
+            const textEscaped = encodeURIComponent(finalTexto);
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${textEscaped}`;
+            window.open(whatsappUrl, '_blank');
+            await concederXp();
+            if (options.onMessageSent) {
+              try { await options.onMessageSent(); } catch (errSent) { console.error(errSent); }
+            }
+            fechar();
+            options.showToast('A API do Digisac não autoriza conexões diretas do navegador (CORS). Mensagem aberta no WhatsApp para envio imediato! 🚀', 'success');
           } else {
             options.showToast(`Erro ao disparar via Digisac: ${err.message || 'Verifique as configurações.'}`, 'error');
           }

@@ -32,7 +32,8 @@ import {
   renderReembolsosTabHTML,
   renderNovoProdutoFormHTML,
   renderLateralEditorPaneHTML,
-  renderTrechoRowHTML
+  renderTrechoRowHTML,
+  obterTiposProdutoValidos
 } from './DashboardTemplates';
 import {
   isTipoRav,
@@ -202,6 +203,7 @@ export class EditTravelModal {
       if (tiposData && tiposData.length > 0) {
         this.options.tiposProduto = tiposData;
       }
+      this.options.tiposProduto = obterTiposProdutoValidos(this.options.tiposProduto);
 
       if (sData) this.globalSettings = sData;
       this.cachedFormasRecebimento = formasData;

@@ -125,4 +125,28 @@ describe('Fechamento Unificado e Sincronização Operacional (Subcutâneo)', () 
     expect(resultado.filtrados.map(v => v.id)).not.toContain('viagem-novembro');
     expect(resultado.filtrados.length).toBe(1);
   });
+
+  it('deve fornecer catálogo resiliente de tipos de produto mesmo se o banco de dados retornar vazio por RLS ou falha', async () => {
+    // Setup
+    const { obterTiposProdutoValidos, renderNovoProdutoFormHTML } = await import('../../src/components/dashboard/DashboardTemplates');
+
+    // Action 1: Array vazio do banco
+    const tiposVazios = obterTiposProdutoValidos([]);
+
+    // Assert 1: Deve conter os tipos essenciais (Aéreo, Hotel, etc.)
+    expect(tiposVazios.length).toBeGreaterThan(0);
+    const nomes = tiposVazios.map((t: any) => t.nome);
+    expect(nomes).toContain('Aéreo Facial');
+    expect(nomes).toContain('Hotel');
+    expect(nomes).toContain('MARKUP');
+    expect(nomes).toContain('RAV - 12%');
+
+    // Action 2: Renderização do formulário com array vazio
+    const htmlForm = renderNovoProdutoFormHTML([]);
+
+    // Assert 2: O formulário deve conter os <option> preenchidos e não ficar em branco
+    expect(htmlForm).toContain('<option value="Aéreo Facial"');
+    expect(htmlForm).toContain('<option value="Hotel"');
+    expect(htmlForm).not.toContain('MUDAR!');
+  });
 });
