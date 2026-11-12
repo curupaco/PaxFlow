@@ -27,6 +27,7 @@ import {
   verificarViagemTotalmentePaga
 } from '../utils/productFinancialHelper';
 import { excluirViagemCascata } from '../controllers/viagensController';
+import { ContatosEmbarqueService } from '../services/contatosEmbarqueService';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
 if (typeof document !== 'undefined') {
@@ -612,6 +613,45 @@ export class Dashboard {
           isTotalmentePago
         };
       });
+
+      // Transição automática inteligente: viagens em pós-venda dentro da janela de SLA avançam para pré-embarque
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const msPorDia = 1000 * 60 * 60 * 24;
+      const viagensParaTransicionar: string[] = [];
+
+      this.viagens.forEach((v: any) => {
+        if (v.status === 'pos_venda') {
+          const embarques = ContatosEmbarqueService.obterEmbarquesViagem(v, v.produtos);
+          const menorDataStr = embarques.length > 0 
+            ? embarques.map(e => e.dataStr).filter(Boolean).sort()[0] 
+            : v.data_ida;
+
+          if (menorDataStr) {
+            const dataEmb = new Date(menorDataStr + 'T00:00:00');
+            dataEmb.setHours(0, 0, 0, 0);
+            const diasParaEmbarque = Math.ceil((dataEmb.getTime() - hoje.getTime()) / msPorDia);
+
+            if (diasParaEmbarque >= 0 && diasParaEmbarque <= this.slaPreEmbarqueDias) {
+              v.status = 'pre_embarque';
+              viagensParaTransicionar.push(v.id);
+            }
+          }
+        }
+      });
+
+      if (viagensParaTransicionar.length > 0 && !this.isFallbackMode) {
+        (async () => {
+          try {
+            await supabase
+              .from('viagens')
+              .update({ status: 'pre_embarque' })
+              .in('id', viagensParaTransicionar);
+          } catch (errT: any) {
+            console.warn('Falha na transição automática de status para pré-embarque:', errT);
+          }
+        })();
+      }
     } catch (err: any) {
       this.isFallbackMode = true;
       console.warn('Erro ao carregar viagens do banco. Mantendo estado atual:', err.message);

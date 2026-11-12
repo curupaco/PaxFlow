@@ -264,8 +264,8 @@ export class DashboardFilterEngine {
       }
     };
 
-    // Regra de SLA para "Pré-Embarque"
-    if (viagem.status === 'pre_embarque' || viagem.status === 'fechado') {
+    // Regra de SLA para "Pré-Embarque" (inclui viagens em pos_venda cuja validação administrativa já foi concluída)
+    if (viagem.status === 'pre_embarque' || viagem.status === 'fechado' || viagem.status === 'pos_venda') {
       checkDateUrgency(viagem.data_ida, 'Embarque');
 
       if (viagem.produtos && Array.isArray(viagem.produtos)) {

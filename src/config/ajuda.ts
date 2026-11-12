@@ -640,7 +640,7 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'viagens',
     label: 'Automação: Transição para Pré-Embarque (Viagens)',
     description: 'Viagens em pós-venda mudam para "Pré-Embarque" automaticamente próximo à data de embarque.',
-    details: 'Quando a data do voo ou do primeiro serviço da viagem (data de ida) se aproxima, o sistema altera o status operacional da viagem para "Pré-Embarque" de forma autônoma.\n\nEsta transição ocorre exatamente X dias antes da viagem (limite definido por padrão como 7 dias nas Configurações de Automações). Ao entrar nesta fase, a viagem aciona alertas visuais de atenção na lista e destaca a necessidade de conferência final e entrega de vouchers/dicas de viagem para o cliente final.'
+    details: 'Quando a data do voo ou do primeiro serviço da viagem se aproxima, o sistema altera o status operacional da viagem de "Pós-Venda" para "Pré-Embarque" de forma autônoma e sincronizada.\n\n* **Janela Baseada em SLA Dinâmico**: A transição e a geração de alertas no Inbox do consultor (e de parceiros da venda) ocorrem estritamente dentro da janela definida em "Parâmetros de SLAs & Prazos Automáticos" da agência (`sla_pre_embarque_dias`).\n* **Inteligência de Trechos e Produtos**: O sistema analisa tanto a data geral da viagem quanto os trechos e bilhetes aéreos cadastrados nos produtos, garantindo que mesmo se a data de cabeçalho estiver divergente, o primeiro voo real ative o SLA e o alerta no Inbox.\n* **Alertas Visuais Imediatos**: Ao entrar na janela de pré-embarque, o indicador de SLA no Dashboard acende o alerta (⚠️ ou 🚨 para menos de 48h) com o checklist de conferência e entrega de vouchers aos passageiros.'
   },
   {
     id: 'auto-status-pos-viagem',

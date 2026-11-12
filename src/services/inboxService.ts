@@ -5,6 +5,7 @@ import { EscalaService, isSameConsultantName } from './escalaService';
 import { formatTipoSolicitacaoEscala, formatStatusEscala, formatReembolsoStatus, formatarDataBR, formatarPeriodoDataBR } from '../utils/messageFormatter';
 import { PushSenderService } from './pushSenderService';
 import { podeAcessarFinanceiro } from '../utils/permissaoFinanceiro';
+import { ContatosEmbarqueService } from './contatosEmbarqueService';
 
 export class InboxService {
   /**
@@ -731,12 +732,33 @@ export class InboxService {
         }
       })();
 
-      // 10. Viagens operacionais relevantes (janela cirúrgica de pré-embarque até 15 dias e pós-viagem 8 dias)
-      const agora = new Date();
-      const dataMinimaVolta = new Date(agora.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const dataMaximaIda = new Date(agora.getTime() + 16 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const dataMinimaIda = new Date(agora.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      // 10. Configurações globais de SLAs da agência (Parâmetros de SLAs & Prazos Automáticos)
+      const pSettings = (async () => {
+        try {
+          const { data } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+          return data;
+        } catch (_) {
+          return null;
+        }
+      })();
 
+      // 11. Divisões e parcerias ativas da consultora/consultor
+      const pParcerias = !userIsAdmin
+        ? (async () => {
+            try {
+              const { data } = await supabase
+                .from('viagens_divisoes')
+                .select('viagem_id')
+                .eq('consultor_id', user.id);
+              return (data || []).map((d: any) => d.viagem_id).filter(Boolean);
+            } catch (_) {
+              return [];
+            }
+          })()
+        : Promise.resolve([]);
+
+      // 12. Viagens operacionais relevantes com suporte unificado a datas de produtos e parcerias
+      const agora = new Date();
       const pViagens = (async () => {
         try {
           let vQuery = supabase
@@ -744,22 +766,34 @@ export class InboxService {
             .select(`
               *,
               cliente:clientes (*),
-              produtos:produtos_viagem(*)
+              produtos:produtos_viagem(*),
+              divisoes:viagens_divisoes(*)
             `)
             .not('status', 'eq', 'cancelada');
+
+          // Janela operacional temporal dinâmica calculada com folga segura para cobrir datas gerais e trechos
+          const diasSlaPre = 30; // Folga de 30 dias para frente na query SQL (embarques futuros)
+          const dataMaximaIda = new Date(agora.getTime() + diasSlaPre * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          const dataMinimaVolta = new Date(agora.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          const dataMinimaIda = new Date(agora.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
           if (typeof (vQuery as any).or === 'function') {
             vQuery = vQuery.or(`and(data_ida.gte.${dataMinimaIda},data_ida.lte.${dataMaximaIda}),and(data_volta.gte.${dataMinimaVolta},data_volta.lte.${agora.toISOString().split('T')[0]})`);
           }
 
           if (!userIsAdmin) {
-            vQuery = vQuery.eq('consultor_id', user.id);
+            const parceriasIds = await pParcerias;
+            if (parceriasIds.length > 0 && typeof (vQuery as any).or === 'function') {
+              vQuery = vQuery.or(`consultor_id.eq.${user.id},id.in.(${parceriasIds.join(',')})`);
+            } else {
+              vQuery = vQuery.eq('consultor_id', user.id);
+            }
           }
 
           const res = await vQuery;
           if (res && res.error) {
             // Fallback defensivo para queries de viagens sem restrição de .or() em mocks
-            return await supabase
+            let fallbackQuery = supabase
               .from('viagens')
               .select(`
                 *,
@@ -767,6 +801,10 @@ export class InboxService {
                 produtos:produtos_viagem(*)
               `)
               .not('status', 'eq', 'cancelada');
+            if (!userIsAdmin) {
+              fallbackQuery = fallbackQuery.eq('consultor_id', user.id);
+            }
+            return await fallbackQuery;
           }
           return res;
         } catch (errViag) {
@@ -774,13 +812,13 @@ export class InboxService {
         }
       })();
 
-      // 11. Solicitações de escala
+      // 13. Solicitações de escala
       const pEscala = EscalaService.loadSolicitacoes().catch(errEsc => {
         console.warn('Erro ao carregar solicitações de escala:', errEsc);
         return [];
       });
 
-      // 12. Gestão financeira e contas a pagar
+      // 14. Gestão financeira e contas a pagar
       const podeVerFinanceiro = podeAcessarFinanceiro(perfil);
       const pFinanceiro = (async () => {
         if (!podeVerFinanceiro) return [];
@@ -795,7 +833,7 @@ export class InboxService {
         }
       })();
 
-      // 13. Campanhas ativas (gamificação)
+      // 15. Campanhas ativas (gamificação)
       const pCampanhas = (async () => {
         try {
           return await supabase.from('campaigns').select('*');
@@ -818,7 +856,9 @@ export class InboxService {
         viagensRes,
         solicitacoesEscala,
         contasCriticasFinanceiro,
-        campanhasRes
+        campanhasRes,
+        settingsRes,
+        parceriasList
       ] = await Promise.all([
         pArchived,
         pProfiles,
@@ -832,7 +872,9 @@ export class InboxService {
         pViagens,
         pEscala,
         pFinanceiro,
-        pCampanhas
+        pCampanhas,
+        pSettings,
+        pParcerias
       ]);
 
       const archivedSet = new Set(archivedList || []);
@@ -1365,126 +1407,77 @@ export class InboxService {
       // --- PARTE 6: PROCESSAMENTO CIRÚRGICO DE VIAGENS (PRÉ-EMBARQUE, AÉREO E NPS) ---
       const viagensData: any[] = viagensRes?.data || [];
       const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+
+      const slaPreEmbarqueDias = Number(settingsRes?.sla_pre_embarque_dias ?? 7);
+      const slaPosViagemDias = Number(settingsRes?.sla_pos_viagem_dias ?? 1);
+      const msPorDia = 1000 * 60 * 60 * 24;
 
       (viagensData || []).forEach((v: any) => {
         if (!v.produtos) {
           v.produtos = [];
         }
 
-        if (!userIsAdmin && v.consultor_id !== user.id) {
+        // Permissão: Admin, consultor titular ou parceiro na divisão
+        const isTitular = v.consultor_id === user.id;
+        const isParceiro = Array.isArray(v.divisoes) && v.divisoes.some((d: any) => d.consultor_id === user.id);
+        if (!userIsAdmin && !isTitular && !isParceiro) {
           return;
         }
 
         const clienteNome = v.cliente?.nome || 'Passageiro';
         const destino = v.destino || 'Destino';
 
-        // 1. Alerta de Pré-Embarque (Até 7 dias antes da ida)
-        if (v.data_ida) {
-          const dataIda = new Date(v.data_ida + 'T00:00:00');
-          const diffMs = dataIda.getTime() - hoje.getTime();
-          const horasAteIda = diffMs / (1000 * 60 * 60);
+        // 1. Alertas de Pré-Embarque via Motor Unificado de Embarques
+        const embarques = ContatosEmbarqueService.obterEmbarquesViagem(v, v.produtos);
 
-          if (horasAteIda > -24 && horasAteIda <= 168) {
-            const isUrgente = horasAteIda <= 48;
-            const uniqueId = `pre-embarque-${v.id}`;
-            const diasRestantes = Math.max(0, Math.ceil(horasAteIda / 24));
+        embarques.forEach((emb) => {
+          if (!emb.dataStr) return;
+          const dataEmb = new Date(emb.dataStr + 'T00:00:00');
+          dataEmb.setHours(0, 0, 0, 0);
+
+          const diffMs = dataEmb.getTime() - hoje.getTime();
+          const diasRestantes = Math.ceil(diffMs / msPorDia);
+
+          // Dispara alerta dentro da janela configurada em global_settings.sla_pre_embarque_dias
+          if (diasRestantes >= 0 && diasRestantes <= slaPreEmbarqueDias) {
+            const isUrgente = diasRestantes <= 2; // Menos de 48h
+            const uniqueId = `pre-embarque-${v.id}-${emb.chave}`;
+            const rotaOuDestino = emb.destino || destino;
+            const locTexto = emb.loc || v.codigo_localizador || 'Não informado';
 
             list.push({
               id: uniqueId,
               type: 'pre-embarque',
-              title: isUrgente ? '🚨 URGENTE - Embarque em menos de 48h!' : '✈️ Alerta - Pré-Embarque de Cliente',
+              title: isUrgente 
+                ? '🚨 URGENTE - Embarque em menos de 48h!' 
+                : `✈️ Alerta - Pré-Embarque (${emb.tipoDesc || 'Voo'})`,
               sender: 'PaxFlow Operações',
               senderAvatar: 'paxflow',
-              dateStr: dataIda.toLocaleDateString('pt-BR'),
+              dateStr: dataEmb.toLocaleDateString('pt-BR'),
               subject: isUrgente 
-                ? `🚨 EMBARQUE PRÓXIMO: ${clienteNome} viaja para ${destino} em menos de 48h!`
-                : `Pré-Embarque: ${clienteNome} viaja para ${destino} em ${diasRestantes} dia(s).`,
-              body: `A viagem de <strong>${clienteNome}</strong> com destino a <strong>${destino}</strong> está agendada para <strong>${dataIda.toLocaleDateString('pt-BR')}</strong> (${diasRestantes} dia(s) restante(s)).<br><br>• <strong>Data de Ida:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${v.codigo_localizador || 'Não informado'}<br><br><strong>Checklist de Segurança Operacional:</strong><br>1. Confirmar emissão e envio de todos os vouchers.<br>2. Auxiliar o cliente com o check-in online das companhias aéreas.<br>3. Conferir validade do passaporte, vistos e vacinas em mãos.`,
+                ? `🚨 EMBARQUE PRÓXIMO: ${clienteNome} (${rotaOuDestino}) em menos de 48h!`
+                : `Pré-Embarque: ${clienteNome} (${rotaOuDestino}) em ${diasRestantes} dia(s).`,
+              body: `O embarque de <strong>${clienteNome}</strong> com destino a <strong>${rotaOuDestino}</strong> (${emb.tipoDesc || 'Embarque'}) está agendado para <strong>${dataEmb.toLocaleDateString('pt-BR')}</strong> (${diasRestantes} dia(s) restante(s)).<br><br>• <strong>Data do Embarque:</strong> ${dataEmb.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${locTexto}<br><br><strong>Checklist de Segurança Operacional:</strong><br>1. Confirmar emissão e envio de todos os vouchers aos passageiros.<br>2. Auxiliar o cliente com o check-in online na companhia aérea / operadora.<br>3. Conferir validade do passaporte, vistos e documentação sanitária.`,
               targetId: v.id,
-              arquivado: archivedSet.has(uniqueId),
+              arquivado: archivedSet.has(uniqueId) || archivedSet.has(`pre-embarque-${v.id}`),
               consultorId: v.consultor_id || '',
               consultorNome: 'PaxFlow Automático',
               createdAt: v.created_at || new Date().toISOString(),
-              eventDate: v.data_ida
+              eventDate: emb.dataStr
             });
           }
+        });
 
-          // 1.2. Alertas de Pré-Embarque para Trechos Aéreos
-          if (v.produtos && Array.isArray(v.produtos)) {
-            v.produtos.forEach((p: any) => {
-              if ((p.tipo === 'AÉREO OPERADORA' || p.tipo === 'AÉREO FACIAL') && p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
-                p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
-                  const labelTrecho = `${p.fornecedor} - Trecho ${idx + 1} (${t.origem} ➔ ${t.destino})`;
-                  
-                  if (t.dataIda) {
-                    const dataIdaTrecho = new Date(t.dataIda + 'T00:00:00');
-                    const diffMsTrecho = dataIdaTrecho.getTime() - hoje.getTime();
-                    const horasAteIdaTrecho = diffMsTrecho / (1000 * 60 * 60);
-
-                    if (horasAteIdaTrecho > 0 && horasAteIdaTrecho <= 48) {
-                      const uniqueId = `pre-embarque-trecho-ida-${v.id}-${p.id}-${idx}`;
-
-                      list.push({
-                        id: uniqueId,
-                        type: 'pre-embarque',
-                        title: '✈️ Alerta - Ida de Trecho Aéreo',
-                        sender: 'PaxFlow Operações',
-                        senderAvatar: 'paxflow',
-                        dateStr: dataIdaTrecho.toLocaleDateString('pt-BR'),
-                        subject: `Embarque de ${clienteNome}: ${labelTrecho} em breve!`,
-                        body: `A ida do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendada para iniciar em menos de 48 horas.<br><br>• <strong>Data de Ida do Trecho:</strong> ${dataIdaTrecho.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
-                        targetId: v.id,
-                        arquivado: archivedSet.has(uniqueId) || archivedSet.has(`pre-embarque-${v.id}`),
-                        consultorId: v.consultor_id || '',
-                        consultorNome: 'PaxFlow Automático',
-                        createdAt: v.created_at || new Date().toISOString(),
-                        eventDate: t.dataIda
-                      });
-                    }
-                  }
-
-                  if (t.dataVolta) {
-                    const dataVoltaTrecho = new Date(t.dataVolta + 'T00:00:00');
-                    const diffMsVolta = dataVoltaTrecho.getTime() - hoje.getTime();
-                    const horasAteVoltaTrecho = diffMsVolta / (1000 * 60 * 60);
-
-                    if (horasAteVoltaTrecho > 0 && horasAteVoltaTrecho <= 48) {
-                      const uniqueId = `pre-embarque-trecho-volta-${v.id}-${p.id}-${idx}`;
-
-                      list.push({
-                        id: uniqueId,
-                        type: 'pre-embarque',
-                        title: '✈️ Alerta - Volta de Trecho Aéreo',
-                        sender: 'PaxFlow Operações',
-                        senderAvatar: 'paxflow',
-                        dateStr: dataVoltaTrecho.toLocaleDateString('pt-BR'),
-                        subject: `Retorno de ${clienteNome}: ${labelTrecho} em breve!`,
-                        body: `O retorno do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendado para iniciar em menos de 48 horas.<br><br>• <strong>Data de Volta do Trecho:</strong> ${dataVoltaTrecho.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
-                        targetId: v.id,
-                        arquivado: archivedSet.has(uniqueId) || archivedSet.has(`pre-embarque-${v.id}`),
-                        consultorId: v.consultor_id || '',
-                        consultorNome: 'PaxFlow Automático',
-                        createdAt: v.created_at || new Date().toISOString(),
-                        eventDate: t.dataVolta
-                      });
-                    }
-                  }
-                });
-              }
-            });
-          }
-        }
-
-        // 2. Alerta de Pós-Viagem NPS (24h após a volta até 7 dias)
+        // 2. Alerta de Pós-Viagem NPS (baseado no slaPosViagemDias de global_settings)
         if (v.data_volta) {
-          const dataVolta = new Date(v.data_volta);
-          const dataDisparo = new Date(dataVolta);
-          dataDisparo.setDate(dataDisparo.getDate() + 1);
+          const dataVolta = new Date(v.data_volta + 'T00:00:00');
+          dataVolta.setHours(0, 0, 0, 0);
 
-          const diffMsDisparo = hoje.getTime() - dataDisparo.getTime();
-          const diasAposVolta = diffMsDisparo / (1000 * 60 * 60 * 24);
+          const diffMsDisparo = hoje.getTime() - dataVolta.getTime();
+          const diasAposVolta = Math.floor(diffMsDisparo / msPorDia);
 
-          if (diasAposVolta >= 0 && diasAposVolta <= 7) {
+          if (diasAposVolta >= slaPosViagemDias && diasAposVolta <= (slaPosViagemDias + 7)) {
             const uniqueId = `pos-viagem-nps-${v.id}`;
 
             list.push({

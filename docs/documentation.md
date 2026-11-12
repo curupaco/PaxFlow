@@ -597,10 +597,22 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 ### 3.22 Alertas Automatizados de Pré-Embarque e Pós-Viagem NPS
 
-**Automações integradas à Caixa de Entrada (Inbox)** focadas em mitigar falhas de comunicação operacional e assegurar a coleta contínua de pesquisas de satisfação pós-venda.
+**Automações integradas à Caixa de Entrada (Inbox) e ao Dashboard** focadas em mitigar falhas de comunicação operacional, eliminar perdas de prazo e assegurar a coleta contínua de pesquisas de satisfação pós-venda.
 
-- **Alerta de Pré-Embarque (48h)**: Notifica automaticamente o consultor com 48 horas de antecedência ao embarque (`data_ida`) para garantir o envio correto de vouchers, passagens e orientações gerais de viagem.
-- **Alerta de Pós-Viagem NPS**: Notifica o consultor após o retorno do passageiro para conduzir a pesquisa de avaliação de satisfação (NPS).
+- **Janela Dinâmica de SLA Baseada em Configuração Global**:
+  - Os prazos de alerta deixaram de usar limites rígidos em código e agora respeitam rigorosamente os **Parâmetros de SLAs & Prazos Automáticos** da agência (`global_settings.sla_pre_embarque_dias` e `global_settings.sla_pos_viagem_dias`).
+  - Cada agência pode definir sua antecedência ideal de pré-embarque (ex: 7, 5 ou 3 dias) e a janela de pós-viagem (ex: 2 a 15 dias).
+- **Unificação com o Motor de Embarques (`ContatosEmbarqueService`)**:
+  - O Inbox agora utiliza exatamente o mesmo motor analítico do Relatório de Embarques (`ContatosEmbarqueService.obterEmbarquesViagem`).
+  - Todos os trechos aéreos, voos, conexões e bilhetes cadastrados em `produtos_viagem` (independente da categoria do produto conter "AÉREO", "VOO", "PASSAGEM" ou apenas trechos preenchidos) são rastreados com precisão de data e hora.
+  - Para viagens terrestres, cruzeiros ou hospedagem sem trechos aéreos, o sistema calcula a data a partir de `data_ida`/`data_volta`.
+- **Suporte Pleno a Parcerias e Divisões de Venda**:
+  - Os alertas de Pré-Embarque e Pós-Viagem no Inbox são gerados tanto para o consultor titular (`viagens.consultor_id`) quanto para os consultores parceiros cadastrados na divisão de venda (`viagens_divisoes`).
+- **Transição Automática de Status (`pos_venda` ➔ `pre_embarque`)**:
+  - Viagens com pagamentos validados que estejam no status `pos_venda` passam a ser auditadas pelo motor de SLA (`DashboardFilterEngine.checkSLA`).
+  - Ao entrar na janela configurada de pré-embarque (`diasParaEmbarque <= slaPreEmbarqueDias`), o PaxFlow atualiza automaticamente o status da viagem de `pos_venda` para `pre_embarque` no Supabase e aciona os alertas no Inbox e no Dashboard, garantindo que nenhum cliente embarque sem atendimento prévio.
+- **Resolução Estrita de Histórico no Digisac / WhatsApp**:
+  - A integração com a API do Digisac realiza a resolução prévia do ID do contato (`GET /api/v1/contacts?where[data.number][$iLike]=...`) antes de consultar o histórico, filtrando as mensagens unicamente por `contactId`. Isso elimina de forma definitiva qualquer risco de exibição de conversas de terceiros ou dados aleatórios na interface.
 - **Integração Imediata via WhatsApp**: Cada card de alerta contém uma ação de um clique para **Enviar Mensagem**, que carrega o modelo do WhatsApp correspondente pré-preenchido e com o link personalizado da viagem.
 
 ### 3.23 Métricas Avançadas de Performance e Rendimento de Equipe
