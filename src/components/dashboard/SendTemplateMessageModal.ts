@@ -430,6 +430,26 @@ export class SendTemplateMessageModal {
           messages = Array.isArray(raw) ? raw : (raw.data || []);
         }
 
+        // Filtro defensivo: descarta qualquer mensagem que pertença explicitamente a outro telefone
+        if (cleanNumber.length >= 8 && messages.length > 0) {
+          const ultimos8 = cleanNumber.slice(-8);
+          messages = messages.filter((m: any) => {
+            const numeroIdentificado = String(
+              m.contact?.number ||
+              m.contact?.data?.number ||
+              m.number ||
+              m.to ||
+              m.from ||
+              ''
+            ).replace(/\D/g, '');
+
+            if (numeroIdentificado && !numeroIdentificado.includes(ultimos8)) {
+              return false;
+            }
+            return true;
+          });
+        }
+
         if (messages.length === 0) {
           chatContainer.innerHTML = `
             <div class="flex items-center justify-center h-full text-slate-400 dark:text-slate-500 text-xs font-semibold text-center p-4">

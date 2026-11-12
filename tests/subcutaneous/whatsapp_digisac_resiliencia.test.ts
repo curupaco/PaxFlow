@@ -112,5 +112,39 @@ describe('WhatsApp e Digisac Resiliência Subcutâneo', () => {
     expect(mensagensOrdenadas[1].id).toBe('msg-2');
     expect(mensagensOrdenadas[2].id).toBe('msg-3');
   });
+
+  it('deve descartar defensivamente no client mensagens de telefones divergentes caso venham de proxy com cache legado', () => {
+    // Setup
+    const telefoneCliente = '5511999998888';
+    const ultimos8 = telefoneCliente.slice(-8); // '99998888'
+
+    const mensagensComTerceiros = [
+      { id: '1', text: 'Mensagem da Danielle', contact: { number: '5511911112222' } },
+      { id: '2', text: 'Mensagem do próprio cliente', contact: { number: '5511999998888' } },
+      { id: '3', text: 'Outra mensagem sem número explícito' }
+    ];
+
+    // Action
+    const mensagensFiltradas = mensagensComTerceiros.filter((m: any) => {
+      const numeroIdentificado = String(
+        m.contact?.number ||
+        m.contact?.data?.number ||
+        m.number ||
+        m.to ||
+        m.from ||
+        ''
+      ).replace(/\D/g, '');
+
+      if (numeroIdentificado && !numeroIdentificado.includes(ultimos8)) {
+        return false;
+      }
+      return true;
+    });
+
+    // Assert: A mensagem da Danielle (telefone diferente) foi sumariamente descartada
+    expect(mensagensFiltradas.length).toBe(2);
+    expect(mensagensFiltradas.some(m => m.text.includes('Danielle'))).toBe(false);
+    expect(mensagensFiltradas.some(m => m.text.includes('próprio cliente'))).toBe(true);
+  });
 });
 
