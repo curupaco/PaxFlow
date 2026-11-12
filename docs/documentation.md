@@ -2,7 +2,7 @@
 
 > **Sistema de Gestão de Pós-Venda e Fluxo de Passageiros para Agências de Viagem**
 >
-> _Versão 1.0.0 — © 2026 Thiago Costa_
+> _Versão 1.0.1 — © 2026 Thiago Costa_
 
 ---
 
