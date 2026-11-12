@@ -126,27 +126,37 @@ describe('Fechamento Unificado e Sincronização Operacional (Subcutâneo)', () 
     expect(resultado.filtrados.length).toBe(1);
   });
 
-  it('deve fornecer catálogo resiliente de tipos de produto mesmo se o banco de dados retornar vazio por RLS ou falha', async () => {
+  it('deve refletir estritamente os tipos reais do banco sem dados inventados em memória', async () => {
     // Setup
     const { obterTiposProdutoValidos, renderNovoProdutoFormHTML } = await import('../../src/components/dashboard/DashboardTemplates');
 
-    // Action 1: Array vazio do banco
+    // Action 1: Array vazio do banco (sem dados mockados)
     const tiposVazios = obterTiposProdutoValidos([]);
+    expect(tiposVazios.length).toBe(0);
 
-    // Assert 1: Deve conter os tipos essenciais (Aéreo, Hotel, etc.)
-    expect(tiposVazios.length).toBeGreaterThan(0);
-    const nomes = tiposVazios.map((t: any) => t.nome);
+    // Assert 1: O formulário com banco vazio deve avisar claramente e não inventar opções
+    const htmlFormVazio = renderNovoProdutoFormHTML([]);
+    expect(htmlFormVazio).toContain('Nenhum tipo cadastrado no banco');
+
+    // Action 2: Dados reais vindos do Supabase
+    const tiposReaisDoBanco = [
+      { nome: 'Aéreo Facial', ativo: true },
+      { nome: 'Hotel', ativo: true },
+      { nome: 'MUDAR!', ativo: true },
+      { nome: 'Desativado', ativo: false }
+    ];
+    const tiposFiltrados = obterTiposProdutoValidos(tiposReaisDoBanco);
+
+    // Assert 2: Deve conter apenas os tipos ativos e válidos do banco
+    expect(tiposFiltrados.length).toBe(2);
+    const nomes = tiposFiltrados.map((t: any) => t.nome);
     expect(nomes).toContain('Aéreo Facial');
     expect(nomes).toContain('Hotel');
-    expect(nomes).toContain('MARKUP');
-    expect(nomes).toContain('RAV - 12%');
+    expect(nomes).not.toContain('MUDAR!');
+    expect(nomes).not.toContain('Desativado');
 
-    // Action 2: Renderização do formulário com array vazio
-    const htmlForm = renderNovoProdutoFormHTML([]);
-
-    // Assert 2: O formulário deve conter os <option> preenchidos e não ficar em branco
-    expect(htmlForm).toContain('<option value="Aéreo Facial"');
-    expect(htmlForm).toContain('<option value="Hotel"');
-    expect(htmlForm).not.toContain('MUDAR!');
+    const htmlFormPreenchido = renderNovoProdutoFormHTML(tiposReaisDoBanco);
+    expect(htmlFormPreenchido).toContain('<option value="Aéreo Facial"');
+    expect(htmlFormPreenchido).toContain('<option value="Hotel"');
   });
 });
