@@ -175,15 +175,23 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 **Visualização em lista unificada** de alto desempenho para gerenciar o ciclo de vida operacional de cada viagem, do fechamento ao pós-viagem.
 
-**5 Fases de Venda / Status:**
+**6 Fases de Venda / Status Operacional:**
 
 | Fase | Descrição | SLA |
 | --- | --- | --- |
-| Fechado | Venda concluída, aguardando emissão | — |
-| Pós-Venda | Documentação, passaportes, vistos | — |
-| Pré-Embarque | Próximo ao embarque | Indicador de atenção ⚠️ se < N dias |
-| Pós-Viagem | Cliente já viajou | Alerta crítico 🚨 se sem contato pós-viagem > N dias |
+| Fechado | Venda concluída, aguardando conferência | — |
+| Pós-Venda | Documentação, passaportes, conferência | — |
+| Pré-Embarque | Próximo ao embarque | Indicador de atenção ⚠️ se <= N dias |
+| Em Viagem | Passageiro embarcado e viagem em andamento | Status de acompanhamento operacional em curso |
+| Pós-Viagem | Cliente já retornou da viagem | Alerta crítico 🚨 se sem contato pós-viagem > N dias |
 | Reembolso Solicitado | Cancelamento ou devolução em andamento | — |
+
+- **Motor de Transições Temporais Automáticas do Ciclo de Vida**:
+  - Na carga de viagens do Dashboard (`ViagensTransicaoManager.determinarStatusTemporal`), o sistema reclassifica automaticamente as viagens de acordo com a linha do tempo real:
+    - **`hoje > data_volta`**: Transiciona autonomamente para `🔵 Pós-Viagem`, ativando a cobrança de NPS e pesquisa de satisfação.
+    - **`hoje >= data_embarque` e `hoje <= data_volta`**: Transiciona autonomamente para `✈️ Em Viagem`, indicando passageiro no destino e finalizando checklists prévios de embarque.
+    - **`diasParaEmbarque <= slaPreEmbarqueDias`**: Transiciona autonomamente para `🟠 Pré-Embarque` e gera alertas na Inbox e Relatório de Embarques.
+    - **`diasParaEmbarque > slaPreEmbarqueDias`**: Mantém o status em `🟡 Pós-Venda` para gestão documental.
 
 - **Painel de Filtros Avançados Combináveis & Resumo Financeiro em Tempo Real [UPDATED]**:
   - Painel colapsável acionado pelo botão **🎛️ Avançado (N)** com contagem dinâmica de critérios ativos e rolagem interna suave (`overflow-y-auto max-h-[75vh]`).

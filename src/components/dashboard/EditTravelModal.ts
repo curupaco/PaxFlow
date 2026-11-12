@@ -742,6 +742,7 @@ export class EditTravelModal {
                   <option value="pos_venda" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
                   <option value="fechado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
                   <option value="pre_embarque" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
+                  <option value="em_viagem" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'em_viagem' ? 'selected' : ''}>Em Viagem</option>
                   <option value="pos_viagem" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
                   <option value="reembolso_solicitado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
                 </select>

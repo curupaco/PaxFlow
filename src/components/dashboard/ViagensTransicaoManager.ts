@@ -9,6 +9,7 @@
 import { supabase } from '../../services/supabase';
 import { showCustomConfirm } from '../../services/dialog';
 import { SolicitarReembolsoModal } from '../reembolsos/SolicitarReembolsoModal';
+import { ContatosEmbarqueService } from '../../services/contatosEmbarqueService';
 
 export interface TransicaoOptions {
   isFallbackMode?: boolean;
@@ -144,5 +145,79 @@ export class ViagensTransicaoManager {
         }
       }
     });
+  }
+
+  /**
+   * Determina o status temporal de uma viagem operacional de acordo com o calendário.
+   * Retorna o novo status se houver transição temporal necessária, ou null se mantiver o atual.
+   *
+   * Ciclo operacional:
+   * 1. hoje > data_volta                      => pos_viagem
+   * 2. hoje >= data_embarque && hoje <= volta => em_viagem
+   * 3. diasParaEmbarque <= slaPreEmbarque     => pre_embarque
+   * 4. diasParaEmbarque > slaPreEmbarque      => pos_venda
+   */
+  public static determinarStatusTemporal(
+    viagem: any,
+    hoje: Date = new Date(),
+    slaPreEmbarqueDias: number = 7
+  ): string | null {
+    if (!viagem) return null;
+    const statusAtual = viagem.status;
+
+    // Apenas viagens em fases operacionais ativas são reclassificadas temporalmente
+    if (statusAtual !== 'pos_venda' && statusAtual !== 'pre_embarque' && statusAtual !== 'em_viagem') {
+      return null;
+    }
+
+    const dataHoje = new Date(hoje);
+    dataHoje.setHours(0, 0, 0, 0);
+    const msPorDia = 1000 * 60 * 60 * 24;
+
+    // 1. Resolver menor data de embarque
+    let menorDataStr: string | null = null;
+    try {
+      const embarques = ContatosEmbarqueService.obterEmbarquesViagem(viagem, viagem.produtos);
+      if (embarques && embarques.length > 0) {
+        menorDataStr = embarques.map((e: any) => e.dataStr).filter(Boolean).sort()[0] || null;
+      }
+    } catch {
+      // Fallback para data_ida
+    }
+    if (!menorDataStr) {
+      menorDataStr = viagem.data_ida || null;
+    }
+
+    // 2. Resolver data de retorno
+    const dataVoltaStr = viagem.data_volta || menorDataStr;
+
+    if (!menorDataStr && !dataVoltaStr) return null;
+
+    const dataEmb = menorDataStr ? new Date(menorDataStr + 'T00:00:00') : null;
+    if (dataEmb) dataEmb.setHours(0, 0, 0, 0);
+
+    const dataVolta = dataVoltaStr ? new Date(dataVoltaStr + 'T00:00:00') : (dataEmb || dataHoje);
+    if (dataVolta) dataVolta.setHours(0, 0, 0, 0);
+
+    // Regra 1: Retorno já concluído (hoje > data_volta)
+    if (dataVolta && dataHoje.getTime() > dataVolta.getTime()) {
+      return statusAtual !== 'pos_viagem' ? 'pos_viagem' : null;
+    }
+
+    // Regra 2: Em viagem (hoje >= data_embarque e hoje <= data_volta)
+    if (dataEmb && dataHoje.getTime() >= dataEmb.getTime() && dataVolta && dataHoje.getTime() <= dataVolta.getTime()) {
+      return statusAtual !== 'em_viagem' ? 'em_viagem' : null;
+    }
+
+    // Regra 3: Pré-embarque (dentro da janela de SLA)
+    if (dataEmb) {
+      const diasParaEmbarque = Math.ceil((dataEmb.getTime() - dataHoje.getTime()) / msPorDia);
+      if (diasParaEmbarque >= 0 && diasParaEmbarque <= slaPreEmbarqueDias) {
+        return statusAtual !== 'pre_embarque' ? 'pre_embarque' : null;
+      }
+    }
+
+    // Regra 4: Futuro distante
+    return null;
   }
 }

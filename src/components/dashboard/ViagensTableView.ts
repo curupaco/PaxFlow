@@ -298,6 +298,7 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
               <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟢 Fechado</option>
               <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟡 Pós-Venda</option>
               <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟠 Pré-Embarque</option>
+              <option value="em_viagem" ${v.status === 'em_viagem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">✈️ Em Viagem</option>
               <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔵 Pós-Viagem</option>
               <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔴 Reembolso Solicitado</option>
             </select>
@@ -505,6 +506,7 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
               <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟢 Fechado</option>
               <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟡 Pós-Venda</option>
               <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🟠 Pré-Embarque</option>
+              <option value="em_viagem" ${v.status === 'em_viagem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">✈️ Em Viagem</option>
               <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔵 Pós-Viagem</option>
               <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔴 Reembolso Solicitado</option>
             </select>

@@ -88,6 +88,7 @@ export interface FilterViagensResult {
     fechado: number;
     pos_venda: number;
     pre_embarque: number;
+    em_viagem: number;
     pos_viagem: number;
     reembolso_solicitado: number;
   };
@@ -309,7 +310,7 @@ export class DashboardFilterEngine {
       viagem.status === 'concluida'
     );
 
-    if (viagem.status === 'pos_viagem' && viagem.data_volta && !isPosContatoConcluido) {
+    if ((viagem.status === 'pos_viagem' || viagem.status === 'em_viagem') && viagem.data_volta && !isPosContatoConcluido) {
       const dataVolta = new Date(viagem.data_volta + 'T00:00:00');
       dataVolta.setHours(0, 0, 0, 0);
 
@@ -506,6 +507,7 @@ export class DashboardFilterEngine {
       fechado: totalPorConsultor.filter(v => v.status === 'fechado').length,
       pos_venda: totalPorConsultor.filter(v => v.status === 'pos_venda').length,
       pre_embarque: totalPorConsultor.filter(v => v.status === 'pre_embarque').length,
+      em_viagem: totalPorConsultor.filter(v => v.status === 'em_viagem').length,
       pos_viagem: totalPorConsultor.filter(v => v.status === 'pos_viagem').length,
       reembolso_solicitado: totalPorConsultor.filter(v => v.status === 'reembolso_solicitado').length
     };

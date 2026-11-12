@@ -65,6 +65,7 @@ export interface DashboardFilterContext {
     fechado: number;
     pos_venda: number;
     pre_embarque: number;
+    em_viagem: number;
     pos_viagem: number;
     reembolso_solicitado: number;
   };
@@ -1016,6 +1017,7 @@ export class DashboardFilterBar {
         fechado: 'Fechado',
         pos_venda: 'Pós-Venda',
         pre_embarque: 'Pré-Embarque',
+        em_viagem: 'Em Viagem',
         pos_viagem: 'Pós-Viagem',
         reembolso_solicitado: 'Reembolso Solicitado'
       };
@@ -1056,6 +1058,7 @@ export class DashboardFilterBar {
           ${DashboardFilterBar.renderStatusTab('Fechado', 'fechado', counts.fechado, activeTab)}
           ${DashboardFilterBar.renderStatusTab('Pós-Venda', 'pos_venda', counts.pos_venda, activeTab)}
           ${DashboardFilterBar.renderStatusTab('Pré-Embarque', 'pre_embarque', counts.pre_embarque, activeTab)}
+          ${DashboardFilterBar.renderStatusTab('Em Viagem', 'em_viagem', counts.em_viagem, activeTab)}
           ${DashboardFilterBar.renderStatusTab('Pós-Viagem', 'pos_viagem', counts.pos_viagem, activeTab)}
           ${DashboardFilterBar.renderStatusTab('Reembolso Solicitado', 'reembolso_solicitado', counts.reembolso_solicitado, activeTab)}
         </div>

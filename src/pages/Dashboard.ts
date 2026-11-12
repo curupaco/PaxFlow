@@ -614,41 +614,45 @@ export class Dashboard {
         };
       });
 
-      // Transição automática inteligente: viagens em pós-venda dentro da janela de SLA avançam para pré-embarque
+      // Transição automática temporal: classifica viagens operacionais de acordo com a linha do tempo real
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
-      const msPorDia = 1000 * 60 * 60 * 24;
-      const viagensParaTransicionar: string[] = [];
+
+      const paraPosViagem: string[] = [];
+      const paraEmViagem: string[] = [];
+      const paraPreEmbarque: string[] = [];
 
       this.viagens.forEach((v: any) => {
-        if (v.status === 'pos_venda') {
-          const embarques = ContatosEmbarqueService.obterEmbarquesViagem(v, v.produtos);
-          const menorDataStr = embarques.length > 0 
-            ? embarques.map(e => e.dataStr).filter(Boolean).sort()[0] 
-            : v.data_ida;
+        const novoStatus = ViagensTransicaoManager.determinarStatusTemporal(
+          v,
+          hoje,
+          this.slaPreEmbarqueDias
+        );
 
-          if (menorDataStr) {
-            const dataEmb = new Date(menorDataStr + 'T00:00:00');
-            dataEmb.setHours(0, 0, 0, 0);
-            const diasParaEmbarque = Math.ceil((dataEmb.getTime() - hoje.getTime()) / msPorDia);
-
-            if (diasParaEmbarque >= 0 && diasParaEmbarque <= this.slaPreEmbarqueDias) {
-              v.status = 'pre_embarque';
-              viagensParaTransicionar.push(v.id);
-            }
-          }
+        if (novoStatus) {
+          v.status = novoStatus;
+          if (novoStatus === 'pos_viagem') paraPosViagem.push(v.id);
+          else if (novoStatus === 'em_viagem') paraEmViagem.push(v.id);
+          else if (novoStatus === 'pre_embarque') paraPreEmbarque.push(v.id);
         }
       });
 
-      if (viagensParaTransicionar.length > 0 && !this.isFallbackMode) {
+      if (!this.isFallbackMode && (paraPosViagem.length > 0 || paraEmViagem.length > 0 || paraPreEmbarque.length > 0)) {
         (async () => {
           try {
-            await supabase
-              .from('viagens')
-              .update({ status: 'pre_embarque' })
-              .in('id', viagensParaTransicionar);
+            const updates: PromiseLike<any>[] = [];
+            if (paraPosViagem.length > 0) {
+              updates.push(supabase.from('viagens').update({ status: 'pos_viagem' }).in('id', paraPosViagem));
+            }
+            if (paraEmViagem.length > 0) {
+              updates.push(supabase.from('viagens').update({ status: 'em_viagem' }).in('id', paraEmViagem));
+            }
+            if (paraPreEmbarque.length > 0) {
+              updates.push(supabase.from('viagens').update({ status: 'pre_embarque' }).in('id', paraPreEmbarque));
+            }
+            await Promise.all(updates);
           } catch (errT: any) {
-            console.warn('Falha na transição automática de status para pré-embarque:', errT);
+            console.warn('Falha na transição automática temporal de status:', errT);
           }
         })();
       }

@@ -284,7 +284,7 @@ CREATE TABLE IF NOT EXISTS public.viagens (
     data_ida DATE NOT NULL,
     data_volta DATE NOT NULL,
     valor_total NUMERIC DEFAULT 0.00 NOT NULL,
-    status VARCHAR(30) CHECK (status IN ('fechado', 'pos_venda', 'pre_embarque', 'pos_viagem', 'reembolso_solicitado')) DEFAULT 'fechado' NOT NULL,
+    status VARCHAR(30) CHECK (status IN ('fechado', 'pos_venda', 'pre_embarque', 'em_viagem', 'pos_viagem', 'reembolso_solicitado', 'concluida', 'cancelada')) DEFAULT 'fechado' NOT NULL,
     codigo_localizador TEXT,
     observacoes TEXT,
     data_financeiro DATE,

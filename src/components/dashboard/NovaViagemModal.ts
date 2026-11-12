@@ -127,6 +127,7 @@ export class NovaViagemModal {
                   <option value="pos_venda" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Venda</option>
                   <option value="fechado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Fechado</option>
                   <option value="pre_embarque" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pré-Embarque</option>
+                  <option value="em_viagem" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Em Viagem</option>
                   <option value="pos_viagem" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Viagem</option>
                 </select>
               </div>

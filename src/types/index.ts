@@ -286,7 +286,7 @@ export interface Viagem {
   data_volta?: string;
   valorTotal?: number;
   valor_total?: number;
-  status: 'planejamento' | 'confirmada' | 'em_andamento' | 'concluida' | 'cancelada' | 'pre_embarque' | 'pos_viagem' | 'reembolso_solicitado';
+  status: 'planejamento' | 'confirmada' | 'em_andamento' | 'concluida' | 'cancelada' | 'fechado' | 'pos_venda' | 'pre_embarque' | 'em_viagem' | 'pos_viagem' | 'reembolso_solicitado';
   codigoLocalizador?: string; // Código de reserva geral
   codigo_localizador?: string;
   origem?: string;
