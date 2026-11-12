@@ -415,7 +415,8 @@ export class SendTemplateMessageModal {
             action: 'getHistory',
             domain: cleanDomain,
             token: settings.digisac_token,
-            number: cleanNumber
+            number: cleanNumber,
+            serviceId: settings?.digisac_service_id
           }
         });
 

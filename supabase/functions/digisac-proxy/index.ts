@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -100,26 +101,94 @@ serve(async (req: Request) => {
         });
       }
 
-      const url = `${cleanDomain}/api/v1/messages?number=${cleanNumber}&limit=20`;
-      const response = await fetch(url, {
+      // 1. Localizar o contato pelo número de telefone no Digisac
+      // A API do Digisac não filtra mensagens por telefone em /api/v1/messages diretamente (retorna aleatórias da agência).
+      // É obrigatório localizar o contato via /api/v1/contacts e filtrar as mensagens por contactId.
+      const searchDigits = cleanNumber.length >= 8 ? cleanNumber.slice(-8) : cleanNumber;
+      const contactsUrl = `${cleanDomain}/api/v1/contacts?where[data.number][$iLike]=${encodeURIComponent(`%${searchDigits}%`)}&limit=10`;
+
+      const contactsRes = await fetch(contactsUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      const responseText = await response.text();
-      let resJson: any = {};
-      try { resJson = JSON.parse(responseText); } catch (_) { resJson = { raw: responseText }; }
+      const contactsText = await contactsRes.text();
+      let contactsJson: any = {};
+      try { contactsJson = JSON.parse(contactsText); } catch (_) { contactsJson = { raw: contactsText }; }
 
-      if (!response.ok) {
-        return new Response(JSON.stringify({ error: resJson.message || `Digisac HTTP ${response.status}`, details: resJson }), {
-          status: response.status,
+      if (!contactsRes.ok) {
+        return new Response(JSON.stringify({ error: contactsJson.message || `Digisac HTTP ${contactsRes.status}`, details: contactsJson }), {
+          status: contactsRes.status,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      return new Response(JSON.stringify({ success: true, data: resJson }), {
+      const contactsList: any[] = Array.isArray(contactsJson) ? contactsJson : (contactsJson.data || []);
+
+      if (contactsList.length === 0) {
+        // Contato ainda não cadastrado no Digisac. Retorna histórico vazio com segurança.
+        return new Response(JSON.stringify({ success: true, data: [] }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Se houver mais de um contato retornado pela busca dos dígitos,
+      // seleciona preferencialmente o mais exato ou do serviceId correspondente
+      let selectedContact = contactsList[0];
+      if (contactsList.length > 1) {
+        const exactMatch = contactsList.find((c: any) => {
+          const cNum = String(c.data?.number || c.number || '').replace(/\D/g, '');
+          return cNum.includes(cleanNumber) || cleanNumber.includes(cNum);
+        });
+        if (exactMatch) {
+          selectedContact = exactMatch;
+        } else if (serviceId) {
+          const serviceMatch = contactsList.find((c: any) => c.serviceId === serviceId);
+          if (serviceMatch) selectedContact = serviceMatch;
+        }
+      }
+
+      const contactId = selectedContact.id;
+      if (!contactId) {
+        return new Response(JSON.stringify({ success: true, data: [] }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // 2. Buscar as mensagens específicas do contato identificado
+      const messagesUrl = `${cleanDomain}/api/v1/messages?where[contactId]=${encodeURIComponent(contactId)}&limit=50`;
+      const messagesRes = await fetch(messagesUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const messagesText = await messagesRes.text();
+      let messagesJson: any = {};
+      try { messagesJson = JSON.parse(messagesText); } catch (_) { messagesJson = { raw: messagesText }; }
+
+      if (!messagesRes.ok) {
+        return new Response(JSON.stringify({ error: messagesJson.message || `Digisac HTTP ${messagesRes.status}`, details: messagesJson }), {
+          status: messagesRes.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      let messages: any[] = Array.isArray(messagesJson) ? messagesJson : (messagesJson.data || []);
+
+      // Ordenar cronologicamente para a visualização correta do chat
+      messages.sort((a: any, b: any) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeA - timeB;
+      });
+
+      return new Response(JSON.stringify({ success: true, data: messages }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

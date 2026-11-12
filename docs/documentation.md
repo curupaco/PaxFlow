@@ -1266,7 +1266,7 @@ Para aprofundar o controle gerencial, a governança de auditoria e a agilidade n
      - Relatório de SLAs e Jornada de Pós-Venda
      - Relatório de Validação de Documentos Iminentes (Passaportes em Risco)
      - Painel Preditivo de Risco e Churn
-   - Abre a gaveta de chat para visualização rápida sem efetuar disparos automáticos indevidos.
+   - Abre a gaveta de chat para visualização rápida sem efetuar disparos automáticos indevidos, utilizando resolução estrita de contato (`/api/v1/contacts`) para carregar exclusivamente o histórico do cliente selecionado em ordem cronológica, com fallback limpo de histórico vazio caso não haja interações prévias.
 
 4. **Central de Lembretes com Descrição & Resolução de Nomes**:
    - Adição de campo de texto dedicado (`descricao`) na criação e agendamento de lembretes, permitindo detalhar claramente o objetivo da tarefa (ex: "Conferir marcação de assentos e voucher").
