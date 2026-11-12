@@ -112,13 +112,11 @@ describe('Fechamento Unificado e Sincronização Operacional (Subcutâneo)', () 
       advRentabilidadeMax: null,
       advMarkupRav: 'todos',
       advAnexos: 'todos',
-      advPendencias: 'todos',
-      advDivisao: 'todos',
-      advContatosEmbarque: 'todos',
+      advSla: 'todos',
       advConsultores: [],
       slaPreEmbarqueDias: 7,
       slaPosViagemDias: 3
-    });
+    } as any);
 
     // Assert: A viagem de Outubro DEVE ser incluída porque há filtro explícito de data financeira
     expect(resultado.filtrados.map(v => v.id)).toContain('viagem-outubro');
