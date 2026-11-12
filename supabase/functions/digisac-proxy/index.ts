@@ -1,0 +1,173 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req: Request) => {
+  // Trata preflight CORS do navegador
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const authHeader = req.headers.get('Authorization') || req.headers.get('apikey');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado: token ausente' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const body = await req.json();
+    const { action, domain, token, number, text, serviceId } = body;
+
+    if (!domain || !token) {
+      return new Response(JSON.stringify({ error: 'Configurações do Digisac (domínio e token) são obrigatórias' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Sanitiza o domínio do Digisac
+    let cleanDomain = domain.trim().replace(/\/$/, '');
+    if (cleanDomain.endsWith('/api/v1')) {
+      cleanDomain = cleanDomain.slice(0, -7);
+    } else if (cleanDomain.endsWith('/api/v1/')) {
+      cleanDomain = cleanDomain.slice(0, -8);
+    } else if (cleanDomain.endsWith('/api')) {
+      cleanDomain = cleanDomain.slice(0, -4);
+    }
+    if (!cleanDomain.startsWith('http://') && !cleanDomain.startsWith('https://')) {
+      cleanDomain = 'https://' + cleanDomain;
+    }
+
+    const cleanNumber = String(number || '').replace(/\D/g, '');
+
+    // Ação 1: Enviar Mensagem via Digisac API (Server-Side sem bloqueio CORS)
+    if (action === 'sendMessage') {
+      if (!cleanNumber || !text) {
+        return new Response(JSON.stringify({ error: 'Número e texto da mensagem são obrigatórios' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const url = `${cleanDomain}/api/v1/messages`;
+      const payload: any = {
+        text,
+        number: cleanNumber,
+        origin: 'bot',
+        dontOpenTicket: true
+      };
+      if (serviceId) {
+        payload.serviceId = serviceId;
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const responseText = await response.text();
+      let resJson: any = {};
+      try { resJson = JSON.parse(responseText); } catch (_) { resJson = { raw: responseText }; }
+
+      if (!response.ok) {
+        return new Response(JSON.stringify({ error: resJson.message || `Digisac HTTP ${response.status}`, details: resJson }), {
+          status: response.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, data: resJson }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Ação 2: Buscar Histórico de Mensagens via Digisac API (Server-Side sem bloqueio CORS)
+    if (action === 'getHistory') {
+      if (!cleanNumber) {
+        return new Response(JSON.stringify({ error: 'Número do cliente é obrigatório para carregar histórico' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const url = `${cleanDomain}/api/v1/messages?number=${cleanNumber}&limit=20`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const responseText = await response.text();
+      let resJson: any = {};
+      try { resJson = JSON.parse(responseText); } catch (_) { resJson = { raw: responseText }; }
+
+      if (!response.ok) {
+        return new Response(JSON.stringify({ error: resJson.message || `Digisac HTTP ${response.status}`, details: resJson }), {
+          status: response.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, data: resJson }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Ação 3: Testar Conexão com o Serviço do Digisac (Server-Side sem bloqueio CORS)
+    if (action === 'testConnection') {
+      if (!serviceId) {
+        return new Response(JSON.stringify({ error: 'ID de Serviço é obrigatório para testar a conexão' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const url = `${cleanDomain}/api/v1/services/${serviceId}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const responseText = await response.text();
+      let resJson: any = {};
+      try { resJson = JSON.parse(responseText); } catch (_) { resJson = { raw: responseText }; }
+
+      if (!response.ok) {
+        return new Response(JSON.stringify({ error: resJson.message || `Digisac HTTP ${response.status}`, details: resJson }), {
+          status: response.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, data: resJson }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: `Ação inválida: ${action}` }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message || 'Erro interno no proxy Digisac' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});

@@ -60,5 +60,18 @@ describe('WhatsApp e Digisac Resiliência Subcutâneo', () => {
       'http://minhaagencia.digisac.chat'
     ]);
   });
+
+  it('deve utilizar o proxy de backend (supabase.functions.invoke digisac-proxy) em vez de fetch direto de browser sujeito a CORS', async () => {
+    // Setup & Action
+    const fs = await import('fs');
+    const path = await import('path');
+    const modalPath = path.resolve(__dirname, '../../src/components/dashboard/SendTemplateMessageModal.ts');
+    const conteudo = fs.readFileSync(modalPath, 'utf-8');
+
+    // Assert: Invoca a Edge Function digisac-proxy
+    expect(conteudo).toContain("supabase.functions.invoke('digisac-proxy'");
+    // Não realiza fetch direto do browser para /api/v1/messages
+    expect(conteudo).not.toContain("fetch(url,");
+  });
 });
 

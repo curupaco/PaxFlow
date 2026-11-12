@@ -641,16 +641,21 @@ export class ConfiguracoesPage {
           cleanDomain = cleanDomain.slice(0, -4);
         }
 
-        const url = `${cleanDomain}/api/v1/services/${serviceId}`;
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
+        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('digisac-proxy', {
+          body: {
+            action: 'testConnection',
+            domain: cleanDomain,
+            token,
+            serviceId
           }
         });
 
-        if (response.status === 200) {
-          const serviceData = await response.json();
+        if (edgeError) {
+          throw edgeError;
+        }
+
+        if (edgeData && (edgeData.success || edgeData.data)) {
+          const serviceData = edgeData.data || {};
           const serviceName = serviceData.name || 'WhatsApp';
           
           if (statusEl) {
@@ -662,29 +667,8 @@ export class ConfiguracoesPage {
             resultEl.textContent = `Sucesso! Canal: "${serviceName}"`;
           }
           this.showToast('Conexão estabelecida com o Digisac!', 'success');
-        } else if (response.status === 401 || response.status === 403) {
-          if (statusEl) {
-            statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20';
-            statusEl.textContent = 'Erro Auth';
-          }
-          if (resultEl) {
-            resultEl.className = 'text-[10px] font-semibold text-rose-555';
-            resultEl.textContent = 'Token de acesso inválido ou expirado.';
-          }
-          this.showToast('Erro: Token do Digisac inválido.', 'error');
-        } else if (response.status === 404) {
-          if (statusEl) {
-            statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20';
-            statusEl.textContent = 'ID Inválido';
-          }
-          if (resultEl) {
-            resultEl.className = 'text-[10px] font-semibold text-rose-555';
-            resultEl.textContent = 'ID de Conexão não encontrado.';
-          }
-          this.showToast('ID da Conexão não encontrado no Digisac.', 'error');
         } else {
-          const errText = await response.text();
-          throw new Error(errText || `Erro HTTP ${response.status}`);
+          throw new Error(edgeData?.error || 'Erro ao conectar ao Digisac.');
         }
       } catch (err: any) {
         console.error('Erro de teste Digisac:', err);
