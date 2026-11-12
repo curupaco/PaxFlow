@@ -41,7 +41,13 @@ export class ContatosEmbarqueService {
     };
 
     const extrairLocProduto = (p: any): string => {
-      return (p?.codigo_reserva || p?.codigoReserva || p?.codigo_localizador || '').trim().toUpperCase();
+      const locDireto = (p?.codigo_reserva || p?.codigoReserva || p?.codigo_localizador || p?.codigoLoc || p?.loc || '').trim().toUpperCase();
+      if (locDireto) return locDireto;
+      if (p?.dados_adicionais && typeof p.dados_adicionais === 'object') {
+        const locAdicional = (p.dados_adicionais.localizador || p.dados_adicionais.loc || p.dados_adicionais.codigo_reserva || '').trim().toUpperCase();
+        if (locAdicional) return locAdicional;
+      }
+      return '';
     };
 
     // Coletar produtos aéreos da viagem
@@ -52,6 +58,12 @@ export class ContatosEmbarqueService {
       prodsAereos.map(extrairLocProduto).filter(Boolean)
     ));
     const locAereoPadrao = locsAereosCadastrados.length > 0 ? locsAereosCadastrados.join(' / ') : '';
+
+    // Todos os LOCs de conferências registradas na viagem se houver
+    const locsConferencias = Array.isArray(viagem.loc_conferencias)
+      ? viagem.loc_conferencias.map((c: any) => (c.codigo_localizador || '').trim().toUpperCase()).filter(Boolean)
+      : (Array.isArray(viagem.conferencias) ? viagem.conferencias.map((c: any) => (c.codigo_localizador || '').trim().toUpperCase()).filter(Boolean) : []);
+    const locConferenciaPadrao = locsConferencias.length > 0 ? Array.from(new Set(locsConferencias)).join(' / ') : '';
 
     // Todos os LOCs de quaisquer produtos cadastrados na viagem como fallback defensivo geral
     const todosLocsViagem = Array.from(new Set(
@@ -80,7 +92,7 @@ export class ContatosEmbarqueService {
         
         // LOC: prioriza sempre o LOC do produto aéreo cadastrado
         const locProd = extrairLocProduto(p);
-        const loc = locProd || (t.loc ? String(t.loc).trim().toUpperCase() : '') || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || locQualquerProduto || 'S/ LOC';
+        const loc = locProd || (t.loc ? String(t.loc).trim().toUpperCase() : '') || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || locConferenciaPadrao || locQualquerProduto || 'S/ LOC';
 
         if (t.dataIda) {
           items.push({
@@ -122,8 +134,8 @@ export class ContatosEmbarqueService {
         return prodData ? extrairLocProduto(prodData) : '';
       };
 
-      const locIda = extrairLocDeData(viagem.data_ida) || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || locQualquerProduto || 'S/ LOC';
-      const locVolta = extrairLocDeData(viagem.data_volta) || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || locQualquerProduto || 'S/ LOC';
+      const locIda = extrairLocDeData(viagem.data_ida) || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || locConferenciaPadrao || locQualquerProduto || 'S/ LOC';
+      const locVolta = extrairLocDeData(viagem.data_volta) || locAereoPadrao || (viagem.codigo_localizador || '').trim().toUpperCase() || locConferenciaPadrao || locQualquerProduto || 'S/ LOC';
 
       if (viagem.data_ida) {
         items.push({

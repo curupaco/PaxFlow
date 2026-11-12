@@ -410,35 +410,23 @@ export class SendTemplateMessageModal {
           cleanDomain = 'https://' + cleanDomain;
         }
 
-        let messages: any[] = [];
-        try {
-          const { data: edgeData, error: edgeError } = await supabase.functions.invoke('digisac-proxy', {
-            body: {
-              action: 'getHistory',
-              domain: cleanDomain,
-              token: settings.digisac_token,
-              number: cleanNumber
-            }
-          });
-
-          if (!edgeError && edgeData) {
-            const raw = edgeData.data || edgeData;
-            messages = Array.isArray(raw) ? raw : (raw.data || []);
-          } else {
-            throw edgeError || new Error('Proxy Digisac indisponível');
+        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('digisac-proxy', {
+          body: {
+            action: 'getHistory',
+            domain: cleanDomain,
+            token: settings.digisac_token,
+            number: cleanNumber
           }
-        } catch (_) {
-          // Quando a Edge Function não estiver implantada, orienta de forma amigável sem poluir com erros de rede
-          chatContainer.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500 text-xs font-semibold text-center p-6 space-y-2.5">
-              <span class="text-3xl opacity-70">📱</span>
-              <p class="font-bold text-slate-700 dark:text-slate-200">Canal de Atendimento WhatsApp</p>
-              <p class="text-[11px] font-normal text-slate-400 dark:text-slate-500 max-w-[280px] leading-relaxed">
-                O envio de mensagens está 100% ativo. O histórico de mensagens integrado opera através de proxy seguro de servidor.
-              </p>
-            </div>
-          `;
-          return;
+        });
+
+        if (edgeError) {
+          throw new Error(edgeError.message || 'Serviço de histórico Digisac indisponível.');
+        }
+
+        let messages: any[] = [];
+        if (edgeData) {
+          const raw = edgeData.data || edgeData;
+          messages = Array.isArray(raw) ? raw : (raw.data || []);
         }
 
         if (messages.length === 0) {
@@ -557,29 +545,22 @@ export class SendTemplateMessageModal {
             cleanDomain = 'https://' + cleanDomain;
           }
           
-          let enviadoViaProxy = false;
-
-          // 1. Tenta envio server-side via Edge Function 'digisac-proxy' (livre de CORS)
-          try {
-            const { data: edgeData, error: edgeError } = await supabase.functions.invoke('digisac-proxy', {
-              body: {
-                action: 'sendMessage',
-                domain: cleanDomain,
-                token: settings.digisac_token,
-                number: cleanNumber,
-                text: finalTexto,
-                serviceId: settings.digisac_service_id
-              }
-            });
-
-            if (!edgeError && edgeData && (edgeData.success || edgeData.data)) {
-              enviadoViaProxy = true;
+          const { data: edgeData, error: edgeError } = await supabase.functions.invoke('digisac-proxy', {
+            body: {
+              action: 'sendMessage',
+              domain: cleanDomain,
+              token: settings.digisac_token,
+              number: cleanNumber,
+              text: finalTexto,
+              serviceId: settings.digisac_service_id
             }
-          } catch (eProxy) {
-            console.warn('Proxy Digisac não disponível, acionando contingência imediata:', eProxy);
+          });
+
+          if (edgeError) {
+            throw new Error(edgeError.message || 'Falha de comunicação com o servidor Digisac.');
           }
 
-          if (enviadoViaProxy) {
+          if (edgeData && (edgeData.success || edgeData.data)) {
             await concederXp();
             if (options.onMessageSent) {
               try { await options.onMessageSent(); } catch (err) { console.error(err); }
@@ -592,26 +573,16 @@ export class SendTemplateMessageModal {
             return;
           }
 
-          // 2. Contingência instantânea: abre o WhatsApp com a mensagem preenchida
-          const textEscaped = encodeURIComponent(finalTexto);
-          const whatsappUrl = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${textEscaped}`;
-          window.open(whatsappUrl, '_blank');
-          await concederXp();
-          if (options.onMessageSent) {
-            try { await options.onMessageSent(); } catch (errSent) { console.error(errSent); }
-          }
-          fechar();
-          options.showToast('Mensagem preparada e aberta no WhatsApp com sucesso! 🚀', 'success');
+          const erroDigisac = edgeData?.error || 'A API do Digisac não confirmou o envio da mensagem.';
+          throw new Error(erroDigisac);
+
         } catch (err: any) {
-          console.error('Erro ao processar envio:', err);
+          console.error('Erro ao enviar via Digisac:', err);
           if (btnSend) {
             btnSend.disabled = false;
             btnSend.textContent = 'Enviar via Digisac 💬';
           }
-          const textEscaped = encodeURIComponent(finalTexto);
-          const whatsappUrl = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${textEscaped}`;
-          window.open(whatsappUrl, '_blank');
-          fechar();
+          options.showToast(`Erro Digisac: ${err.message || 'Não foi possível disparar a mensagem.'}`, 'error');
         }
       });
 
