@@ -112,7 +112,15 @@ export class InboxPage {
         // Atualização cirúrgica em memória (zero roundtrip)
         const previousReadList = [...this.readList];
         const newReadSet = new Set(this.readList);
-        ids.forEach(id => newReadSet.add(id));
+        ids.forEach(id => {
+          newReadSet.add(id);
+          const alertObj = this.alerts.find(a => a.id === id) || this.filteredAlerts.find(a => a.id === id);
+          if (alertObj?.targetId) {
+            newReadSet.add(alertObj.targetId);
+            if (alertObj.type === 'pre-embarque') newReadSet.add(`pre-embarque-${alertObj.targetId}`);
+            if (alertObj.type === 'financeiro') newReadSet.add(`financeiro-conta-${alertObj.targetId}`);
+          }
+        });
         this.readList = Array.from(newReadSet);
         this.selectedAlertIds.clear();
         this.applyFilters();
@@ -137,6 +145,14 @@ export class InboxPage {
         // Atualização cirúrgica em memória (zero roundtrip)
         const previousReadList = [...this.readList];
         const idSet = new Set(ids);
+        ids.forEach(id => {
+          const alertObj = this.alerts.find(a => a.id === id) || this.filteredAlerts.find(a => a.id === id);
+          if (alertObj?.targetId) {
+            idSet.add(alertObj.targetId);
+            if (alertObj.type === 'pre-embarque') idSet.add(`pre-embarque-${alertObj.targetId}`);
+            if (alertObj.type === 'financeiro') idSet.add(`financeiro-conta-${alertObj.targetId}`);
+          }
+        });
         this.readList = this.readList.filter(id => !idSet.has(id));
         this.selectedAlertIds.clear();
         this.applyFilters();
@@ -421,9 +437,16 @@ export class InboxPage {
     
     // Atualização cirúrgica em memória instantânea (zero roundtrip)
     const previousReadList = [...this.readList];
-    if (!this.readList.includes(id)) {
-      this.readList = [...this.readList, id];
+    const alertObj = this.alerts.find(a => a.id === id) || this.filteredAlerts.find(a => a.id === id);
+    const idsToAdd = [id];
+    if (alertObj?.targetId) {
+      idsToAdd.push(alertObj.targetId);
+      if (alertObj.type === 'pre-embarque') idsToAdd.push(`pre-embarque-${alertObj.targetId}`);
+      if (alertObj.type === 'financeiro') idsToAdd.push(`financeiro-conta-${alertObj.targetId}`);
     }
+    const newReadSet = new Set(this.readList);
+    idsToAdd.forEach(x => newReadSet.add(x));
+    this.readList = Array.from(newReadSet);
     this.applyFilters();
     this.render();
     this.setupEventListeners();
@@ -446,7 +469,14 @@ export class InboxPage {
 
     // Atualização cirúrgica em memória instantânea (zero roundtrip)
     const previousReadList = [...this.readList];
-    this.readList = this.readList.filter(x => x !== id);
+    const alertObj = this.alerts.find(a => a.id === id) || this.filteredAlerts.find(a => a.id === id);
+    const idsToRemove = new Set([id]);
+    if (alertObj?.targetId) {
+      idsToRemove.add(alertObj.targetId);
+      if (alertObj.type === 'pre-embarque') idsToRemove.add(`pre-embarque-${alertObj.targetId}`);
+      if (alertObj.type === 'financeiro') idsToRemove.add(`financeiro-conta-${alertObj.targetId}`);
+    }
+    this.readList = this.readList.filter(x => !idsToRemove.has(x));
     this.applyFilters();
     this.render();
     this.setupEventListeners();
@@ -473,7 +503,14 @@ export class InboxPage {
     // Atualização cirúrgica em memória instantânea (zero roundtrip)
     const previousReadList = [...this.readList];
     const newReadSet = new Set(this.readList);
-    idsToMark.forEach(id => newReadSet.add(id));
+    this.filteredAlerts.forEach(a => {
+      newReadSet.add(a.id);
+      if (a.targetId) {
+        newReadSet.add(a.targetId);
+        if (a.type === 'pre-embarque') newReadSet.add(`pre-embarque-${a.targetId}`);
+        if (a.type === 'financeiro') newReadSet.add(`financeiro-conta-${a.targetId}`);
+      }
+    });
     this.readList = Array.from(newReadSet);
 
     this.applyFilters();
@@ -645,19 +682,19 @@ export class InboxPage {
     // Filter subsets for totals and unread counts
     const activeAlerts = baseAlertsForCounters.filter(a => !a.arquivado && !a.isSent && !a.isDecision);
     const totalAtivos = activeAlerts.length;
-    const unreadAtivos = activeAlerts.filter(a => !readList.includes(a.id)).length;
+    const unreadAtivos = activeAlerts.filter(a => !InboxService.isAlertRead(a, readList)).length;
 
     const manualAlerts = activeAlerts.filter(a => a.type === 'manual');
     const totalManual = manualAlerts.length;
-    const unreadManual = manualAlerts.filter(a => !readList.includes(a.id)).length;
+    const unreadManual = manualAlerts.filter(a => !InboxService.isAlertRead(a, readList)).length;
 
     const passportAlerts = activeAlerts.filter(a => a.type === 'passport');
     const totalPassport = passportAlerts.length;
-    const unreadPassport = passportAlerts.filter(a => !readList.includes(a.id)).length;
+    const unreadPassport = passportAlerts.filter(a => !InboxService.isAlertRead(a, readList)).length;
 
     const refundAlerts = activeAlerts.filter(a => a.type === 'refund');
     const totalRefund = refundAlerts.length;
-    const unreadRefund = refundAlerts.filter(a => !readList.includes(a.id)).length;
+    const unreadRefund = refundAlerts.filter(a => !InboxService.isAlertRead(a, readList)).length;
 
     const sentAlerts = baseAlertsForCounters.filter(a => a.isSent && !a.isDecision);
     const totalEnviadas = sentAlerts.length;
@@ -667,11 +704,11 @@ export class InboxPage {
 
     const archivedAlerts = baseAlertsForCounters.filter(a => a.arquivado);
     const totalArquivados = archivedAlerts.length;
-    const unreadArquivados = archivedAlerts.filter(a => !a.isSent && !a.isDecision && !readList.includes(a.id)).length;
+    const unreadArquivados = archivedAlerts.filter(a => !a.isSent && !a.isDecision && !InboxService.isAlertRead(a, readList)).length;
 
     const allInboxAlerts = baseAlertsForCounters.filter(a => true);
     const totalGeral = allInboxAlerts.length;
-    const unreadGeral = allInboxAlerts.filter(a => !a.isSent && !a.isDecision && !readList.includes(a.id)).length;
+    const unreadGeral = allInboxAlerts.filter(a => !a.isSent && !a.isDecision && !InboxService.isAlertRead(a, readList)).length;
 
     const folderInfoMap: Record<string, { label: string; icon: string; total: number; unread: number }> = {
       ativos: { label: 'Caixa de Entrada', icon: '📥', total: totalAtivos, unread: unreadAtivos },

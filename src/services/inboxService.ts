@@ -247,8 +247,10 @@ export class InboxService {
       (notifRead || []).forEach(n => {
         if (n.id) {
           readIds.add(`mention-${n.id}`);
+          readIds.add(n.id);
         }
         if (n.item_id) {
+          readIds.add(n.item_id);
           readIds.add(`dm-direct-${n.item_id}`);
           readIds.add(`mention-dm-direct-${n.item_id}`);
           readIds.add(`escala-sol-${n.item_id}-inbox`);
@@ -260,13 +262,17 @@ export class InboxService {
           readIds.add(`pre-embarque-${n.item_id}`);
           readIds.add(`pos-viagem-nps-${n.item_id}`);
           readIds.add(`risk-alerta-${n.item_id}`);
+          readIds.add(`financeiro-conta-${n.item_id}`);
+          readIds.add(`atendimento-balcao-${n.item_id}`);
         }
         if (n.parent_id) {
+          readIds.add(n.parent_id);
           readIds.add(`dm-direct-${n.parent_id}`);
           readIds.add(`mention-dm-direct-${n.parent_id}`);
           readIds.add(`escala-sol-${n.parent_id}-inbox`);
           readIds.add(`escala-sol-${n.parent_id}-sent`);
           readIds.add(`escala-sol-${n.parent_id}-decisao`);
+          readIds.add(`atendimento-balcao-${n.parent_id}`);
         }
       });
 
@@ -311,6 +317,7 @@ export class InboxService {
           archivedIds.add(`pre-embarque-${n.item_id}`);
           archivedIds.add(`pos-viagem-nps-${n.item_id}`);
           archivedIds.add(`risk-alerta-${n.item_id}`);
+          archivedIds.add(`financeiro-conta-${n.item_id}`);
           archivedIds.add(`atendimento-balcao-${n.item_id}`);
           archivedIds.add(`sent-${n.item_id}`);
           archivedIds.add(`sent-mention-${n.item_id}`);
@@ -333,6 +340,72 @@ export class InboxService {
       console.error('Exceção ao buscar alertas arquivados no Supabase:', e);
       return [];
     }
+  }
+
+  /**
+   * Determina de forma determinística e resiliente se um alerta foi lido pelo usuário,
+   * comparando IDs canônicos, IDs compostos (ex: pré-embarque por trecho),
+   * prefixos de tipos e identificadores de destino (targetId).
+   */
+  static isAlertRead(alert: AlertItem, readList: string[] | Set<string>): boolean {
+    if (!alert) return false;
+    const readSet = readList instanceof Set ? readList : new Set(readList || []);
+
+    // 1. Verificação direta do ID exato do card
+    if (readSet.has(alert.id)) return true;
+
+    // 2. Verificação direta pelo targetId isolado (se houver)
+    if (alert.targetId && readSet.has(alert.targetId)) return true;
+
+    // 3. Alertas de Pré-Embarque com ID composto (ex: pre-embarque-${v.id}-${emb.chave})
+    if (alert.type === 'pre-embarque' || alert.id.startsWith('pre-embarque-')) {
+      if (alert.targetId && readSet.has(`pre-embarque-${alert.targetId}`)) return true;
+      const baseUUID = this.extractUUIDFromAlertId(alert.id);
+      if (baseUUID && (readSet.has(`pre-embarque-${baseUUID}`) || readSet.has(baseUUID))) return true;
+    }
+
+    // 4. Alertas do Módulo Financeiro (ex: financeiro-conta-${conta.id})
+    if (alert.type === 'financeiro' || alert.id.startsWith('financeiro-conta-')) {
+      if (alert.targetId && (readSet.has(`financeiro-conta-${alert.targetId}`) || readSet.has(alert.targetId))) return true;
+      const baseUUID = this.extractUUIDFromAlertId(alert.id);
+      if (baseUUID && (readSet.has(`financeiro-conta-${baseUUID}`) || readSet.has(baseUUID))) return true;
+    }
+
+    // 5. Alertas de Solicitações de Escala e Balcão (ex: escala-sol-${sol.id}-inbox)
+    if (alert.id.startsWith('escala-sol-') || alert.type === 'escala_solicitacao' || alert.type === 'atendimento_balcao') {
+      if (alert.targetId) {
+        if (readSet.has(`escala-sol-${alert.targetId}-inbox`) ||
+            readSet.has(`escala-sol-${alert.targetId}-sent`) ||
+            readSet.has(`escala-sol-${alert.targetId}-decisao`) ||
+            readSet.has(`atendimento-balcao-${alert.targetId}`) ||
+            readSet.has(alert.targetId)) {
+          return true;
+        }
+      }
+    }
+
+    // 6. Mensagens Diretas e Menções (ex: dm-direct-${id} vs mention-${not.id} vs mention-dm-direct-${id})
+    if (alert.type === 'direct_message' || alert.id.startsWith('dm-direct-') || alert.id.startsWith('mention-')) {
+      if (alert.targetId) {
+        if (readSet.has(`dm-direct-${alert.targetId}`) ||
+            readSet.has(`mention-dm-direct-${alert.targetId}`) ||
+            readSet.has(`mention-${alert.targetId}`) ||
+            readSet.has(alert.targetId)) {
+          return true;
+        }
+      }
+    }
+
+    // 7. Passaporte, Reembolso, Lembrete Manual, NPS e Risco
+    if (alert.targetId) {
+      if (alert.type === 'passport' && readSet.has(`passport-${alert.targetId}`)) return true;
+      if (alert.type === 'refund' && readSet.has(`refund-${alert.targetId}`)) return true;
+      if (alert.type === 'manual' && readSet.has(`manual-${alert.targetId}`)) return true;
+      if (alert.type === 'pos-viagem-nps' && readSet.has(`pos-viagem-nps-${alert.targetId}`)) return true;
+      if (alert.type === 'risk_alerta' && readSet.has(`risk-alerta-${alert.targetId}`)) return true;
+    }
+
+    return false;
   }
 
   /**
@@ -1141,6 +1214,18 @@ export class InboxService {
       // Mesclar mensagens diretas recebidas que ainda não constem em notificacoesData
       const msgsRecebidas: any[] = mensagensRecebidasRes?.data || [];
       if (msgsRecebidas.length > 0) {
+        const msgsRecebidasMap = new Map<string, any>(msgsRecebidas.map((m: any) => [m.id, m]));
+
+        // Hidratar notificações existentes do tipo 'mensagem' com o objeto da mensagem direta correspondente
+        (notificacoesData || []).forEach((not: any) => {
+          if (not.tipo_item === 'mensagem' && !not.mensagem) {
+            const msgFound = msgsRecebidasMap.get(not.item_id) || msgsRecebidasMap.get(not.parent_id);
+            if (msgFound) {
+              not.mensagem = msgFound;
+            }
+          }
+        });
+
         const existingNotifMsgIds = new Set(
           notificacoesData
             .filter((n: any) => n.tipo_item === 'mensagem')
@@ -1929,7 +2014,7 @@ export class InboxService {
 
     // 5. Apenas não lidas
     if (onlyUnreadFilter) {
-      result = result.filter(a => !readList.includes(a.id));
+      result = result.filter(a => !InboxService.isAlertRead(a, readList));
     }
 
     // Ordenação decrescente de criação

@@ -145,6 +145,58 @@ describe('Inbox - Testes Subcutâneos de Performance e Arquitetura', () => {
     expect(readAlerts).toContain(`refund-${alertId}`);
     expect(readAlerts).toContain(`pre-embarque-${alertId}`);
     expect(readAlerts).toContain(`pos-viagem-nps-${alertId}`);
+    expect(readAlerts).toContain(`financeiro-conta-${alertId}`);
+    expect(readAlerts).toContain(`atendimento-balcao-${alertId}`);
+    expect(readAlerts).toContain(alertId);
+  });
+
+  it('deve identificar alertas como lidos com resiliência para IDs compostos e financeiros (isAlertRead)', () => {
+    // Setup
+    const tripId = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
+    const contaId = 'a123b456-789c-4def-0123-456789abcdef';
+    const msgId = 'e789f012-3456-789a-bcde-f0123456789a';
+
+    const readList = [
+      `pre-embarque-${tripId}`,
+      `financeiro-conta-${contaId}`,
+      `dm-direct-${msgId}`
+    ];
+
+    const alertPreEmbarqueComposto: any = {
+      id: `pre-embarque-${tripId}-seg-ida-hotel-0`,
+      type: 'pre-embarque',
+      targetId: tripId
+    };
+
+    const alertFinanceiro: any = {
+      id: `financeiro-conta-${contaId}`,
+      type: 'financeiro',
+      targetId: contaId
+    };
+
+    const alertDirectMessage: any = {
+      id: `dm-direct-${msgId}`,
+      type: 'direct_message',
+      targetId: msgId
+    };
+
+    const alertNaoLido: any = {
+      id: 'pre-embarque-outro-id-1234',
+      type: 'pre-embarque',
+      targetId: 'outro-id-1234'
+    };
+
+    // Action
+    const isPreEmbarqueLido = InboxService.isAlertRead(alertPreEmbarqueComposto, readList);
+    const isFinanceiroLido = InboxService.isAlertRead(alertFinanceiro, readList);
+    const isDmLido = InboxService.isAlertRead(alertDirectMessage, readList);
+    const isOutroLido = InboxService.isAlertRead(alertNaoLido, readList);
+
+    // Assert
+    expect(isPreEmbarqueLido).toBe(true);
+    expect(isFinanceiroLido).toBe(true);
+    expect(isDmLido).toBe(true);
+    expect(isOutroLido).toBe(false);
   });
 });
 

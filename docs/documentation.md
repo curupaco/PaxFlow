@@ -146,7 +146,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Pesquisa em tempo real de alta precisão (client-side)**: O filtro textual da caixa de entrada cobre perfeitamente todos os campos e datas, incluindo a data alvo do evento (`eventDate`), data amigável formatada (`dateStr`), período do lembrete (`periodText`) e o nome amigável do consultor responsável na visualização administrativa.
 - **Leitor de mensagens corporativo & Persistência Universal**:
   - Modal com visual estilo e-mail profissional, integrado com deep-linking interativo e arquivamento em tempo real.
-  - **Persistência de Leitura no Supabase [NEW]**: Qualquer mensagem aberta (mensagens diretas, solicitações de escala, atendimentos presenciais de balcão e alertas operacionais) tem seu status de leitura gravado diretamente no banco de dados na tabela `public.notificacoes`, mantendo o status sincronizado em qualquer dispositivo.
+  - **Persistência de Leitura no Supabase & Reconciliação Canônica (`isAlertRead`) [UPDATED]**: Qualquer mensagem aberta (mensagens diretas, solicitações de escala, atendimentos presenciais de balcão e alertas operacionais) tem seu status de leitura gravado diretamente no banco de dados na tabela `public.notificacoes`. O sistema conta com reconciliação canônica (`isAlertRead`) que mapeia com exatidão IDs compostos (como pré-embarque por trecho `pre-embarque-${v.id}-${emb.chave}` e contas a pagar do financeiro `financeiro-conta-${conta.id}`), eliminando regressões de leitura e garantindo que o status permaneça consistente em todos os dispositivos.
 - **Sistema de Mensagens Diretas Internas (P2P)**:
   - Permite o envio de mensagens diretas no estilo e-mail (com destinatários "Para" e "Cc" múltiplos) entre consultores da agência.
   - **Autocomplete de Contatos**: Interface de seleção de destinatários utilizando tags/badges interativos com remoção instantânea.
@@ -623,14 +623,38 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - A integração com a API do Digisac realiza a resolução prévia do ID do contato (`GET /api/v1/contacts?where[data.number][$iLike]=...`) antes de consultar o histórico, filtrando as mensagens unicamente por `contactId`. Isso elimina de forma definitiva qualquer risco de exibição de conversas de terceiros ou dados aleatórios na interface.
 - **Integração Imediata via WhatsApp**: Cada card de alerta contém uma ação de um clique para **Enviar Mensagem**, que carrega o modelo do WhatsApp correspondente pré-preenchido e com o link personalizado da viagem.
 
-### 3.23 Métricas Avançadas de Performance e Rendimento de Equipe
+### 3.23 Métricas Avançadas de Performance, Rendimento de Equipe & Console de Pacing
 
-**Painel analítico detalhado** adicionado ao Dashboard Comercial para permitir que gestores e donos de agências tenham visibilidade completa sobre a eficiência da força de vendas.
+**Painel analítico detalhado e console comparativo executivo** integrado ao Dashboard Comercial (`#comercial`) para permitir que a diretoria, gestores e consultores tenham visibilidade completa sobre o ritmo de vendas, pacing e eficiência comercial.
 
-- **Taxa de Conversão**: Percentual de orçamentos criados que foram convertidos em viagens ganhas/fechadas.
-- **Tempo Médio de Fechamento**: Cálculo dinâmico do intervalo de dias que os consultores levam para fechar e ganhar uma proposta a partir do seu lançamento.
-- **Visualização de Gap financeiro**: Destaca o montante faturado versus as oportunidades financeiras perdidas por desistências de orçamentos.
-- **XP de Vendas no Ranking**: Ranking unificado que recompensa consultores mais ativos, incentivando a competição saudável por produtividade.
+- **Toggle de Modo de Visualização (`📊 Visão Mensal` ⇄ `⚡ Console Comparativo`)**:
+  - Permite alternar instantaneamente entre a visão de competência do mês corrente e o módulo analítico de comparação de períodos.
+- **Presets de Ritmo (Pacing) Pré-Calibrados**:
+  - `📅 Mês até hoje vs. Mês Anterior (mesmo dia)`: Compara a receita acumulada do dia 1 até a data atual contra o mesmo intervalo homólogo do mês passado (MoM Same-Period).
+  - `🗓️ Mês até hoje vs. Mesmo Mês do Ano Passado`: Mede o crescimento anualizado do mesmo período (YoY Same-Period).
+  - `📈 Trimestre até hoje vs. Média do Trimestre`: Compara o ritmo acumulado do trimestre corrente em relação aos períodos trimestrais anteriores (QTD).
+  - `🛠️ Intervalo Customizado Livre`: Permite que o operador informe datas personalizadas de De/Até para o período base e o período comparativo.
+- **Critério Estrito de Data de Vendas**:
+  - As vendas são apuradas **exclusivamente com base na data de confirmação financeira (`data_financeiro`)**, sem fallbacks silenciosos ou mascaramento de datas.
+- **Gráfico Interativo de Ritmo Acumulado Diário (Curva S de Pacing)**:
+  - Desenvolvido em SVG nativo responsivo de alta performance (sem bibliotecas externas pesadas).
+  - Exibe 4 curvas comparativas: **Período Atual até hoje** (linha sólida índigo com área preenchida), **Período Anterior no mesmo corte** (linha tracejada slate), **Benchmark de Fechamento Total do período anterior** (linha pontilhada slate) e **Projeção Linear de Fechamento / Run-Rate** (linha pontilhada esmeralda).
+  - Círculos interativos em hover/touch exibindo a data, o faturamento do dia e o acumulado até aquele momento.
+- **Tabela de Desempenho da Equipe com Rateio Proporcional de Vendas em Parceria**:
+  - Em vendas com múltiplos consultores registrados em `viagens_divisoes`, o faturamento, a quantidade de viagens e a rentabilidade líquida são rateados estritamente conforme o percentual cadastrado (ex: 50/50 credita metade para cada um).
+  - A soma individual dos consultores bate com 100% de exatidão matemática com o total faturado da loja.
+  - Colunas: Consultor, Vendas Atual (R$ e Qtd), Vendas Anterior (R$ e Qtd), Variação (Δ R$ e Δ%), Rentabilidade Líquida Total (`Comissão + Markup + 88% RAV`), Margem Média %, Volume e Conversão de Orçamentos da Safra, e Share (%) da Loja.
+  - Linha destacada de **Totais da Loja** no rodapé.
+- **Controle de Acesso e Níveis de Privacidade (RBAC)**:
+  - **Administradores**: Acesso integral ao consolidado da agência, seletor de equipe e ranking completo do time.
+  - **Consultores**: Modo focado em auto-gestão, visualizando exclusivamente seus próprios KPIs, sua própria Curva S e histórico individual, preservando o sigilo dos números dos colegas.
+- **Compatibilidade Mobile & Telas Compactas**:
+  - Grid de KPIs em 2 colunas no celular.
+  - Gráfico com ticks espaçados e touch tooltip.
+  - Tabela com rolagem horizontal defensiva (`scroll-indicator-fade`) e toggle opcional para visualização em **Cartões de Consultor Mobile**.
+- **Exportação e Relatório Executivo**:
+  - Exportação em planilha CSV formatada para Excel Brasil (UTF-8 com BOM e ponto-e-vírgula `;`).
+  - Suporte completo a impressão limpa de relatórios em PDF (`@media print`), ocultando menus laterais e barras de navegação.
 
 ### 3.24 Central Administrativa de Escala de Funcionários
 

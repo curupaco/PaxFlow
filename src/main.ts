@@ -1744,7 +1744,7 @@ class App {
       }
       
       // Contar estritamente mensagens ativas da Caixa de Entrada que não foram lidas
-      const unreadCount = filteredAlerts.filter(a => !a.arquivado && !a.isSent && !a.isDecision && !readList.includes(a.id)).length;
+      const unreadCount = filteredAlerts.filter(a => !a.arquivado && !a.isSent && !a.isDecision && !InboxService.isAlertRead(a, readList)).length;
       
       const badge = document.getElementById('nav-inbox-badge');
       if (badge) {

@@ -1,5 +1,6 @@
 import { AlertItem, PerfilConsultor } from '../../types';
 import { getAvatarSvg } from '../../services/avatars';
+import { InboxService } from '../../services/inboxService';
 
 export interface AlertsFeedOptions {
   container?: HTMLElement;
@@ -171,7 +172,7 @@ export class AlertsFeed {
             borderAccent = 'border-l-4 border-l-sky-500';
           }
 
-          const isUnread = !a.arquivado && !a.isSent && !a.isDecision && !this.readList.includes(a.id);
+          const isUnread = !a.arquivado && !a.isSent && !a.isDecision && !InboxService.isAlertRead(a, this.readList);
 
           return `
             <div class="inbox-card inbox-glass p-5 rounded-2xl border ${borderAccent} ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/10 dark:bg-indigo-950/20' : 'border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70'} shadow-sm flex items-start gap-3 cursor-pointer relative transition hover:shadow-md" data-alert-id="${a.id}">

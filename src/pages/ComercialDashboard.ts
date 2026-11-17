@@ -10,6 +10,13 @@ import { NextTripEngineService } from '../services/nextTripEngineService';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { UpsellEngineService } from '../services/upsellEngineService';
 import { ViagensDivisoesService } from '../services/viagensDivisoesService';
+import { 
+  PerformanceComparativaService, 
+  PresetPacingTipo, 
+  KpisComparativosResult, 
+  CurvaSResult, 
+  LinhaConsultorComparativo 
+} from '../services/performanceComparativaService';
 
 // Injeta estilos específicos premium para o Dashboard de Relatórios
 if (typeof document !== 'undefined') {
@@ -32,6 +39,25 @@ if (typeof document !== 'undefined') {
     }
     html.dark .dashboard-glass:hover {
       box-shadow: 0 12px 24px -3px rgba(0, 0, 0, 0.35), 0 4px 8px -2px rgba(0, 0, 0, 0.25);
+    }
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #dashboard-metrics-container, #dashboard-metrics-container * {
+        visibility: visible !important;
+      }
+      #dashboard-metrics-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100% !important;
+        background: white !important;
+        color: black !important;
+      }
+      .no-print {
+        display: none !important;
+      }
     }
     .kpi-card {
       position: relative;
@@ -93,6 +119,22 @@ export class ComercialDashboard {
   private selectedConsultantId: string = 'todos'; // 'todos' ou ID específico (apenas para admins)
   private selectedMetaId: string = 'todas';
   private selectedMetaView: string = 'agency'; // 'agency' ou 'consultant-{id}'
+
+  // Estados do Console Comparativo de Performance & Pacing
+  public activeDashboardMode: 'mensal' | 'comparativo' = 'mensal';
+  public comparativoPreset: PresetPacingTipo = 'mom_same_period';
+  public comparativoCustomDatas = {
+    dataAtualInicio: '',
+    dataAtualFim: '',
+    dataAnteriorInicio: '',
+    dataAnteriorFim: ''
+  };
+  public comparativoTipoProduto: string = 'todos';
+  public comparativoDestino: string = 'todos';
+  public dadosComparativos: any = null;
+  public carregandoComparativo: boolean = false;
+  public modoVisualizacaoTime: 'tabela' | 'cards' = 'tabela';
+  public tiposProdutoDisponiveis: Array<{ id: string; nome: string; icone?: string }> = [];
   
   // Auxiliares de carregamento/offline
   private isFallbackMode: boolean = false;
@@ -542,6 +584,82 @@ export class ComercialDashboard {
 
     this.container.addEventListener('click', async (e) => {
       const target = e.target as HTMLElement;
+
+      // Toggle de Modo: Mensal vs. Comparativo
+      const btnModeMensal = target.closest('#btn-mode-mensal');
+      if (btnModeMensal && this.activeDashboardMode !== 'mensal') {
+        this.activeDashboardMode = 'mensal';
+        this.render();
+        return;
+      }
+
+      const btnModeComp = target.closest('#btn-mode-comparativo');
+      if (btnModeComp && this.activeDashboardMode !== 'comparativo') {
+        this.activeDashboardMode = 'comparativo';
+        this.render();
+        return;
+      }
+
+      // Exportar CSV do Console Comparativo
+      const btnExpCsv = target.closest('#btn-exportar-csv-comparativo');
+      if (btnExpCsv) {
+        this.exportarCsvComparativo();
+        return;
+      }
+
+      // Imprimir / PDF
+      const btnPrint = target.closest('#btn-imprimir-comparativo');
+      if (btnPrint) {
+        window.print();
+        return;
+      }
+
+      // Alternar visualização da equipe (Tabela vs. Cartões)
+      const btnTabela = target.closest('#btn-toggle-time-tabela');
+      if (btnTabela && this.modoVisualizacaoTime !== 'tabela') {
+        this.modoVisualizacaoTime = 'tabela';
+        this.renderMetricsSection();
+        return;
+      }
+
+      const btnCards = target.closest('#btn-toggle-time-cards');
+      if (btnCards && this.modoVisualizacaoTime !== 'cards') {
+        this.modoVisualizacaoTime = 'cards';
+        this.renderMetricsSection();
+        return;
+      }
+
+      // Limpar Destino no Comparativo
+      const btnLimparDest = target.closest('#btn-limpar-destino-comparativo');
+      if (btnLimparDest) {
+        this.comparativoDestino = 'todos';
+        await this.carregarDadosComparativos(true);
+        this.renderMetricsSection();
+        return;
+      }
+
+      // Aplicar Intervalo Customizado
+      const btnAplicarCustom = target.closest('#btn-aplicar-custom-datas');
+      if (btnAplicarCustom) {
+        const inAtuIni = document.getElementById('input-custom-atual-inicio') as HTMLInputElement;
+        const inAtuFim = document.getElementById('input-custom-atual-fim') as HTMLInputElement;
+        const inAntIni = document.getElementById('input-custom-ant-inicio') as HTMLInputElement;
+        const inAntFim = document.getElementById('input-custom-ant-fim') as HTMLInputElement;
+
+        if (inAtuIni && inAtuFim && inAntIni && inAntFim) {
+          this.comparativoCustomDatas = {
+            dataAtualInicio: inAtuIni.value,
+            dataAtualFim: inAtuFim.value,
+            dataAnteriorInicio: inAntIni.value,
+            dataAnteriorFim: inAntFim.value
+          };
+          await this.carregarDadosComparativos(true);
+          this.renderMetricsSection();
+          this.showToast('Intervalo customizado aplicado com sucesso!', 'success');
+        }
+        return;
+      }
+
       const btn = target.closest('#btn-refresh-metas') as HTMLButtonElement;
       if (btn) {
         const spanText = btn.querySelector('span');
@@ -551,6 +669,47 @@ export class ComercialDashboard {
         await this.loadMetas(true);
         this.renderMetricsSection();
         this.showToast('Metas atualizadas com sucesso!', 'success');
+      }
+    });
+
+    // Event delegation para seletores do console comparativo
+    this.container.addEventListener('change', async (e) => {
+      const target = e.target as HTMLElement;
+
+      if (target && target.id === 'select-comparativo-preset') {
+        const select = target as HTMLSelectElement;
+        this.comparativoPreset = select.value as PresetPacingTipo;
+        await this.carregarDadosComparativos(true);
+        this.renderMetricsSection();
+      }
+
+      if (target && target.id === 'select-comparativo-consultor') {
+        const select = target as HTMLSelectElement;
+        this.selectedConsultantId = select.value;
+        await this.carregarDadosComparativos(true);
+        this.renderMetricsSection();
+      }
+
+      if (target && target.id === 'select-comparativo-tipo-produto') {
+        const select = target as HTMLSelectElement;
+        this.comparativoTipoProduto = select.value;
+        await this.carregarDadosComparativos(true);
+        this.renderMetricsSection();
+      }
+    });
+
+    // Evento de busca de destino no comparativo com debounce
+    let timerBuscaDestino: any = null;
+    this.container.addEventListener('input', (e) => {
+      const target = e.target as HTMLElement;
+      if (target && target.id === 'input-comparativo-destino') {
+        const input = target as HTMLInputElement;
+        clearTimeout(timerBuscaDestino);
+        timerBuscaDestino = setTimeout(async () => {
+          this.comparativoDestino = input.value.trim() || 'todos';
+          await this.carregarDadosComparativos(true);
+          this.renderMetricsSection();
+        }, 400);
       }
     });
   }
@@ -579,27 +738,41 @@ export class ComercialDashboard {
           <!-- Filtros de Dashboard & Perfil -->
           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
             
-            <!-- Seletor de Período -->
-            <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-              <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Período:</span>
-              <select id="select-dashboard-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer">
-                <option value="mes_atual" ${this.selectedPeriod === 'mes_atual' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Mês Atual</option>
-                <option value="30_dias" ${this.selectedPeriod === '30_dias' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Últimos 30 dias</option>
-                <option value="90_dias" ${this.selectedPeriod === '90_dias' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Últimos 90 dias</option>
-                <option value="ano_atual" ${this.selectedPeriod === 'ano_atual' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Ano Atual</option>
-                <option value="todo_periodo" ${this.selectedPeriod === 'todo_periodo' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todo o Período</option>
-              </select>
+            <!-- Toggle de Modo: Visão Mensal vs. Console Comparativo -->
+            <div class="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 rounded-xl h-[42px] shadow-xs no-print">
+              <button type="button" id="btn-mode-mensal" class="px-3.5 h-full rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardMode === 'mensal' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs font-black' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}">
+                <span>📊</span>
+                <span class="hidden sm:inline">Visão Mensal</span>
+              </button>
+              <button type="button" id="btn-mode-comparativo" class="px-3.5 h-full rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardMode === 'comparativo' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs font-black' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}">
+                <span>⚡</span>
+                <span>Console Comparativo</span>
+              </button>
             </div>
 
-            <!-- Seletor de Consultores (Apenas para Admins) -->
-            ${isAdmin ? `
-              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
-                <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
-                  <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todos os Consultores</option>
-                  ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
+            ${this.activeDashboardMode === 'mensal' ? `
+              <!-- Seletor de Período -->
+              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm h-[42px]">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Período:</span>
+                <select id="select-dashboard-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer">
+                  <option value="mes_atual" ${this.selectedPeriod === 'mes_atual' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Mês Atual</option>
+                  <option value="30_dias" ${this.selectedPeriod === '30_dias' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Últimos 30 dias</option>
+                  <option value="90_dias" ${this.selectedPeriod === '90_dias' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Últimos 90 dias</option>
+                  <option value="ano_atual" ${this.selectedPeriod === 'ano_atual' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Ano Atual</option>
+                  <option value="todo_periodo" ${this.selectedPeriod === 'todo_periodo' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todo o Período</option>
                 </select>
               </div>
+
+              <!-- Seletor de Consultores (Apenas para Admins) -->
+              ${isAdmin ? `
+                <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm h-[42px]">
+                  <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
+                  <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
+                    <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todos os Consultores</option>
+                    ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
+                  </select>
+                </div>
+              ` : ''}
             ` : ''}
           </div>
         </header>
@@ -621,6 +794,12 @@ export class ComercialDashboard {
   private renderMetricsSection(): void {
     const metricsContainer = document.getElementById('dashboard-metrics-container');
     if (!metricsContainer) return;
+
+    // Se estiver no modo Console Comparativo, delega a renderização para o módulo de Pacing
+    if (this.activeDashboardMode === 'comparativo') {
+      this.renderConsoleComparativo(metricsContainer);
+      return;
+    }
 
     // 1. Aplica filtros
     const { filteredOrc, filteredVia } = this.filterRecords();
@@ -1791,6 +1970,721 @@ export class ComercialDashboard {
         ${goalsHTML}
       </div>
     `;
+  }
+
+  /**
+   * Busca e processa dados comparativos utilizando o serviço especializado
+   */
+  public async carregarDadosComparativos(forcarRecarga: boolean = false): Promise<void> {
+    if (this.dadosComparativos && !forcarRecarga) return;
+
+    this.carregandoComparativo = true;
+    try {
+      const result = await PerformanceComparativaService.buscarDadosComparativos({
+        preset: this.comparativoPreset,
+        dataAtualInicio: this.comparativoCustomDatas.dataAtualInicio,
+        dataAtualFim: this.comparativoCustomDatas.dataAtualFim,
+        dataAnteriorInicio: this.comparativoCustomDatas.dataAnteriorInicio,
+        dataAnteriorFim: this.comparativoCustomDatas.dataAnteriorFim,
+        consultorId: this.selectedConsultantId,
+        tipoProduto: this.comparativoTipoProduto,
+        destino: this.comparativoDestino,
+        userPerfil: this.perfil
+      });
+      this.dadosComparativos = result;
+    } catch (err: any) {
+      console.error('Erro ao carregar dados do console comparativo:', err);
+      this.showToast('Erro ao carregar comparativo: ' + (err.message || 'Falha de conexão'), 'error');
+    } finally {
+      this.carregandoComparativo = false;
+    }
+  }
+
+  /**
+   * Renderiza a visão executiva do Console Comparativo de Performance & Pacing
+   */
+  private async renderConsoleComparativo(container: HTMLElement): Promise<void> {
+    const isAdmin = this.perfil?.role === 'admin';
+
+    // Se ainda não carregou os dados do comparativo, dispara busca e exibe skeleton
+    if (!this.dadosComparativos && !this.carregandoComparativo) {
+      this.carregarDadosComparativos().then(() => {
+        this.renderMetricsSection();
+      });
+    }
+
+    if (this.carregandoComparativo || !this.dadosComparativos) {
+      container.innerHTML = `
+        <div class="flex flex-col items-center justify-center p-16 space-y-4">
+          <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <div class="text-sm font-bold text-slate-600 dark:text-slate-400">Processando métricas comparativas e ritmo da loja...</div>
+          <div class="text-[11px] text-slate-400">Cruzando vendas por data financeiro, rentabilidade líquida e safras de orçamentos</div>
+        </div>
+      `;
+      return;
+    }
+
+    const { intervalos, kpis, curvaS, tabelaTime } = this.dadosComparativos;
+    const formatMoeda = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatPerc = (val: number) => `${val.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+
+    const renderBadgeDelta = (delta: any, isMonetario: boolean = false) => {
+      const isUp = delta.direcao === 'up';
+      const isDown = delta.direcao === 'down';
+      const bg = isUp 
+        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' 
+        : (isDown ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' : 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20');
+      const arrow = isUp ? '▲' : (isDown ? '▼' : '▬');
+      const valNom = isMonetario ? `R$ ${formatMoeda(Math.abs(delta.deltaNominal))}` : Math.abs(delta.deltaNominal).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+      const sinal = delta.deltaNominal > 0 ? '+' : (delta.deltaNominal < 0 ? '-' : '');
+
+      return `
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-black tracking-tight ${bg}">
+          <span>${arrow}</span>
+          <span>${sinal}${Math.abs(delta.deltaPercentual).toFixed(1)}%</span>
+          <span class="text-[9px] opacity-75 font-semibold">(${sinal}${valNom})</span>
+        </span>
+      `;
+    };
+
+    container.innerHTML = `
+      <div class="space-y-6 animate-fadeIn pb-12">
+        <!-- BARRA SUPERIOR DE FILTROS & PRESETS DO COMPARATIVO -->
+        <div class="dashboard-glass rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-4 no-print">
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Preset de Pacing -->
+            <div class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl h-[42px] shadow-xs">
+              <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Ritmo / Preset:</span>
+              <select id="select-comparativo-preset" class="text-xs font-bold bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer">
+                <option value="mom_same_period" ${this.comparativoPreset === 'mom_same_period' ? 'selected' : ''}>📅 Mês até hoje vs. Mês Anterior (Mesmo dia)</option>
+                <option value="yoy_same_period" ${this.comparativoPreset === 'yoy_same_period' ? 'selected' : ''}>🗓️ Mês até hoje vs. Ano Anterior (Mesmo mês/dia)</option>
+                <option value="qtd_same_period" ${this.comparativoPreset === 'qtd_same_period' ? 'selected' : ''}>📈 Trimestre até hoje vs. Trimestre Anterior</option>
+                <option value="customizado" ${this.comparativoPreset === 'customizado' ? 'selected' : ''}>🛠️ Intervalo Customizado Livre</option>
+              </select>
+            </div>
+
+            <!-- Filtro de Equipe (Apenas Admin) -->
+            ${isAdmin ? `
+              <div class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl h-[42px] shadow-xs">
+                <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Equipe:</span>
+                <select id="select-comparativo-consultor" class="text-xs font-bold bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer max-w-[160px]">
+                  <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>🏢 Toda a Loja</option>
+                  ${this.consultores.map(c => `
+                    <option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>👤 ${c.nome}</option>
+                  `).join('')}
+                </select>
+              </div>
+            ` : `
+              <div class="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 px-3 py-1.5 rounded-xl h-[42px]">
+                <span class="text-xs font-black text-indigo-700 dark:text-indigo-300">👤 Sua Performance Pessoal (${this.perfil?.nome || 'Consultor'})</span>
+              </div>
+            `}
+
+            <!-- Filtro de Destino (Busca rápida) -->
+            <div class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl h-[42px] shadow-xs">
+              <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Destino:</span>
+              <input type="text" id="input-comparativo-destino" placeholder="Ex: Paris, Europa, Disney..." value="${this.comparativoDestino === 'todos' ? '' : this.comparativoDestino}" class="text-xs font-bold bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-28 sm:w-36 placeholder:text-slate-400" />
+              ${this.comparativoDestino !== 'todos' ? `
+                <button type="button" id="btn-limpar-destino-comparativo" class="text-xs text-slate-400 hover:text-rose-500 font-bold cursor-pointer">✕</button>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Ações de Exportação e Impressão -->
+          <div class="flex items-center gap-2">
+            <button type="button" id="btn-exportar-csv-comparativo" class="h-[42px] px-3.5 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl transition shadow-xs text-xs font-black text-slate-700 dark:text-slate-300 uppercase flex items-center gap-1.5 cursor-pointer">
+              <span>📥</span>
+              <span class="hidden sm:inline">Exportar CSV</span>
+            </button>
+            <button type="button" id="btn-imprimir-comparativo" class="h-[42px] px-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-600/15 text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer">
+              <span>🖨️</span>
+              <span class="hidden sm:inline">Imprimir / PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SELETORES DE DATAS CUSTOMIZADAS (Visível se preset === customizado) -->
+        ${this.comparativoPreset === 'customizado' ? `
+          <div class="dashboard-glass rounded-2xl p-4 border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/20 dark:bg-indigo-950/10 flex flex-wrap items-center gap-4 animate-fadeIn no-print">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase">Período Atual:</span>
+              <input type="date" id="input-custom-atual-inicio" value="${intervalos.atual.inicio}" class="h-[38px] px-2.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl" />
+              <span class="text-xs text-slate-400">até</span>
+              <input type="date" id="input-custom-atual-fim" value="${intervalos.atual.fim}" class="h-[38px] px-2.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl" />
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black text-slate-600 dark:text-slate-400 uppercase">Período Comparativo:</span>
+              <input type="date" id="input-custom-ant-inicio" value="${intervalos.anterior.inicio}" class="h-[38px] px-2.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl" />
+              <span class="text-xs text-slate-400">até</span>
+              <input type="date" id="input-custom-ant-fim" value="${intervalos.anterior.fim}" class="h-[38px] px-2.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl" />
+            </div>
+
+            <button type="button" id="btn-aplicar-custom-datas" class="h-[38px] px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs uppercase shadow-sm cursor-pointer">
+              ✓ Aplicar
+            </button>
+          </div>
+        ` : ''}
+
+        <!-- SUB-HEADER DE CONTEXTO TEMPORAL -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-1">
+          <div>
+            <h2 class="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <span>⚡ Pacing & Performance da Loja</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                ${intervalos.atual.rotulo} vs. ${intervalos.anterior.rotulo}
+              </span>
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+              Vendas apuradas rigorosamente pela data financeiro. Ritmo decorrido: <strong>${kpis.ritmoEsperadoPercentual.toFixed(1)}% do período</strong>.
+            </p>
+          </div>
+          <div class="text-left sm:text-right">
+            <span class="text-[11px] font-bold text-slate-400">Projeção Fechamento (Run-Rate):</span>
+            <span class="block text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">
+              R$ ${formatMoeda(kpis.runRateFechamento)}
+            </span>
+          </div>
+        </div>
+
+        <!-- GRID DE CARDS KPIS COM DELTA Δ -->
+        <section class="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <!-- CARD 1: FATURAMENTO BRUTO -->
+          <div class="dashboard-glass rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800/60 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Faturamento</span>
+              <span class="text-sm">💰</span>
+            </div>
+            <div class="mt-2">
+              <div class="text-lg font-black text-slate-800 dark:text-slate-100 font-mono leading-tight">
+                R$ ${formatMoeda(kpis.faturamento.atual)}
+              </div>
+              <div class="text-[10px] text-slate-400 font-medium mt-0.5">
+                Ant: R$ ${formatMoeda(kpis.faturamento.anterior)}
+              </div>
+              <div class="mt-2.5">
+                ${renderBadgeDelta(kpis.faturamento, true)}
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 2: RENTABILIDADE LÍQUIDA -->
+          <div class="dashboard-glass rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800/60 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Rentabilidade</span>
+              <span class="text-sm">💎</span>
+            </div>
+            <div class="mt-2">
+              <div class="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono leading-tight">
+                R$ ${formatMoeda(kpis.rentabilidade.atual)}
+              </div>
+              <div class="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center justify-between">
+                <span>Margem: <strong>${formatPerc(kpis.margemMedia.atual)}</strong></span>
+                <span>Ant: ${formatPerc(kpis.margemMedia.anterior)}</span>
+              </div>
+              <div class="mt-2.5">
+                ${renderBadgeDelta(kpis.rentabilidade, true)}
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 3: VENDAS & TICKET MÉDIO -->
+          <div class="dashboard-glass rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800/60 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Vendas Fechadas</span>
+              <span class="text-sm">✈️</span>
+            </div>
+            <div class="mt-2">
+              <div class="text-lg font-black text-slate-800 dark:text-slate-100 font-mono leading-tight">
+                ${kpis.quantidadeVendas.atual.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} viagens
+              </div>
+              <div class="text-[10px] text-slate-400 font-medium mt-0.5">
+                Ticket Médio: <strong>R$ ${formatMoeda(kpis.ticketMedio.atual)}</strong>
+              </div>
+              <div class="mt-2.5">
+                ${renderBadgeDelta(kpis.quantidadeVendas, false)}
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 4: SAFRA DE ORÇAMENTOS -->
+          <div class="dashboard-glass rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800/60 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Orçamentos</span>
+              <span class="text-sm">📑</span>
+            </div>
+            <div class="mt-2">
+              <div class="text-lg font-black text-slate-800 dark:text-slate-100 font-mono leading-tight">
+                ${kpis.orcamentosCriados.atual} cotações
+              </div>
+              <div class="text-[10px] text-slate-400 font-medium mt-0.5">
+                Conversão: <strong>${formatPerc(kpis.taxaConversao.atual)}</strong>
+              </div>
+              <div class="mt-2.5">
+                ${renderBadgeDelta(kpis.orcamentosCriados, false)}
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 5: PACING & RUN-RATE -->
+          <div class="dashboard-glass rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800/60 relative overflow-hidden col-span-2 lg:col-span-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Run-Rate Final</span>
+              <span class="text-sm">🎯</span>
+            </div>
+            <div class="mt-2">
+              <div class="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono leading-tight">
+                R$ ${formatMoeda(kpis.runRateFechamento)}
+              </div>
+              <div class="text-[10px] text-slate-400 font-medium mt-0.5">
+                Benchmark Mês Ant: R$ ${formatMoeda(curvaS.benchmarkFechamentoAnterior)}
+              </div>
+              <div class="mt-2.5 flex items-center gap-1.5">
+                <div class="flex-1 bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                  <div class="bg-indigo-600 h-full rounded-full transition-all duration-500" style="width: ${Math.min(100, kpis.ritmoEsperadoPercentual)}%"></div>
+                </div>
+                <span class="text-[9px] font-bold text-slate-500">${kpis.ritmoEsperadoPercentual.toFixed(0)}%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- GRÁFICO DE RITMO ACUMULADO DIÁRIO (CURVA S) -->
+        <section class="dashboard-glass rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800/80 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <span>📈 Curva S de Pacing Acumulado</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Evolução Diária de Vendas</span>
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Compara a velocidade diária de entrada de receita entre os dois períodos do mês
+              </p>
+            </div>
+            
+            <!-- LEGENDA DA CURVA S -->
+            <div class="flex flex-wrap items-center gap-4 text-xs font-bold">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-1 bg-indigo-600 rounded-full inline-block"></span>
+                <span class="text-slate-700 dark:text-slate-300">Atual até hoje: <strong>R$ ${formatMoeda(curvaS.totalAtualAteCorte)}</strong></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-1 bg-slate-400 border-b border-dashed border-slate-500 rounded-full inline-block"></span>
+                <span class="text-slate-500 dark:text-slate-400">Anterior mesmo dia: <strong>R$ ${formatMoeda(curvaS.totalAnteriorAteCorte)}</strong></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-1 bg-slate-300 dark:bg-slate-700 border-b border-dotted rounded-full inline-block"></span>
+                <span class="text-slate-400">Fechamento Anterior: <strong>R$ ${formatMoeda(curvaS.benchmarkFechamentoAnterior)}</strong></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-1 bg-emerald-500 border-b border-dotted rounded-full inline-block"></span>
+                <span class="text-emerald-600 dark:text-emerald-400">Projeção: <strong>R$ ${formatMoeda(curvaS.runRateFinal)}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ÁREA DO GRÁFICO SVG -->
+          <div class="w-full overflow-x-auto custom-scrollbar pt-2">
+            ${this.renderCurvaSSVG(curvaS, intervalos)}
+          </div>
+        </section>
+
+        <!-- SEÇÃO: DESEMPENHO POR CONSULTOR / AUTO-GESTÃO -->
+        ${isAdmin ? `
+          <section class="dashboard-glass rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800/80 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div>
+                <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <span>👥 Desempenho e Ranking da Equipe</span>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase">Rateio Proporcional de Divisões</span>
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Vendas e comissões divididas oficialmente conforme viagens_divisoes (soma 100% fiel ao total da loja)
+                </p>
+              </div>
+
+              <!-- Toggle Tabela vs. Cards Mobile -->
+              <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 h-[38px] no-print">
+                <button type="button" id="btn-toggle-time-tabela" class="px-2.5 py-1 text-xs font-bold rounded-lg transition ${this.modoVisualizacaoTime === 'tabela' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'}">
+                  📋 Tabela
+                </button>
+                <button type="button" id="btn-toggle-time-cards" class="px-2.5 py-1 text-xs font-bold rounded-lg transition ${this.modoVisualizacaoTime === 'cards' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'}">
+                  🗂️ Cartões
+                </button>
+              </div>
+            </div>
+
+            ${this.modoVisualizacaoTime === 'tabela' 
+              ? this.renderTabelaConsultoresComparativo(tabelaTime)
+              : this.renderCardsConsultoresMobile(tabelaTime)
+            }
+          </section>
+        ` : `
+          <!-- PAINEL DE AUTO-GESTÃO DO CONSULTOR -->
+          <section class="dashboard-glass rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800/80 space-y-4">
+            <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <span>🎯 Auto-Gestão de Metas e Histórico Pessoal</span>
+            </h3>
+            <div class="p-5 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <span class="text-xs font-bold text-indigo-900 dark:text-indigo-200">Seu Faturamento no Período:</span>
+                <span class="block text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">
+                  R$ ${formatMoeda(kpis.faturamento.atual)}
+                </span>
+                <span class="text-xs text-slate-500 mt-1 block">
+                  Comparado ao mesmo período anterior: <strong>R$ ${formatMoeda(kpis.faturamento.anterior)}</strong>
+                </span>
+              </div>
+              <div>
+                ${renderBadgeDelta(kpis.faturamento, true)}
+              </div>
+            </div>
+          </section>
+        `}
+      </div>
+    `;
+  }
+
+  /**
+   * Renderiza o Gráfico SVG dinâmico e responsivo da Curva S de Pacing
+   */
+  private renderCurvaSSVG(curvaS: CurvaSResult, intervalos: any): string {
+    const pontos = curvaS.pontos || [];
+    if (pontos.length === 0) {
+      return `<div class="p-8 text-center text-xs text-slate-400">Nenhum dado de vendas para desenhar a curva de pacing.</div>`;
+    }
+
+    const width = 1000;
+    const height = 300;
+    const paddingLeft = 75;
+    const paddingRight = 30;
+    const paddingTop = 25;
+    const paddingBottom = 40;
+
+    const graphWidth = width - paddingLeft - paddingRight;
+    const graphHeight = height - paddingTop - paddingBottom;
+
+    // Determinar valor máximo no eixo Y
+    const maxValReal = Math.max(
+      curvaS.benchmarkFechamentoAnterior,
+      curvaS.runRateFinal,
+      curvaS.totalAtualAteCorte,
+      ...pontos.map(p => p.vendaAcumuladaAnterior),
+      ...pontos.map(p => p.vendaAcumuladaAtual)
+    );
+    const maxVal = maxValReal > 0 ? maxValReal * 1.15 : 10000;
+
+    const totalDias = pontos.length;
+    const stepX = graphWidth / Math.max(1, totalDias - 1);
+
+    const getX = (diaIdx: number) => paddingLeft + (diaIdx * stepX);
+    const getY = (val: number) => height - paddingBottom - ((Math.max(0, val) / maxVal) * graphHeight);
+
+    // Linhas de grade horizontal
+    const gridLinesCount = 5;
+    let gridLinesHTML = '';
+    for (let i = 0; i <= gridLinesCount; i++) {
+      const val = (maxVal / gridLinesCount) * i;
+      const y = getY(val);
+      const valFormat = (val / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k';
+      gridLinesHTML += `
+        <line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" stroke="currentColor" class="text-slate-100 dark:text-slate-800" stroke-width="1" stroke-dasharray="3,3" />
+        <text x="${paddingLeft - 10}" y="${y + 3}" text-anchor="end" class="text-[9px] font-mono fill-slate-400">R$ ${valFormat}</text>
+      `;
+    }
+
+    // Ticks no eixo X
+    let xTicksHTML = '';
+    const intervaloTicks = totalDias > 20 ? 5 : 2;
+    pontos.forEach((p, idx) => {
+      if (p.dia === 1 || p.dia % intervaloTicks === 0 || p.dia === totalDias || p.dia === intervalos.atual.diasCorte) {
+        const x = getX(idx);
+        const isCorte = p.dia === intervalos.atual.diasCorte;
+        xTicksHTML += `
+          <line x1="${x}" y1="${height - paddingBottom}" x2="${x}" y2="${height - paddingBottom + 5}" stroke="currentColor" class="${isCorte ? 'text-indigo-600' : 'text-slate-300 dark:text-slate-700'}" stroke-width="${isCorte ? '2' : '1'}" />
+          <text x="${x}" y="${height - paddingBottom + 18}" text-anchor="middle" class="text-[9px] ${isCorte ? 'font-black fill-indigo-600 dark:fill-indigo-400' : 'font-bold fill-slate-400'}">D${p.dia}</text>
+        `;
+      }
+    });
+
+    // Construção das curvas:
+    // 1. Anterior Acumulado (Tracejado Cinza)
+    const ptsAnterior = pontos.map((p, idx) => `${getX(idx)},${getY(p.vendaAcumuladaAnterior)}`).join(' ');
+
+    // 2. Atual Acumulado (Sólido Índigo até o dia de corte)
+    const pontosAtualAteCorte = pontos.filter(p => p.dia <= intervalos.atual.diasCorte);
+    const ptsAtual = pontosAtualAteCorte.map((p, idx) => `${getX(idx)},${getY(p.vendaAcumuladaAtual)}`).join(' ');
+
+    // Área sombreada sob a curva atual
+    let areaAtualPath = '';
+    if (pontosAtualAteCorte.length > 0) {
+      const primeiroX = getX(0);
+      const ultimoIdx = pontosAtualAteCorte.length - 1;
+      const ultimoX = getX(ultimoIdx);
+      const baseZeroY = height - paddingBottom;
+      areaAtualPath = `M ${primeiroX},${baseZeroY} ` + 
+        pontosAtualAteCorte.map((p, idx) => `L ${getX(idx)},${getY(p.vendaAcumuladaAtual)}`).join(' ') + 
+        ` L ${ultimoX},${baseZeroY} Z`;
+    }
+
+    // 3. Projeção Run-Rate (Pontilhado Esmeralda do dia de corte até o fim)
+    const pontosProjecao = pontos.filter(p => p.dia >= intervalos.atual.diasCorte && p.vendaProjetada !== undefined);
+    let ptsProjecao = '';
+    if (pontosProjecao.length > 0) {
+      const startIdx = pontos.findIndex(p => p.dia === intervalos.atual.diasCorte);
+      ptsProjecao = pontosProjecao.map(p => {
+        const idx = pontos.findIndex(item => item.dia === p.dia);
+        return `${getX(idx)},${getY(p.vendaProjetada!)}`;
+      }).join(' ');
+    }
+
+    // Linha de corte vertical (Hoje)
+    const idxCorte = Math.min(intervalos.atual.diasCorte - 1, totalDias - 1);
+    const xCorte = getX(idxCorte);
+
+    return `
+      <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto min-w-[700px] select-none font-sans overflow-visible">
+        <defs>
+          <linearGradient id="gradientPacingArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.25" />
+            <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.0" />
+          </linearGradient>
+        </defs>
+
+        <!-- Grade de fundo -->
+        ${gridLinesHTML}
+        ${xTicksHTML}
+
+        <!-- Linha Vertical do Dia de Corte (Hoje) -->
+        <line x1="${xCorte}" y1="${paddingTop}" x2="${xCorte}" y2="${height - paddingBottom}" stroke="#4f46e5" stroke-width="1.5" stroke-dasharray="4,4" class="opacity-60" />
+        <text x="${xCorte}" y="${paddingTop - 6}" text-anchor="middle" class="text-[9px] font-black fill-indigo-600 dark:fill-indigo-400 uppercase tracking-widest">Corte Atual (Hoje)</text>
+
+        <!-- Benchmark Fechamento Mês Anterior (Linha horizontal) -->
+        <line x1="${paddingLeft}" y1="${getY(curvaS.benchmarkFechamentoAnterior)}" x2="${width - paddingRight}" y2="${getY(curvaS.benchmarkFechamentoAnterior)}" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3,4" class="opacity-80" />
+
+        <!-- Área Sombreada da Curva Atual -->
+        ${areaAtualPath ? `<path d="${areaAtualPath}" fill="url(#gradientPacingArea)" />` : ''}
+
+        <!-- Curva Anterior (Tracejada Slate) -->
+        <polyline fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6,5" points="${ptsAnterior}" class="transition-all duration-300" />
+
+        <!-- Projeção Run-Rate (Pontilhada Esmeralda) -->
+        ${ptsProjecao ? `<polyline fill="none" stroke="#10b981" stroke-width="2.5" stroke-dasharray="4,4" points="${ptsProjecao}" />` : ''}
+
+        <!-- Curva Atual (Sólida Índigo) -->
+        <polyline fill="none" stroke="#4f46e5" stroke-width="3.5" points="${ptsAtual}" stroke-linecap="round" stroke-linejoin="round" class="transition-all duration-300" />
+
+        <!-- Pontos Interativos na Curva Atual -->
+        ${pontosAtualAteCorte.map((p, idx) => {
+          const cx = getX(idx);
+          const cy = getY(p.vendaAcumuladaAtual);
+          const isToday = p.dia === intervalos.atual.diasCorte;
+          return `
+            <circle cx="${cx}" cy="${cy}" r="${isToday ? '5.5' : '3.5'}" fill="${isToday ? '#4f46e5' : '#ffffff'}" stroke="#4f46e5" stroke-width="2.5" class="cursor-pointer hover:r-6 transition-all">
+              <title>Dia ${p.dia}: Venda do dia R$ ${p.vendaDiaAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Acumulado R$ ${p.vendaAcumuladaAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</title>
+            </circle>
+          `;
+        }).join('')}
+      </svg>
+    `;
+  }
+
+  /**
+   * Renderiza a Tabela de Desempenho por Consultor com design tokens do PaxFlow
+   */
+  private renderTabelaConsultoresComparativo(tabelaTime: LinhaConsultorComparativo[]): string {
+    const formatMoeda = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatPerc = (val: number) => `${val.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+
+    if (!tabelaTime || tabelaTime.length === 0) {
+      return `<div class="p-8 text-center text-xs text-slate-400">Nenhum consultor com movimentação nos períodos selecionados.</div>`;
+    }
+
+    // Totais da Loja
+    const totVendasAtu = tabelaTime.reduce((s, c) => s + c.vendasAtualValor, 0);
+    const totQtdAtu = tabelaTime.reduce((s, c) => s + c.vendasAtualQtd, 0);
+    const totVendasAnt = tabelaTime.reduce((s, c) => s + c.vendasAnteriorValor, 0);
+    const totQtdAnt = tabelaTime.reduce((s, c) => s + c.vendasAnteriorQtd, 0);
+    const totRentAtu = tabelaTime.reduce((s, c) => s + c.rentabilidadeAtualValor, 0);
+    const totOrcQtd = tabelaTime.reduce((s, c) => s + c.orcamentosQtd, 0);
+    const deltaTot = PerformanceComparativaService.calcularDelta(totVendasAtu, totVendasAnt);
+    const margemTot = totVendasAtu > 0 ? (totRentAtu / totVendasAtu) * 100 : 0;
+
+    return `
+      <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade min-w-[700px] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl">
+        <table class="w-full text-left text-xs font-sans">
+          <thead>
+            <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
+              <th class="py-3 px-4">Consultor</th>
+              <th class="py-3 px-4 text-right">Vendas Atual</th>
+              <th class="py-3 px-4 text-right">Vendas Anterior</th>
+              <th class="py-3 px-4 text-center">Variação (Δ)</th>
+              <th class="py-3 px-4 text-right">Rentabilidade</th>
+              <th class="py-3 px-4 text-center">Conversão</th>
+              <th class="py-3 px-4 text-right">Share Loja</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+            ${tabelaTime.map(c => {
+              const isUp = c.deltaValor > 0;
+              const isDown = c.deltaValor < 0;
+              const badgeClass = isUp ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/40' : (isDown ? 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/40' : 'text-slate-500 bg-slate-50');
+
+              return `
+                <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition">
+                  <td class="py-3 px-4 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-xs font-black shrink-0 overflow-hidden">
+                      ${c.avatarUrl ? `<img src="${c.avatarUrl}" class="w-full h-full object-cover" />` : c.nome.charAt(0).toUpperCase()}
+                    </div>
+                    <span>${c.nome}</span>
+                  </td>
+                  <td class="py-3 px-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100">
+                    R$ ${formatMoeda(c.vendasAtualValor)}
+                    <span class="block text-[10px] text-slate-400 font-sans font-normal">${c.vendasAtualQtd.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} viagens</span>
+                  </td>
+                  <td class="py-3 px-4 text-right font-mono text-slate-500">
+                    R$ ${formatMoeda(c.vendasAnteriorValor)}
+                    <span class="block text-[10px] text-slate-400 font-sans font-normal">${c.vendasAnteriorQtd.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} viagens</span>
+                  </td>
+                  <td class="py-3 px-4 text-center">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-black ${badgeClass}">
+                      <span>${isUp ? '▲ +' : (isDown ? '▼ ' : '')}${c.deltaPercentual.toFixed(1)}%</span>
+                    </span>
+                    <span class="block text-[9px] text-slate-400 mt-0.5">${c.deltaValor > 0 ? '+' : ''}R$ ${formatMoeda(c.deltaValor)}</span>
+                  </td>
+                  <td class="py-3 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    R$ ${formatMoeda(c.rentabilidadeAtualValor)}
+                    <span class="block text-[10px] text-slate-400 font-sans font-normal">Margem: ${formatPerc(c.margemAtualPercentual)}</span>
+                  </td>
+                  <td class="py-3 px-4 text-center font-bold text-slate-700 dark:text-slate-300">
+                    ${formatPerc(c.taxaConversaoPercentual)}
+                    <span class="block text-[10px] text-slate-400 font-normal">${c.orcamentosQtd} cotações</span>
+                  </td>
+                  <td class="py-3 px-4 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    ${formatPerc(c.shareLojaPercentual)}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+          <!-- LINHA DE TOTAIS DA LOJA -->
+          <tfoot>
+            <tr class="bg-slate-100/90 dark:bg-slate-900/90 font-black border-t-2 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+              <td class="py-3 px-4">TOTAL DA LOJA CONSOLIDADO</td>
+              <td class="py-3 px-4 text-right font-mono">
+                R$ ${formatMoeda(totVendasAtu)}
+                <span class="block text-[10px] text-slate-500 font-sans font-normal">${totQtdAtu.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} viagens</span>
+              </td>
+              <td class="py-3 px-4 text-right font-mono text-slate-600 dark:text-slate-400">
+                R$ ${formatMoeda(totVendasAnt)}
+                <span class="block text-[10px] text-slate-500 font-sans font-normal">${totQtdAnt.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} viagens</span>
+              </td>
+              <td class="py-3 px-4 text-center">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-black ${deltaTot.direcao === 'up' ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100'}">
+                  ${deltaTot.direcao === 'up' ? '▲ +' : '▼ '}${deltaTot.deltaPercentual.toFixed(1)}%
+                </span>
+              </td>
+              <td class="py-3 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400">
+                R$ ${formatMoeda(totRentAtu)}
+                <span class="block text-[10px] text-slate-500 font-sans font-normal">Margem: ${formatPerc(margemTot)}</span>
+              </td>
+              <td class="py-3 px-4 text-center">
+                ${totOrcQtd} cotações
+              </td>
+              <td class="py-3 px-4 text-right font-mono text-indigo-600 dark:text-indigo-400">
+                100,0%
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    `;
+  }
+
+  /**
+   * Renderiza a visualização em Cartões de Consultor (Layout Mobile & Tablet)
+   */
+  private renderCardsConsultoresMobile(tabelaTime: LinhaConsultorComparativo[]): string {
+    const formatMoeda = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatPerc = (val: number) => `${val.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+
+    return `
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        ${tabelaTime.map(c => {
+          const isUp = c.deltaValor > 0;
+          return `
+            <div class="dashboard-glass rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800/80 space-y-3">
+              <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-xs font-black overflow-hidden">
+                    ${c.avatarUrl ? `<img src="${c.avatarUrl}" class="w-full h-full object-cover" />` : c.nome.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-black text-slate-800 dark:text-slate-100">${c.nome}</h4>
+                    <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">Share: ${formatPerc(c.shareLojaPercentual)}</span>
+                  </div>
+                </div>
+                <span class="px-2 py-0.5 rounded-lg border text-[10px] font-black ${isUp ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-rose-600 bg-rose-50 border-rose-200'}">
+                  ${isUp ? '▲ +' : '▼ '}${c.deltaPercentual.toFixed(1)}%
+                </span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span class="text-[9px] uppercase font-bold text-slate-400 block">Vendas Atual:</span>
+                  <span class="font-mono font-bold text-slate-800 dark:text-slate-100">R$ ${formatMoeda(c.vendasAtualValor)}</span>
+                </div>
+                <div>
+                  <span class="text-[9px] uppercase font-bold text-slate-400 block">Vendas Anterior:</span>
+                  <span class="font-mono text-slate-500">R$ ${formatMoeda(c.vendasAnteriorValor)}</span>
+                </div>
+                <div>
+                  <span class="text-[9px] uppercase font-bold text-slate-400 block">Rentabilidade:</span>
+                  <span class="font-mono font-bold text-emerald-600">R$ ${formatMoeda(c.rentabilidadeAtualValor)}</span>
+                </div>
+                <div>
+                  <span class="text-[9px] uppercase font-bold text-slate-400 block">Conversão:</span>
+                  <span class="font-bold text-slate-700 dark:text-slate-300">${formatPerc(c.taxaConversaoPercentual)} (${c.orcamentosQtd})</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  /**
+   * Exporta os dados do Console Comparativo para arquivo CSV formatado
+   */
+  private exportarCsvComparativo(): void {
+    if (!this.dadosComparativos) {
+      this.showToast('Nenhum dado comparativo carregado para exportar.', 'error');
+      return;
+    }
+
+    try {
+      const csv = PerformanceComparativaService.gerarCsvComparativo(
+        this.dadosComparativos.kpis,
+        this.dadosComparativos.tabelaTime,
+        this.dadosComparativos.intervalos
+      );
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `paxflow_comparativo_pacing_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      this.showToast('Planilha CSV do comparativo exportada com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Erro ao exportar CSV do comparativo:', err);
+      this.showToast('Falha ao exportar CSV: ' + err.message, 'error');
+    }
   }
 
   private showToast(message: string, type: 'success' | 'error' = 'success'): void {
