@@ -521,12 +521,20 @@ export class EscalaService {
    * Carrega os plantões dos últimos 3 feriados, preenchendo automaticamente a partir da escala_diaria
    * e preservando ajustes manuais salvos pelo administrador.
    */
-  public static async loadFeriadosPlantoes(ano?: number, mes?: number): Promise<import('../types').FeriadoPlantaoInfo[]> {
-    const hoje = new Date();
+  public static async loadFeriadosPlantoes(
+    ano?: number,
+    mes?: number,
+    dataReferencia?: Date | string
+  ): Promise<import('../types').FeriadoPlantaoInfo[]> {
+    const hoje = dataReferencia
+      ? (typeof dataReferencia === 'string' ? new Date(dataReferencia.includes('T') ? dataReferencia : `${dataReferencia}T12:00:00`) : dataReferencia)
+      : new Date();
     const targetAno = ano || hoje.getFullYear();
     const targetMes = mes || (hoje.getMonth() + 1);
 
-    const ultimosTres = this.getUltimosTresFeriados(targetAno, targetMes);
+    const ultimosTres = dataReferencia
+      ? this.getUltimosTresFeriados(dataReferencia)
+      : this.getUltimosTresFeriados(targetAno, targetMes);
     const datasIso = ultimosTres.map(f => f.dataIso);
 
     // 1. Busca lançamentos reais de trabalho da escala_diaria

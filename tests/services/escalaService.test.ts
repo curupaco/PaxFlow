@@ -684,8 +684,8 @@ describe('EscalaService Subcutaneous Tests', () => {
       return createQueryMock([]);
     });
 
-    // Action
-    const feriados = await EscalaService.loadFeriadosPlantoes(ano, mesNovembro);
+    // Action: Data de corte travada em 04/11/2026 para validar travamento contra feriados futuros de novembro
+    const feriados = await EscalaService.loadFeriadosPlantoes(ano, mesNovembro, '2026-11-04');
 
     // Assert: Exatamente 3 feriados passados
     expect(feriados.length).toBe(3);
