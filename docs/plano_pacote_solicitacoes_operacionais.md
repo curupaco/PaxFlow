@@ -38,11 +38,26 @@ flowchart TD
 
 ## 2. Detalhamento Técnico das 9 Entregas
 
-### Item 1: Orçamentos Iniciando em "Em Andamento"
-- **Regra de Negócio**: Como os consultores cadastram diretamente suas próprias cotações (sem fila prévia de triagem), a coluna `Solicitado` é removida da visualização principal do Kanban. Novos orçamentos passam a nascer com `status = 'EM_ANDAMENTO'`.
-- **Métricas de SLA**: O cronômetro de primeiro atendimento é adaptado para medir o tempo decorrido da **criação da cotação até o envio formal da proposta** (`PROPOSTA_ENVIADA`).
-- **Arquivos Afetados**: `src/pages/Orcamentos.ts`, `src/services/orcamentosService.ts`, `src/types/index.ts`.
-- *Ponto de atenção anotado*: Aguardando esclarecimento da agência sobre o termo *"junção das telas"*.
+### Item 1: Orçamentos Unificados em "Em Andamento" (Eliminação de Solicitado)
+- **Eliminação da Coluna Solicitado**: A coluna `Solicitado` é removida por completo do Kanban. O fluxo passa a ser composto por 3 colunas ativas:
+  1. ⏳ **Em Andamento** (ponto de entrada padrão de todo novo orçamento);
+  2. 📤 **Aguardando** (proposta enviada ao cliente, aguardando aprovação);
+  3. 🏆 **Concluído** (Venda Fechada ou Desistência).
+- **Tela Unificada de Novo Orçamento**: Ao clicar em `+ Novo Orçamento`, abre-se um modal completo integrando os dados cadastrais do lead e os campos operacionais de negociação:
+  1. *Identificação do Cliente*: Nome Completo com busca e autocomplete resiliente (reconhecendo clientes já existentes e exibindo badge de cliente cadastrado), Telefone, E-mail, Origem do Lead e Consultor Responsável.
+  2. *Destino e Prazos*: Destino da Viagem (com suporte a autocomplete IATA do Item 2) e Data Estimada.
+  3. *Dados Comerciais e Proposta*:
+     - **Valor Estimado da Proposta (R$)**: Campo com máscara monetária brasileira para registrar a expectativa orçamentária do cliente ou valor preliminar.
+     - **Temperatura do Lead**: Normal (50%), Quente (Alta chance) ou Frio (Baixa chance).
+     - **Resumo e Anotações da Negociação (Área Ampliada)**: Campo de texto expandido e confortável (`rows="5"`, `min-h-[120px]`) para que os consultores anotem detalhadamente todo o briefing, exigências de voo, categorias de cabine/hotel e preferências do passageiro.
+     - **Anexo de Arquivos / Documentos**: Upload direto de PDFs, imagens e propostas com armazenamento seguro no Google Drive.
+     - **Tags**: Palavras-chave livres para categorização (ex: *Casal*, *Luxo*, *Cruzeiro*, *Milhas*).
+- **Ações de Fechamento do Modal**:
+  - `[ Cancelar ]`: Fecha o modal sem salvar.
+  - `[ 💾 Salvar Orçamento ]`: Grava o orçamento com `status = 'EM_ANDAMENTO'`, gerando o card na coluna "Em Andamento" e fechando o modal.
+  - `[ ✨ Salvar e Abrir Studio™ ]`: Grava o orçamento e abre imediatamente a interface de montagem visual de propostas do Studio™.
+- **Métricas e Cronômetro de SLA**: O cronômetro de primeiro atendimento é adaptado para medir o tempo decorrido da **criação da cotação (já em Em Andamento) até o envio formal da proposta** (`PROPOSTA_ENVIADA` / avanço para *Aguardando*).
+- **Arquivos Afetados**: `src/pages/Orcamentos.ts`, `src/services/orcamentosService.ts`, `src/types/index.ts`, `src/controllers/orcamentosController.ts`.
 
 ---
 
@@ -90,25 +105,50 @@ flowchart TD
 
 ---
 
-### Item 7: Assistente de Carga em Lote: Clientes Leady (CSV)
-- **Regra de Negócio**:
-  1. Criação do botão e modal `📥 Importar Clientes (Leady CSV)` dentro do módulo de Clientes.
-  2. Parser automático de colunas (Nome, CPF, Telefone, E-mail, Cidade, etc.).
-  3. **Desduplicação Inteligente**: Verifica se o cliente já existe por CPF ou E-mail; se existir, atualiza dados cadastrais em branco sem gerar registros duplicados; se não existir, cria o novo cadastro.
-  4. **Atribuição**: Clientes importados sem vínculo explícito são associados à carteira **"Geral / Agência"**.
-- **Arquivos Afetados**: `src/pages/Clientes.ts`, `src/services/csvImporter.ts`, `src/services/clienteSearchService.ts`.
-- *Ponto de atenção anotado*: Aguardando a exportação da planilha de clientes do Leady pelo usuário.
+### Item 7: Carga Única de Clientes Históricos do Leady (Script de Ingestão & SQL)
+- **Decisão Operacional**: Conforme alinhamento via `/grill-me`, **não** será desenvolvida funcionalidade de tela ou assistente no sistema, pois trata-se de uma carga pontual e definitiva (one-off) de encerramento do Leady.
+- **Volume e Origem dos Dados**:
+  - 3 arquivos CSV consolidados cobrindo 01/08/2020 até 30/09/2026 (total de **2.824 linhas brutas**, resultando em aproximadamente **2.044 clientes únicos**).
+  - 12 consultores do Leady identificados: `Alice Maciel`, `Cadu`, `Diego Gois`, `Fabiano Demarco`, `Guto`, `Malta`, `Maria`, `Marinna Morena`, `Paulo Soares`, `Rafael Sousa`, `Renata Martins`, `Sandra Varela`.
+- **Regras de Negócio e Ingestão Alinhadas**:
+  1. **Chave de Desduplicação e Precedência Temporal**:
+     - CPF/CNPJ limpo (apenas dígitos) é a chave primária de identificação. Para registros sem documento, utiliza-se a combinação Nome + Telefone/E-mail.
+     - Como clientes compram em períodos sucessivos (2020-2021, 2022-2023, 2024-2026), o registro do período mais recente possui precedência para atualizar e-mail, telefones e consultor responsável.
+  2. **Tratamento de Conflito com Clientes Já Existentes (`COALESCE`)**:
+     - Para clientes que já existirem na base do PaxFlow (mesmo CPF ou e-mail), aplica-se atualização defensiva: preserva todos os dados atuais do PaxFlow e preenche apenas os campos que estiverem vazios (`NULL` ou em branco).
+  3. **Vínculo de Consultores (De-Para)**:
+     - Mapeamento direto dos nomes do Leady para os perfis correspondentes na tabela `profiles`.
+     - Consultores inativos ou sem cadastro equivalente no PaxFlow recebem `consultor_responsavel_id = NULL` (atribuídos à carteira Geral / Agência).
+  4. **Preservação do Histórico Comercial do Leady**:
+     - As métricas de valor do Leady (Primeira Compra, Última Compra, Rentabilidade, Ticket Médio, Total de Atendimentos Fechados) são agregadas e formatadas no campo `observacoes` do cliente (ex: `[Histórico Leady] Última Compra: 2024-05-10 | Ticket Médio: R$ 8.500 | Fechamentos: 3 | Rentabilidade: R$ 1.200`).
+  5. **Mecanismo de Execução e Governança**:
+     - Script utilitário em Node/TypeScript (`scripts/importar_leady_sql.ts`) que analisa os 3 CSVs, sanitiza telefones/documentos, consolida duplicatas e gera o arquivo `supabase/seed_carga_leady.sql`.
+     - O script SQL gerado roda envelopado em bloco transacional seguro (`BEGIN; ... COMMIT;`), para conferência e execução manual pelo usuário no SQL Editor do Supabase.
+- **Arquivos Afetados**: `scripts/importar_leady_sql.ts`, `supabase/seed_carga_leady.sql`.
 
 ---
 
-### Item 8: Seção "⭐ Mais Acessados" no Topo dos Relatórios & Permissões
-- **Regra de Negócio**:
-  1. Criação da seção nobre **"⭐ MAIS ACESSADOS"** fixada no topo da barra de navegação de relatórios, destacando com acesso direto em 1 clique:
-     - 🛫 **Relatório de Embarques e Voos**
-     - 💰 **Faturamento**
-  2. Manutenção das categorias existentes (`Comercial`, `Financeiro`, `Operações`, `Equipe`) logo abaixo.
-- **Arquivos Afetados**: `src/components/relatorios/shell/RelatoriosShellView.ts`.
-- *Ponto de atenção anotado*: Aguardando a lista de relatórios restritos de vendas que o usuário colherá com a gestão.
+### Item 8: Seção "⭐ Mais Acessados" no Topo dos Relatórios & Matriz Estrita de Permissões
+- **Seção Nobre no Topo ("⭐ Mais Acessados")**:
+  1. Fixada tanto no menu lateral expandido quanto na mini-bar recolhida e no seletor mobile, visível para Administradores e Consultores.
+  2. Contém atalhos rápidos de 1 clique para os 2 relatórios de maior giro operacional da agência:
+     - 🛫 **Relatório de Embarque e Trechos de Voo** (`embarques`)
+     - 💰 **Faturamento** (`faturamento`)
+- **Matriz de Permissões e Acesso por Perfil**:
+  1. **Perfil Consultor (`role !== 'admin'`)**:
+     - Menu lateral e seletor mobile exibem **estritamente** os 5 relatórios operacionais autorizados:
+       - 💼 *Gestão Comercial*: **Metas & Campanhas** (`metas_campanhas`)
+       - 🪙 *Financeiro & Auditoria*: **Faturamento** (`faturamento`) e **Desistências & Perdas** (`perdas`)
+       - ⚙️ *Operações & SLAs*: **Pesquisa de Satisfação** (`satisfacao`) e **Relatório de Embarque** (`embarques`)
+     - Todos os demais relatórios (Desempenho Geral, Campanhas & Segmentação, Origem de Leads, Previsões Preditivas, Risco Churn, Recebimentos/Auditoria, Controle de SLAs, Pós-Venda e Gamificação Geral) ficam ocultos para o consultor.
+     - **Isolamento de Carteira**: Nos relatórios acessados, o consultor visualiza estritamente os dados das suas próprias viagens e suas vendas (o filtro de consultor fica fixado no seu ID).
+  2. **Perfil Administrador (`role === 'admin'`)**:
+     - Visualiza **todos** os relatórios do sistema nas categorias completas.
+     - Acesso total à visão macro e consolidada da agência, com liberdade para alternar e filtrar por qualquer consultor.
+- **Relatório de Pesquisa de Satisfação (NPS)**:
+  1. **Visão do Consultor**: Acompanha seus indicadores pessoais (NPS próprio, total de feedbacks recebidos dos seus clientes, média de nota e mural de comentários de suas viagens).
+  2. **Visão do Administrador**: Visualiza o NPS macro da agência, ranking comparativo entre consultores, zonas de qualidade e mural consolidado com filtros avançados.
+- **Arquivos Afetados**: `src/components/relatorios/shell/RelatoriosShellView.ts`, `src/pages/Relatorios.ts`, `src/components/relatorios/operacoes/RelatoriosOperacoesView.ts`, `src/components/relatorios/financeiro/RelatoriosFinanceiroView.ts`.
 
 ---
 
@@ -124,17 +164,27 @@ flowchart TD
 
 ---
 
-## 3. Protocolo de Governança de Banco de Dados (DDL Supabase)
+## 3. Protocolo de Governança de Banco de Dados (DDL & DML Supabase)
 
-Para viabilizar o **Item 4** (configuração de dias para cruzeiro), o script SQL oficial abaixo deverá ser executado pelo usuário no Supabase SQL Editor:
+Para garantir integridade de dados absoluta e zero-drift, o script SQL oficial abaixo deverá ser executado pelo usuário no Supabase SQL Editor:
 
 ```sql
--- 1. Adicionar coluna de SLA de cruzeiro na tabela global_settings se não existir
-ALTER TABLE public.global_settings 
-ADD COLUMN IF NOT EXISTS sla_cruzeiro_pre_embarque_dias INTEGER DEFAULT 20;
+-- ==============================================================================
+-- 1. MIGRAÇÃO DE ORÇAMENTOS: Eliminação do status SOLICITADO (Item 1)
+-- ==============================================================================
+-- Atualiza orçamentos legados para o novo padrão 'EM_ANDAMENTO'
+UPDATE public.orcamentos 
+SET status = 'EM_ANDAMENTO' 
+WHERE UPPER(status) = 'SOLICITADO';
 
--- 2. Atualizar o registro existente com o valor padrão de 20 dias
-UPDATE public.global_settings 
+-- ==============================================================================
+-- 2. PARÂMETRO DE SLA DE CRUZEIROS: Janela antecipada de 20 dias (Item 4)
+-- ==============================================================================
+-- Adiciona coluna física na tabela global_settings_table e atualiza View
+ALTER TABLE IF EXISTS public.global_settings_table 
+ADD COLUMN IF NOT EXISTS sla_cruzeiro_pre_embarque_dias INTEGER DEFAULT 20 NOT NULL;
+
+UPDATE public.global_settings_table 
 SET sla_cruzeiro_pre_embarque_dias = 20 
 WHERE sla_cruzeiro_pre_embarque_dias IS NULL;
 ```
@@ -154,7 +204,7 @@ WHERE sla_cruzeiro_pre_embarque_dias IS NULL;
 3. **Fase 3 (Comercial, IATA & Carga de Dados)**:
    - Item 1: Orçamentos iniciando em Em Andamento e SLA ajustado;
    - Item 2: Autocomplete IATA nos trechos da Viagem e destino de Orçamentos;
-   - Item 7: Assistente de importação de clientes do Leady (quando o CSV for exportado).
+   - Item 7: Execução do script de higienização dos 3 CSVs do Leady e geração do SQL de carga única (`supabase/seed_carga_leady.sql`).
 
 ---
 

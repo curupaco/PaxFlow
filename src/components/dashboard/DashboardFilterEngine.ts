@@ -247,7 +247,16 @@ export class DashboardFilterEngine {
 
     let urgentAlert: { dias: number; text: string } | null = null;
 
-    const checkDateUrgency = (dateStr: string, label: string) => {
+    const slaCruzeiroDias = Number(
+      settings?.slaCruzeiroPreEmbarqueDias ??
+      settings?.sla_cruzeiro_pre_embarque_dias ??
+      20
+    );
+    const isCruzeiroText = (txt?: string) => /cruzeiro|navio|mar[ií]timo/i.test(String(txt || ''));
+    const viagemPossuiCruzeiro = Array.isArray(viagem.produtos)
+      && viagem.produtos.some((p: any) => isCruzeiroText(p.tipo) || isCruzeiroText(p.descricao));
+
+    const checkDateUrgency = (dateStr: string, label: string, janelaDias: number = slaPreEmbarqueDias) => {
       if (!dateStr) return;
       const targetDate = new Date(dateStr + 'T00:00:00');
       targetDate.setHours(0, 0, 0, 0);
@@ -255,7 +264,7 @@ export class DashboardFilterEngine {
       const diferencaTempo = targetDate.getTime() - hoje.getTime();
       const diasRestantes = Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24));
 
-      if (diasRestantes >= 0 && diasRestantes <= slaPreEmbarqueDias) {
+      if (diasRestantes >= 0 && diasRestantes <= janelaDias) {
         if (!urgentAlert || diasRestantes < urgentAlert.dias) {
           urgentAlert = {
             dias: diasRestantes,
@@ -267,26 +276,27 @@ export class DashboardFilterEngine {
 
     // Regra de SLA para "Pré-Embarque" (inclui viagens em pos_venda cuja validação administrativa já foi concluída)
     if (viagem.status === 'pre_embarque' || viagem.status === 'fechado' || viagem.status === 'pos_venda') {
-      checkDateUrgency(viagem.data_ida, 'Embarque');
+      checkDateUrgency(viagem.data_ida, 'Embarque', viagemPossuiCruzeiro ? slaCruzeiroDias : slaPreEmbarqueDias);
 
       if (viagem.produtos && Array.isArray(viagem.produtos)) {
         viagem.produtos.forEach((p: any) => {
           const icon = this.getIconForType(p.tipo, tiposProduto);
           const labelBase = `${icon} ${p.fornecedor}`;
+          const janelaProduto = (isCruzeiroText(p.tipo) || isCruzeiroText(p.descricao)) ? slaCruzeiroDias : slaPreEmbarqueDias;
 
-          checkDateUrgency(p.data_servico, `${labelBase}`);
+          checkDateUrgency(p.data_servico, `${labelBase}`, janelaProduto);
 
           if (p.datas_adicionais && Array.isArray(p.datas_adicionais)) {
             p.datas_adicionais.forEach((d: any) => {
-              checkDateUrgency(d.data, `${labelBase} (${d.rotulo})`);
+              checkDateUrgency(d.data, `${labelBase} (${d.rotulo})`, janelaProduto);
             });
           }
 
           if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
             p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
               const labelTrecho = `${icon} ${p.fornecedor} - Trecho ${idx + 1} (${t.origem} ➔ ${t.destino})`;
-              if (t.dataIda) checkDateUrgency(t.dataIda, `${labelTrecho} (Ida)`);
-              if (t.dataVolta) checkDateUrgency(t.dataVolta, `${labelTrecho} (Volta)`);
+              if (t.dataIda) checkDateUrgency(t.dataIda, `${labelTrecho} (Ida)`, janelaProduto);
+              if (t.dataVolta) checkDateUrgency(t.dataVolta, `${labelTrecho} (Volta)`, janelaProduto);
             });
           }
         });
@@ -713,7 +723,8 @@ export class DashboardFilterEngine {
 
       // Anexos / Vouchers
       if (advAnexos !== 'todos') {
-        const hasVoucher = !!v.voucher_geral_anexado;
+        const hasVoucherProduto = (v.produtos || []).some((p: any) => !!(p.voucher_url || p.voucher_anexado || p.voucher_emitido || p.anexo_url));
+        const hasVoucher = !!v.voucher_geral_anexado || hasVoucherProduto;
         const totalAnexos = Number(v.anexos_count) || (Array.isArray(v.anexos) ? v.anexos.length : 0);
         if (advAnexos === 'com_voucher' && !hasVoucher) return false;
         if (advAnexos === 'sem_voucher' && hasVoucher) return false;

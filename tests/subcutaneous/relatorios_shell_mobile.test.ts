@@ -4,15 +4,14 @@ import { RelatoriosShellView, RelatoriosShellParams } from '../../src/components
 describe('Subcutaneous: Relatórios - Navegação Responsiva e Seletor Mobile', () => {
   it('deve renderizar seletor dropdown mobile com o relatório ativo selecionado e categorias agrupadas', () => {
     // Setup
-    const params: RelatoriosShellParams = {
-      filtros: {
-        dataInicio: '2026-01-01',
-        dataFim: '2026-12-31',
-        consultorId: ''
-      },
-      consultoresList: [],
+    const params: any = {
+      dataInicio: '2026-01-01',
+      dataFim: '2026-12-31',
+      consultorIdFilter: 'todos',
+      consultores: [],
+      isAdmin: true,
       menuLateralRecolhido: true,
-      collapsedGroups: { comercial: false, financeiro: false, operacoes: false, equipe: false },
+      collapsedGroups: { comercial: false, financeiro: false, operacional: false, equipe: false },
       activeTab: 'satisfacao',
       contentHtml: '<div id="conteudo-teste">Conteúdo do Relatório</div>'
     };
@@ -23,6 +22,7 @@ describe('Subcutaneous: Relatórios - Navegação Responsiva e Seletor Mobile', 
     // Assert
     expect(html).toContain('id="select-relatorio-mobile"');
     expect(html).toContain('value="satisfacao" selected');
+    expect(html).toContain('optgroup label="⭐ MAIS ACESSADOS"');
     expect(html).toContain('optgroup label="💼 GESTÃO COMERCIAL"');
     expect(html).toContain('optgroup label="💰 FINANCEIRO & AUDITORIA"');
     expect(html).toContain('optgroup label="✈️ OPERAÇÕES & SLAS"');

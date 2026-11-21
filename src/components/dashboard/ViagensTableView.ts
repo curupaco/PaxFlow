@@ -193,6 +193,18 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
         <td class="px-5 py-4">
           <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
             <span>✈️ ${highlightMatch(v.destino, ctx.buscaTermo)}</span>
+            ${(() => {
+              const totalAnexos = Number(v.anexos_count) || (Array.isArray(v.anexos) ? v.anexos.length : 0);
+              if (totalAnexos > 0) {
+                return `
+                  <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 text-[10px] font-black text-slate-600 dark:text-slate-300 shrink-0" title="${totalAnexos} anexo(s) vinculado(s)">
+                    <span>📎</span>
+                    <span>${totalAnexos}</span>
+                  </span>
+                `;
+              }
+              return '';
+            })()}
             ${temReembolsoPendente ? `
               <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-[10px] font-black text-rose-600 dark:text-rose-400 shrink-0" title="Existe processo de reembolso em andamento para esta viagem">
                 <span>💸</span>

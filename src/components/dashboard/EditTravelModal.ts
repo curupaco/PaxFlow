@@ -43,6 +43,7 @@ import {
   isLocBloqueadoPorEdicao
 } from '../../utils/productFinancialHelper';
 import { limparObservacoesTralha } from '../../services/anexosService';
+import { renderIataDatalistHTML } from '../../utils/iataCatalog';
 
 export interface EditTravelModalOptions {
   perfil: any;
@@ -69,6 +70,7 @@ export class EditTravelModal {
   private expandedLocKeys: Set<string> = new Set<string>();
   private cachedFormasRecebimento: any[] | null = null;
   private cachedLocPagamentos: any[] | null = null;
+  private keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 
   constructor(options: EditTravelModalOptions) {
     this.options = options;
@@ -754,21 +756,22 @@ export class EditTravelModal {
               </div>
 
               <!-- Rodapé Fixo (Sticky Footer) para Ações de Salvamento -->
-              <div class="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 pt-3 pb-2 z-20 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 font-sans">
+              <div class="sticky bottom-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 py-3 px-4 -mx-4 mt-4 rounded-b-2xl flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 font-sans">
                 <div class="flex items-center gap-2 w-full sm:w-auto">
                   ${this.options.perfil?.role === 'admin' && !viagemProcessoConferido ? `
-                    <button id="btn-excluir-viagem" type="button" class="w-full sm:w-auto px-4 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-[11px] tracking-wider rounded-xl transition uppercase">
+                    <button id="btn-excluir-viagem" type="button" class="w-full sm:w-auto px-4 h-[42px] bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-[11px] tracking-wider rounded-xl transition uppercase cursor-pointer">
                       Excluir
                     </button>
                   ` : ''}
                 </div>
 
                 <div class="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
-                  <button id="btn-close-edit-modal" type="button" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase text-center">
+                  <button id="btn-close-edit-modal" type="button" class="flex-1 sm:flex-none px-4 h-[42px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase text-center cursor-pointer">
                     Cancelar
                   </button>
-                  <button type="submit" class="flex-1 sm:flex-none px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 transition uppercase text-center cursor-pointer">
-                    Salvar Alterações
+                  <button id="btn-save-edit-trip" type="submit" title="Salvar Alterações (Ctrl+S)" class="flex-1 sm:flex-none px-5 h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs tracking-wider rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 uppercase text-center cursor-pointer flex items-center justify-center gap-1.5">
+                    <span>💾</span>
+                    <span>Salvar Alterações</span>
                   </button>
                 </div>
               </div>
@@ -961,6 +964,7 @@ export class EditTravelModal {
             ${renderReembolsosHTML()}
           </div>
 
+          ${renderIataDatalistHTML()}
         </div>
 
       </div>
@@ -972,7 +976,11 @@ export class EditTravelModal {
       await this.options.onUpdate(this.currentLoadedViagem);
     };
     document.getElementById('btn-close-edit-modal-x')?.addEventListener('click', handleClose);
+    document.getElementById('btn-close-edit-modal')?.addEventListener('click', handleClose);
     document.getElementById('btn-cancel-edit')?.addEventListener('click', handleClose);
+
+    // Atalho Ctrl+S / Cmd+S para salvar rapidamente
+    this.registerKeyboardShortcuts();
 
     // Enviar WhatsApp (Ações rápidas)
     document.getElementById('btn-modal-whatsapp')?.addEventListener('click', () => {
@@ -4249,10 +4257,10 @@ export class EditTravelModal {
     let acDest: any = null;
 
     if (inputOrigem && !disabled) {
-      acOrigem = new DestinosAutocomplete(inputOrigem, () => {});
+      acOrigem = new DestinosAutocomplete(inputOrigem, () => {}, null, { allowFreeText: true, trechoMode: true });
     }
     if (inputDest && !disabled) {
-      acDest = new DestinosAutocomplete(inputDest, () => {});
+      acDest = new DestinosAutocomplete(inputDest, () => {}, null, { allowFreeText: true, trechoMode: true });
     }
 
     (row as any)._autocompletes = [acOrigem, acDest].filter(Boolean);
@@ -4502,7 +4510,36 @@ export class EditTravelModal {
     });
   }
 
+  private registerKeyboardShortcuts(): void {
+    if (this.keydownHandler) {
+      window.removeEventListener('keydown', this.keydownHandler);
+      this.keydownHandler = null;
+    }
+
+    this.keydownHandler = (e: KeyboardEvent) => {
+      const overlay = document.getElementById('modal-overlay');
+      if (!overlay || overlay.classList.contains('pointer-events-none')) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (this.currentActiveTab === 'detalhes') {
+          const formEditar = document.getElementById('form-editar-viagem') as HTMLFormElement | null;
+          formEditar?.requestSubmit();
+        } else if (this.currentActiveTab === 'produtos' && this.selectedProductId) {
+          const formProd = document.getElementById(`form-editar-produto-lateral-${this.selectedProductId}`) as HTMLFormElement | null;
+          formProd?.requestSubmit();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', this.keydownHandler);
+  }
+
   private closeModal(): void {
+    if (this.keydownHandler) {
+      window.removeEventListener('keydown', this.keydownHandler);
+      this.keydownHandler = null;
+    }
     if (this.destAutocomplete) {
       this.destAutocomplete.destroy();
       this.destAutocomplete = null;

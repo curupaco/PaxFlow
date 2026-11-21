@@ -42,8 +42,8 @@ export const HELP_ITEMS: HelpItem[] = [
     id: 'primeiro-orcamento',
     modulo: 'onboarding',
     label: 'Criando e Conduzindo seu Primeiro Orçamento',
-    description: 'Como cadastrar um lead, pesquisar tarifas e movimentar a negociação no Kanban.',
-    details: 'Para iniciar uma nova prospecção de vendas:\n\n1. Acesse o menu **Orçamentos** e clique no botão de criação (+ Novo Orçamento).\n2. **Busca e Recomendação de Clientes**: Comece a digitar o **Nome**, **CPF** (com ou sem pontuação), **E-mail** ou **Telefone** (com ou sem DDD). O sistema pesquisa instantaneamente e recomenda clientes cadastrados na base.\n3. **Seleção em 1-Clique**: Ao clicar no cliente sugerido, o PaxFlow preenche automaticamente o Nome Completo, Telefone (com DDI), E-mail e exibe a badge `✔️ Cliente Cadastrado` vinculada ao histórico da agência.\n4. **Defina a Temperatura**: Classifique o lead (❄️ Frio, ⚡ Normal, 🔥 Quente) para priorizar seu atendimento.\n5. **Adicione as Notas**: Registre o que o cliente busca (ex: "hotel 5 estrelas em Orlando, viagem em família").\n6. **Movimentação do Card**: Use os botões de ação ("Iniciar" -> "Enviar Proposta" -> "Aceitar/Desistir") para mover o card pelo funil. O PaxFlow não usa drag-and-drop para evitar erros acidentais.'
+    description: 'Como cadastrar um lead, pesquisar tarifas, anexar cotações e conduzir a negociação no Kanban de 3 colunas.',
+    details: 'Para iniciar uma nova prospecção de vendas:\n\n1. Acesse o menu **Orçamentos** e clique em `+ Novo Orçamento`.\n2. **Busca e Recomendação de Clientes**: Digite o **Nome**, **CPF**, **E-mail** ou **Telefone**. Ao clicar em um cliente cadastrado, o sistema preenche os dados e exibe a badge `✔️ Cliente Cadastrado`.\n3. **Destino com Sigla IATA**: Digite o nome da cidade ou a sigla IATA do aeroporto (ex: `MCO`, `GRU`, `LIS`) para sugestão imediata.\n4. **Negociação Completa na Abertura**: Informe o Valor Estimado (R$), Temperatura (❄️ Frio, ⚡ Normal, 🔥 Quente), Resumo ampliado da negociação e anexe PDFs opcionais.\n5. **Entrada Direta em Em Andamento**: Ao clicar em `Salvar Orçamento` (ou `✨ Salvar e Abrir Studio™`), o card já inicia na primeira coluna ativa **Em Andamento**.\n6. **Avanço no Funil**: Use os botões `Enviar Proposta 📤` -> `Vender 🏆` / `Desistência 🚫`.'
   },
   {
     id: 'fechar-primeira-venda',
@@ -617,16 +617,16 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'auto-status-em-andamento',
     modulo: 'orcamentos',
-    label: 'Automação: Início do Atendimento (Orçamentos)',
-    description: 'O orçamento passa de "Solicitado" para "Em Andamento" de forma automática ao interagir com o lead.',
-    details: 'Quando um novo orçamento (Lead) entra no sistema, ele inicia no estágio "Solicitado". Assim que qualquer consultor abre a ficha deste orçamento e adiciona a primeira anotação, observação interna ou envia uma mensagem na linha do tempo, o PaxFlow entende que o atendimento foi iniciado e altera o status do orçamento automaticamente para "Em Andamento".\n\nIsso evita que o consultor precise clicar manualmente para atualizar o estágio, mantendo o funil comercial preciso e gerando métricas corretas de tempo de resposta do primeiro atendimento.'
+    label: 'Fluxo Unificado em "Em Andamento" (Orçamentos)',
+    description: 'Todo novo orçamento inicia diretamente na etapa Em Andamento, eliminando etapas redundantes.',
+    details: 'O funil Kanban opera com 3 colunas objetivas: **Em Andamento**, **Aguardando** e **Concluído**.\n\nAo criar um orçamento pelo modal unificado, o consultor já informa os dados iniciais, valor estimado, notas completas e anexos, entrando imediatamente em **Em Andamento** para que o cronômetro de atendimento meça o tempo real até o envio da proposta comercial (`Aguardando`).'
   },
   {
     id: 'lead-aging-reinicio',
     modulo: 'orcamentos',
     label: '⏱️ Lead Aging & Reinício de Tempo na Etapa (Orçamentos)',
-    description: 'Como funciona o contador visual de tempo na etapa e seu reinício automático ao voltar para Solicitado.',
-    details: 'Cada card de orçamento exibe um badge visual de **Lead Aging** indicando o tempo decorrido desde a última movimentação:\n\n1. **Faixas Visuais**: `🟢 Recente` (até 2 dias na etapa, ex: "Hoje" ou "1d na etapa"), `🟡 Moderado` (3 a 5 dias) e `🔴 Crítico` (acima de 5 dias parado, com efeito pulsante).\n2. **Reinício Automático**: Ao voltar um orçamento de "Em Andamento" ou "Aguardando" para "Solicitado" (seja via botão de retorno `↩️`, botão `🔄` ou menu de ações rápidas `⋮`), o contador é reiniciado do zero imediatamente (`🟢 Hoje`), gravando o novo timestamp de atualização no banco de dados.'
+    description: 'Como funciona o contador visual de tempo na etapa e o retorno para revisão em Em Andamento.',
+    details: 'Cada card de orçamento exibe um badge visual de **Lead Aging** indicando o tempo decorrido desde a última movimentação:\n\n1. **Faixas Visuais**: `🟢 Recente` (até 2 dias na etapa, ex: "Hoje" ou "1d na etapa"), `🟡 Moderado` (3 a 5 dias) e `🔴 Crítico` (acima de 5 dias parado, com efeito pulsante).\n2. **Reinício ao Revisar Proposta**: Ao retornar um orçamento de "Aguardando" para "Em Andamento" para ajustes (via botão `🔄` ou menu de ações rápidas `⋮`), o timestamp é renovado para reiniciar o contador na etapa.'
   },
   {
     id: 'localizadores-grid-viagens',
@@ -647,7 +647,7 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'viagens',
     label: 'Automação: Transição para Pré-Embarque (Viagens)',
     description: 'Viagens em pós-venda mudam para "Pré-Embarque" automaticamente próximo à data de embarque.',
-    details: 'Quando a data do voo ou do primeiro serviço da viagem se aproxima, o sistema altera o status operacional da viagem de "Pós-Venda" para "Pré-Embarque" de forma autônoma e sincronizada.\n\n* **Janela Baseada em SLA Dinâmico**: A transição e a geração de alertas no Inbox do consultor (e de parceiros da venda) ocorrem estritamente dentro da janela definida em "Parâmetros de SLAs & Prazos Automáticos" da agência (`sla_pre_embarque_dias`).\n* **Inteligência de Trechos e Produtos**: O sistema analisa tanto a data geral da viagem quanto os trechos e bilhetes aéreos cadastrados nos produtos, garantindo que mesmo se a data de cabeçalho estiver divergente, o primeiro voo real ative o SLA e o alerta no Inbox.\n* **Alertas Visuais Imediatos**: Ao entrar na janela de pré-embarque, o indicador de SLA no Dashboard acende o alerta (⚠️ ou 🚨 para menos de 48h) com o checklist de conferência e entrega de vouchers aos passageiros.'
+    details: 'Quando a data do voo ou do primeiro serviço da viagem se aproxima, o sistema altera o status operacional da viagem de "Pós-Venda" para "Pré-Embarque" de forma autônoma e sincronizada.\n\n* **Janela Baseada em SLA Dinâmico**: A transição e os alertas obedecem às configurações da agência: `sla_pre_embarque_dias` (padrão 7 dias para voos/pacotes) e `sla_cruzeiro_pre_embarque_dias` (padrão 20 dias para cruzeiros e roteiros marítimos, ideal para web check-in de navios).\n* **Inteligência de Trechos, Siglas IATA e Rodapé Fixo**: O sistema analisa datas de trechos com suporte a siglas IATA (`GRU`, `MCO`, `LIS`), permite salvar rapidamente com `Ctrl+S` pelo rodapé fixo do modal e exibe o badge `📎` para viagens com anexos.\n* **Visão Dupla no Calendário**: Mesmo viagens futuras agendadas para os próximos anos já aparecem no Calendário do Inbox destacando tanto o dia do SLA (`📞 Ação Pré-Embarque`) quanto a data real do embarque (`✈️ Embarque`).'
   },
   {
     id: 'auto-status-pos-viagem',

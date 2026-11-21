@@ -1,5 +1,11 @@
 import { supabase } from '../services/supabase';
 import { Destino } from '../types';
+import { buscarAeroportosPorTermo } from '../utils/iataCatalog';
+
+export interface DestinosAutocompleteOptions {
+  allowFreeText?: boolean;
+  trechoMode?: boolean;
+}
 
 export class DestinosAutocomplete {
   private input: HTMLInputElement;
@@ -10,11 +16,26 @@ export class DestinosAutocomplete {
   private filteredDestinos: Destino[] = [];
   private selectedDestinoId: string | null = null;
   private clickListener: ((e: MouseEvent) => void) | null = null;
+  private allowFreeText: boolean = true;
+  private trechoMode: boolean = false;
 
-  constructor(input: HTMLInputElement, onSelect: (destino: Destino | null) => void, initialDestinoId: string | null = null) {
+  constructor(
+    input: HTMLInputElement,
+    onSelect: (destino: Destino | null) => void,
+    initialDestinoId: string | null = null,
+    options?: boolean | DestinosAutocompleteOptions
+  ) {
     this.input = input;
     this.onSelect = onSelect;
     this.selectedDestinoId = initialDestinoId;
+    if (typeof options === 'boolean') {
+      this.allowFreeText = options;
+    } else if (options) {
+      if (options.allowFreeText !== undefined) {
+        this.allowFreeText = Boolean(options.allowFreeText);
+      }
+      this.trechoMode = Boolean(options.trechoMode);
+    }
     this.init();
   }
 
@@ -113,11 +134,29 @@ export class DestinosAutocomplete {
     if (!query) {
       this.filteredDestinos = this.destinos.slice(0, 40);
     } else {
-      this.filteredDestinos = this.destinos.filter(d => {
+      const dbMatches = this.destinos.filter(d => {
         const nomeClean = d.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const paisClean = d.pais.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         return nomeClean.includes(query) || paisClean.includes(query);
       });
+
+      const iataMatches = buscarAeroportosPorTermo(query, 12).map(a => ({
+        id: `iata-${a.code}`,
+        nome: `${a.city} (${a.code})`,
+        pais: a.country,
+        _iataCode: a.code,
+        _cityName: a.city
+      } as Destino & { _iataCode?: string; _cityName?: string }));
+
+      // Evita duplicidade visual se o destino já contiver a sigla IATA no nome
+      const iataFiltrados = iataMatches.filter(iataItem => {
+        const codeTag = `(${(iataItem as any)._iataCode})`.toLowerCase();
+        return !dbMatches.some(db => db.nome.toLowerCase().includes(codeTag));
+      });
+
+      this.filteredDestinos = query.length <= 3
+        ? [...iataFiltrados, ...dbMatches]
+        : [...dbMatches, ...iataFiltrados];
     }
 
     this.selectedIndex = -1;
@@ -149,16 +188,17 @@ export class DestinosAutocomplete {
     const listHtml = this.filteredDestinos.map((dest, idx) => {
       // Ignorar prefixo "ARRUMAR | " na exibição das sugestões normais
       const isArrumar = dest.nome.startsWith('ARRUMAR | ');
+      const isIata = String(dest.id || '').startsWith('iata-');
       const displayName = isArrumar ? dest.nome.replace('ARRUMAR | ', '⚠️ Arrumar: ') : dest.nome;
-      const displayPais = isArrumar ? '' : `, ${dest.pais}`;
+      const displayPais = isArrumar ? '' : (dest.pais ? `, ${dest.pais}` : '');
 
       return `
         <div data-idx="${idx}" class="item-autocomplete px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition-colors flex items-center justify-between rounded-lg">
           <div class="flex items-center gap-2">
-            <span>📍</span>
+            <span>${isIata ? '✈️' : '📍'}</span>
             <span>${displayName}${displayPais}</span>
           </div>
-          ${dest.id === this.selectedDestinoId ? '<span class="text-indigo-500 text-[10px]">✓</span>' : ''}
+          ${isIata ? '<span class="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase">IATA</span>' : (dest.id === this.selectedDestinoId ? '<span class="text-indigo-500 text-[10px]">✓</span>' : '')}
         </div>
       `;
     }).join('');
@@ -209,13 +249,33 @@ export class DestinosAutocomplete {
   }
 
   private selectItem(destino: Destino): void {
-    this.selectedDestinoId = destino.id;
+    const isIata = String(destino.id || '').startsWith('iata-');
+    let matchedDb: Destino | null = isIata ? null : destino;
+
+    if (isIata) {
+      const cityNorm = ((destino as any)._cityName || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+      if (cityNorm) {
+        matchedDb = this.destinos.find(d =>
+          d.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(cityNorm)
+        ) || null;
+      }
+    }
+
+    this.selectedDestinoId = matchedDb ? matchedDb.id : null;
     
     const isArrumar = destino.nome.startsWith('ARRUMAR | ');
-    const displayName = isArrumar ? destino.nome : `${destino.nome}, ${destino.pais}`;
+    const displayName = isArrumar
+      ? destino.nome
+      : (this.trechoMode && isIata
+          ? destino.nome
+          : (destino.pais ? `${destino.nome}, ${destino.pais}` : destino.nome));
 
     this.input.value = displayName;
-    this.onSelect(destino);
+    this.onSelect(matchedDb);
     this.closeDropdown();
   }
 
@@ -260,6 +320,10 @@ export class DestinosAutocomplete {
 
     if (match) {
       this.selectItem(match);
+    } else if (this.allowFreeText) {
+      // Mantém digitação livre de siglas IATA, cidades rodoviárias ou portos
+      this.selectedDestinoId = null;
+      this.onSelect(null);
     } else {
       // Sem correspondência: limpa o campo para forçar seleção válida
       this.input.value = '';

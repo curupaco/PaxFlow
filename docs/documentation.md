@@ -168,7 +168,8 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
     - **AGENDA**: Linha do tempo (Timeline) vertical corrida e minimalista, agrupada exclusivamente por datas com eventos pendentes, exibindo avatares de remetente e atalhos rápidos.
   - **Sumarização Dinâmica via Regex**: O calendário resume automaticamente os títulos longos e genéricos das notificações (ex: extrai o nome do passageiro e destino de forma compacta, como _"João Silva - Orlando"_ em vez de _"Lembrete cadastrado - Orçamento"_).
   - **Saliência Estética e Alinhamento**: As colunas e células possuem travamento rígido proporcional de largura (`minmax(0, 1fr)` e `min-width: 0`) para evitar qualquer distorção visual. Inclui hover tridimensional (`translateY`) e anel brilhante animado no dia atual ("Hoje").
-  - **Legenda de Cores Tooltip**: Um círculo flutuante **"?"** no topo direito do cabeçalho que exibe instantaneamente, via hover com popover puramente em CSS Tailwind, a legenda de cores e mapeamento de tipos de eventos (Lembretes = Índigo, Passaportes = Âmbar, Reembolsos = Rose).
+  - **Visão Dupla e Agendamento Imediato de Viagens Futuras [NEW]**: Todas as viagens ativas confirmadas aparecem imediatamente na grade do Calendário (mesmo com embarque em anos futuros), diferenciando visualmente a data de início da ação operacional (`📞 Ação Pré-Embarque` conforme SLA de 7d aéreo ou 20d cruzeiro) em âmbar e a data real da viagem (`✈️ Embarque` e `🏠 Retorno`) em índigo/esmeralda.
+  - **Legenda de Cores Tooltip**: Um círculo flutuante **"?"** no topo direito do cabeçalho que exibe instantaneamente, via hover com popover puramente em CSS Tailwind, a legenda de cores e mapeamento de tipos de eventos (`✈️ Embarques`, `📞 Ação Pré-Embarque SLA`, `🏠 Retornos/Lembretes` e `Reembolsos`).
   - **Ação com Reuso de Modal**: Clicar em qualquer evento do calendário abre instantaneamente o leitor corporativo de e-mail existente, mantendo links funcionais e re-renderizando a tela sob arquivamento.
 
 ### 3.2 Viagens
@@ -264,16 +265,17 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 ### 3.3 Orçamentos
 
-**Kanban controlado** (sem drag-and-drop) para o fluxo de prospecção e vendas.
+**Kanban controlado** (sem drag-and-drop) em **3 estágios ativos** para o fluxo unificado de prospecção e vendas:
 
-**4 Estágios do Pipeline:**
+**3 Estágios do Pipeline:**
 
 | Estágio | Ações Disponíveis |
 | --- | --- |
-| Solicitado | Iniciar → move para "Em Andamento" |
-| Em Andamento | Enviar Proposta → abre modal com notas e upload de documentos |
-| Aguardando | Alterar (volta para Solicitado), Desistir (vai para Concluído), Aceitar/Vender (vai para Concluído) |
-| Concluído | Exibe sub-status: ACEITO (viagem fechada) ou DESISTÊNCIA |
+| Em Andamento | Ponto de entrada unificado de todo novo orçamento. Ações: Enviar Proposta → move para "Aguardando", Abrir no Studio™ |
+| Aguardando | Alterar (volta para Em Andamento), Desistir (vai para Concluído), Vender/Aceitar (vai para Concluído) |
+| Concluído | Exibe sub-status: ACEITO (viagem fechada) ou DESISTÊNCIA (com opção de reabertura para Em Andamento) |
+
+- **Modal Unificado de Novo Orçamento [NEW]**: Integra dados cadastrais do cliente, destino com suporte a siglas IATA (`MCO`, `GRU`, `LIS`), valor estimado da proposta, temperatura, campo ampliado para briefing/anotações (`rows="5"`), upload opcional de PDFs/imagens e botões de ação `[ 💾 Salvar Orçamento ]` e `[ ✨ Salvar e Abrir Studio™ ]`.
 
 - **Arquitetura de Alta Performance do Funil Kanban [OTIMIZAÇÃO PLANO 4]**:
   - **Abertura Ultrarrápida (< 300ms)**: Expurgado o download massivo de toda a base de clientes durante a inicialização da tela (`loadClientes`), liberando a thread do navegador e reduzindo a latência de abertura para milissegundos.
@@ -488,6 +490,9 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
     - **Coluna de Rentabilidade Real**: Posicionada estrategicamente entre _Faturamento Realizado_ e _Tíquete Médio_, permitindo visualizar a rentabilidade líquida total gerada por cada canal comercial (considerando comissão, markup e 88% da RAV dos produtos de viagens vinculadas).
     - **Métricas Completas por Canal**: Origem, Total de Leads, Ganhos, Conversão %, Faturamento Realizado, Rentabilidade e Tíquete Médio.
     - **Exportação CSV Sincronizada**: O download de planilha (.csv compatível com Excel) exporta a coluna de Rentabilidade na mesma disposição tabular.
+- **Seção "⭐ Mais Acessados" & Matriz Estrita de Permissões por Perfil [NEW]**:
+  - **Atalhos Nobre no Topo ("⭐ Mais Acessados")**: Exibido no topo do menu lateral, na mini-bar e no seletor mobile com atalhos de 1 clique para **Relatório de Embarque** e **Faturamento**.
+  - **Isolamento Estrito do Perfil Consultor**: Consultores visualizam exclusivamente 5 relatórios filtrados para a própria carteira (*Metas & Campanhas*, *Faturamento*, *Desistências & Perdas*, *Pesquisa de Satisfação NPS* e *Relatório de Embarque*), enquanto administradores possuem acesso irrestrito a toda a matriz gerencial da agência.
 - **Segurança de Acesso (RLS local)**: Consultores comuns têm visão bloqueada a seu próprio ID (o filtro é desativado). Apenas administradores auditam o consolidado e selecionam qualquer consultor da agência.
 - **Exportação e PDF**: Geração de arquivo **CSV** Excel compatível e folha de estilos de impressão `@media print` que esconde barras de navegação e filtros, permitindo salvar relatórios como PDFs corporativos limpos.
 - **KPIs Financeiros de Caixa**:

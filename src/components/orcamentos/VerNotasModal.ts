@@ -75,12 +75,9 @@ export class VerNotasModal {
     };
     const tempClass = temperaturaClasses[orc.temperatura] || temperaturaClasses.Normal;
 
-    let statusText: string = orc.status || 'SOLICITADO';
+    let statusText: string = orc.status || 'EM_ANDAMENTO';
     let statusClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/50';
-    if (orc.status === 'SOLICITADO') {
-      statusClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100/30';
-      statusText = 'Solicitado';
-    } else if (orc.status === 'EM_ANDAMENTO') {
+    if (!orc.status || orc.status === 'SOLICITADO' || orc.status === 'EM_ANDAMENTO') {
       statusClass = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100/30';
       statusText = 'Em Andamento';
     } else if (orc.status === 'AGUARDANDO') {

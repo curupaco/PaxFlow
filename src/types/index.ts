@@ -43,6 +43,8 @@ export interface GlobalSettings {
   googleRefreshToken?: string; // Token de renovação persistido para integração com o Google Drive
   googleParentFolderId?: string; // ID da pasta mãe no Google Drive para armazenamento centralizado
   slaPreEmbarqueDias?: number; // Dias de SLA para alertas de embarque
+  slaCruzeiroPreEmbarqueDias?: number; // Dias de SLA para alertas de pré-embarque de cruzeiros/navios
+  sla_cruzeiro_pre_embarque_dias?: number;
   slaPosViagemDias?: number; // Dias de SLA para contatos de pós-viagem
   limiteUploadMb?: number; // Limite de tamanho para upload de arquivos em MB
   enviarNpsAutomatico?: boolean; // Habilita o envio automático de pesquisas de NPS
@@ -624,6 +626,8 @@ export interface AlertItem {
   parentId?: string;
   threadId?: string;
   solicitacaoStatus?: 'pendente_colega' | 'pendente_admin' | 'pendente_consultor' | 'aprovado' | 'recusado';
+  calendarOnly?: boolean;
+  calendarCategory?: 'embarque_agenda' | 'sla_acao' | 'retorno_agenda';
 }
 
 /**

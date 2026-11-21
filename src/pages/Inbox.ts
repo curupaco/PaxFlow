@@ -42,6 +42,7 @@ export class InboxPage {
   
   // Global settings
   private prazoReembolsoDias: number = 3;
+  private calendarViagemEvents: AlertItem[] = [];
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -65,7 +66,9 @@ export class InboxPage {
       alerts: this.alerts,
       filteredAlerts: this.filteredAlerts,
       onAlertClick: (alertItem) => {
-        this.markAlertAsRead(alertItem.id);
+        if (!alertItem.calendarOnly) {
+          this.markAlertAsRead(alertItem.id);
+        }
         this.openEmailReaderModal(alertItem);
       },
       onStateUpdate: () => {
@@ -80,7 +83,9 @@ export class InboxPage {
       selectedAlertIds: this.selectedAlertIds,
       perfil: this.perfil,
       onAlertClick: (alertItem) => {
-        this.markAlertAsRead(alertItem.id);
+        if (!alertItem.calendarOnly) {
+          this.markAlertAsRead(alertItem.id);
+        }
         this.openEmailReaderModal(alertItem);
       },
       onQuickArchive: async (alertItem) => {
@@ -398,12 +403,14 @@ export class InboxPage {
    */
   private async loadAndBuildAlerts(): Promise<void> {
     try {
-      const [alerts, readList] = await Promise.all([
+      const [alerts, readList, calendarViagens] = await Promise.all([
         InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias),
-        this.user?.id ? InboxService.getReadAlerts(this.user.id) : Promise.resolve([])
+        this.user?.id ? InboxService.getReadAlerts(this.user.id) : Promise.resolve([]),
+        InboxService.loadCalendarViagemEvents(this.user, this.perfil).catch(() => [])
       ]);
       this.alerts = alerts;
       this.readList = readList;
+      this.calendarViagemEvents = calendarViagens;
     } catch (err) {
       console.error('Erro ao compilar alertas no serviço:', err);
     }
@@ -425,7 +432,25 @@ export class InboxPage {
       perfil: this.perfil
     });
 
-    this.calendarView?.updateAlerts(this.alerts, this.filteredAlerts, this.container);
+    // Combina alertas filtrados com agenda futura de viagens (Visão Dupla) sem duplicar cards na janela
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+    const q = this.searchQuery.trim().toLowerCase();
+    const calendarExtras = (this.calendarViagemEvents || []).filter(ev => {
+      if (isAdmin && this.selectedConsultantFilter !== 'todos' && ev.consultorId !== this.selectedConsultantFilter) {
+        return false;
+      }
+      if (q && !(ev.title?.toLowerCase() || '').includes(q) && !(ev.subject?.toLowerCase() || '').includes(q)) {
+        return false;
+      }
+      return true;
+    });
+
+    const calendarAlertasCombinados = [
+      ...this.filteredAlerts.filter(a => a.type !== 'pre-embarque' || calendarExtras.length === 0),
+      ...calendarExtras
+    ];
+
+    this.calendarView?.updateAlerts(this.alerts, calendarAlertasCombinados, this.container);
     this.alertsFeed?.updateState(this.filteredAlerts, this.readList, this.selectedAlertIds, this.perfil, this.container);
   }
 

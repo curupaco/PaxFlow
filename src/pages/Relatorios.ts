@@ -20,7 +20,7 @@ import { RelatoriosOperacoesView, RelatoriosOperacoesContext } from '../componen
 import { RelatoriosFinanceiroView, RelatoriosFinanceiroContext } from '../components/relatorios/financeiro/RelatoriosFinanceiroView';
 import { RelatoriosComercialView, RelatoriosComercialContext } from '../components/relatorios/comercial/RelatoriosComercialView';
 import { RelatoriosInteligenciaView, RelatoriosInteligenciaContext } from '../components/relatorios/inteligencia/RelatoriosInteligenciaView';
-import { RelatoriosShellView, RelatorioTab } from '../components/relatorios/shell/RelatoriosShellView';
+import { RelatoriosShellView, RelatorioTab, RELATORIOS_PERMITIDOS_CONSULTOR } from '../components/relatorios/shell/RelatoriosShellView';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -220,9 +220,15 @@ export class RelatoriosPage {
       this.perfil = perfil;
       const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
 
-      // Restringe rigidamente o filtro padrão ao próprio consultor se não for admin
+      // Restringe rigidamente o filtro padrão e abas permitidas ao próprio consultor se não for admin
       if (!isAdmin) {
         this.consultorIdFilter = this.user.id;
+        if (!RELATORIOS_PERMITIDOS_CONSULTOR.includes(this.activeTab)) {
+          this.activeTab = 'embarques';
+          const p = RelatoriosPage.obterPeriodoPadraoEmbarques(30);
+          this.dataInicio = p.inicio;
+          this.dataFim = p.fim;
+        }
       }
 
       await this.loadData();
@@ -987,6 +993,12 @@ export class RelatoriosPage {
         }
       },
       onSelectTab: async (tab: RelatorioTab) => {
+        const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+        if (!isAdmin && !RELATORIOS_PERMITIDOS_CONSULTOR.includes(tab)) {
+          this.showToast('Acesso restrito aos relatórios da sua carteira.', 'error');
+          return;
+        }
+
         const previousTab = this.activeTab;
         this.activeTab = tab;
         this.menuLateralRecolhido = true;

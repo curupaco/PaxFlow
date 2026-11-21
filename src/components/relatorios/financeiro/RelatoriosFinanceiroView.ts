@@ -707,10 +707,10 @@ export class RelatoriosFinanceiroView {
           try {
             const res = await OrcamentosService.reabrirOrcamento(orcId, motivo, ctx.perfil);
             if (res.success) {
-              ctx.showToast('Orçamento reaberto com sucesso e movido para Solicitado!', 'success');
+              ctx.showToast('Orçamento reaberto com sucesso e movido para Em Andamento!', 'success');
               
               if (orc) {
-                orc.status = 'SOLICITADO';
+                orc.status = 'EM_ANDAMENTO';
                 orc.sub_status = null;
                 orc.subStatus = undefined;
                 orc.contato_realizado = false;

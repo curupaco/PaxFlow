@@ -196,6 +196,7 @@ export class ConfiguracoesPage {
           googleRefreshToken: data.google_refresh_token || data.googleRefreshToken,
           googleParentFolderId: data.google_parent_folder_id || data.googleParentFolderId,
           slaPreEmbarqueDias: data.sla_pre_embarque_dias !== undefined ? data.sla_pre_embarque_dias : 7,
+          slaCruzeiroPreEmbarqueDias: data.sla_cruzeiro_pre_embarque_dias !== undefined ? data.sla_cruzeiro_pre_embarque_dias : 20,
           slaPosViagemDias: data.sla_pos_viagem_dias !== undefined ? data.sla_pos_viagem_dias : 3,
           limiteUploadMb: data.limite_upload_mb !== undefined ? data.limite_upload_mb : 25,
           enviarNpsAutomatico: data.enviar_nps_automatico !== undefined ? data.enviar_nps_automatico : false,
@@ -261,6 +262,7 @@ export class ConfiguracoesPage {
           notificacoes_ativas: true,
           email_suporte: 'suporte@paxflow.com.br',
           sla_pre_embarque_dias: 7,
+          sla_cruzeiro_pre_embarque_dias: 20,
           sla_pos_viagem_dias: 3,
           limite_upload_mb: 25,
           enviar_nps_automatico: false,
@@ -313,6 +315,7 @@ export class ConfiguracoesPage {
           emailSuporte: inserted.email_suporte,
           googleParentFolderId: inserted.google_parent_folder_id,
           slaPreEmbarqueDias: inserted.sla_pre_embarque_dias,
+          slaCruzeiroPreEmbarqueDias: inserted.sla_cruzeiro_pre_embarque_dias ?? 20,
           slaPosViagemDias: inserted.sla_pos_viagem_dias,
           limiteUploadMb: inserted.limite_upload_mb,
           enviarNpsAutomatico: inserted.enviar_nps_automatico,
@@ -1892,16 +1895,22 @@ export class ConfiguracoesPage {
             <!-- Viagens Kanban SLAs -->
             <div>
               <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">SLAs de Kanban & Viagens</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Alerta Pré-Embarque (Dias antes) *</label>
-                  <input id="input-sla-pre" type="number" min="1" required value="${this.settings.slaPreEmbarqueDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                  <p class="text-[10px] text-slate-400 mt-1">Sinaliza alerta de prioridade em viagens a menos de X dias do embarque.</p>
+                  <input id="input-sla-pre" type="number" min="1" required value="${this.settings.slaPreEmbarqueDias}" class="w-full h-[42px] px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 mt-1">Sinaliza alerta de prioridade em voos e pacotes a menos de X dias do embarque.</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Pré-Embarque Cruzeiros / Navio (Dias antes) *</label>
+                  <input id="input-sla-cruzeiro-pre" type="number" min="1" required value="${this.settings.slaCruzeiroPreEmbarqueDias ?? 20}" class="w-full h-[42px] px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 mt-1">Janela antecipada (padrão 20 dias) para web check-in e embarque de navios.</p>
                 </div>
 
                 <div>
                   <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Alerta Pós-Viagem (Dias depois) *</label>
-                  <input id="input-sla-pos" type="number" min="1" required value="${this.settings.slaPosViagemDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <input id="input-sla-pos" type="number" min="1" required value="${this.settings.slaPosViagemDias}" class="w-full h-[42px] px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
                   <p class="text-[10px] text-slate-400 mt-1">Alerta a equipe caso a finalização do pós-venda passe de X dias.</p>
                 </div>
               </div>
@@ -2607,6 +2616,7 @@ export class ConfiguracoesPage {
 
       const tempoDesistenciaInput = document.getElementById('input-tempo-desistencia') as HTMLInputElement;
       const slaPreInput = document.getElementById('input-sla-pre') as HTMLInputElement;
+      const slaCruzeiroPreInput = document.getElementById('input-sla-cruzeiro-pre') as HTMLInputElement;
       const slaPosInput = document.getElementById('input-sla-pos') as HTMLInputElement;
       const enviarNpsInput = document.getElementById('input-enviar-nps') as HTMLInputElement;
       const prazoReembolsoInput = document.getElementById('input-prazo-reembolso') as HTMLInputElement;
@@ -2617,6 +2627,7 @@ export class ConfiguracoesPage {
 
       const tempoDesistenciaVal = tempoDesistenciaInput ? Number(tempoDesistenciaInput.value) : this.settings.tempoDesistenciaOrcamentoDias;
       const slaPreVal = slaPreInput ? Number(slaPreInput.value) : this.settings.slaPreEmbarqueDias;
+      const slaCruzeiroPreVal = slaCruzeiroPreInput ? Number(slaCruzeiroPreInput.value) : (this.settings.slaCruzeiroPreEmbarqueDias ?? 20);
       const slaPosVal = slaPosInput ? Number(slaPosInput.value) : this.settings.slaPosViagemDias;
       const enviarNpsVal = enviarNpsInput ? enviarNpsInput.checked : this.settings.enviarNpsAutomatico;
       const prazoReembolsoVal = prazoReembolsoInput ? Number(prazoReembolsoInput.value) : this.settings.prazoReembolsoDias;
@@ -2662,6 +2673,7 @@ export class ConfiguracoesPage {
       const payload: Record<string, any> = {
         tempo_desistencia_orcamento_dias: tempoDesistenciaVal,
         sla_pre_embarque_dias: slaPreVal,
+        sla_cruzeiro_pre_embarque_dias: slaCruzeiroPreVal,
         sla_pos_viagem_dias: slaPosVal,
         enviar_nps_automatico: enviarNpsVal,
         prazo_reembolso_dias: prazoReembolsoVal,

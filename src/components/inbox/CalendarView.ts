@@ -85,16 +85,20 @@ export class CalendarView {
                 <h4 class="text-xs font-black text-slate-800 dark:text-slate-300 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-3 text-left">Legenda de Cores</h4>
                 <div class="space-y-2.5 text-left">
                   <div class="flex items-center gap-2.5">
-                     <span class="w-3.5 h-3.5 rounded-md badge-gradient-indigo flex-shrink-0"></span>
-                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">Lembretes Manuais</span>
+                     <span class="w-3.5 h-3.5 rounded-md bg-indigo-600 flex-shrink-0"></span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">✈️ Embarques Agendados</span>
                   </div>
                   <div class="flex items-center gap-2.5">
-                     <span class="w-3.5 h-3.5 rounded-md badge-gradient-amber flex-shrink-0"></span>
-                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">Passaportes SLA</span>
+                     <span class="w-3.5 h-3.5 rounded-md bg-amber-500 flex-shrink-0"></span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">📞 Ação Pré-Embarque (SLA)</span>
+                  </div>
+                  <div class="flex items-center gap-2.5">
+                     <span class="w-3.5 h-3.5 rounded-md bg-emerald-600 flex-shrink-0"></span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">🏠 Retorno / Lembrete</span>
                   </div>
                   <div class="flex items-center gap-2.5">
                      <span class="w-3.5 h-3.5 rounded-md badge-gradient-rose flex-shrink-0"></span>
-                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">Reembolsos SLA</span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">Reembolsos / Alertas</span>
                   </div>
                 </div>
               </div>
@@ -153,11 +157,11 @@ export class CalendarView {
       this.onStateUpdate?.();
     });
 
-    // Cliques nas pílulas de eventos na visão mensal
-    root.querySelectorAll('.calendar-event-pill').forEach(pill => {
-      pill.addEventListener('click', (e) => {
+    // Cliques nas pílulas e cards de eventos (Visões Mês, Semana e Agenda)
+    root.querySelectorAll('.calendar-event-pill, .inbox-card[data-alert-id]').forEach(el => {
+      el.addEventListener('click', (e) => {
         e.stopPropagation();
-        const alertId = pill.getAttribute('data-alert-id');
+        const alertId = el.getAttribute('data-alert-id');
         if (!alertId) return;
 
         const alertItem = this.filteredAlerts.find(a => a.id === alertId);
@@ -270,7 +274,13 @@ export class CalendarView {
           <div class="flex-grow overflow-y-auto custom-scrollbar space-y-1 max-h-[85px] w-full">
             ${dayAlerts.map(a => {
               let colorClass = 'badge-gradient-indigo';
-              if (a.type === 'passport') {
+              if (a.calendarCategory === 'embarque_agenda') {
+                colorClass = 'bg-indigo-600 text-white';
+              } else if (a.calendarCategory === 'sla_acao') {
+                colorClass = 'bg-amber-500 text-white';
+              } else if (a.calendarCategory === 'retorno_agenda') {
+                colorClass = 'bg-emerald-600 text-white';
+              } else if (a.type === 'passport') {
                 colorClass = 'badge-gradient-amber';
               } else if (a.type === 'refund') {
                 colorClass = 'badge-gradient-rose';
@@ -362,7 +372,19 @@ export class CalendarView {
               let accentClass = 'bg-indigo-500';
               let cardClass = '';
 
-              if (a.type === 'passport') {
+              if (a.calendarCategory === 'embarque_agenda') {
+                badgeClass = 'bg-indigo-600 text-white';
+                badgeText = 'Embarque ✈️';
+                accentClass = 'bg-indigo-500';
+              } else if (a.calendarCategory === 'sla_acao') {
+                badgeClass = 'bg-amber-500 text-white';
+                badgeText = 'Ação SLA 📞';
+                accentClass = 'bg-amber-500';
+              } else if (a.calendarCategory === 'retorno_agenda') {
+                badgeClass = 'bg-emerald-600 text-white';
+                badgeText = 'Retorno 🏠';
+                accentClass = 'bg-emerald-500';
+              } else if (a.type === 'passport') {
                 badgeClass = 'badge-gradient-amber';
                 badgeText = 'Passaporte';
                 accentClass = 'bg-amber-500';
@@ -492,7 +514,19 @@ export class CalendarView {
               let accentClass = 'bg-indigo-500';
               let cardClass = '';
 
-              if (a.type === 'passport') {
+              if (a.calendarCategory === 'embarque_agenda') {
+                badgeClass = 'bg-indigo-600 text-white';
+                badgeText = 'Embarque ✈️';
+                accentClass = 'bg-indigo-500';
+              } else if (a.calendarCategory === 'sla_acao') {
+                badgeClass = 'bg-amber-500 text-white';
+                badgeText = 'Ação SLA 📞';
+                accentClass = 'bg-amber-500';
+              } else if (a.calendarCategory === 'retorno_agenda') {
+                badgeClass = 'bg-emerald-600 text-white';
+                badgeText = 'Retorno 🏠';
+                accentClass = 'bg-emerald-500';
+              } else if (a.type === 'passport') {
                 badgeClass = 'badge-gradient-amber';
                 badgeText = 'Passaporte SLA';
                 accentClass = 'bg-amber-500';

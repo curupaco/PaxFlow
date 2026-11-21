@@ -205,10 +205,23 @@ export class OrcamentosService {
         }
       }
     } else {
-      const { error } = await supabase
+      const insertQuery = supabase
         .from('orcamentos')
         .insert(payload);
-      resError = error;
+      if (typeof (insertQuery as any)?.select === 'function') {
+        const selectChain = (insertQuery as any).select('id');
+        const { data: insertedData, error } = typeof selectChain?.maybeSingle === 'function'
+          ? await selectChain.maybeSingle()
+          : await selectChain;
+        resError = error;
+        const returnedId = Array.isArray(insertedData) ? insertedData[0]?.id : insertedData?.id;
+        if (returnedId) {
+          o.id = returnedId;
+        }
+      } else {
+        const { error } = await insertQuery;
+        resError = error;
+      }
     }
 
     if (resError) {

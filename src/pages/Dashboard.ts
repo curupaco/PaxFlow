@@ -306,6 +306,7 @@ export class Dashboard {
           notificacoesAtivas: data.notificacoes_ativas ?? true,
           emailSuporte: data.email_suporte || 'suporte@paxflow.com.br',
           slaPreEmbarqueDias: data.sla_pre_embarque_dias || 7,
+          slaCruzeiroPreEmbarqueDias: data.sla_cruzeiro_pre_embarque_dias ?? 20,
           slaPosViagemDias: data.sla_pos_viagem_dias || 3
         };
         this.slaPreEmbarqueDias = data.sla_pre_embarque_dias || 7;
@@ -522,13 +523,36 @@ export class Dashboard {
           })()
         : Promise.resolve([]);
 
-      const [viagensRes, locConfs, locPags, comments, divData] = await Promise.all([
+      const anexosPromise = !this.isFallbackMode
+        ? (async () => {
+            try {
+              const { data } = await supabase
+                .from('documentos_anexos')
+                .select('id, viagem_id')
+                .not('viagem_id', 'is', null);
+              return data || [];
+            } catch (errAnx) {
+              console.warn('Aviso ao contar anexos no Dashboard:', errAnx);
+              return [];
+            }
+          })()
+        : Promise.resolve([]);
+
+      const [viagensRes, locConfs, locPags, comments, divData, anexosData] = await Promise.all([
         viagensPromise,
         locConfsPromise,
         locPagsPromise,
         commentsPromise,
-        divisoesPromise
+        divisoesPromise,
+        anexosPromise
       ]);
+
+      const anexosCountMap = new Map<string, number>();
+      (anexosData || []).forEach((ax: any) => {
+        if (ax?.viagem_id) {
+          anexosCountMap.set(ax.viagem_id, (anexosCountMap.get(ax.viagem_id) || 0) + 1);
+        }
+      });
 
       if (viagensRes.error) throw viagensRes.error;
       const data = viagensRes.data || [];
@@ -608,6 +632,7 @@ export class Dashboard {
           destino_ref: v.destino_ref,
           destinoRef: v.destino_ref,
           comentarios_busca: tripCommentsMap.get(v.id) || [],
+          anexos_count: anexosCountMap.get(v.id) ?? (Array.isArray(v.anexos) ? v.anexos.length : Number(v.anexos_count) || 0),
           isFinanceiroConferido,
           isProcessoConferido,
           isTotalmentePago

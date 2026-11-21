@@ -46,13 +46,12 @@ export class OrcamentosPage {
   private buscaTermo: string = '';
   private selectedConsultantId: string = 'todos';
   private filterConcluido: 'todos' | 'fechada' | 'desistencia' = 'todos';
-  private activeColumnMobile: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO' = 'SOLICITADO';
+  private activeColumnMobile: 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO' = 'EM_ANDAMENTO';
   private showAllConcluded: boolean = false;
-  private columnSorts: Record<'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO', {
+  private columnSorts: Record<'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO', {
     field: 'temperatura' | 'nomeCliente' | 'valorProposta' | 'createdAt' | 'consultor' | 'origem';
     order: 'asc' | 'desc';
   }> = {
-    SOLICITADO: { field: 'createdAt', order: 'desc' },
     EM_ANDAMENTO: { field: 'createdAt', order: 'desc' },
     AGUARDANDO: { field: 'createdAt', order: 'desc' },
     CONCLUIDO: { field: 'createdAt', order: 'desc' },
@@ -68,7 +67,12 @@ export class OrcamentosPage {
     const saved = localStorage.getItem(key);
     if (saved) {
       try {
-        this.columnSorts = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        this.columnSorts = {
+          EM_ANDAMENTO: parsed.EM_ANDAMENTO || this.columnSorts.EM_ANDAMENTO,
+          AGUARDANDO: parsed.AGUARDANDO || this.columnSorts.AGUARDANDO,
+          CONCLUIDO: parsed.CONCLUIDO || this.columnSorts.CONCLUIDO
+        };
       } catch (e) {
         console.error('Erro ao carregar preferências de ordenação:', e);
       }
@@ -404,9 +408,9 @@ export class OrcamentosPage {
     this.container.querySelectorAll('.select-sort-field').forEach(select => {
       select.addEventListener('change', (e) => {
         const el = e.target as HTMLSelectElement;
-        const col = el.dataset.column as 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
+        const col = el.dataset.column as 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
         const field = el.value as any;
-        if (col && field) {
+        if (col && field && this.columnSorts[col]) {
           this.columnSorts[col].field = field;
           this.saveColumnSorts();
           this.render();
@@ -417,8 +421,8 @@ export class OrcamentosPage {
     this.container.querySelectorAll('.btn-sort-dir').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const el = e.currentTarget as HTMLButtonElement;
-        const col = el.dataset.column as 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
-        if (col) {
+        const col = el.dataset.column as 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
+        if (col && this.columnSorts[col]) {
           const currentOrder = this.columnSorts[col].order;
           this.columnSorts[col].order = currentOrder === 'asc' ? 'desc' : 'asc';
           this.saveColumnSorts();
@@ -430,7 +434,7 @@ export class OrcamentosPage {
     // Eventos de abas do Kanban mobile
     this.container.querySelectorAll('.mobile-kanban-tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const col = (btn as HTMLElement).dataset.column as 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
+        const col = (btn as HTMLElement).dataset.column as 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
         if (col) {
           this.activeColumnMobile = col;
           this.render();
@@ -443,8 +447,18 @@ export class OrcamentosPage {
    * Configura os cliques dos botões dos cards
    */
   private setupColumnButtons(): void {
-    // Botões de Transição - SOLICITADO -> INICIAR
-    this.container.querySelectorAll('[data-action="iniciar"]').forEach(btn => {
+    // Botões de Transição - EM ANDAMENTO -> ENVIAR PROPOSTA
+    this.container.querySelectorAll('[data-action="inserir-proposta"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = (btn as HTMLElement).dataset.id;
+        if (id) this.openEnviarPropostaModal(id);
+      });
+    });
+
+    // Botão Voltar para Em Andamento (de AGUARDANDO ou Ações Rápidas)
+    this.container.querySelectorAll('[data-action="voltar-andamento"], [data-action="quick-voltar-andamento"], [data-action="voltar-solicitado"], [data-action="quick-voltar-solicitado"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -456,44 +470,14 @@ export class OrcamentosPage {
           orc.updatedAt = new Date().toISOString();
           const success = await this.persistOrcamento(orc);
           if (success) {
-            this.showToast('Orçamento em andamento! Hora de criar a proposta.', 'success');
+            this.showToast('Orçamento retornado para Em Andamento!', 'success');
             this.render();
           }
         }
       });
     });
 
-    // Botões de Transição - EM ANDAMENTO -> ENVIAR PROPOSTA
-    this.container.querySelectorAll('[data-action="inserir-proposta"]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        const id = (btn as HTMLElement).dataset.id;
-        if (id) this.openEnviarPropostaModal(id);
-      });
-    });
-
-    // Botão Voltar para Solicitado (de EM_ANDAMENTO ou Ações Rápidas)
-    this.container.querySelectorAll('[data-action="voltar-solicitado"], [data-action="quick-voltar-solicitado"]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        const id = (btn as HTMLElement).dataset.id;
-        if (!id) return;
-        const orc = this.orcamentos.find(o => o.id === id);
-        if (orc) {
-          orc.status = 'SOLICITADO';
-          orc.updatedAt = new Date().toISOString();
-          const success = await this.persistOrcamento(orc);
-          if (success) {
-            this.showToast('Orçamento retornado para Solicitado! Tempo na etapa reiniciado.', 'success');
-            this.render();
-          }
-        }
-      });
-    });
-
-    // Botões da coluna AGUARDANDO: ALTERAR (Voltar para Solicitado)
+    // Botões da coluna AGUARDANDO: ALTERAR (Voltar para Em Andamento)
     this.container.querySelectorAll('[data-action="alterar"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -502,11 +486,11 @@ export class OrcamentosPage {
         if (!id) return;
         const orc = this.orcamentos.find(o => o.id === id);
         if (orc) {
-          orc.status = 'SOLICITADO';
+          orc.status = 'EM_ANDAMENTO';
           orc.updatedAt = new Date().toISOString();
           const success = await this.persistOrcamento(orc);
           if (success) {
-            this.showToast('Orçamento retornado para ajuste! Tempo na etapa reiniciado.', 'success');
+            this.showToast('Orçamento retornado para Em Andamento para ajuste.', 'success');
             this.render();
           }
         }
@@ -802,7 +786,7 @@ export class OrcamentosPage {
     });
   }
 
-  private sortColumn(list: Orcamento[], col: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO'): Orcamento[] {
+  private sortColumn(list: Orcamento[], col: 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO'): Orcamento[] {
     const config = this.columnSorts[col];
     if (!config) return list;
 
@@ -846,8 +830,8 @@ export class OrcamentosPage {
     });
   }
 
-  private renderSortControls(col: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO'): string {
-    const config = this.columnSorts[col];
+  private renderSortControls(col: 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO'): string {
+    const config = this.columnSorts[col] || { field: 'createdAt', order: 'desc' };
     return `
       <!-- Controles de ordenação da coluna -->
       <div class="flex items-center justify-between gap-1 mb-4 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/40 text-[10px] select-none border border-slate-200/30 dark:border-slate-800/20 shrink-0">
@@ -914,9 +898,11 @@ export class OrcamentosPage {
       );
     });
 
-    // Separação dos orçamentos filtrados por coluna e ordenados individualmente
-    const solicitado = this.sortColumn(filtrados.filter(o => (o.status || '').toUpperCase() === 'SOLICITADO'), 'SOLICITADO');
-    const emAndamento = this.sortColumn(filtrados.filter(o => (o.status || '').toUpperCase() === 'EM_ANDAMENTO'), 'EM_ANDAMENTO');
+    // Separação dos orçamentos filtrados por coluna (SOLICITADO legado unificado em EM_ANDAMENTO)
+    const emAndamento = this.sortColumn(
+      filtrados.filter(o => ['EM_ANDAMENTO', 'SOLICITADO'].includes((o.status || 'EM_ANDAMENTO').toUpperCase())),
+      'EM_ANDAMENTO'
+    );
     const aguardando = this.sortColumn(filtrados.filter(o => (o.status || '').toUpperCase() === 'AGUARDANDO'), 'AGUARDANDO');
     
     let concluidoRaw = filtrados.filter(o => (o.status || '').toUpperCase() === 'CONCLUIDO');
@@ -973,18 +959,11 @@ export class OrcamentosPage {
         <div class="block md:hidden px-6 pt-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors duration-200">
           <div class="flex gap-2 pb-px overflow-x-auto custom-scrollbar">
             <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
-              this.activeColumnMobile === 'SOLICITADO'
-                ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-black'
-                : 'border-transparent text-slate-400 dark:text-slate-400 font-bold hover:text-slate-600 dark:hover:text-slate-300'
-            }" data-column="SOLICITADO">
-              Solicitado (${solicitado.length})
-            </button>
-            <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
               this.activeColumnMobile === 'EM_ANDAMENTO'
                 ? 'border-amber-500 text-amber-500 dark:border-amber-400 dark:text-amber-400 font-black'
                 : 'border-transparent text-slate-400 dark:text-slate-400 font-bold hover:text-slate-600 dark:hover:text-slate-300'
             }" data-column="EM_ANDAMENTO">
-              Andamento (${emAndamento.length})
+              Em Andamento (${emAndamento.length})
             </button>
             <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
               this.activeColumnMobile === 'AGUARDANDO'
@@ -1003,35 +982,11 @@ export class OrcamentosPage {
           </div>
         </div>
 
-        <!-- Corpo Principal Kanban -->
-        <main class="flex-1 p-6 pb-8 overflow-x-auto flex md:flex flex-col md:flex-row gap-6 items-stretch md:items-start custom-scrollbar" style="scrollbar-gutter: stable;">
+        <!-- Corpo Principal Kanban (3 Colunas: Em Andamento, Aguardando, Concluído) -->
+        <main class="flex-1 p-6 pb-8 overflow-x-auto flex md:grid md:grid-cols-3 gap-6 items-stretch md:items-start custom-scrollbar" style="scrollbar-gutter: stable;">
           
-          <!-- Coluna 1: SOLICITADO -->
-          <div class="w-full md:w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-indigo-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'SOLICITADO' ? 'flex' : 'hidden md:flex'}">
-            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
-              <div class="flex items-center gap-2">
-                <span class="p-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 dark:text-indigo-400 rounded-lg flex items-center justify-center shrink-0">
-                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" class="w-4 h-4">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                  </svg>
-                </span>
-                <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Solicitado</span>
-              </div>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/50 shadow-xs">
-                <span class="text-[10px] font-black text-indigo-700 dark:text-indigo-300">${solicitado.length}</span>
-                <span class="text-[9px] text-indigo-400">•</span>
-                <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400">R$ ${solicitado.reduce((acc, curr) => acc + (curr.valorProposta || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
-              </div>
-            </div>
-            ${this.renderSortControls('SOLICITADO')}
-            <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
-              ${solicitado.map(o => this.renderCardHtml(o)).join('')}
-              ${solicitado.length === 0 ? this.renderEmptySlot() : ''}
-            </div>
-          </div>
-
-          <!-- Coluna 2: EM ANDAMENTO -->
-          <div class="w-full md:w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-amber-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'EM_ANDAMENTO' ? 'flex' : 'hidden md:flex'}">
+          <!-- Coluna 1: EM ANDAMENTO -->
+          <div class="w-full bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-amber-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'EM_ANDAMENTO' ? 'flex' : 'hidden md:flex'}">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
                 <span class="p-1 bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 rounded-lg flex items-center justify-center shrink-0">
@@ -1207,9 +1162,9 @@ export class OrcamentosPage {
                     ❄️ Frio
                   </button>
                   <div class="my-1 border-t border-slate-100 dark:border-slate-700/50"></div>
-                  ${o.status === 'EM_ANDAMENTO' || o.status === 'AGUARDANDO' ? `
-                    <button type="button" data-action="quick-voltar-solicitado" data-id="${o.id}" class="w-full text-left px-3 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer">
-                      ↩️ Voltar para Solicitado
+                  ${o.status === 'AGUARDANDO' ? `
+                    <button type="button" data-action="quick-voltar-andamento" data-id="${o.id}" class="w-full text-left px-3 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer">
+                      ↩️ Voltar para Em Andamento
                     </button>
                   ` : ''}
                   <button type="button" data-action="quick-lembrete-2d" data-id="${o.id}" class="w-full text-left px-3 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer">
@@ -1337,14 +1292,14 @@ export class OrcamentosPage {
                 </svg>
               </button>
 
-              ${o.status === 'EM_ANDAMENTO' ? `
-                <button data-action="voltar-solicitado" data-id="${o.id}" title="Voltar para Solicitado (Reiniciar tempo na etapa)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition text-xs shrink-0">
-                  ↩️
+              ${['EM_ANDAMENTO', 'SOLICITADO'].includes((o.status || 'EM_ANDAMENTO').toUpperCase()) ? `
+                <button data-action="desistir" data-id="${o.id}" title="Registrar Desistência" class="w-7 h-7 inline-flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition text-xs shrink-0">
+                  🚫
                 </button>
               ` : ''}
 
               ${o.status === 'AGUARDANDO' ? `
-                <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta (Voltar para Solicitado)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition text-xs shrink-0">
+                <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta (Voltar para Em Andamento)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition text-xs shrink-0">
                   🔄
                 </button>
                 <button data-action="desistir" data-id="${o.id}" title="Registrar Desistência" class="w-7 h-7 inline-flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition text-xs shrink-0">
@@ -1353,7 +1308,7 @@ export class OrcamentosPage {
               ` : ''}
 
               ${(o.status === 'CONCLUIDO' && o.subStatus === 'DESISTENCIA') ? `
-                <button data-action="reabrir-orcamento" data-id="${o.id}" title="Reabrir Orçamento (Mover para Solicitado)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg transition text-xs shrink-0">
+                <button data-action="reabrir-orcamento" data-id="${o.id}" title="Reabrir Orçamento (Mover para Em Andamento)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg transition text-xs shrink-0">
                   🔄
                 </button>
               ` : ''}
@@ -1369,13 +1324,7 @@ export class OrcamentosPage {
           </div>
 
           <!-- Linha 2: Ação Principal de Avanço da Etapa (Largura Total w-full) -->
-          ${o.status === 'SOLICITADO' ? `
-            <button data-action="iniciar" data-id="${o.id}" class="w-full h-8 px-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white text-[11px] font-black tracking-wider uppercase rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
-              <span>Iniciar</span> <span>▶️</span>
-            </button>
-          ` : ''}
-
-          ${o.status === 'EM_ANDAMENTO' ? `
+          ${(o.status === 'EM_ANDAMENTO' || o.status === 'SOLICITADO' || !o.status) ? `
             <button data-action="inserir-proposta" data-id="${o.id}" class="w-full h-8 px-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white text-[11px] font-black tracking-wider uppercase rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
               <span>Enviar Proposta</span> <span>📤</span>
             </button>
@@ -1449,7 +1398,7 @@ export class OrcamentosPage {
   }
 
   /**
-   * Abre o Modal de Criação de Novo Orçamento (Estágio SOLICITADO)
+   * Abre o Modal Unificado de Criação de Novo Orçamento (já inicia em EM_ANDAMENTO)
    */
   private openNovoOrcamentoModal(): void {
     this.selectedClienteId = null;
@@ -1472,7 +1421,7 @@ export class OrcamentosPage {
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" class="w-5 h-5 text-indigo-500 mr-1.5 shrink-0">
               <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
-            <span>Novo Orçamento</span>
+            <span>Novo Orçamento (Em Andamento)</span>
           </h3>
           <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
         </div>
@@ -1481,11 +1430,11 @@ export class OrcamentosPage {
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Nome Completo do Cliente *</label>
             <div class="relative">
-              <input id="input-orc-nome" type="text" required placeholder="Buscar por nome, CPF, e-mail ou telefone..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" autocomplete="off" />
+              <input id="input-orc-nome" type="text" required placeholder="Buscar por nome, CPF, e-mail ou telefone..." class="w-full h-[42px] px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" autocomplete="off" />
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone</label>
               ${renderPhoneInputHTML('input-orc-telefone', '', 'ex: (11) 98888-7777', false)}
@@ -1496,10 +1445,10 @@ export class OrcamentosPage {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Destino da Viagem *</label>
-              <input id="input-orc-destino" type="text" required placeholder="ex: Miami, EUA" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Destino da Viagem (Nome ou Sigla IATA) *</label>
+              <input id="input-orc-destino" type="text" required placeholder="Ex: MCO ou Orlando, EUA" class="w-full h-[42px] px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data Estimada (DD/MM/AAAA) *</label>
@@ -1507,12 +1456,16 @@ export class OrcamentosPage {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Valor Estimado (R$)</label>
+              ${renderCurrencyInputHTML('input-orc-valor', 0, '0,00', false)}
+            </div>
             <div>
               <label class="block text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center">
-                Temperatura do Lead * ${renderHelpIcon('temperatura-crm')}
+                Temperatura * ${renderHelpIcon('temperatura-crm')}
               </label>
-              <select id="select-orc-temp" required class="h-10 w-full px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs cursor-pointer">
+              <select id="select-orc-temp" required class="h-[42px] w-full px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs cursor-pointer">
                 <option value="Normal" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Normal (50% de chance)</option>
                 <option value="Quente" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Quente (Alta chance)</option>
                 <option value="Frio" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Frio (Baixa chance)</option>
@@ -1520,7 +1473,7 @@ export class OrcamentosPage {
             </div>
             <div>
               <label class="block text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Origem do Lead *</label>
-              <select id="select-orc-origem" required class="h-10 w-full px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs cursor-pointer">
+              <select id="select-orc-origem" required class="h-[42px] w-full px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs cursor-pointer">
                 <option value="" disabled selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Selecione a Origem...</option>
                 ${(this.origensLead && this.origensLead.length > 0 ? this.origensLead : ORIGENS_LEAD_PADRAO.filter(o => o.ativo)).map(o => `
                   <option value="${o.nome}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${o.icone ? o.icone + ' ' : ''}${o.nome}</option>
@@ -1531,23 +1484,40 @@ export class OrcamentosPage {
 
           <div>
             <label class="block text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Consultor Responsável</label>
-            <select id="select-orc-consultor" required class="h-10 w-full px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs cursor-pointer" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
+            <select id="select-orc-consultor" required class="h-[42px] w-full px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs cursor-pointer" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
               ${consultoresOptions.map(c => `<option value="${c.id}" ${c.id === this.user.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
             </select>
           </div>
 
           <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Resumo e Anotações da Negociação</label>
+            <textarea id="input-orc-notas" rows="5" placeholder="Registre aqui todo o briefing do cliente: perfil dos viajantes, exigências de voo/hotel, categorias de cabine, orçamento estimado..." class="w-full min-h-[120px] px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs leading-relaxed custom-scrollbar"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Anexar Documento / Cotação (PDF ou Imagem)</label>
+            <input id="input-orc-arquivo" type="file" accept="application/pdf,image/*" class="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-950/60 dark:file:text-indigo-300 cursor-pointer" />
+          </div>
+
+          <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Tags (Digite e aperte Enter)</label>
-            <div class="flex flex-wrap items-center gap-2 px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 min-h-[46px]">
+            <div class="flex flex-wrap items-center gap-2 px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus-within:ring-2 focus-within:ring-indigo-500 min-h-[42px]">
               <div id="tags-container-modal" class="flex flex-wrap gap-1.5"></div>
               <input id="input-orc-tag" type="text" placeholder="Adicionar tag..." class="flex-1 bg-transparent border-none outline-none focus:ring-0 text-slate-800 dark:text-slate-100 font-semibold text-sm min-w-[100px]" />
             </div>
             <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Ex: Casal, Nacional, Luxo, Disney</p>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-            <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center">Cancelar</button>
-            <button type="submit" class="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase flex items-center justify-center">Criar Orçamento</button>
+          <div class="flex flex-wrap items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="h-[42px] px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center cursor-pointer">Cancelar</button>
+            <button id="btn-salvar-novo-orcamento" type="submit" class="h-[42px] px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md shadow-indigo-600/15 transition active:scale-95 uppercase flex items-center justify-center gap-1.5 cursor-pointer">
+              <span>💾</span>
+              <span>Salvar Orçamento</span>
+            </button>
+            <button id="btn-salvar-abrir-studio" type="button" class="h-[42px] px-5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs tracking-wider rounded-xl shadow-md shadow-amber-500/20 transition active:scale-95 uppercase flex items-center justify-center gap-1.5 cursor-pointer">
+              <span>✨</span>
+              <span>Salvar e Abrir Studio™</span>
+            </button>
           </div>
         </form>
       </div>
@@ -1558,8 +1528,8 @@ export class OrcamentosPage {
     let destAutocomplete: DestinosAutocomplete | null = null;
     if (inputDestino) {
       destAutocomplete = new DestinosAutocomplete(inputDestino, (destino) => {
-        selectedDestinoId = destino ? destino.id : null;
-      });
+        selectedDestinoId = destino && destino.id && !String(destino.id).startsWith('iata-') ? destino.id : null;
+      }, null, { allowFreeText: true });
     }
 
     // Fechamento de Modais
@@ -1576,7 +1546,8 @@ export class OrcamentosPage {
     setupFormValidation('form-novo-orcamento', [
       { id: 'input-orc-telefone', type: 'phone', required: false },
       { id: 'input-orc-email', type: 'email', required: false },
-      { id: 'input-orc-data', type: 'date' }
+      { id: 'input-orc-data', type: 'date' },
+      { id: 'input-orc-valor', type: 'currency', required: false }
     ]);
 
     const inputTelefone = document.getElementById('input-orc-telefone') as HTMLInputElement;
@@ -1763,16 +1734,30 @@ export class OrcamentosPage {
       }
     });
 
-    // Submissão do Formulário
+    // Submissão do Formulário (Unificado em EM_ANDAMENTO + opção Studio)
+    let abrirStudioAposSalvar = false;
+    const btnSalvarAbrirStudio = document.getElementById('btn-salvar-abrir-studio') as HTMLButtonElement | null;
     const form = document.getElementById('form-novo-orcamento') as HTMLFormElement;
+    btnSalvarAbrirStudio?.addEventListener('click', () => {
+      abrirStudioAposSalvar = true;
+      form.requestSubmit();
+    });
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const devoAbrirStudio = abrirStudioAposSalvar;
+      abrirStudioAposSalvar = false;
 
       let nomeVal = (document.getElementById('input-orc-nome') as HTMLInputElement).value;
       const telVal = getFormattedPhoneToDb('input-orc-telefone');
       const emailVal = (document.getElementById('input-orc-email') as HTMLInputElement).value.trim();
       const destinoVal = (document.getElementById('input-orc-destino') as HTMLInputElement).value;
       const dataRaw = (document.getElementById('input-orc-data') as HTMLInputElement).value.trim();
+      const valorRaw = (document.getElementById('input-orc-valor') as HTMLInputElement | null)?.value || '';
+      const valorEstimadoNum = valorRaw ? parseDoubleBr(valorRaw) : 0;
+      const notasVal = (document.getElementById('input-orc-notas') as HTMLTextAreaElement | null)?.value?.trim() || '';
+      const arquivoInput = document.getElementById('input-orc-arquivo') as HTMLInputElement | null;
+      const arquivoSelecionado = arquivoInput?.files && arquivoInput.files.length > 0 ? arquivoInput.files[0] : null;
       const tempVal = (document.getElementById('select-orc-temp') as HTMLSelectElement).value as 'Frio' | 'Normal' | 'Quente';
       const origemVal = (document.getElementById('select-orc-origem') as HTMLSelectElement).value;
       const consultorVal = this.perfil?.role === 'admin'
@@ -1942,8 +1927,28 @@ export class OrcamentosPage {
         }
       }
 
+      const novoOrcId = 'orc-' + Math.random().toString(36).substr(2, 9);
+      let documentosUploaded: string[] = [];
+      if (arquivoSelecionado) {
+        try {
+          const uploadRes = await uploadDocumentoCliente(
+            novoOrcId,
+            nomeVal,
+            emailVal || 'lead@orcamentos.com',
+            telVal || '(11) 90000-0000',
+            arquivoSelecionado
+          );
+          if (uploadRes?.googleDriveFolderUrl) {
+            documentosUploaded.push(uploadRes.googleDriveFolderUrl);
+          }
+        } catch (errUp) {
+          console.warn('Aviso ao enviar anexo no novo orçamento:', errUp);
+          this.showToast('Orçamento salvo, mas houve falha no upload do anexo.', 'error');
+        }
+      }
+
       const payload: Orcamento = {
-        id: 'orc-' + Math.random().toString(36).substr(2, 9),
+        id: novoOrcId,
         consultorId: consultorVal,
         clienteId: finalClienteId || undefined,
         cliente_id: finalClienteId || undefined,
@@ -1956,16 +1961,36 @@ export class OrcamentosPage {
         temperatura: tempVal,
         tags: tagsList,
         origem: origemVal,
-        status: 'SOLICITADO'
+        valorProposta: valorEstimadoNum > 0 ? valorEstimadoNum : undefined,
+        notasNegociacao: notasVal || undefined,
+        documentosUrl: documentosUploaded.length > 0 ? documentosUploaded : undefined,
+        status: 'EM_ANDAMENTO'
       };
 
       const success = await this.persistOrcamento(payload);
       if (success) {
-        this.showToast('Orçamento registrado com sucesso!', 'success');
+        this.showToast('Orçamento iniciado em Em Andamento com sucesso!', 'success');
         this.closeModal();
         await this.loadClientes(); // Recarrega clientes para incluir o recém cadastrado na busca local
         await this.loadOrcamentos();
         this.render();
+
+        if (devoAbrirStudio) {
+          try {
+            const dono = this.consultores.find(c => c.id === consultorVal) || this.perfil;
+            const { StudioPropostasService } = await import('../services/studioPropostasService');
+            const orcCriado = this.orcamentos.find(o =>
+              (payload.id && !String(payload.id).startsWith('orc-') && o.id === payload.id) ||
+              (o.nomeCliente === payload.nomeCliente && o.destino === payload.destino && !String(o.id).startsWith('orc-'))
+            ) || payload;
+            const proposta = await StudioPropostasService.criarPropostaFromOrcamento(orcCriado, dono);
+            this.showToast('✨ Proposta aberta no Studio™!', 'success');
+            window.location.hash = `#studio?id=${proposta.id}`;
+          } catch (errStudio: any) {
+            console.error('Erro ao abrir Studio após criar orçamento:', errStudio);
+            this.showToast('Orçamento salvo, mas não foi possível abrir o Studio automaticamente.', 'error');
+          }
+        }
       } else {
         this.showToast('Erro ao criar orçamento.', 'error');
       }
@@ -3221,7 +3246,7 @@ export class OrcamentosPage {
             dataViagem: d.data_viagem || d.dataViagem || '',
             temperatura: d.temperatura || 'Frio',
             tags: d.tags || [],
-            status: d.status || 'SOLICITADO',
+            status: (d.status && String(d.status).toUpperCase() !== 'SOLICITADO') ? d.status : 'EM_ANDAMENTO',
             subStatus: d.sub_status || d.subStatus || '',
             notasNegociacao: d.notas_negociacao || d.notasNegociacao || '',
             valorProposta: d.valor_proposta !== undefined ? Number(d.valor_proposta) : (d.valorProposta !== undefined ? Number(d.valorProposta) : undefined),
@@ -3255,7 +3280,7 @@ export class OrcamentosPage {
             dataViagem: d.data_viagem || d.dataViagem || '',
             temperatura: d.temperatura || 'Frio',
             tags: d.tags || [],
-            status: d.status || 'SOLICITADO',
+            status: (d.status && String(d.status).toUpperCase() !== 'SOLICITADO') ? d.status : 'EM_ANDAMENTO',
             subStatus: d.sub_status || d.subStatus || '',
             notasNegociacao: d.notas_negociacao || d.notasNegociacao || '',
             valorProposta: d.valor_proposta !== undefined ? Number(d.valor_proposta) : (d.valorProposta !== undefined ? Number(d.valorProposta) : undefined),
@@ -3728,7 +3753,7 @@ export class OrcamentosPage {
         </div>
 
         <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-semibold">
-          Você está prestes a reabrir o orçamento de <strong class="text-slate-800 dark:text-slate-100">${orc.nomeCliente} - ${orc.destino}</strong>, movendo-o de volta para o status <strong>SOLICITADO</strong>. O histórico de negociação anterior será integralmente preservado.
+          Você está prestes a reabrir o orçamento de <strong class="text-slate-800 dark:text-slate-100">${orc.nomeCliente} - ${orc.destino}</strong>, movendo-o de volta para a etapa <strong>Em Andamento</strong>. O histórico de negociação anterior será integralmente preservado.
         </p>
 
         <form id="form-reabrir-orcamento" class="space-y-4">
@@ -3763,9 +3788,10 @@ export class OrcamentosPage {
       try {
         const res = await OrcamentosService.reabrirOrcamento(orc.id, motivo, this.perfil);
         if (res.success) {
-          this.showToast('Orçamento reaberto com sucesso e movido para Solicitado!', 'success');
+          this.showToast('Orçamento reaberto com sucesso e movido para Em Andamento!', 'success');
           this.closeModal();
-          orc.status = 'SOLICITADO';
+          orc.status = 'EM_ANDAMENTO';
+          await this.persistOrcamento(orc);
           orc.subStatus = undefined;
           orc.contatoRealizado = false;
           orc.contato_realizado = false;

@@ -523,11 +523,11 @@ export function renderTrechoRowHTML(index: number, origem = '', destino = '', da
       <div class="grid grid-cols-2 gap-2.5 pr-6">
         <div>
           <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Origem *</label>
-          <input type="text" placeholder="Origem" required ${disabledAttr} value="${origem}" class="trecho-origem w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded text-xs font-bold uppercase transition" />
+          <input type="text" placeholder="Ex: GRU ou São Paulo" required ${disabledAttr} value="${origem}" list="iata-airports-datalist" class="trecho-origem w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded text-xs font-bold uppercase transition" />
         </div>
         <div>
           <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Destino *</label>
-          <input type="text" placeholder="Destino" required ${disabledAttr} value="${destino}" class="trecho-destino w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded text-xs font-bold uppercase transition" />
+          <input type="text" placeholder="Ex: MCO ou Orlando" required ${disabledAttr} value="${destino}" list="iata-airports-datalist" class="trecho-destino w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded text-xs font-bold uppercase transition" />
         </div>
       </div>
 

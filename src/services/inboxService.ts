@@ -844,8 +844,8 @@ export class InboxService {
             `)
             .not('status', 'eq', 'cancelada');
 
-          // Janela operacional temporal dinâmica calculada com folga segura para cobrir datas gerais e trechos
-          const diasSlaPre = 30; // Folga de 30 dias para frente na query SQL (embarques futuros)
+          // Janela operacional temporal dinâmica calculada com folga segura para cobrir datas gerais, cruzeiros (20d+) e trechos
+          const diasSlaPre = 35; // Folga de 35 dias para frente na query SQL (embarques futuros e cruzeiros)
           const dataMaximaIda = new Date(agora.getTime() + diasSlaPre * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
           const dataMinimaVolta = new Date(agora.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
           const dataMinimaIda = new Date(agora.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -1495,6 +1495,7 @@ export class InboxService {
       hoje.setHours(0, 0, 0, 0);
 
       const slaPreEmbarqueDias = Number(settingsRes?.sla_pre_embarque_dias ?? 7);
+      const slaCruzeiroPreEmbarqueDias = Number(settingsRes?.sla_cruzeiro_pre_embarque_dias ?? 20);
       const slaPosViagemDias = Number(settingsRes?.sla_pos_viagem_dias ?? 1);
       const msPorDia = 1000 * 60 * 60 * 24;
 
@@ -1512,6 +1513,7 @@ export class InboxService {
 
         const clienteNome = v.cliente?.nome || 'Passageiro';
         const destino = v.destino || 'Destino';
+        const viagemTemCruzeiro = (v.produtos || []).some((p: any) => /cruzeiro|navio|mar[ií]timo/i.test(`${p.tipo || ''} ${p.descricao || ''}`));
 
         // 1. Alertas de Pré-Embarque via Motor Unificado de Embarques
         const embarques = ContatosEmbarqueService.obterEmbarquesViagem(v, v.produtos);
@@ -1523,9 +1525,14 @@ export class InboxService {
 
           const diffMs = dataEmb.getTime() - hoje.getTime();
           const diasRestantes = Math.ceil(diffMs / msPorDia);
+          const prodEmb = (emb as any).productId ? (v.produtos || []).find((p: any) => p.id === (emb as any).productId) : null;
+          const isCruzeiroEmb = prodEmb
+            ? /cruzeiro|navio|mar[ií]timo/i.test(`${prodEmb.tipo || ''} ${prodEmb.descricao || ''}`)
+            : (/cruzeiro|navio|mar[ií]timo/i.test(String(emb.tipoDesc || '')) || (viagemTemCruzeiro && emb.tipo === 'ida'));
+          const janelaSlaEmb = isCruzeiroEmb ? slaCruzeiroPreEmbarqueDias : slaPreEmbarqueDias;
 
-          // Dispara alerta dentro da janela configurada em global_settings.sla_pre_embarque_dias
-          if (diasRestantes >= 0 && diasRestantes <= slaPreEmbarqueDias) {
+          // Dispara alerta dentro da janela configurada em global_settings (7d padrão ou 20d cruzeiros)
+          if (diasRestantes >= 0 && diasRestantes <= janelaSlaEmb) {
             const isUrgente = diasRestantes <= 2; // Menos de 48h
             const uniqueId = `pre-embarque-${v.id}-${emb.chave}`;
             const rotaOuDestino = emb.destino || destino;
@@ -2178,6 +2185,174 @@ export class InboxService {
     }
 
     return createdMsg;
+  }
+
+  /**
+   * Constrói eventos de Calendário (Visão Dupla: Ação SLA vs Embarque + Retorno)
+   * a partir das viagens cadastradas, independentemente de quão distante esteja a data futura.
+   */
+  static buildCalendarScheduleFromViagens(
+    viagens: any[],
+    user: any,
+    perfil: PerfilConsultor | null,
+    slaPreEmbarqueDias: number = 7,
+    slaCruzeiroPreEmbarqueDias: number = 20
+  ): AlertItem[] {
+    const events: AlertItem[] = [];
+    if (!Array.isArray(viagens) || !user) return events;
+
+    const userIsAdmin = (perfil?.role || '').toLowerCase() === 'admin';
+    const msPorDia = 1000 * 60 * 60 * 24;
+
+    viagens.forEach((v: any) => {
+      if (String(v.status || '').toLowerCase() === 'cancelada') return;
+
+      const isTitular = v.consultor_id === user.id;
+      const isParceiro = Array.isArray(v.divisoes) && v.divisoes.some((d: any) => d.consultor_id === user.id);
+      if (!userIsAdmin && !isTitular && !isParceiro) return;
+
+      const clienteNome = v.cliente?.nome || 'Passageiro';
+      const destino = v.destino_ref ? `${v.destino_ref.nome}, ${v.destino_ref.pais}` : (v.destino || 'Destino');
+      const produtos = Array.isArray(v.produtos) ? v.produtos : [];
+      const viagemTemCruzeiro = produtos.some((p: any) => /cruzeiro|navio|mar[ií]timo/i.test(`${p.tipo || ''} ${p.descricao || ''}`));
+
+      let embarques = ContatosEmbarqueService.obterEmbarquesViagem(v, produtos);
+      if (embarques.length === 0 && v.data_ida) {
+        embarques = [{
+          chave: 'viagem-geral',
+          dataStr: String(v.data_ida).split('T')[0],
+          destino,
+          loc: v.codigo_localizador || '',
+          tipo: 'viagem-geral',
+          tipoDesc: viagemTemCruzeiro ? 'Cruzeiro' : 'Viagem',
+          fornecedor: ''
+        } as any];
+      }
+
+      embarques.forEach((emb: any) => {
+        if (!emb.dataStr) return;
+        const dataEmbStr = String(emb.dataStr).split('T')[0];
+        const parts = dataEmbStr.split('-').map(Number);
+        if (parts.length !== 3 || parts.some(isNaN)) return;
+
+        const dataEmb = new Date(parts[0], parts[1] - 1, parts[2]);
+        const prodEmb = emb.productId ? produtos.find((p: any) => p.id === emb.productId) : null;
+        const isCruzeiroEmb = prodEmb
+          ? /cruzeiro|navio|mar[ií]timo/i.test(`${prodEmb.tipo || ''} ${prodEmb.descricao || ''}`)
+          : (/cruzeiro|navio|mar[ií]timo/i.test(String(emb.tipoDesc || '')) || (viagemTemCruzeiro && (emb.tipo === 'ida' || emb.tipo === 'viagem-geral')));
+        const janelaSlaEmb = isCruzeiroEmb ? slaCruzeiroPreEmbarqueDias : slaPreEmbarqueDias;
+        const rotaOuDestino = emb.destino || destino;
+        const locTexto = emb.loc || v.codigo_localizador || 'S/N';
+
+        // 1. Data Real do Voo / Embarque
+        events.push({
+          id: `cal-emb-${v.id}-${emb.chave}`,
+          type: 'pre-embarque',
+          calendarOnly: true,
+          calendarCategory: 'embarque_agenda',
+          title: `✈️ Embarque: ${clienteNome} - ${rotaOuDestino}`,
+          sender: 'Agenda de Viagens',
+          senderAvatar: 'paxflow',
+          dateStr: dataEmb.toLocaleDateString('pt-BR'),
+          subject: `Embarque confirmado (${emb.tipoDesc || 'Viagem'}) • ${clienteNome} ➔ ${rotaOuDestino} (LOC: ${locTexto})`,
+          body: `<strong>Embarque Programado</strong><br>• <strong>Passageiro:</strong> ${clienteNome}<br>• <strong>Destino:</strong> ${rotaOuDestino}<br>• <strong>Data:</strong> ${dataEmb.toLocaleDateString('pt-BR')}<br>• <strong>Localizador:</strong> ${locTexto}`,
+          targetId: v.id,
+          arquivado: false,
+          consultorId: v.consultor_id || '',
+          consultorNome: 'Agenda de Embarques',
+          createdAt: v.created_at || new Date().toISOString(),
+          eventDate: dataEmbStr
+        });
+
+        // 2. Ação Operacional de SLA (Ex: 7d antes voo / 20d antes cruzeiro) - cálculo imune a DST em UTC
+        const dataSlaUtc = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] - janelaSlaEmb));
+        const dataSlaStr = dataSlaUtc.toISOString().split('T')[0];
+        const dataSlaDisplay = dataSlaStr.split('-').reverse().join('/');
+        events.push({
+          id: `cal-sla-${v.id}-${emb.chave}`,
+          type: 'pre-embarque',
+          calendarOnly: true,
+          calendarCategory: 'sla_acao',
+          title: `📞 Ação Pré-Embarque: ${clienteNome} - ${rotaOuDestino}`,
+          sender: 'PaxFlow SLA',
+          senderAvatar: 'paxflow',
+          dateStr: dataSlaDisplay,
+          subject: `Checklist Pré-Embarque (${janelaSlaEmb} dias antes de ${dataEmb.toLocaleDateString('pt-BR')}) • ${clienteNome} (${rotaOuDestino})`,
+          body: `<strong>Ação Operacional de Pré-Embarque</strong><br>• <strong>Passageiro:</strong> ${clienteNome}<br>• <strong>Embarque Real:</strong> ${dataEmb.toLocaleDateString('pt-BR')}<br>• <strong>Janela SLA (${isCruzeiroEmb ? 'Cruzeiro' : 'Padrão'}):</strong> ${janelaSlaEmb} dias antes<br>• <strong>Checklist:</strong> Emitir/enviar vouchers, orientar check-in e validar documentação.`,
+          targetId: v.id,
+          arquivado: false,
+          consultorId: v.consultor_id || '',
+          consultorNome: 'Checklist Pré-Embarque',
+          createdAt: v.created_at || new Date().toISOString(),
+          eventDate: dataSlaStr
+        });
+      });
+
+      // 3. Data de Retorno Programada
+      if (v.data_volta) {
+        const dataVoltaStr = String(v.data_volta).split('T')[0];
+        const dataVolta = new Date(dataVoltaStr + 'T00:00:00');
+        if (!isNaN(dataVolta.getTime())) {
+          events.push({
+            id: `cal-ret-${v.id}`,
+            type: 'pos-viagem-nps',
+            calendarOnly: true,
+            calendarCategory: 'retorno_agenda',
+            title: `🏠 Retorno: ${clienteNome} - ${destino}`,
+            sender: 'Agenda de Viagens',
+            senderAvatar: 'paxflow',
+            dateStr: dataVolta.toLocaleDateString('pt-BR'),
+            subject: `Retorno programado de ${clienteNome} (${destino}). Preparar contato de boas-vindas e NPS.`,
+            body: `<strong>Retorno de Viagem</strong><br>• <strong>Passageiro:</strong> ${clienteNome}<br>• <strong>Destino:</strong> ${destino}<br>• <strong>Data de Retorno:</strong> ${dataVolta.toLocaleDateString('pt-BR')}`,
+            targetId: v.id,
+            arquivado: false,
+            consultorId: v.consultor_id || '',
+            consultorNome: 'Agenda de Retornos',
+            createdAt: v.created_at || new Date().toISOString(),
+            eventDate: dataVoltaStr
+          });
+        }
+      }
+    });
+
+    return events;
+  }
+
+  /**
+   * Carrega todas as viagens ativas (inclusive futuras) para plotagem imediata na grade do Calendário
+   */
+  static async loadCalendarViagemEvents(user: any, perfil: PerfilConsultor | null): Promise<AlertItem[]> {
+    if (!user) return [];
+    const userIsAdmin = (perfil?.role || '').toLowerCase() === 'admin';
+
+    try {
+      const pSettings = supabase.from('global_settings').select('sla_pre_embarque_dias, sla_cruzeiro_pre_embarque_dias').limit(1).maybeSingle();
+      let vQuery = supabase
+        .from('viagens')
+        .select('id, consultor_id, destino, data_ida, data_volta, status, codigo_localizador, created_at, cliente:clientes(nome), produtos:produtos_viagem(*), divisoes:viagens_divisoes(*), destino_ref:destinos(nome, pais)')
+        .not('status', 'eq', 'cancelada');
+
+      if (!userIsAdmin) {
+        const { data: parcerias } = await supabase
+          .from('viagens_divisoes')
+          .select('viagem_id')
+          .eq('consultor_id', user.id);
+        const parceriasIds = (parcerias || []).map((d: any) => d.viagem_id).filter(Boolean);
+        if (parceriasIds.length > 0 && typeof (vQuery as any).or === 'function') {
+          vQuery = vQuery.or(`consultor_id.eq.${user.id},id.in.(${parceriasIds.join(',')})`);
+        } else {
+          vQuery = vQuery.eq('consultor_id', user.id);
+        }
+      }
+
+      const [settingsRes, viagensRes] = await Promise.all([pSettings, vQuery]);
+      const slaPre = Number(settingsRes?.data?.sla_pre_embarque_dias ?? 7);
+      const slaCruzeiro = Number(settingsRes?.data?.sla_cruzeiro_pre_embarque_dias ?? 20);
+      return this.buildCalendarScheduleFromViagens(viagensRes?.data || [], user, perfil, slaPre, slaCruzeiro);
+    } catch (err) {
+      console.warn('Aviso ao carregar agenda futura do calendário:', err);
+      return [];
+    }
   }
 }
 

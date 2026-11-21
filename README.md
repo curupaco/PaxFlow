@@ -18,6 +18,14 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ---
 
+- **Pacote de Melhorias Operacionais & Migração Leady [NEW]**:
+  - **Orçamentos Unificados em "Em Andamento" (Sem Coluna Solicitado)**: Fluxo Kanban simplificado para 3 colunas (*Em Andamento*, *Aguardando*, *Concluído*). O modal de `+ Novo Orçamento` já integra valor estimado, temperatura, campo ampliado de anotações, upload de documentos e opção `[ ✨ Salvar e Abrir Studio™ ]`.
+  - **Suporte a Siglas IATA em Trechos e Orçamentos**: Catálogo IATA integrado ao autocomplete (`GRU`, `MCO`, `LIS`, `CDG`, etc.) para trechos aéreos e destinos de orçamentos, mantendo digitação livre para cidades rodoviárias e portos.
+  - **Ergonomia de Viagens (`Ctrl+S` & Sticky Footer)**: Rodapé fixo sempre visível no modal de edição de viagens (`Salvar Alterações` + atalho `Ctrl+S` / `Cmd+S`), além da correção do filtro avançado *"Por Anexo"* com contagem real de `documentos_anexos` e badge `📎` na tabela.
+  - **SLA Diferenciado para Cruzeiros (20 Dias) & Visão Dupla no Calendário**: Alerta antecipado configurável (`sla_cruzeiro_pre_embarque_dias = 20`) e plotagem imediata na grade do calendário de todas as viagens futuras confirmadas, diferenciando o dia da ação operacional (`📞 Ação Pré-Embarque`) e a data real do voo (`✈️ Embarque`).
+  - **Relatórios "⭐ Mais Acessados" & Matriz de Permissões do Consultor**: Seção fixa de acesso rápido no topo (*Relatório de Embarque* e *Faturamento*) e isolamento estrito para o perfil consultor visualizando 5 relatórios operacionais da própria carteira (*Metas & Campanhas*, *Faturamento*, *Desistências & Perdas*, *Pesquisa de Satisfação NPS* e *Relatório de Embarque*).
+  - **Script de Carga Única de Clientes do Leady (`scripts/importar_leady_sql.ts`)**: Consolidação e desduplicação dos lotes CSV históricos (2020–2026) em script SQL transacional (`supabase/seed_carga_leady.sql`) com atualização defensiva (`COALESCE`) e histórico comercial.
+
 - **Governança Estrita, Saneamento Geral de Schema & Padrão Fail-Fast [NEW]**:
   - **Blindagem e Integridade de Consultas Relacionais**: Projeções cirúrgicas do Supabase revisadas em 100% dos módulos (Reembolsos, Relatórios de Operações e Inteligência, Painel Comercial, Edição de Viagens e Copiloto de Balcão). Garantida a inclusão de campos essenciais (`codigo_localizador`, `codigo_reserva`, `descricao`, `origem`, `contatos_embarque`, `tipo`) eliminando falhas de dados ausentes em relatórios, reconciliação e validações de pós-venda.
   - **Relatório de Embarque com LOC do Produto Aéreo**: Exibição prioritária e consolidada do código localizador do produto aéreo de cada trecho nos relatórios operacionais, eliminando ambiguidades e duplicidades.

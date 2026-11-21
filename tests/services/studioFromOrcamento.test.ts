@@ -16,7 +16,7 @@ describe('PaxFlow Studio - Geração de Proposta em 1-Clique a partir de Orçame
   it('deve gerar proposta estruturada com foto automática, itinerário e vínculo ao orçamento original', async () => {
     // Setup
     const mockOrcamento = {
-      id: 'orc-999',
+      id: '550e8400-e29b-41d4-a716-446655440999',
       nomeCliente: 'Ana Beatriz Souza',
       contato: '11988887777',
       email: 'ana.souza@gmail.com',
@@ -63,7 +63,7 @@ describe('PaxFlow Studio - Geração de Proposta em 1-Clique a partir de Orçame
     expect(proposta.cliente_nome).toBe('Ana Beatriz Souza');
     expect(proposta.destino).toBe('Pantanal & Bonito');
     expect(proposta.valor_total).toBe(12500);
-    expect(proposta.orcamento_origem_id).toBe('orc-999');
+    expect(proposta.orcamento_origem_id).toBe('550e8400-e29b-41d4-a716-446655440999');
     expect(proposta.consultor_nome).toBe('Juliana Consultora');
     expect(proposta.data_ida).toBe('2026-11-15');
     expect(proposta.foto_capa_url).toContain('unsplash');
