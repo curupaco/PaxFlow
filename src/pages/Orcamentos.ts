@@ -983,7 +983,7 @@ export class OrcamentosPage {
         </div>
 
         <!-- Corpo Principal Kanban (3 Colunas: Em Andamento, Aguardando, Concluído) -->
-        <main class="flex-1 p-6 pb-8 overflow-x-auto flex md:grid md:grid-cols-3 gap-6 items-stretch md:items-start custom-scrollbar" style="scrollbar-gutter: stable;">
+        <main class="flex-1 p-3.5 sm:p-6 pb-8 overflow-x-auto flex md:grid md:grid-cols-3 gap-6 items-stretch md:items-start custom-scrollbar" style="scrollbar-gutter: stable;">
           
           <!-- Coluna 1: EM ANDAMENTO -->
           <div class="w-full bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-amber-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'EM_ANDAMENTO' ? 'flex' : 'hidden md:flex'}">
@@ -1004,7 +1004,7 @@ export class OrcamentosPage {
               </div>
             </div>
             ${this.renderSortControls('EM_ANDAMENTO')}
-            <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
+            <div class="flex flex-col gap-4 md:overflow-y-auto md:max-h-[700px] pr-1 custom-scrollbar">
               ${emAndamento.map(o => this.renderCardHtml(o)).join('')}
               ${emAndamento.length === 0 ? this.renderEmptySlot() : ''}
             </div>
@@ -1028,7 +1028,7 @@ export class OrcamentosPage {
               </div>
             </div>
             ${this.renderSortControls('AGUARDANDO')}
-            <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
+            <div class="flex flex-col gap-4 md:overflow-y-auto md:max-h-[700px] pr-1 custom-scrollbar">
               ${aguardando.map(o => this.renderCardHtml(o)).join('')}
               ${aguardando.length === 0 ? this.renderEmptySlot() : ''}
             </div>
@@ -1058,7 +1058,7 @@ export class OrcamentosPage {
               </div>
             </div>
             ${this.renderSortControls('CONCLUIDO')}
-            <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
+            <div class="flex flex-col gap-4 md:overflow-y-auto md:max-h-[700px] pr-1 custom-scrollbar">
               ${!this.showAllConcluded ? `
                 <div class="px-3 py-2 text-center text-[10.5px] text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/50 rounded-xl border border-slate-200/50 dark:border-slate-700/40">
                   <span>Exibindo recentes (últimos 30 dias).</span>

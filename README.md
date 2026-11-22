@@ -18,6 +18,11 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ---
 
+- **Rolagem Natural Mobile & Modo Foco na Busca [NEW]**:
+  - **Eliminação de Rolagem Dupla no Celular**: Remoção de travas fixas de altura (`100vh` e `max-h-[600px]`/`[700px]`) em **Viagens**, **Orçamentos**, **Reembolsos**, **Inbox (Lista e Calendário)**, **Clientes** e **Next Trip Engine**, permitindo rolagem fluida e natural da página inteira em smartphones (como iPhone 15 Pro).
+  - **Modo Foco ao Pesquisar**: Durante uma busca ativa no celular, blocos secundários do topo (widget Next Trip em Viagens, indicadores secundários da barra financeira e cartões de KPIs em Reembolsos/Next Trip) são ocultados ou compactados automaticamente para trazer os resultados imediatamente para a área visível.
+  - **Busca Global Ergonomizada no Mobile (`GlobalHeaderSearch`)**: Pressionar `Enter` ou tocar na lupa fecha o dropdown Co-Piloto, recolhe o teclado virtual (`blur()`) e sincroniza a limpeza da busca entre o cabeçalho global e os filtros da tela.
+
 - **Pacote de Melhorias Operacionais & Migração Leady [NEW]**:
   - **Orçamentos Unificados em "Em Andamento" (Sem Coluna Solicitado)**: Fluxo Kanban simplificado para 3 colunas (*Em Andamento*, *Aguardando*, *Concluído*). O modal de `+ Novo Orçamento` já integra valor estimado, temperatura, campo ampliado de anotações, upload de documentos e opção `[ ✨ Salvar e Abrir Studio™ ]`.
   - **Suporte a Siglas IATA em Trechos e Orçamentos**: Catálogo IATA integrado ao autocomplete (`GRU`, `MCO`, `LIS`, `CDG`, etc.) para trechos aéreos e destinos de orçamentos, mantendo digitação livre para cidades rodoviárias e portos.

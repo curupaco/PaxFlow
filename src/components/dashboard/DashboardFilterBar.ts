@@ -280,9 +280,11 @@ export class DashboardFilterBar {
   /**
    * Renderiza a barra com o resumo financeiro em tempo real e o botão de exportar CSV/Excel
    */
-  public static renderFinancialSummaryBarHTML(ctx: DashboardFilterContext): string {
+  public static renderFinancialSummaryBarHTML(ctx: DashboardFilterContext, state?: DashboardFilterState): string {
+    const isModoFoco = !!state?.buscaTermo?.trim();
+
     return `
-      <div id="financial-summary-export-bar" class="px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div id="financial-summary-export-bar" class="px-4 md:px-6 py-2 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div class="flex flex-wrap items-center gap-4">
           <div class="flex items-center gap-1.5">
             <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Viagens:</span>
@@ -294,24 +296,24 @@ export class DashboardFilterBar {
             <span class="font-extrabold text-emerald-600 dark:text-emerald-400">R$ ${ctx.totalVendas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div class="h-3.5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
-          <div class="flex items-center gap-1.5">
+          <div class="${isModoFoco ? 'hidden sm:flex' : 'flex'} items-center gap-1.5">
             <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Rentabilidade:</span>
             <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${ctx.totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           ${(ctx.totalMarkupAcumulado > 0 || ctx.totalRavAcumulado > 0) ? `
             <div class="h-3.5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
-            <div class="flex items-center gap-1.5">
+            <div class="${isModoFoco ? 'hidden sm:flex' : 'flex'} items-center gap-1.5">
               <span class="text-[10px] font-black uppercase text-purple-600 dark:text-purple-400 tracking-wider">Markup:</span>
               <span class="font-bold text-purple-600 dark:text-purple-400">R$ ${ctx.totalMarkupAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div class="h-3.5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
-            <div class="flex items-center gap-1.5">
+            <div class="${isModoFoco ? 'hidden sm:flex' : 'flex'} items-center gap-1.5">
               <span class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider">RAV:</span>
               <span class="font-bold text-amber-600 dark:text-amber-400">R$ ${ctx.totalRavAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ` : ''}
           <div class="h-3.5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
-          <div class="flex items-center gap-1.5">
+          <div class="${isModoFoco ? 'hidden sm:flex' : 'flex'} items-center gap-1.5">
             <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Ticket Médio:</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">R$ ${ctx.ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>

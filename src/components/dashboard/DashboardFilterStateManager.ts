@@ -432,11 +432,13 @@ export class DashboardFilterStateManager {
     this.buscaTermo = '';
     const searchInput = document.getElementById('input-busca-viagem') as HTMLInputElement;
     if (searchInput) searchInput.value = '';
-    const globalInput = document.getElementById('global-header-search-input') as HTMLInputElement;
+    const globalInput = (document.getElementById('global-search-input') || document.getElementById('global-header-search-input')) as HTMLInputElement | null;
     if (globalInput) {
       globalInput.value = '';
       const clearBtn = document.getElementById('btn-clear-global-search');
       if (clearBtn) clearBtn.classList.add('hidden');
+      const dropdown = document.getElementById('global-search-dropdown');
+      if (dropdown) dropdown.classList.add('hidden');
     }
     this.dataFinStart = '';
     this.dataFinEnd = '';
@@ -487,11 +489,13 @@ export class DashboardFilterStateManager {
       this.buscaTermo = '';
       const searchInput = document.getElementById('input-busca-viagem') as HTMLInputElement;
       if (searchInput) searchInput.value = '';
-      const globalInput = document.getElementById('global-header-search-input') as HTMLInputElement;
+      const globalInput = (document.getElementById('global-search-input') || document.getElementById('global-header-search-input')) as HTMLInputElement | null;
       if (globalInput) {
         globalInput.value = '';
         const clearBtn = document.getElementById('btn-clear-global-search');
         if (clearBtn) clearBtn.classList.add('hidden');
+        const dropdown = document.getElementById('global-search-dropdown');
+        if (dropdown) dropdown.classList.add('hidden');
       }
     } else if (filterKey === 'dataFin') {
       this.dataFinStart = '';

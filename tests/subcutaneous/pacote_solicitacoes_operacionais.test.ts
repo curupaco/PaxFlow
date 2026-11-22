@@ -5,6 +5,9 @@ import { RELATORIOS_PERMITIDOS_CONSULTOR } from '../../src/components/relatorios
 import { buscarAeroportosPorTermo } from '../../src/utils/iataCatalog';
 import { StudioPropostasService } from '../../src/services/studioPropostasService';
 import { supabase } from '../../src/services/supabase';
+import { ViagensTableView } from '../../src/components/dashboard/ViagensTableView';
+import { DashboardFilterBar } from '../../src/components/dashboard/DashboardFilterBar';
+import { DashboardFilterStateManager } from '../../src/components/dashboard/DashboardFilterStateManager';
 import {
   normalizarDocumentoLeady,
   processarConteudosCsvLeady,
@@ -289,6 +292,96 @@ describe('Pacote de Solicitações Operacionais — Testes Subcutâneos', () => 
     expect(payloadsEnviados).toHaveLength(2);
     expect(payloadsEnviados[0].orcamento_origem_id).toBeNull();
     expect(payloadsEnviados[1].orcamento_origem_id).toBe(uuidReal);
+  });
+
+  it('deve renderizar cards mobile sem rolagem interna aninhada, compactar resumo financeiro na busca e limpar busca global', () => {
+    // Setup
+    const tableCtx: any = {
+      user: { id: 'u1' },
+      perfil: { id: 'u1', role: 'admin' },
+      settings: {},
+      consultores: [],
+      buscaTermo: 'João',
+      sortField: '',
+      sortDirection: 'asc',
+      isTodosReembolsosConcluidos: () => false,
+      checkSLA: () => ({ alert: false, type: null, text: '' }),
+      getTripFinancialTotals: () => ({
+        totalVenda: 5000,
+        totalRentabilidade: 500,
+        totalMarkup: 0,
+        totalRav: 0,
+        isDividida: false,
+        fatiaVenda: 1,
+        fatiaRav: 1
+      }),
+      getConsultorContextoAtivoId: () => null
+    };
+    const filterCtx: any = {
+      totalViagens: 1,
+      totalVendas: 5000,
+      totalRentabilidade: 500,
+      totalMarkupAcumulado: 0,
+      totalRavAcumulado: 0,
+      ticketMedio: 5000
+    };
+
+    const globalInput = { value: 'João' };
+    const clearBtn = { classList: { add: vi.fn() } };
+    const dropdown = { classList: { add: vi.fn() } };
+    const localInput = { value: 'João' };
+
+    vi.stubGlobal('document', {
+      getElementById: (id: string) => {
+        if (id === 'global-search-input') return globalInput;
+        if (id === 'btn-clear-global-search') return clearBtn;
+        if (id === 'global-search-dropdown') return dropdown;
+        if (id === 'input-busca-viagem') return localInput;
+        return null;
+      }
+    });
+
+    try {
+      const stateManager = new DashboardFilterStateManager({
+        user: { id: 'u1' },
+        perfil: { id: 'u1', role: 'admin' } as any,
+        settings: {} as any,
+        consultores: [],
+        formasRecebimento: [],
+        origensLead: [],
+        listaDestinosDisponiveis: [],
+        tiposProduto: [],
+        onStateChange: vi.fn(),
+        onNovaViagem: vi.fn(),
+        onExportCsv: vi.fn()
+      });
+
+      // Action
+      const tableHtml = ViagensTableView.renderTableAndMobileView(
+        [{ id: 'v1', destino: 'Orlando', status: 'fechado', cliente: { nome: 'João' }, produtos: [] }],
+        tableCtx
+      );
+      const summaryModoFoco = DashboardFilterBar.renderFinancialSummaryBarHTML(filterCtx, { buscaTermo: 'João' } as any);
+
+      stateManager.buscaTermo = 'João';
+      stateManager.removeSingleFilter('busca');
+      const valorAposRemoveSingle = globalInput.value;
+
+      globalInput.value = 'Orlando';
+      stateManager.buscaTermo = 'Orlando';
+      stateManager.resetAllFilters();
+
+      // Assert
+      expect(tableHtml).toContain('class="block md:hidden space-y-3.5 pb-6"');
+      expect(summaryModoFoco).toContain('hidden sm:flex');
+      expect(valorAposRemoveSingle).toBe('');
+      expect(globalInput.value).toBe('');
+      expect(localInput.value).toBe('');
+      expect(clearBtn.classList.add).toHaveBeenCalledWith('hidden');
+      expect(dropdown.classList.add).toHaveBeenCalledWith('hidden');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

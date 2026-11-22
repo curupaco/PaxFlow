@@ -108,7 +108,7 @@ export class CalendarView {
         </div>
 
         <!-- Rendered Calendar View -->
-        <div class="custom-scrollbar overflow-y-auto max-h-[calc(100vh-310px)] pr-1">
+        <div class="custom-scrollbar md:overflow-y-auto md:max-h-[calc(100vh-310px)] pr-1">
           ${this.renderCalendarContent()}
         </div>
       </div>

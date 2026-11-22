@@ -946,15 +946,17 @@ export class Dashboard {
     this.container.innerHTML = `
       <style>
         .dashboard-container {
-          height: ${mobileHeight};
+          min-height: ${mobileHeight};
+          height: auto;
         }
         @media (min-width: 768px) {
           .dashboard-container {
             height: ${desktopHeight};
+            overflow: hidden;
           }
         }
       </style>
-      <div class="dashboard-container bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200 overflow-hidden">
+      <div class="dashboard-container bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200 md:overflow-hidden">
         
         <!-- CABEÇALHO PADRONIZADO IGUAL ÀS DEMAIS TELAS DO PAXFLOW -->
         <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 relative z-10 px-4 md:px-6 py-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 transition-colors duration-200 w-full">
@@ -976,11 +978,11 @@ export class Dashboard {
         ${DashboardFilterBar.renderStatusTabsHTML(counts, filterState.activeStatusTab)}
 
         ${DashboardFilterBar.renderActiveFilterChipsHTML(filterContext, filterState)}
-        ${DashboardFilterBar.renderFinancialSummaryBarHTML(filterContext)}
+        ${DashboardFilterBar.renderFinancialSummaryBarHTML(filterContext, filterState)}
 
         <!-- CONTEÚDO PRINCIPAL (LISTA / TABELA) -->
-        <main class="flex-1 p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950 overflow-y-auto custom-scrollbar">
-          <div id="next-trip-engine-mount"></div>
+        <main class="flex-1 p-3.5 sm:p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950 md:overflow-y-auto custom-scrollbar">
+          <div id="next-trip-engine-mount" class="${filterState.buscaTermo?.trim() ? 'hidden md:block' : ''}"></div>
           ${this.renderBalcaoSectionHTML()}
           ${ViagensTableView.renderTableAndMobileView(filtrados, this.getViagensTableViewContext())}
         </main>

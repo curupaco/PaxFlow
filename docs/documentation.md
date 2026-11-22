@@ -2125,6 +2125,19 @@ Essa prática foi **100% expurgada**:
    - **Validação de Transição para Pós-Venda**: Adição do campo `tipo` no select de validação de `produtos_viagem` em `EditTravelModal`, assegurando que produtos com RAV ou Markup não bloqueiem a transição por cálculo financeiro incompleto.
    - **Normalização Snake-Case & Compatibilidade**: Ajuste em `ViagensTableView` e `BalcaoCopilotoSection` para ler consistentemente `codigo_ref` e `consultor_id`, eliminando discrepâncias visuais de tags e duplicações no co-piloto.
 
+## 3.58 Rolagem Natural Mobile & Modo Foco na Busca (iPhone / Smartphones)
+1. **Erradicação de Contêineres Presos e Rolagens Duplas**:
+   - **Viagens (`Dashboard.ts`, `ViagensTableView.ts`)**: No mobile (`< 768px`), `.dashboard-container` utiliza `min-height` e `height: auto` sem `overflow-hidden`, e a listagem de cards mobile flui naturalmente na página sem `overflow-y-auto` aninhado.
+   - **Orçamentos (`Orcamentos.ts`)**: Limites `max-h-[700px] overflow-y-auto` das colunas foram restritos ao desktop (`md:overflow-y-auto md:max-h-[700px]`).
+   - **Reembolsos (`Reembolsos.ts`)**: Removido `max-h-[600px] overflow-y-auto` da lista mobile e compactados os 4 cards de KPIs para grade `2x2` no celular.
+   - **Inbox (`AlertsFeed.ts`, `CalendarView.ts`)**: Travas `max-h-[calc(100vh-310px)] overflow-y-auto` restritas a `md:`.
+   - **Clientes (`Clientes.ts`)**: A lista lateral utiliza altura dinâmica `max-h-[calc(100dvh-230px)]` no mobile para preservar o evento de scroll infinito com máximo aproveitamento vertical.
+   - **Next Trip Engine (`NextTripPage.ts`)**: Grade de KPIs compactada para `2x2` no celular e rolagem unificada na página.
+2. **Modo Foco na Pesquisa & Correção da Busca Global (`GlobalHeaderSearch.ts`)**:
+   - Ao acionar `Enter` ou clicar na lupa na barra global, o dropdown do Co-Piloto é fechado e `input.blur()` recolhe o teclado virtual no celular.
+   - Com termo de busca ativo no mobile, o widget Next Trip e os indicadores secundários em Viagens, além dos KPIs em Reembolsos e Next Trip, são ocultados/compactados automaticamente (`hidden md:...` / `hidden sm:flex`) para priorizar os resultados filtrados.
+   - `DashboardFilterStateManager` passou a limpar corretamente `#global-search-input`, `#btn-clear-global-search` e `#global-search-dropdown` ao remover o chip de busca ou limpar todos os filtros.
+
 ---
 
 > **PaxFlow** — Gestão de Pós-Venda e Fluxo de Passageiros

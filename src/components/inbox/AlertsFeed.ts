@@ -114,7 +114,7 @@ export class AlertsFeed {
       </div>
 
       <!-- Alerts Mail Stack -->
-      <div class="space-y-3 custom-scrollbar overflow-y-auto max-h-[calc(100vh-310px)] pr-1">
+      <div class="space-y-3 custom-scrollbar md:overflow-y-auto md:max-h-[calc(100vh-310px)] pr-1">
         ${this.filteredAlerts.length === 0 ? `
           <div class="inbox-glass p-12 text-center rounded-2xl border border-slate-200/40 dark:border-slate-800/40">
             <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">

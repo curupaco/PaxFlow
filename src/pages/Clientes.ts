@@ -1822,10 +1822,10 @@ export class ClientesPage {
    */
   private render(): void {
     this.container.innerHTML = `
-      <div class="w-full flex-1 flex flex-col overflow-hidden font-sans transition-colors duration-200">
+      <div class="w-full flex-1 flex flex-col lg:overflow-hidden font-sans transition-colors duration-200">
         
         <!-- Corpo Principal com Duas Colunas -->
-        <main class="flex-1 p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start overflow-y-auto custom-scrollbar min-w-0 max-w-full">
+        <main class="flex-1 p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start lg:overflow-y-auto custom-scrollbar min-w-0 max-w-full">
           
           <!-- Coluna Esquerda: Lista de Clientes (Busca & Navegação) -->
           <div id="clientes-lista-col" class="lg:col-span-4 min-w-0 max-w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4 lg:flex ${this.mobileDetailOpen ? 'hidden' : 'flex'}">
@@ -1864,7 +1864,7 @@ export class ClientesPage {
             <!-- Listagem Container -->
             <div>
               <label class="block text-[9px] uppercase tracking-widest font-black text-slate-400 dark:text-slate-500 mb-2">Clientes Ativos</label>
-              <div id="lista-clientes-container" class="max-h-[600px] overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
+              <div id="lista-clientes-container" class="max-h-[calc(100dvh-230px)] lg:max-h-[600px] overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
                 <!-- Injetado via JS -->
               </div>
             </div>

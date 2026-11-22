@@ -615,6 +615,13 @@ export const HELP_ITEMS: HelpItem[] = [
   },
 
   {
+    id: 'busca-e-navegacao-mobile',
+    modulo: 'dashboard',
+    label: '📱 Busca Rápida e Navegação no Celular (Modo Foco)',
+    description: 'Como pesquisar viagens, orçamentos e reembolsos no celular com aproveitamento total da tela.',
+    details: 'No celular (iPhone e Android), o PaxFlow adapta automaticamente o layout durante a pesquisa:\n\n1. **Modo Foco Automático**: Ao digitar um nome ou localizador e pressionar **Enter** (ou tocar na lupa), o teclado é recolhido e os blocos pesados do topo são compactados ou ocultados temporariamente para que os resultados fiquem imediatamente visíveis.\n2. **Rolagem Natural de Tela**: As listas de Viagens, Orçamentos, Reembolsos, Inbox e Next Trip rolam de forma contínua junto com a página, sem caixas internas apertadas.\n3. **Limpar Busca**: Toque no `✕` da barra de busca ou no chip de filtro ativo para restaurar todos os painéis instantaneamente.'
+  },
+  {
     id: 'auto-status-em-andamento',
     modulo: 'orcamentos',
     label: 'Fluxo Unificado em "Em Andamento" (Orçamentos)',

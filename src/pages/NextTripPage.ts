@@ -313,11 +313,11 @@ export class NextTripPage {
           </div>
         </header>
 
-        <main class="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar">
+        <main class="flex-1 p-3.5 sm:p-6 space-y-4 sm:space-y-6 md:overflow-y-auto custom-scrollbar">
           
           <!-- KPIS SUPERIORES -->
-          <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs">
+          <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 ${this.filterBusca?.trim() ? 'hidden md:grid' : ''}">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-5 rounded-2xl shadow-xs">
               <div class="flex items-center justify-between text-slate-400 mb-2">
                 <span class="text-[10px] font-black uppercase tracking-wider">Oportunidades Mapeadas</span>
                 <svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -328,7 +328,7 @@ export class NextTripPage {
               </div>
               <div class="text-2xl font-black text-slate-800 dark:text-white">${totalOps}</div>
               <span class="text-[10px] text-slate-400 font-medium">Clientes monitorados na janela de recompra</span>
-              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm border-l-4 border-l-emerald-500">
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-5 rounded-3xl shadow-sm border-l-4 border-l-emerald-500">
               <div class="flex items-center justify-between text-slate-400 mb-2">
                 <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Alto Potencial</span>
                 <span class="text-lg">🔥</span>
@@ -337,7 +337,7 @@ export class NextTripPage {
               <span class="text-[10px] text-slate-400 font-medium">Prioridade máxima de abordagem comercial</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm border-l-4 border-l-amber-500">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-5 rounded-3xl shadow-sm border-l-4 border-l-amber-500">
               <div class="flex items-center justify-between text-slate-400 mb-2">
                 <span class="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">Médio Potencial</span>
                 <span class="text-lg">⏳</span>
@@ -346,7 +346,7 @@ export class NextTripPage {
               <span class="text-[10px] text-slate-400 font-medium">Clientes em aquecimento gradual</span>
             </div>
 
-            <div id="card-algoritmo-preditivo" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm border-l-4 border-l-indigo-500 cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-md transition group">
+            <div id="card-algoritmo-preditivo" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-5 rounded-3xl shadow-sm border-l-4 border-l-indigo-500 cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-md transition group">
               <div class="flex items-center justify-between text-slate-400 mb-2">
                 <span class="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
                   Algoritmo Preditivo

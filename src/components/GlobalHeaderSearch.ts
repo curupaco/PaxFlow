@@ -73,16 +73,10 @@ export class GlobalHeaderSearch {
       // Dispara evento global para telas operacionais (Viagens, Orçamentos, Reembolsos)
       window.dispatchEvent(new CustomEvent('paxflow-global-search-submit', { detail: { termo: q } }));
 
-      // Se a tela atual possuir elemento de busca local suportado, fecha o dropdown Co-Piloto
-      const hasLocalFilter = !!(
-        document.getElementById('input-busca-viagem') ||
-        document.getElementById('input-busca-orcamento') ||
-        document.getElementById('input-busca-reembolso')
-      );
-
-      if (hasLocalFilter && this.dropdownEl) {
+      if (this.dropdownEl) {
         this.dropdownEl.classList.add('hidden');
       }
+      this.inputEl?.blur();
     };
 
     this.inputEl.addEventListener('input', (e) => {
@@ -93,6 +87,12 @@ export class GlobalHeaderSearch {
       }
 
       clearTimeout(this.searchTimeout);
+
+      if (q.length === 0) {
+        this.dropdownEl!.classList.add('hidden');
+        window.dispatchEvent(new CustomEvent('paxflow-global-search-submit', { detail: { termo: '' } }));
+        return;
+      }
 
       if (q.trim().length < 2) {
         this.dropdownEl!.classList.add('hidden');

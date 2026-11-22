@@ -62,7 +62,7 @@ export class ViagensTableView {
 
     return `
       <!-- Mobile View: Cards Layout (Visible only on mobile portrait) -->
-      <div class="block md:hidden overflow-y-auto flex-1 space-y-4 custom-scrollbar pr-1 pb-4">
+      <div class="block md:hidden space-y-3.5 pb-6">
         ${viagens.map(v => this.renderMobileCard(v, ctx)).join('')}
       </div>
 

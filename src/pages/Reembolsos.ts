@@ -624,7 +624,7 @@ export class ReembolsosPage {
           </div>
         </header>
 
-        <main class="flex-1 p-6 flex flex-col gap-6">
+        <main class="flex-1 p-3.5 sm:p-6 flex flex-col gap-4 sm:gap-6">
           
           <!-- Alerta de Viagens Órfãs de Reembolso -->
           ${this.viagensOrfas.length > 0 ? `
@@ -667,8 +667,8 @@ export class ReembolsosPage {
           ` : ''}
 
           <!-- Cards de Métricas Premium -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm flex items-center justify-between">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 ${this.buscaTermo?.trim() ? 'hidden md:grid' : ''}">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-5 rounded-3xl shadow-sm flex items-center justify-between">
               <div>
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Total de Processos</span>
                 <span class="text-2xl font-black text-slate-800 dark:text-slate-200">${totalReembolsos}</span>
@@ -676,7 +676,7 @@ export class ReembolsosPage {
               <span class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 dark:text-indigo-400 rounded-2xl text-base font-extrabold flex items-center justify-center shrink-0">📋</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-5 rounded-3xl shadow-sm flex items-center justify-between">
               <div>
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Pendente Ação Agência</span>
                 <span class="text-2xl font-black text-amber-600 dark:text-amber-400">${agenciaCount}</span>
@@ -684,7 +684,7 @@ export class ReembolsosPage {
               <span class="w-10 h-10 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-400 rounded-2xl text-base font-extrabold flex items-center justify-center shrink-0">🏢</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-5 rounded-3xl shadow-sm flex items-center justify-between">
               <div>
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Fornecedor / Agaxtur</span>
                 <span class="text-2xl font-black text-blue-600 dark:text-blue-400">${fornecedorCount + agaxturCount}</span>
@@ -692,7 +692,7 @@ export class ReembolsosPage {
               <span class="w-10 h-10 bg-blue-50 dark:bg-blue-950/45 text-blue-500 dark:text-blue-400 rounded-2xl text-base font-extrabold flex items-center justify-center shrink-0">✈️</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-5 rounded-3xl shadow-sm flex items-center justify-between">
               <div>
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Valor Aprovado Total</span>
                 <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">R$ ${somaTotalAprovado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -778,7 +778,7 @@ export class ReembolsosPage {
               </div>
             ` : `
               <!-- Mobile View: Cards -->
-              <div class="block md:hidden p-4 space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar">
+              <div class="block md:hidden p-3.5 sm:p-4 space-y-3.5">
                 ${filtrados.map(r => this.renderMobileCard(r)).join('')}
               </div>
 
