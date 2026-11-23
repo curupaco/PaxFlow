@@ -8,77 +8,84 @@
 
 ## Sumário
 
-1. [Visão Geral e Proposta de Valor](#1-visão-geral-e-proposta-de-valor)
-2. [Público-Alvo](#2-público-alvo)
-3. [Módulos e Funcionalidades](#3-módulos-e-funcionalidades)
-   - 3.1 [Inbox](#31-inbox)
-   - 3.2 [Viagens](#32-viagens)
-   - 3.3 [Orçamentos](#33-orçamentos)
-   - 3.4 [Clientes](#34-clientes)
-   - 3.5 [Reembolsos](#35-reembolsos)
-   - 3.6 [Configurações](#36-configurações)
-   - 3.7 [Quadro de Planejamento Interno (Todo Kanban)](#37-quadro-de-planejamento-interno-todo-kanban)
-   - 3.8 [Navegação e UI Shell Premium](#38-navegação-e-ui-shell-premium)
-   - 3.9 [Sistema de Gamificação e Perfis](#39-sistema-de-gamificação-e-perfis)
-   - 3.10 [Módulo de Cadastros](#310-módulo-de-cadastros)
-   - 3.11 [Localização de Erros e Tradutor Global (I18n)](#311-localização-de-erros-e-tradutor-global-i18n)
-   - 3.12 [Dashboard de Resultados (Analytics) e Relatórios Gerenciais](#312-dashboard-de-resultados-analytics-e-relatórios-gerenciais)
-   - 3.13 [Sistema de Comentários, Notas, Menções e Agendamento Automático](#313-sistema-de-comentários-notas-menções-e-agendamento-automático)
-   - 3.14 [Exclusão Administrativa e Políticas de Delegação (RBAC)](#314-exclusão-administrativa-e-políticas-de-delegação-rbac)
-   - 3.15 [Itinerário Digital Interativo Público](#315-itinerário-digital-interativo-público)
-   - 3.16 [Pesquisa NPS Pós-Viagem Pública](#316-pesquisa-nps-pós-viagem-pública)
-   - 3.17 [Hub de Modelos de Mensagens (WhatsApp)](#317-hub-de-modelos-de-mensagens-whatsapp)
-   - 3.18 [Campanhas de Vendas & Leaderboard](#318-campanhas-de-vendas--leaderboard)
-   - 3.19 [Códigos de Referência Internos Sequenciais (ORC, VIA, RBS, CLI)](#319-códigos-de-referência-internos-sequenciais-orc-via-rbs-cli)
-   - 3.20 [Validação Automatizada de Viagens e Conferência de Processos](#320-validação-automatizada-de-viagens-e-conferência-de-processos)
-   - 3.21 [Configurações de Identidade Visual (White-Label Branding)](#321-configurações-de-identidade-visual-white-label-branding)
-   - 3.22 [Alertas Automatizados de Pré-Embarque e Pós-Viagem NPS](#322-alertas-automatizados-de-pré-embarque-e-pós-viagem-nps)
-   - 3.23 [Métricas Avançadas de Performance e Rendimento de Equipe](#323-métricas-avançadas-de-performance-e-rendimento-de-equipe)
-   - 3.24 [Central Administrativa de Escala de Funcionários](#324-central-administrativa-de-escala-de-funcionários)
-   - 3.25 [Redesenho de Usabilidade Mobile da Gestão de Viagens](#325-redesenho-de-usabilidade-mobile-da-gestão-de-viagens)
-   - 3.26 [PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100)](#326-paxflow-risk-score-diagnóstico-preditivo-de-saúde-operacional-0-a-100)
-   - 3.27 [Relatório de Embarque e Rastreamento de Contato Pré-Embarque](#327-relatório-de-embarque-e-rastreamento-de-contato-pré-embarque)
-   - 3.28 [Next Trip Engine™ (Motor Heurístico & Estatístico de Recompra & Ciclo de Vida do Viajante)](#328-next-trip-engine-motor-heurístico--estatístico-de-recompra--ciclo-de-vida-do-viajante)
-   - 3.29 [PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)](#329-paxflow-upsell-engine-motor-preditivo-de-oportunidades--ticket-médio)
-   - 3.30 [PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem)](#330-paxflow-studio-criação-de-propostas-digitais-de-luxo--cadernos-de-viagem)
-   - 3.31 [Gestão Inteligente de Anexos e Documentos (Clientes e Viagens)](#331-gestão-inteligente-de-anexos-e-documentos-clientes-e-viagens)
-   - 3.32 [Melhorias de Usabilidade, Produtividade e Feedback Visual de UX (Plano 1)](#332-melhorias-de-usabilidade-produtividade-e-feedback-visual-de-ux-plano-1)
-   - 3.33 [Melhorias de Eficiência Operacional, Pipeline e Ações Rápidas de UX (Plano 2)](#333-melhorias-de-eficiência-operacional-pipeline-e-ações-rápidas-de-ux-plano-2)
-   - 3.34 [Experiência Premium, Inteligência Relacional e Microinterações de UX (Plano 3)](#334-experiência-premium-inteligência-relacional-e-microinterações-de-ux-plano-3)
-   - 3.35 [Atalho Rápido e Modal de Cadastro do Cliente na Venda](#335-atalho-rápido-e-modal-de-cadastro-do-cliente-na-venda)
-   - 3.36 [PaxFlow FinRecon™ (Módulo de Conciliação Bancária & Fechamento Contábil)](#336-paxflow-finrecon-módulo-de-conciliação-bancária--fechamento-contábil)
-   - 3.37 [Design System de Tabelas, Proporções e Padronização Visual PaxFlow](#337-design-system-de-tabelas-proporções-e-padronização-visual-paxflow)
-   - 3.38 [Painel de Filtros Avançados Combináveis, Resumo Financeiro & Exportação CSV de Viagens](#338-painel-de-filtros-avançados-combináveis-resumo-financeiro--exportação-csv-de-viagens)
-   - 3.39 [Tabela Operacional Desktop, Cards Mobile & Gestos Swipe (ViagensTableView.ts)](#339-tabela-operacional-desktop-cards-mobile--gestos-swipe-viagenstableviewts)
-   - 3.40 [Transições de Status, Criação de Viagem & Modo Co-Piloto Balcão (NovaViagemModal, ViagensTransicaoManager, BalcaoCopilotoSection)](#340-transições-de-status-criação-de-viagem--modo-co-piloto-balcão-novaviagemmodal-viagenstransicaomanager-balcaocopilotosection)
-   - 3.41 [Melhorias Estratégicas em Relatórios e Central de Lembretes](#341-melhorias-estratégicas-em-relatórios-e-central-de-lembretes)
-   - 3.42 [Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos](#342-governança-de-desistências-check-de-contato-do-gestor--reabertura-de-orçamentos)
-   - 3.43 [Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional](#343-arquitetura-de-web-push-server-side-exclusão-em-cascata--integridade-transacional)
-   - 3.44 [Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil](#344-agregação-segura-de-produtos--junção-de-viagens-com-proteção-contábil)
-   - 3.45 [Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique](#345-assistente-de-remarcação-de-viagens-com-blindagem-contábil-em-1-clique)
-   - 3.46 [Divisão de Viagens, Comissões e Parcerias entre Consultores (com Rateio de RAV Aérea)](#346-divisão-de-viagens-comissões-e-parcerias-entre-consultores-com-rateio-de-rav-aérea)
-   - 3.47 [Redesign e Organização em 5 Abas do Gerenciador de Viagens](#347-redesign-e-organização-em-5-abas-do-gerenciador-de-viagens)
-   - 3.48 [Ergonomia Visual, Barras de Rolagem de Alto Contraste & Indicador de Transbordo (Scroll Fade)](#348-ergonomia-visual-barras-de-rolagem-de-alto-contraste--indicador-de-transbordo-scroll-fade)
-   - 3.49 [Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial](#349-rateio-integral-de-parcerias-e-rav-no-módulo-de-relatórios-e-dashboard-comercial)
-   - 3.50 [Módulo de Campanhas & Segmentação Comercial de Base](#350-módulo-de-campanhas--segmentação-comercial-de-base)
-   - 3.51 [Painel Analítico de Pesquisa de Satisfação (NPS)](#351-painel-analítico-de-pesquisa-de-satisfação-nps)
-   - 3.52 [Ergonomia do Painel de Relatórios & Menu Lateral Retrátil](#352-ergonomia-do-painel-de-relatórios--menu-lateral-retrátil)
-   - 3.53 [Módulo Financeiro de Contas a Pagar, Remessas & Plano de Contas](#353-módulo-financeiro-de-contas-a-pagar-remessas--plano-de-contas)
-   - 3.54 [Identificação Visual de Participações & Módulos na Gestão de Equipe](#354-identificação-visual-de-participações--módulos-na-gestão-de-equipe)
-   - 3.55 [Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral](#355-unificação-do-módulo-financeiro--submenu-indentado-na-barra-lateral)
-   - 3.56 [Polimento Visual, UX Responsiva Mobile-First & Scorecards do Financeiro](#356-polimento-visual-ux-responsiva-mobile-first--scorecards-do-financeiro)
-   - 3.57 [Apresentação Comercial Oficial & Vitrine de Produto (/conheca)](#357-apresentação-comercial-oficial--vitrine-de-produto-conheca)
-   - 3.58 [Arquitetura de Alta Performance da Central de Relatórios & Cache por Competência](#358-arquitetura-de-alta-performance-da-central-de-relatórios--cache-por-competência)
-   - 3.59 [Arquitetura de Alta Performance do Painel Comercial & Otimização de Competência](#359-arquitetura-de-alta-performance-do-painel-comercial--otimização-de-competência)
-   - 3.60 [Arquitetura de Alta Performance da Central de Reembolsos & Gestão de SLAs](#360-arquitetura-de-alta-performance-da-central-de-reembolsos--gestão-de-slas)
-   - 3.61 [Arquitetura de Alta Performance da Conciliação Bancária & Smart Match Indexado](#361-arquitetura-de-alta-performance-da-conciliação-bancária--smart-match-indexado)
-4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
-5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
-6. [Segurança e Conformidade](#6-segurança-e-conformidade)
-7. [Integrações](#7-integrações)
-8. [Modelos de Implantação](#8-modelos-de-implantação)
-9. [Fluxo de Implantação para Novos Clientes](#9-fluxo-de-implantação-para-novos-clientes)
-10. [FAQ Comercial](#10-faq-comercial)
+- [1. Visão Geral e Proposta de Valor](#1-visão-geral-e-proposta-de-valor)
+- [2. Público-Alvo](#2-público-alvo)
+- [3. Módulos e Funcionalidades](#3-módulos-e-funcionalidades)
+  - [Inbox](#31-inbox)
+  - [Viagens](#32-viagens)
+  - [Orçamentos](#33-orçamentos)
+  - [Clientes](#34-clientes)
+  - [Reembolsos](#35-reembolsos)
+  - [Configurações](#36-configurações)
+  - [Quadro de Planejamento Interno (Todo Kanban)](#37-quadro-de-planejamento-interno-todo-kanban)
+  - [Navegação e UI Shell Premium](#38-navegação-e-ui-shell-premium)
+  - [Sistema de Gamificação e Perfis](#39-sistema-de-gamificação-e-perfis)
+  - [Módulo de Cadastros](#310-módulo-de-cadastros)
+  - [Localização de Erros e Tradutor Global (I18n)](#311-localização-de-erros-e-tradutor-global-i18n)
+  - [Dashboard de Resultados (Analytics) e Relatórios Gerenciais](#312-dashboard-de-resultados-analytics-e-relatórios-gerenciais)
+  - [Sistema de Comentários, Notas, Menções e Agendamento Automático](#313-sistema-de-comentários-notas-menções-e-agendamento-automático)
+  - [Exclusão Administrativa e Políticas de Delegação (RBAC)](#314-exclusão-administrativa-e-políticas-de-delegação-rbac)
+  - [Itinerário Digital Interativo Público](#315-itinerário-digital-interativo-público)
+  - [Pesquisa NPS Pós-Viagem Pública](#316-pesquisa-nps-pós-viagem-pública)
+  - [Hub de Modelos de Mensagens (WhatsApp)](#317-hub-de-modelos-de-mensagens-whatsapp)
+  - [Campanhas de Vendas & Leaderboard](#318-campanhas-de-vendas-leaderboard)
+  - [Códigos de Referência Internos Sequenciais (ORC, VIA, RBS, CLI)](#319-códigos-de-referência-internos-sequenciais-orc-via-rbs-cli)
+  - [Validação Automatizada de Viagens e Conferência de Processos](#320-validação-automatizada-de-viagens-e-conferência-de-processos)
+  - [Configurações de Identidade Visual (White-Label Branding)](#321-configurações-de-identidade-visual-white-label-branding)
+  - [Alertas Automatizados de Pré-Embarque e Pós-Viagem NPS](#322-alertas-automatizados-de-pré-embarque-e-pós-viagem-nps)
+  - [Métricas Avançadas de Performance, Rendimento de Equipe & Console de Pacing](#323-métricas-avançadas-de-performance-rendimento-de-equipe-console-de-pacing)
+  - [Central Administrativa de Escala de Funcionários](#324-central-administrativa-de-escala-de-funcionários)
+  - [Redesenho de Usabilidade Mobile da Gestão de Viagens](#325-redesenho-de-usabilidade-mobile-da-gestão-de-viagens)
+  - [PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100)](#326-paxflow-risk-score-diagnóstico-preditivo-de-saúde-operacional-0-a-100)
+  - [Relatório de Embarque e Rastreamento de Contato Pré-Embarque](#327-relatório-de-embarque-e-rastreamento-de-contato-pré-embarque)
+  - [Next Trip Engine™ (Motor Heurístico & Estatístico de Recompra & Ciclo de Vida do Viajante)](#328-next-trip-engine-motor-heurístico-estatístico-de-recompra-ciclo-de-vida-do-viajante)
+  - [PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)](#329-paxflow-upsell-engine-motor-preditivo-de-oportunidades-ticket-médio)
+  - [PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem)](#330-paxflow-studio-criação-de-propostas-digitais-de-luxo-cadernos-de-viagem)
+  - [Gestão Inteligente de Anexos e Documentos (Clientes e Viagens)](#331-gestão-inteligente-de-anexos-e-documentos-clientes-e-viagens)
+  - [Melhorias de Usabilidade, Produtividade e Feedback Visual de UX (Plano 1)](#332-melhorias-de-usabilidade-produtividade-e-feedback-visual-de-ux-plano-1)
+  - [Melhorias de Eficiência Operacional, Pipeline e Ações Rápidas de UX (Plano 2)](#333-melhorias-de-eficiência-operacional-pipeline-e-ações-rápidas-de-ux-plano-2)
+  - [Experiência Premium, Inteligência Relacional e Microinterações de UX (Plano 3)](#334-experiência-premium-inteligência-relacional-e-microinterações-de-ux-plano-3)
+  - [Atalho Rápido e Modal de Cadastro do Cliente na Venda](#335-atalho-rápido-e-modal-de-cadastro-do-cliente-na-venda)
+  - [PaxFlow FinRecon™ (Módulo de Conciliação Bancária & Fechamento Contábil)](#336-paxflow-finrecon-módulo-de-conciliação-bancária-fechamento-contábil)
+  - [Design System de Tabelas, Proporções e Padronização Visual PaxFlow](#337-design-system-de-tabelas-proporções-e-padronização-visual-paxflow)
+  - [Painel de Filtros Avançados Combináveis, Resumo Financeiro & Exportação CSV de Viagens](#338-painel-de-filtros-avançados-combináveis-resumo-financeiro-exportação-csv-de-viagens)
+  - [Tabela Operacional Desktop, Cards Mobile & Gestos Swipe (ViagensTableView.ts)](#339-tabela-operacional-desktop-cards-mobile-gestos-swipe-viagenstableviewts)
+  - [Transições de Status, Criação de Viagem & Modo Co-Piloto Balcão (NovaViagemModal, ViagensTransicaoManager, BalcaoCopilotoSection)](#340-transições-de-status-criação-de-viagem-modo-co-piloto-balcão-novaviagemmodal-viagenstransicaomanager-balcaocopilotosection)
+  - [Melhorias Estratégicas em Relatórios e Central de Lembretes](#341-melhorias-estratégicas-em-relatórios-e-central-de-lembretes)
+  - [Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos](#342-governança-de-desistências-check-de-contato-do-gestor-reabertura-de-orçamentos)
+  - [Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional](#343-arquitetura-de-web-push-server-side-exclusão-em-cascata-integridade-transacional)
+  - [Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil](#344-agregação-segura-de-produtos-junção-de-viagens-com-proteção-contábil)
+  - [Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique](#345-assistente-de-remarcação-de-viagens-com-blindagem-contábil-em-1-clique)
+  - [Divisão de Viagens, Comissões e Parcerias entre Consultores (com Rateio de RAV Aérea)](#346-divisão-de-viagens-comissões-e-parcerias-entre-consultores-com-rateio-de-rav-aérea)
+  - [Redesign e Organização em 5 Abas do Gerenciador de Viagens](#347-redesign-e-organização-em-5-abas-do-gerenciador-de-viagens)
+  - [Ergonomia Visual, Barras de Rolagem de Alto Contraste & Indicador de Transbordo (Scroll Fade)](#348-ergonomia-visual-barras-de-rolagem-de-alto-contraste-indicador-de-transbordo-scroll-fade)
+  - [Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial](#349-rateio-integral-de-parcerias-e-rav-no-módulo-de-relatórios-e-dashboard-comercial)
+  - [Módulo de Campanhas & Segmentação Comercial de Base](#350-módulo-de-campanhas-segmentação-comercial-de-base)
+  - [Painel Analítico de Pesquisa de Satisfação (NPS)](#351-painel-analítico-de-pesquisa-de-satisfação-nps)
+  - [Ergonomia do Painel de Relatórios & Menu Lateral Retrátil](#352-ergonomia-do-painel-de-relatórios-menu-lateral-retrátil)
+  - [Módulo Financeiro de Contas a Pagar, Remessas & Plano de Contas](#353-módulo-financeiro-de-contas-a-pagar-remessas-plano-de-contas)
+  - [Identificação Visual de Participações & Módulos na Gestão de Equipe](#354-identificação-visual-de-participações-módulos-na-gestão-de-equipe)
+  - [Unificação do Módulo Financeiro & Submenu Indentado na Barra Lateral](#355-unificação-do-módulo-financeiro-submenu-indentado-na-barra-lateral)
+  - [Polimento Visual, UX Responsiva Mobile-First & Scorecards do Financeiro](#356-polimento-visual-ux-responsiva-mobile-first-scorecards-do-financeiro)
+  - [Apresentação Comercial Oficial & Vitrine de Produto (/conheca)](#357-apresentação-comercial-oficial-vitrine-de-produto-conheca)
+  - [Arquitetura de Alta Performance da Central de Relatórios & Cache por Competência](#358-arquitetura-de-alta-performance-da-central-de-relatórios-cache-por-competência)
+  - [Arquitetura de Alta Performance do Painel Comercial & Otimização de Competência](#359-arquitetura-de-alta-performance-do-painel-comercial-otimização-de-competência)
+  - [Arquitetura de Alta Performance da Central de Reembolsos & Gestão de SLAs](#360-arquitetura-de-alta-performance-da-central-de-reembolsos-gestão-de-slas)
+  - [Arquitetura de Alta Performance da Conciliação Bancária & Smart Match Indexado](#361-arquitetura-de-alta-performance-da-conciliação-bancária-smart-match-indexado)
+  - [Arquitetura de Alta Performance do Módulo de Viagens e Modal de Detalhes](#362-arquitetura-de-alta-performance-do-módulo-de-viagens-e-modal-de-detalhes)
+  - [Evolução Visual PaxFlow: Tipografia Tabular, Paleta Mineral & Microinterações](#363-evolução-visual-paxflow-tipografia-tabular-paleta-mineral-microinterações)
+  - [Governança Estrita de Banco de Dados, Saneamento de Schema & Padrão Fail-Fast](#364-governança-estrita-de-banco-de-dados-saneamento-de-schema-padrão-fail-fast)
+  - [Desacoplamento Total dos Filtros de Conferência (Financeiro e Processo)](#365-desacoplamento-total-dos-filtros-de-conferência-financeiro-e-processo)
+  - [Harmonização e Integridade de Fechamento Contábil & Rateio de Divisões de Vendas](#366-harmonização-e-integridade-de-fechamento-contábil-rateio-de-divisões-de-vendas)
+  - [Blindagem de Projeções Relacionais e Consistência de Dados em Tempo Real](#367-blindagem-de-projeções-relacionais-e-consistência-de-dados-em-tempo-real)
+  - [Rolagem Natural Mobile & Modo Foco na Busca (iPhone / Smartphones)](#368-rolagem-natural-mobile-modo-foco-na-busca-iphone-smartphones)
+- [4. Diferenciais Competitivos](#4-diferenciais-competitivos)
+- [5. Arquitetura Tecnológica](#5-arquitetura-tecnológica)
+- [6. Segurança e Conformidade](#6-segurança-e-conformidade)
+- [7. Integrações](#7-integrações)
+- [8. Modelos de Implantação](#8-modelos-de-implantação)
+- [9. Fluxo de Implantação para Novos Clientes](#9-fluxo-de-implantação-para-novos-clientes)
+- [10. FAQ Comercial](#10-faq-comercial)
 
 ---
 
@@ -1349,7 +1356,7 @@ Para consolidar as garantias de segurança cibernética, integridade referencial
 
 1. **Web Push 100% Server-Side via Edge Functions & Proteção VAPID**:
    - **Isolamento de Credenciais**: A chave privada VAPID (`JWK / d`) foi removida do bundle JavaScript do frontend, passando a residir exclusivamente em variáveis de ambiente seguras (`Deno.env.get('VAPID_PRIVATE_KEY')`) na Edge Function `send-push`.
-   - **Validação de Autenticação**: Requisições de push exigem cabeçalho `Authorization: Bearer <JWT>` com validação de usuário no Supabase Auth antes do envio.
+   - **Validação de Autenticação**: Requisições de push exigem cabeçalho ``Authorization: Bearer <JWT>`` com validação de usuário no Supabase Auth antes do envio.
    - **Sincronização Não Intrusiva**: A solicitação de permissão no navegador deixa de ser executada de forma automática no boot quando em estado `default`, sendo solicitada apenas mediante consentimento voluntário ou sincronizada silenciosamente quando já concedida (`granted`).
 
 2. **Exclusão de Viagens em Cascata com Integridade Referencial**:
@@ -1829,6 +1836,124 @@ O módulo de Conciliação Bancária (`src/pages/Conciliacao.ts` e `src/services
 3. **Casamento 1-Clique em Memória**:
    - Ações de conciliação assistida e confirmações de Smart Match atualizam o status das transações e contadores em memória (`aplicarConciliacaoEmMemoria`), removendo a pendência pareada e recalculando as taxas locais sem refazer requisições de listagem completa.
 
+
+---
+
+### 3.62 Arquitetura de Alta Performance do Módulo de Viagens e Modal de Detalhes
+
+Otimização estrutural de latência de rede e processamento no módulo operacional de Viagens (`Dashboard.ts`, `EditTravelModal.ts` e `balcaoService.ts`):
+
+1. **Paralelização em Rodada Única (`Promise.all`)**:
+   - Abertura de viagens desacoplada do modelo sequencial: todas as consultas independentes (dados da viagem, localizadores, divisões de consultores, formas de recebimento e pagamentos) são disparadas simultaneamente via `Promise.all`.
+   - Redução drástica do tempo de espera de rede de ~2,5s para ~250ms na abertura da ficha da viagem.
+
+2. **Eliminação de Consultas Redundantes**:
+   - Reutilização dos produtos e conferências de localizador já recebidos no payload mestre da viagem, suprimindo requisições repetidas a `produtos_viagem` e `loc_conferencias`.
+
+3. **Carga Inteligente de Clientes (Lazy Loading)**:
+   - Eliminação do download irrestrito da tabela inteira de clientes (`SELECT id, nome FROM clientes`) a cada clique.
+   - O modal inicializa apenas com o cliente titular da viagem selecionado, ativando busca paginada com limite de 200 registros sob demanda exclusivamente se o operador focar no seletor para alteração de titularidade.
+
+4. **Abertura Direta de Viagens Pesquisadas**:
+   - Supressão do pré-fetch redundante no clique dos resultados da busca global/balcão, transferindo a responsabilidade diretamente para o modal otimizado.
+
+5. **Atualização Cirúrgica em Memória (`atualizarViagemEmMemoria`)**:
+   - Ao salvar alterações ou atualizar produtos no modal de viagens, o sistema atualiza cirurgicamente a entidade correspondente na lista local em memória (`this.viagens`), re-renderizando a interface de forma instantânea sem disparar o download de toda a base de viagens.
+
+---
+
+### 3.63 Evolução Visual PaxFlow: Tipografia Tabular, Paleta Mineral & Microinterações
+
+#### 3.63.1 Fundação Tipográfica Numérica Tabular (`tnum`)
+Para erradicar a instabilidade visual causada por números dançantes em tabelas de faturamento, DRE, conciliação e rateio de RAV, foi adotada a fundação OpenType `tnum` (Tabular Numbers) associada ao conjunto estilístico alternativo `cv05`.
+- **Comportamento**: Todos os algarismos de 0 a 9 compartilham milimetricamente a mesma largura de avanço horizontal.
+- **Escopo**: Ativado nativamente em `src/index.css` para elementos `table td`, `.kpi-value`, `[data-mask="currency"]` e classes `.tabular-nums`.
+
+#### 3.63.2 Paleta Mineral de 4 Níveis & Elevação de 1px
+Substituição da base escura plana por uma estratificação física mineral de quatro camadas projetada para anular o cansaço ocular de operadores contínuos:
+1. **Nível 0 — Fundação (`#090d16` / `#fafbfc`)**: Tela de fundo base mineral sem pretos absolutos.
+2. **Nível 1 — Estrutura (`#0f1523` / `#ffffff`)**: Cards principais com borda fina de `1px` (`rgba(255, 255, 255, 0.07)` no dark).
+3. **Nível 2 — Elevação Superior (`#161e31`)**: Modais, gavetas de risco e popovers com micro-reflexo superior `inset 0 1px 0 0 rgba(255, 255, 255, 0.08)`.
+4. **Nível 3 — Ativação & Hover (`#1e293f`)**: Células ativas e estados de foco.
+
+#### 3.63.3 Status Dots & Revelação Elegante
+Nas listagens densas de viagens e orçamentos, caixas retangulares pesadas foram substituídas por indicadores pontuais iluminados:
+- **Status Dots**: `🟢 Fechado`, `🟡 Pós-Venda`, `🟠 Pré-Embarque`, `🔵 Pós-Viagem`, `🔴 Reembolso Solicitado`.
+- **Revelação Elegante**: Botões operacionais mantêm repouso com opacidade atenuada em `75%`, acendendo suavemente para `100%` ao passar o mouse sobre a linha da tabela (`group-hover:opacity-100` em 150ms).
+
+---
+
+### 3.64 Governança Estrita de Banco de Dados, Saneamento de Schema & Padrão Fail-Fast
+
+#### 3.64.1 Eliminação do Mascaramento "Zero-Drift"
+Historicamente, alguns módulos continham tratamentos defensivos que capturavam erros de código `42703` (coluna inexistente) e `42P01` (relação inexistente) do PostgreSQL, empacotando dados oficiais em campos de texto livre (`observacoes`, `_paxflow_meta`) ou gerando identificadores temporários em memória.
+Essa prática foi **100% expurgada**:
+1. **Padrão Fail-Fast Transparente**: Se uma coluna ou tabela oficial não estiver presente no banco remoto, a aplicação emite aviso claro de schema desatualizado em vez de falhar silenciosamente ou renderizar dados zerados.
+2. **Schema Real Consolidado**: Todas as entidades do PaxFlow (`studio_propostas`, `documentos_anexos`, `viagens_divisoes`, `origens_lead`, `campanhas_presets`, `gamification_celebrations`, `profiles.participa_metricas`, `profiles.acesso_financeiro`, etc.) possuem colunas físicas oficiais formalizadas em migração DDL.
+3. **Alinhamento do Painel Comercial e Dashboard**: As consultas do Dashboard de Resultados foram corrigidas para consultar estritamente as colunas existentes de `produtos_viagem` (`tipo`, `comissao`, `markup`, `rav`, `valor_venda`) com formatação temporal ISO `YYYY-MM-DD`, garantindo que todas as vendas e faturamento de períodos correntes e históricos sejam apurados e exibidos com precisão cirúrgica.
+
+#### 3.64.2 Erradicação de Dados Mockados, Fallbacks Locais e Migração de Anexos
+1. **Expurgo Total de Mocks e Fallbacks Inventados**:
+   - `metasService`: Eliminada a rotina de simulação em memória (`initialMetas`) e CRUD local em `localStorage` (`sandbox-meta-periodos`). Metas e faixas de premiação são persistidas e lidas estritamente do banco de dados remoto (`campaigns` / `faixas_premiacao`).
+   - `finPlanoContasService`: Eliminadas as constantes estáticas (`TIPOS_CUSTO_FALLBACK`, `CATEGORIAS_FALLBACK`, `CONTAS_BANCARIAS_FALLBACK`). Se o banco estiver vazio, o sistema exibe estado limpo em vez de inventar contas fictícias.
+   - `main.ts`: Eliminado perfil demonstrativo fictício (`Consultor Demonstrativo / admin`) no fluxo de autenticação.
+   - `avatars.ts` e `supabase.ts`: Expurgo de `paxflow-user-avatars` em `localStorage`. A fonte exclusiva para imagem ou ícone de consultor é a coluna `profiles.avatar_url`.
+2. **Recuperação e Migração de Anexos Legados**:
+   - Resgate dos metadados de 11 documentos reais armazenados no legado de `viagens.observacoes` (`<!-- PAXFLOW_ANEXOS -->`), migrando-os diretamente para a tabela física `documentos_anexos`.
+   - Ajuste de políticas de segurança (RLS) em `storage.objects` para o bucket `documentos-clientes`, garantindo autorização de leitura e upload para consultores autenticados e eliminando o erro de `Object not found`.
+
+### 3.65 Desacoplamento Total dos Filtros de Conferência (Financeiro e Processo)
+1. **Independência Operacional Absoluta**:
+   - Os filtros de conferência (`⏳ Fin. Pendente`, `✅ Fin. OK`, `⏳ Proc. Pendente`, `✅ Proc. OK`) foram 100% desacoplados do status ou etapa da viagem (seja Fechado, Pós-Venda, Pré-Embarque ou Pós-Viagem).
+2. **Fidelidade da Conferência Financeira (`isFinanceiroConferido`)**:
+   - Uma viagem é considerada com `isFinanceiroConferido = true` exclusivamente quando possui produtos cadastrados e todos os seus Localizadores (LOCs) únicos possuem auditoria confirmada (`loc_conferencias` com `conferido = true`), refletindo com exatidão o indicador visual `💸 FINANCEIRO (N/N)` do modal de viagem.
+3. **Fidelidade da Conferência de Processo (`isProcessoConferido`)**:
+   - Uma viagem é considerada com `isProcessoConferido = true` exclusivamente com base no valor real do campo `processo_conferido = true` da viagem.
+4. **Sincronização Reativa em Tempo Real**:
+   - As ações de marcar ou desmarcar a conferência de um LOC ou do processo disparam a atualização imediata em memória no Dashboard (`onUpdate`), garantindo que listagens e filtros reflitam o estado auditado em tempo real sem demandar recarregamento de página.
+
+### 3.66 Harmonização e Integridade de Fechamento Contábil & Rateio de Divisões de Vendas
+1. **Rateio Proporcional em Relatórios de Faturamento (`calcularFaturamentoLucratividade`)**:
+   - O cálculo financeiro de Faturamento e Lucratividade do Painel de Relatórios Gerenciais passa a integrar obrigatoriamente o `ViagensDivisoesService`.
+   - Ao filtrar por consultor específico, as métricas de Venda, Taxas, Comissão, Markup, RAV e Rentabilidade Líquida são rigorosamente multiplicadas pelas respectivas fatias de participação (`fatiaVenda` e `fatiaRav`), erradicando a soma de 100% indevida em viagens compartilhadas.
+2. **Competência Financeira Estrita em Relatórios & Desativação de Conflito de Mês Corrente**:
+   - Nas abas financeiras de faturamento e auditoria, a agregação temporal respeita exclusivamente o campo `data_financeiro`, impedindo que viagens sem competência financeira fechada poluam o resultado contábil do mês.
+   - Quando o operador aplica um filtro de período explícito (ex: Data Financeira no menu Avançado do Dashboard), a trava de Mês Corrente é automaticamente desativada, evitando que viagens da competência solicitada sejam excluídas por não terem sido criadas no mês de calendário atual.
+3. **Unificação Integral do Motor Financeiro (Comissão, Markup e RAV)**:
+   - Em todos os módulos (`calcularFinanceiroProduto`, Painel Operacional, Relatórios e Exportação CSV), a rentabilidade líquida consolida de forma unificada: `Rentabilidade = Comissão + Markup + (RAV × 0.88)` para qualquer tipo de produto cadastrado. Se uma passagem aérea ou pacote possuir Markup ou RAV, estes valores são computados com fidelidade ao centavo em todas as visões.
+4. **Desmembramento de Cotas na Exportação Geral CSV para Excel**:
+   - Na exportação geral consolidada do Dashboard (`DashboardExportManager`), viagens que possuem divisão de vendas entre múltiplos consultores são desdobradas em linhas dedicadas por consultor participante, estampando o nome do respectivo parceiro, a cota percentual no identificador (`VIA-XXXX (50%)`) e os valores rateados de venda e rentabilidade.
+   - Isso garante que a Tabela Dinâmica do Excel agrupando por `Consultor Responsável` coincida rigorosamente ao centavo com o Dashboard Operacional e o Painel de Relatórios Gerenciais.
+5. **Propagação de LOC no Pré-Embarque e Auto-Recuperação de Tipos de Produto**:
+   - O serviço de contatos de pré-embarque reconhece variações de tipos aéreos (`Cias aéreas`, `Passagem aérea`, etc.) e propaga o LOC do lote/aéreo para trechos de ida e volta, impedindo a exibição de "S/ LOC".
+   - O modal de edição de viagem e produtos (`EditTravelModal`) executa auto-recuperação direta do banco caso a lista de tipos chegue vazia, impedindo que o seletor fique em branco.
+
+### 3.67 Blindagem de Projeções Relacionais e Consistência de Dados em Tempo Real
+1. **Auditoria Cirúrgica de Projeções do Supabase**:
+   - Varredura e enriquecimento de consultas em todos os módulos onde selects restritivos causavam omissão de dados no frontend.
+   - **Central de Reembolsos e Relatórios Financeiros**: Inclusão mandatória de `codigo_localizador` de viagens e `descricao, codigo_reserva, status` de produtos em selects diretos e de viagens órfãs, eliminando campos em branco nas tabelas e no modal de edição de reembolsos.
+   - **Relatório de Embarque e Contatos Pré-Embarque**: Seleção explícita de `contatos_embarque` e priorização absoluta do código localizador (`codigo_reserva` do produto aéreo) sobre o localizador geral da viagem, garantindo fidelidade operacional por trecho.
+   - **Relatório de Inteligência e Origem de Aquisição**: Inclusão de `origem` e `valor_viagem` no select de orçamentos e viagens, permitindo a classificação precisa dos canais de captação de clientes sem agrupamento indevido em "Outros".
+   - **Validação de Transição para Pós-Venda**: Adição do campo `tipo` no select de validação de `produtos_viagem` em `EditTravelModal`, assegurando que produtos com RAV ou Markup não bloqueiem a transição por cálculo financeiro incompleto.
+   - **Normalização Snake-Case & Compatibilidade**: Ajuste em `ViagensTableView` e `BalcaoCopilotoSection` para ler consistentemente `codigo_ref` e `consultor_id`, eliminando discrepâncias visuais de tags e duplicações no co-piloto.
+
+### 3.68 Rolagem Natural Mobile & Modo Foco na Busca (iPhone / Smartphones)
+1. **Erradicação de Contêineres Presos e Rolagens Duplas**:
+   - **Viagens (`Dashboard.ts`, `ViagensTableView.ts`)**: No mobile (`< 768px`), `.dashboard-container` utiliza `min-height` e `height: auto` sem `overflow-hidden`, e a listagem de cards mobile flui naturalmente na página sem `overflow-y-auto` aninhado.
+   - **Orçamentos (`Orcamentos.ts`)**: Limites `max-h-[700px] overflow-y-auto` das colunas foram restritos ao desktop (`md:overflow-y-auto md:max-h-[700px]`).
+   - **Reembolsos (`Reembolsos.ts`)**: Removido `max-h-[600px] overflow-y-auto` da lista mobile e compactados os 4 cards de KPIs para grade `2x2` no celular.
+   - **Inbox (`AlertsFeed.ts`, `CalendarView.ts`)**: Travas `max-h-[calc(100vh-310px)] overflow-y-auto` restritas a `md:`.
+   - **Clientes (`Clientes.ts`)**: A lista lateral utiliza altura dinâmica `max-h-[calc(100dvh-230px)]` no mobile para preservar o evento de scroll infinito com máximo aproveitamento vertical.
+   - **Next Trip Engine (`NextTripPage.ts`)**: Grade de KPIs compactada para `2x2` no celular e rolagem unificada na página.
+2. **Modo Foco na Pesquisa & Correção da Busca Global (`GlobalHeaderSearch.ts`)**:
+   - Ao acionar `Enter` ou clicar na lupa na barra global, o dropdown do Co-Piloto é fechado e `input.blur()` recolhe o teclado virtual no celular.
+   - Com termo de busca ativo no mobile, o widget Next Trip e os indicadores secundários em Viagens, além dos KPIs em Reembolsos e Next Trip, são ocultados/compactados automaticamente (`hidden md:...` / `hidden sm:flex`) para priorizar os resultados filtrados.
+   - `DashboardFilterStateManager` passou a limpar corretamente `#global-search-input`, `#btn-clear-global-search` e `#global-search-dropdown` ao remover o chip de busca ou limpar todos os filtros.
+3. **Rolagem Horizontal Defensiva nas Tabelas no Mobile (`ComercialDashboard`, `Relatorios`, `Configuracoes`, `Cadastros`, `index.css`)**:
+   - Corrigida a tabela `👥 Desempenho e Ranking da Equipe` do Console Comparativo (`ComercialDashboard.ts`), removendo `min-w-[700px]` da `<div>` externa e aplicando `min-w-[760px]` diretamente na `<table>` interna com `w-full max-w-full overflow-x-auto` no contêiner pai; o mesmo padrão foi aplicado na tabela `👥 Rendimento e Performance da Equipe` da Visão Mensal.
+   - Padronizada a largura mínima (`min-w-[620px]` a `min-w-[820px]`) diretamente nas tags `<table>` dos módulos de Relatórios (Financeiro, Comercial, Operações e Inteligência), Configurações e Cadastros, garantindo que o arraste lateral funcione sem cortes em smartphones.
+   - Em `src/index.css`, o bloco `@media (max-width: 768px)` passou a exibir uma barra de rolagem fina (`4px`) em `.custom-scrollbar` para sinalizar visualmente a disponibilidade de rolagem horizontal.
+
 ---
 
 ## 4. Diferenciais Competitivos
@@ -1958,11 +2083,11 @@ O PaxFlow adota testes **subcutâneos** rigorosos para garantir integridade cont
 ### Fase 2: Setup (2-3 dias)
 
 1. Criação do projeto Supabase (ou uso da infra PaxFlow)
-2. Execução do script de modelagem do banco de dados (utilizando as DDLs e políticas RLS fornecidas no arquivo [schema.sql](../supabase/schema.sql)), seguido pela migração [add_product_detail_fields.sql](../supabase/add_product_detail_fields.sql) para suporte ao detalhamento financeiro de produtos de viagem.
+2. Execução do script de modelagem do banco de dados (utilizando as DDLs e políticas RLS fornecidas no arquivo [schema.sql](../supabase/schema.sql)), com suporte ao detalhamento financeiro e operacional de produtos de viagem já consolidado no schema oficial.
 3. Configuração de autenticação e criação dos consultores no Supabase Auth
 4. Criação dos Buckets de Storage e respectivas políticas de RLS restritas no painel do Supabase
 5. Deploy do frontend (Cloudflare Pages ou similar)
-6. _(Opcional)_ Limpeza resiliente de dados transacionais e de teste em lote utilizando o script [clean_db.sql](../supabase/clean_db.sql) para inicialização limpa da produção.
+6. _(Opcional)_ Limpeza de dados transacionais e de teste em lote para inicialização limpa do ambiente de produção.
 
 ### Fase 3: Migração de Dados (2-5 dias)
 
@@ -2026,121 +2151,6 @@ Não há limite definido. O Supabase Realtime permite dezenas de consultores ope
 Não. O PaxFlow é focado em CRM operacional e pós-venda. Recomendamos integração com sistemas financeiros especializados (Conta Azul, Omie, etc.) via API futura.
 
 ---
-
-### 3.52 Arquitetura de Alta Performance do Módulo de Viagens e Modal de Detalhes
-
-Otimização estrutural de latência de rede e processamento no módulo operacional de Viagens (`Dashboard.ts`, `EditTravelModal.ts` e `balcaoService.ts`):
-
-1. **Paralelização em Rodada Única (`Promise.all`)**:
-   - Abertura de viagens desacoplada do modelo sequencial: todas as consultas independentes (dados da viagem, localizadores, divisões de consultores, formas de recebimento e pagamentos) são disparadas simultaneamente via `Promise.all`.
-   - Redução drástica do tempo de espera de rede de ~2,5s para ~250ms na abertura da ficha da viagem.
-
-2. **Eliminação de Consultas Redundantes**:
-   - Reutilização dos produtos e conferências de localizador já recebidos no payload mestre da viagem, suprimindo requisições repetidas a `produtos_viagem` e `loc_conferencias`.
-
-3. **Carga Inteligente de Clientes (Lazy Loading)**:
-   - Eliminação do download irrestrito da tabela inteira de clientes (`SELECT id, nome FROM clientes`) a cada clique.
-   - O modal inicializa apenas com o cliente titular da viagem selecionado, ativando busca paginada com limite de 200 registros sob demanda exclusivamente se o operador focar no seletor para alteração de titularidade.
-
-4. **Abertura Direta de Viagens Pesquisadas**:
-   - Supressão do pré-fetch redundante no clique dos resultados da busca global/balcão, transferindo a responsabilidade diretamente para o modal otimizado.
-
-5. **Atualização Cirúrgica em Memória (`atualizarViagemEmMemoria`)**:
-   - Ao salvar alterações ou atualizar produtos no modal de viagens, o sistema atualiza cirurgicamente a entidade correspondente na lista local em memória (`this.viagens`), re-renderizando a interface de forma instantânea sem disparar o download de toda a base de viagens.
-
----
-
-## 3.53 Evolução Visual PaxFlow: Tipografia Tabular, Paleta Mineral & Microinterações
-
-### 3.51.1 Fundação Tipográfica Numérica Tabular (`tnum`)
-Para erradicar a instabilidade visual causada por números dançantes em tabelas de faturamento, DRE, conciliação e rateio de RAV, foi adotada a fundação OpenType `tnum` (Tabular Numbers) associada ao conjunto estilístico alternativo `cv05`.
-- **Comportamento**: Todos os algarismos de 0 a 9 compartilham milimetricamente a mesma largura de avanço horizontal.
-- **Escopo**: Ativado nativamente em `src/index.css` para elementos `table td`, `.kpi-value`, `[data-mask="currency"]` e classes `.tabular-nums`.
-
-### 3.51.2 Paleta Mineral de 4 Níveis & Elevação de 1px
-Substituição da base escura plana por uma estratificação física mineral de quatro camadas projetada para anular o cansaço ocular de operadores contínuos:
-1. **Nível 0 — Fundação (`#090d16` / `#fafbfc`)**: Tela de fundo base mineral sem pretos absolutos.
-2. **Nível 1 — Estrutura (`#0f1523` / `#ffffff`)**: Cards principais com borda fina de `1px` (`rgba(255, 255, 255, 0.07)` no dark).
-3. **Nível 2 — Elevação Superior (`#161e31`)**: Modais, gavetas de risco e popovers com micro-reflexo superior `inset 0 1px 0 0 rgba(255, 255, 255, 0.08)`.
-4. **Nível 3 — Ativação & Hover (`#1e293f`)**: Células ativas e estados de foco.
-
-### 3.51.3 Status Dots & Revelação Elegante
-Nas listagens densas de viagens e orçamentos, caixas retangulares pesadas foram substituídas por indicadores pontuais iluminados:
-- **Status Dots**: `🟢 Fechado`, `🟡 Pós-Venda`, `🟠 Pré-Embarque`, `🔵 Pós-Viagem`, `🔴 Reembolso Solicitado`.
-- **Revelação Elegante**: Botões operacionais mantêm repouso com opacidade atenuada em `75%`, acendendo suavemente para `100%` ao passar o mouse sobre a linha da tabela (`group-hover:opacity-100` em 150ms).
-
----
-
-## 3.54 Governança Estrita de Banco de Dados, Saneamento de Schema & Padrão Fail-Fast
-
-### 3.54.1 Eliminação do Mascaramento "Zero-Drift"
-Historicamente, alguns módulos continham tratamentos defensivos que capturavam erros de código `42703` (coluna inexistente) e `42P01` (relação inexistente) do PostgreSQL, empacotando dados oficiais em campos de texto livre (`observacoes`, `_paxflow_meta`) ou gerando identificadores temporários em memória.
-Essa prática foi **100% expurgada**:
-1. **Padrão Fail-Fast Transparente**: Se uma coluna ou tabela oficial não estiver presente no banco remoto, a aplicação emite aviso claro de schema desatualizado em vez de falhar silenciosamente ou renderizar dados zerados.
-2. **Schema Real Consolidado**: Todas as entidades do PaxFlow (`studio_propostas`, `documentos_anexos`, `viagens_divisoes`, `origens_lead`, `campanhas_presets`, `gamification_celebrations`, `profiles.participa_metricas`, `profiles.acesso_financeiro`, etc.) possuem colunas físicas oficiais formalizadas em migração DDL.
-3. **Alinhamento do Painel Comercial e Dashboard**: As consultas do Dashboard de Resultados foram corrigidas para consultar estritamente as colunas existentes de `produtos_viagem` (`tipo`, `comissao`, `markup`, `rav`, `valor_venda`) com formatação temporal ISO `YYYY-MM-DD`, garantindo que todas as vendas e faturamento de períodos correntes e históricos sejam apurados e exibidos com precisão cirúrgica.
-
-### 3.54.2 Erradicação de Dados Mockados, Fallbacks Locais e Migração de Anexos
-1. **Expurgo Total de Mocks e Fallbacks Inventados**:
-   - `metasService`: Eliminada a rotina de simulação em memória (`initialMetas`) e CRUD local em `localStorage` (`sandbox-meta-periodos`). Metas e faixas de premiação são persistidas e lidas estritamente do banco de dados remoto (`campaigns` / `faixas_premiacao`).
-   - `finPlanoContasService`: Eliminadas as constantes estáticas (`TIPOS_CUSTO_FALLBACK`, `CATEGORIAS_FALLBACK`, `CONTAS_BANCARIAS_FALLBACK`). Se o banco estiver vazio, o sistema exibe estado limpo em vez de inventar contas fictícias.
-   - `main.ts`: Eliminado perfil demonstrativo fictício (`Consultor Demonstrativo / admin`) no fluxo de autenticação.
-   - `avatars.ts` e `supabase.ts`: Expurgo de `paxflow-user-avatars` em `localStorage`. A fonte exclusiva para imagem ou ícone de consultor é a coluna `profiles.avatar_url`.
-2. **Recuperação e Migração de Anexos Legados**:
-   - Resgate dos metadados de 11 documentos reais armazenados no legado de `viagens.observacoes` (`<!-- PAXFLOW_ANEXOS -->`), migrando-os diretamente para a tabela física `documentos_anexos`.
-   - Ajuste de políticas de segurança (RLS) em `storage.objects` para o bucket `documentos-clientes`, garantindo autorização de leitura e upload para consultores autenticados e eliminando o erro de `Object not found`.
-
-## 3.55 Desacoplamento Total dos Filtros de Conferência (Financeiro e Processo)
-1. **Independência Operacional Absoluta**:
-   - Os filtros de conferência (`⏳ Fin. Pendente`, `✅ Fin. OK`, `⏳ Proc. Pendente`, `✅ Proc. OK`) foram 100% desacoplados do status ou etapa da viagem (seja Fechado, Pós-Venda, Pré-Embarque ou Pós-Viagem).
-2. **Fidelidade da Conferência Financeira (`isFinanceiroConferido`)**:
-   - Uma viagem é considerada com `isFinanceiroConferido = true` exclusivamente quando possui produtos cadastrados e todos os seus Localizadores (LOCs) únicos possuem auditoria confirmada (`loc_conferencias` com `conferido = true`), refletindo com exatidão o indicador visual `💸 FINANCEIRO (N/N)` do modal de viagem.
-3. **Fidelidade da Conferência de Processo (`isProcessoConferido`)**:
-   - Uma viagem é considerada com `isProcessoConferido = true` exclusivamente com base no valor real do campo `processo_conferido = true` da viagem.
-4. **Sincronização Reativa em Tempo Real**:
-   - As ações de marcar ou desmarcar a conferência de um LOC ou do processo disparam a atualização imediata em memória no Dashboard (`onUpdate`), garantindo que listagens e filtros reflitam o estado auditado em tempo real sem demandar recarregamento de página.
-
-## 3.56 Harmonização e Integridade de Fechamento Contábil & Rateio de Divisões de Vendas
-1. **Rateio Proporcional em Relatórios de Faturamento (`calcularFaturamentoLucratividade`)**:
-   - O cálculo financeiro de Faturamento e Lucratividade do Painel de Relatórios Gerenciais passa a integrar obrigatoriamente o `ViagensDivisoesService`.
-   - Ao filtrar por consultor específico, as métricas de Venda, Taxas, Comissão, Markup, RAV e Rentabilidade Líquida são rigorosamente multiplicadas pelas respectivas fatias de participação (`fatiaVenda` e `fatiaRav`), erradicando a soma de 100% indevida em viagens compartilhadas.
-2. **Competência Financeira Estrita em Relatórios & Desativação de Conflito de Mês Corrente**:
-   - Nas abas financeiras de faturamento e auditoria, a agregação temporal respeita exclusivamente o campo `data_financeiro`, impedindo que viagens sem competência financeira fechada poluam o resultado contábil do mês.
-   - Quando o operador aplica um filtro de período explícito (ex: Data Financeira no menu Avançado do Dashboard), a trava de Mês Corrente é automaticamente desativada, evitando que viagens da competência solicitada sejam excluídas por não terem sido criadas no mês de calendário atual.
-3. **Unificação Integral do Motor Financeiro (Comissão, Markup e RAV)**:
-   - Em todos os módulos (`calcularFinanceiroProduto`, Painel Operacional, Relatórios e Exportação CSV), a rentabilidade líquida consolida de forma unificada: `Rentabilidade = Comissão + Markup + (RAV × 0.88)` para qualquer tipo de produto cadastrado. Se uma passagem aérea ou pacote possuir Markup ou RAV, estes valores são computados com fidelidade ao centavo em todas as visões.
-4. **Desmembramento de Cotas na Exportação Geral CSV para Excel**:
-   - Na exportação geral consolidada do Dashboard (`DashboardExportManager`), viagens que possuem divisão de vendas entre múltiplos consultores são desdobradas em linhas dedicadas por consultor participante, estampando o nome do respectivo parceiro, a cota percentual no identificador (`VIA-XXXX (50%)`) e os valores rateados de venda e rentabilidade.
-   - Isso garante que a Tabela Dinâmica do Excel agrupando por `Consultor Responsável` coincida rigorosamente ao centavo com o Dashboard Operacional e o Painel de Relatórios Gerenciais.
-5. **Propagação de LOC no Pré-Embarque e Auto-Recuperação de Tipos de Produto**:
-   - O serviço de contatos de pré-embarque reconhece variações de tipos aéreos (`Cias aéreas`, `Passagem aérea`, etc.) e propaga o LOC do lote/aéreo para trechos de ida e volta, impedindo a exibição de "S/ LOC".
-   - O modal de edição de viagem e produtos (`EditTravelModal`) executa auto-recuperação direta do banco caso a lista de tipos chegue vazia, impedindo que o seletor fique em branco.
-
-## 3.57 Blindagem de Projeções Relacionais e Consistência de Dados em Tempo Real
-1. **Auditoria Cirúrgica de Projeções do Supabase**:
-   - Varredura e enriquecimento de consultas em todos os módulos onde selects restritivos causavam omissão de dados no frontend.
-   - **Central de Reembolsos e Relatórios Financeiros**: Inclusão mandatória de `codigo_localizador` de viagens e `descricao, codigo_reserva, status` de produtos em selects diretos e de viagens órfãs, eliminando campos em branco nas tabelas e no modal de edição de reembolsos.
-   - **Relatório de Embarque e Contatos Pré-Embarque**: Seleção explícita de `contatos_embarque` e priorização absoluta do código localizador (`codigo_reserva` do produto aéreo) sobre o localizador geral da viagem, garantindo fidelidade operacional por trecho.
-   - **Relatório de Inteligência e Origem de Aquisição**: Inclusão de `origem` e `valor_viagem` no select de orçamentos e viagens, permitindo a classificação precisa dos canais de captação de clientes sem agrupamento indevido em "Outros".
-   - **Validação de Transição para Pós-Venda**: Adição do campo `tipo` no select de validação de `produtos_viagem` em `EditTravelModal`, assegurando que produtos com RAV ou Markup não bloqueiem a transição por cálculo financeiro incompleto.
-   - **Normalização Snake-Case & Compatibilidade**: Ajuste em `ViagensTableView` e `BalcaoCopilotoSection` para ler consistentemente `codigo_ref` e `consultor_id`, eliminando discrepâncias visuais de tags e duplicações no co-piloto.
-
-## 3.58 Rolagem Natural Mobile & Modo Foco na Busca (iPhone / Smartphones)
-1. **Erradicação de Contêineres Presos e Rolagens Duplas**:
-   - **Viagens (`Dashboard.ts`, `ViagensTableView.ts`)**: No mobile (`< 768px`), `.dashboard-container` utiliza `min-height` e `height: auto` sem `overflow-hidden`, e a listagem de cards mobile flui naturalmente na página sem `overflow-y-auto` aninhado.
-   - **Orçamentos (`Orcamentos.ts`)**: Limites `max-h-[700px] overflow-y-auto` das colunas foram restritos ao desktop (`md:overflow-y-auto md:max-h-[700px]`).
-   - **Reembolsos (`Reembolsos.ts`)**: Removido `max-h-[600px] overflow-y-auto` da lista mobile e compactados os 4 cards de KPIs para grade `2x2` no celular.
-   - **Inbox (`AlertsFeed.ts`, `CalendarView.ts`)**: Travas `max-h-[calc(100vh-310px)] overflow-y-auto` restritas a `md:`.
-   - **Clientes (`Clientes.ts`)**: A lista lateral utiliza altura dinâmica `max-h-[calc(100dvh-230px)]` no mobile para preservar o evento de scroll infinito com máximo aproveitamento vertical.
-   - **Next Trip Engine (`NextTripPage.ts`)**: Grade de KPIs compactada para `2x2` no celular e rolagem unificada na página.
-2. **Modo Foco na Pesquisa & Correção da Busca Global (`GlobalHeaderSearch.ts`)**:
-   - Ao acionar `Enter` ou clicar na lupa na barra global, o dropdown do Co-Piloto é fechado e `input.blur()` recolhe o teclado virtual no celular.
-   - Com termo de busca ativo no mobile, o widget Next Trip e os indicadores secundários em Viagens, além dos KPIs em Reembolsos e Next Trip, são ocultados/compactados automaticamente (`hidden md:...` / `hidden sm:flex`) para priorizar os resultados filtrados.
-   - `DashboardFilterStateManager` passou a limpar corretamente `#global-search-input`, `#btn-clear-global-search` e `#global-search-dropdown` ao remover o chip de busca ou limpar todos os filtros.
-3. **Rolagem Horizontal Defensiva nas Tabelas no Mobile (`ComercialDashboard`, `Relatorios`, `Configuracoes`, `Cadastros`, `index.css`)**:
-   - Corrigida a tabela `👥 Desempenho e Ranking da Equipe` do Console Comparativo (`ComercialDashboard.ts`), removendo `min-w-[700px]` da `<div>` externa e aplicando `min-w-[760px]` diretamente na `<table>` interna com `w-full max-w-full overflow-x-auto` no contêiner pai; o mesmo padrão foi aplicado na tabela `👥 Rendimento e Performance da Equipe` da Visão Mensal.
-   - Padronizada a largura mínima (`min-w-[620px]` a `min-w-[820px]`) diretamente nas tags `<table>` dos módulos de Relatórios (Financeiro, Comercial, Operações e Inteligência), Configurações e Cadastros, garantindo que o arraste lateral funcione sem cortes em smartphones.
-   - Em `src/index.css`, o bloco `@media (max-width: 768px)` passou a exibir uma barra de rolagem fina (`4px`) em `.custom-scrollbar` para sinalizar visualmente a disponibilidade de rolagem horizontal.
 
 ---
 
