@@ -2,6 +2,26 @@
 <html lang="pt-BR">
 
 <head>
+  <script>
+    // Recuperação imediata e auto-cura contra scripts de versão anterior em cache (stale hash / MIME text/html)
+    window.addEventListener('error', function (event) {
+      var target = event.target;
+      if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
+        var lastReload = sessionStorage.getItem('paxflow_stale_reload');
+        var now = Date.now();
+        if (!lastReload || (now - parseInt(lastReload, 10)) > 15000) {
+          sessionStorage.setItem('paxflow_stale_reload', now.toString());
+          console.warn('[PaxFlow] Script ou asset desatualizado detectado no cache. Forçando sincronização limpa...');
+          if ('caches' in window) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (k) { caches.delete(k); });
+            });
+          }
+          window.location.reload();
+        }
+      }
+    }, true);
+  </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -250,7 +270,7 @@
   </noscript>
 
   <!-- Script de Entrada Principal (Vite / TypeScript - Substitui o fallback acima pelo app dinâmico quando carregado) -->
-  <script type="module" src="/src/main.ts"></script>
+  <script type="module" src="/src/main.ts" onerror="if(!sessionStorage.getItem('paxflow_entry_reload')){sessionStorage.setItem('paxflow_entry_reload','1');window.location.reload(true);}"></script>
 
   <!-- Service Worker Registration & Version Sync -->
   <script>

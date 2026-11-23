@@ -33,6 +33,12 @@ import { podeAcessarFinanceiro } from './utils/permissaoFinanceiro';
 
 (window as any).traduzirErro = traduzirErro;
 
+// Limpa marcadores de auto-recuperação de cache de versão anterior
+try {
+  sessionStorage.removeItem('paxflow_stale_reload');
+  sessionStorage.removeItem('paxflow_entry_reload');
+} catch (_) {}
+
 // Inicializa interceptador global de digitação direta para 100% dos campos de data
 initGlobalDateMask();
 
