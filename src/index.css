@@ -197,13 +197,11 @@ html.dark .scroll-indicator-fade::after {
 /* Otimização de rolagem horizontal em dispositivos móveis */
 @media (max-width: 768px) {
   .custom-scrollbar::-webkit-scrollbar {
-    display: none !important;
-    height: 0px !important;
-    width: 0px !important;
+    height: 4px !important;
+    width: 4px !important;
   }
   .custom-scrollbar {
-    scrollbar-width: none !important; /* Firefox */
-    -ms-overflow-style: none !important; /* IE/Edge */
+    scrollbar-width: thin !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-x: contain !important;
   }

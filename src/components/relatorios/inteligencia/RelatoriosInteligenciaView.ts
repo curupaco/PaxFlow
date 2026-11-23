@@ -117,7 +117,7 @@ export class RelatoriosInteligenciaView {
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Funil de Cotação Ativa (Pipeline Ponderado)</h3>
           <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
-            <table class="w-full text-left border-collapse text-xs font-semibold">
+            <table class="w-full text-left border-collapse text-xs font-semibold min-w-[680px]">
               <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Etapa/Status</th>
@@ -259,7 +259,7 @@ export class RelatoriosInteligenciaView {
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Performance por Origem de Leads</h3>
           <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
-            <table class="w-full text-left border-collapse text-xs font-semibold">
+            <table class="w-full text-left border-collapse text-xs font-semibold min-w-[760px]">
               <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Origem</th>
@@ -546,7 +546,7 @@ export class RelatoriosInteligenciaView {
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Ranking Geral de Engajamento</h3>
           <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
-            <table class="w-full text-left border-collapse text-xs font-semibold">
+            <table class="w-full text-left border-collapse text-xs font-semibold min-w-[740px]">
               <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3 text-center w-12">Posição</th>
@@ -569,7 +569,7 @@ export class RelatoriosInteligenciaView {
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Distribuição e Adoção de Medalhas (Badge Analytics)</h3>
           <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
-            <table class="w-full text-left border-collapse text-xs font-semibold">
+            <table class="w-full text-left border-collapse text-xs font-semibold min-w-[680px]">
               <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3 text-center w-12">Medalha</th>
@@ -727,7 +727,7 @@ export class RelatoriosInteligenciaView {
             </div>
           ` : `
             <div class="overflow-x-auto overflow-y-auto max-h-[500px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-xl relative">
-              <table class="w-full text-left border-collapse text-xs font-semibold">
+              <table class="w-full text-left border-collapse text-xs font-semibold min-w-[800px]">
                 <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                   <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                     <th class="p-3">Gravidade</th>
@@ -795,7 +795,7 @@ export class RelatoriosInteligenciaView {
             </div>
           ` : `
             <div class="overflow-x-auto overflow-y-auto max-h-[500px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-xl relative">
-              <table class="w-full text-left border-collapse text-xs font-semibold">
+              <table class="w-full text-left border-collapse text-xs font-semibold min-w-[760px]">
                 <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                   <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                     <th class="p-3">Embarque</th>

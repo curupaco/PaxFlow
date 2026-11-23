@@ -2137,6 +2137,10 @@ Essa prática foi **100% expurgada**:
    - Ao acionar `Enter` ou clicar na lupa na barra global, o dropdown do Co-Piloto é fechado e `input.blur()` recolhe o teclado virtual no celular.
    - Com termo de busca ativo no mobile, o widget Next Trip e os indicadores secundários em Viagens, além dos KPIs em Reembolsos e Next Trip, são ocultados/compactados automaticamente (`hidden md:...` / `hidden sm:flex`) para priorizar os resultados filtrados.
    - `DashboardFilterStateManager` passou a limpar corretamente `#global-search-input`, `#btn-clear-global-search` e `#global-search-dropdown` ao remover o chip de busca ou limpar todos os filtros.
+3. **Rolagem Horizontal Defensiva nas Tabelas no Mobile (`ComercialDashboard`, `Relatorios`, `Configuracoes`, `Cadastros`, `index.css`)**:
+   - Corrigida a tabela `👥 Desempenho e Ranking da Equipe` do Console Comparativo (`ComercialDashboard.ts`), removendo `min-w-[700px]` da `<div>` externa e aplicando `min-w-[760px]` diretamente na `<table>` interna com `w-full max-w-full overflow-x-auto` no contêiner pai; o mesmo padrão foi aplicado na tabela `👥 Rendimento e Performance da Equipe` da Visão Mensal.
+   - Padronizada a largura mínima (`min-w-[620px]` a `min-w-[820px]`) diretamente nas tags `<table>` dos módulos de Relatórios (Financeiro, Comercial, Operações e Inteligência), Configurações e Cadastros, garantindo que o arraste lateral funcione sem cortes em smartphones.
+   - Em `src/index.css`, o bloco `@media (max-width: 768px)` passou a exibir uma barra de rolagem fina (`4px`) em `.custom-scrollbar` para sinalizar visualmente a disponibilidade de rolagem horizontal.
 
 ---
 

@@ -1287,7 +1287,7 @@ export class ComercialDashboard {
 
     return `
       <!-- TABELA DE RENDIMENTO DA EQUIPE -->
-      <section class="dashboard-glass rounded-3xl p-6 select-none overflow-x-auto scroll-indicator-fade custom-scrollbar">
+      <section class="dashboard-glass rounded-3xl p-6 min-w-0 max-w-full overflow-hidden select-none">
         <div class="mb-4">
           <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             👥 Rendimento e Performance da Equipe
@@ -1295,7 +1295,8 @@ export class ComercialDashboard {
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Quadro comparativo de conversão, faturamento e gap financeiro de desistências</p>
         </div>
 
-        <table class="w-full text-left border-collapse text-xs min-w-[700px]">
+        <div class="w-full max-w-full overflow-x-auto custom-scrollbar scroll-indicator-fade border border-slate-200/80 dark:border-slate-800/80 rounded-2xl">
+          <table class="w-full text-left border-collapse text-xs min-w-[760px]">
           <thead>
             <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-400 font-extrabold uppercase tracking-wider">
               <th class="py-3 pl-2">Consultor</th>
@@ -1360,6 +1361,7 @@ export class ComercialDashboard {
             }).join('')}
           </tbody>
         </table>
+        </div>
       </section>
     `;
 
@@ -2291,7 +2293,7 @@ export class ComercialDashboard {
 
         <!-- SEÇÃO: DESEMPENHO POR CONSULTOR / AUTO-GESTÃO -->
         ${isAdmin ? `
-          <section class="dashboard-glass rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800/80 space-y-4">
+          <section class="dashboard-glass rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800/80 space-y-4 min-w-0 max-w-full overflow-hidden">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
               <div>
                 <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -2511,8 +2513,8 @@ export class ComercialDashboard {
     const margemTot = totVendasAtu > 0 ? (totRentAtu / totVendasAtu) * 100 : 0;
 
     return `
-      <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade min-w-[700px] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl">
-        <table class="w-full text-left text-xs font-sans">
+      <div class="w-full max-w-full overflow-x-auto custom-scrollbar scroll-indicator-fade border border-slate-200/80 dark:border-slate-800/80 rounded-2xl">
+        <table class="w-full text-left text-xs font-sans min-w-[760px]">
           <thead>
             <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
               <th class="py-3 px-4">Consultor</th>

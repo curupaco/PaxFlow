@@ -94,7 +94,7 @@ export class RelatoriosOperacoesView {
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Registros de Alertas Recentes</h3>
           <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
-            <table class="w-full text-left border-collapse text-xs font-semibold">
+            <table class="w-full text-left border-collapse text-xs font-semibold min-w-[620px]">
               <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Alerta</th>
@@ -281,7 +281,7 @@ export class RelatoriosOperacoesView {
             <span class="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-450 rounded-lg text-[10px] font-black">${docAlerts.length} inconsistências</span>
           </div>
           <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
-            <table class="w-full text-left border-collapse text-xs font-semibold">
+            <table class="w-full text-left border-collapse text-xs font-semibold min-w-[740px]">
               <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Cliente</th>
@@ -310,7 +310,7 @@ export class RelatoriosOperacoesView {
             <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-450 rounded-lg text-[10px] font-black">${posVendaPendente.length} pendentes</span>
           </div>
           <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
-            <table class="w-full text-left border-collapse text-xs font-semibold">
+            <table class="w-full text-left border-collapse text-xs font-semibold min-w-[740px]">
               <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Cliente</th>
@@ -489,7 +489,7 @@ export class RelatoriosOperacoesView {
           <div class="space-y-3">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Ranking de Satisfação por Consultor</h3>
             <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
-              <table class="w-full text-left border-collapse text-xs font-semibold">
+              <table class="w-full text-left border-collapse text-xs font-semibold min-w-[740px]">
                 <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                   <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                     <th class="p-3 text-center w-12">Posição</th>

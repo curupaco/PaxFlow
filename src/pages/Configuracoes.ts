@@ -2333,8 +2333,8 @@ export class ConfiguracoesPage {
 
         <!-- Tabela de Consultores -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+          <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade">
+            <table class="w-full text-left border-collapse min-w-[740px]">
               <thead>
                 <tr class="bg-slate-50/80 dark:bg-slate-800/60 text-[11px] text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                   <th class="py-3.5 px-5">Consultor</th>

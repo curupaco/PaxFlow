@@ -8,6 +8,7 @@ import { supabase } from '../../src/services/supabase';
 import { ViagensTableView } from '../../src/components/dashboard/ViagensTableView';
 import { DashboardFilterBar } from '../../src/components/dashboard/DashboardFilterBar';
 import { DashboardFilterStateManager } from '../../src/components/dashboard/DashboardFilterStateManager';
+import { ComercialDashboard } from '../../src/pages/ComercialDashboard';
 import {
   normalizarDocumentoLeady,
   processarConteudosCsvLeady,
@@ -382,6 +383,37 @@ describe('Pacote de Solicitações Operacionais — Testes Subcutâneos', () => 
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('deve aplicar rolagem lateral na div externa sem min-w fixo e manter min-w-[760px] na tabela de consultores do Console Comparativo', () => {
+    // Setup
+    const instanciaFake = Object.create(ComercialDashboard.prototype);
+    const linhasConsultores = [
+      {
+        id: 'cons-1',
+        nome: 'Juliana Consultora',
+        avatarUrl: '',
+        vendasAtualValor: 45000,
+        vendasAtualQtd: 5,
+        vendasAnteriorValor: 30000,
+        vendasAnteriorQtd: 3,
+        deltaValor: 15000,
+        deltaPercentual: 50,
+        rentabilidadeAtualValor: 6750,
+        margemAtualPercentual: 15,
+        taxaConversaoPercentual: 35,
+        orcamentosQtd: 14,
+        shareLojaPercentual: 100
+      }
+    ];
+
+    // Action
+    const html = instanciaFake.renderTabelaConsultoresComparativo(linhasConsultores);
+
+    // Assert
+    expect(html).toContain('w-full max-w-full overflow-x-auto custom-scrollbar scroll-indicator-fade');
+    expect(html).not.toContain('overflow-x-auto custom-scrollbar scroll-indicator-fade min-w-[700px]');
+    expect(html).toContain('<table class="w-full text-left text-xs font-sans min-w-[760px]">');
   });
 });
 

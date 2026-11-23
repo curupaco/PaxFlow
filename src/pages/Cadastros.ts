@@ -212,8 +212,8 @@ export class CadastrosPage {
                     </span>
                   </div>
                   
-                  <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                  <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade">
+                    <table class="w-full text-left border-collapse min-w-[640px]">
                       <thead>
                         <tr class="border-b border-slate-100 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-950">
                           <th class="py-2.5 px-3 w-14 text-center">Ícone</th>
@@ -356,8 +356,8 @@ export class CadastrosPage {
                     </div>
                   </div>
                   
-                  <div class="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar">
-                    <table class="w-full text-left border-collapse">
+                  <div class="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar scroll-indicator-fade">
+                    <table class="w-full text-left border-collapse min-w-[640px]">
                       <thead>
                         <tr class="border-b border-slate-100 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase tracking-widest sticky top-0 bg-slate-50 dark:bg-slate-950 z-10">
                           <th class="py-2.5 px-3">Cidade / Destino</th>
@@ -450,8 +450,8 @@ export class CadastrosPage {
                     </span>
                   </div>
                   
-                  <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                  <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade">
+                    <table class="w-full text-left border-collapse min-w-[640px]">
                       <thead>
                         <tr class="border-b border-slate-100 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-950">
                           <th class="py-2.5 px-3 w-14 text-center">Ícone</th>
@@ -567,8 +567,8 @@ export class CadastrosPage {
                     </span>
                   </div>
                   
-                  <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                  <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade">
+                    <table class="w-full text-left border-collapse min-w-[640px]">
                       <thead>
                         <tr class="border-b border-slate-100 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-950">
                           <th class="py-2.5 px-3 w-14 text-center">Ícone</th>
@@ -678,8 +678,8 @@ export class CadastrosPage {
 
               <!-- Tabela de Campanhas -->
               <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-colors">
-                <div class="overflow-x-auto">
-                  <table class="w-full text-left border-collapse">
+                <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade">
+                  <table class="w-full text-left border-collapse min-w-[720px]">
                     <thead>
                       <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                         <th class="py-2.5 px-3.5">Título</th>
@@ -782,8 +782,8 @@ export class CadastrosPage {
 
               <!-- Tabela de Templates -->
               <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-colors">
-                <div class="overflow-x-auto">
-                  <table class="w-full text-left border-collapse">
+                <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade">
+                  <table class="w-full text-left border-collapse min-w-[720px]">
                     <thead>
                       <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                         <th class="py-2.5 px-3.5">Título / Descrição</th>
@@ -847,8 +847,8 @@ export class CadastrosPage {
 
               <!-- Tabela de Metas -->
               <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-colors">
-                <div class="overflow-x-auto">
-                  <table class="w-full text-left border-collapse">
+                <div class="overflow-x-auto custom-scrollbar scroll-indicator-fade">
+                  <table class="w-full text-left border-collapse min-w-[720px]">
                     <thead>
                       <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                         <th class="py-2.5 px-3.5">Nome / Tipo</th>
