@@ -723,7 +723,7 @@ export class LandingPage {
                 <div class="p-3.5 rounded-2xl bg-gradient-to-r from-[#0052d4]/20 to-cyan-900/20 border border-blue-500/30 flex items-center justify-between flex-wrap gap-2">
                   <div class="flex items-center gap-2">
                     <span class="text-[#00a8f5] text-base font-black">✈️</span>
-                    <span><strong>Gestão Operacional de Viagens:</strong> Dossiê em 5 abas com localizadores (LOC), conferência financeira, divisão de comissões/RAV e histórico auditado.</span>
+                    <span><strong>Gestão Operacional de Viagens:</strong> Dossiê em 5 abas com localizadores (LOC), trechos aéreos com siglas IATA, conferência financeira, divisão de comissões/RAV e histórico auditado.</span>
                   </div>
                   <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-[#00a8f5] text-[10px] font-black border border-blue-500/40">Dossiê Completo</span>
                 </div>
@@ -735,7 +735,7 @@ export class LandingPage {
                   <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] text-slate-300">
                     <div><strong>Ida:</strong> 15/11/2026</div>
                     <div><strong>Volta:</strong> 25/11/2026</div>
-                    <div><strong>LOC Aéreo:</strong> LA9042 (Conferido)</div>
+                    <div><strong>Trecho IATA:</strong> GRU ✈ SCL (LA9042)</div>
                     <div><strong>Consultor:</strong> Juliana Prado</div>
                   </div>
                 </div>
@@ -746,21 +746,21 @@ export class LandingPage {
                 <div class="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 to-teal-950/40 border border-emerald-500/30 flex items-center justify-between flex-wrap gap-2">
                   <div class="flex items-center gap-2">
                     <span class="text-[#00e5a3] text-base font-black">📄</span>
-                    <span><strong>Pipeline Kanban de Orçamentos:</strong> Gestão de oportunidades com classificação térmica (Frio, Normal, Quente), busca rápida de clientes cadastrados e conversão em viagem com 1 clique.</span>
+                    <span><strong>Pipeline Kanban de Orçamentos:</strong> Gestão ágil de oportunidades iniciando direto em 'Em Andamento', busca rápida com autocomplete IATA de aeroportos/destinos, classificação térmica e conversão em viagem com 1 clique.</span>
                   </div>
                   <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-[#00e5a3] text-[10px] font-black border border-emerald-500/40">Kanban Ativo</span>
                 </div>
                 <div class="grid grid-cols-3 gap-3">
                   <div class="p-3 rounded-2xl bg-black/40 border border-white/10">
-                    <span class="text-[10px] font-black uppercase text-cyan-400 block mb-2">Em Aberto (14)</span>
-                    <div class="p-2 bg-white/[0.04] rounded-lg text-[10px]">Lead: Lucas Mendes • Bariloche 🔥 Quente</div>
+                    <span class="text-[10px] font-black uppercase text-cyan-400 block mb-2">Em Andamento (14)</span>
+                    <div class="p-2 bg-white/[0.04] rounded-lg text-[10px]">Lead: Lucas Mendes • Bariloche (BRC) 🔥 Quente</div>
                   </div>
                   <div class="p-3 rounded-2xl bg-black/40 border border-white/10">
-                    <span class="text-[10px] font-black uppercase text-amber-400 block mb-2">Proposta Enviada (8)</span>
-                    <div class="p-2 bg-white/[0.04] rounded-lg text-[10px]">Lead: Beatriz Costa • Maldivas ⚡ Normal</div>
+                    <span class="text-[10px] font-black uppercase text-amber-400 block mb-2">Aguardando Retorno (8)</span>
+                    <div class="p-2 bg-white/[0.04] rounded-lg text-[10px]">Lead: Beatriz Costa • Maldivas (MLE) ⚡ Normal</div>
                   </div>
                   <div class="p-3 rounded-2xl bg-black/40 border border-white/10">
-                    <span class="text-[10px] font-black uppercase text-emerald-400 block mb-2">Aceito / Venda (24)</span>
+                    <span class="text-[10px] font-black uppercase text-emerald-400 block mb-2">Concluído / Venda (24)</span>
                     <div class="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-[10px] text-emerald-300">Viagem gerada automaticamente</div>
                   </div>
                 </div>
