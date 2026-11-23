@@ -161,7 +161,7 @@ describe('Orçamentos Desistidos - Validação de Contato do Gestor e Reabertura
 
     // Assert
     expect(result.success).toBe(true);
-    expect(result.orcamentoAtualizado.status).toBe('SOLICITADO');
+    expect(result.orcamentoAtualizado.status).toBe('EM_ANDAMENTO');
     expect(result.orcamentoAtualizado.sub_status).toBeNull();
     expect(result.orcamentoAtualizado.contato_realizado).toBe(false);
     expect(result.orcamentoAtualizado.notas_negociacao).toContain('[Orçamento Reaberto em');
@@ -170,7 +170,7 @@ describe('Orçamentos Desistidos - Validação de Contato do Gestor e Reabertura
     expect(result.orcamentoAtualizado.notas_negociacao).toContain('[Desistência em 15/09/2026]');
     
     expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({
-      status: 'SOLICITADO',
+      status: 'EM_ANDAMENTO',
       sub_status: null,
       contato_realizado: false,
       contato_realizado_por: null,
@@ -182,7 +182,7 @@ describe('Orçamentos Desistidos - Validação de Contato do Gestor e Reabertura
       tipo_item: 'orcamento',
       item_id: orcId,
       usuario_id: 'consultor-uuid-2',
-      conteudo: expect.stringContaining('🔄 Orçamento reaberto para a etapa SOLICITADO')
+      conteudo: expect.stringContaining('🔄 Orçamento reaberto para a etapa EM_ANDAMENTO')
     }));
   });
 });

@@ -51,22 +51,25 @@ export class RelatoriosOperacoesView {
       return limite < new Date() && !a.arquivado;
     }).length;
 
-    const alertListHtml = (data.alertas || []).slice(0, 10).map((a: any) => `
+    const alertListHtml = (data.alertas || []).slice(0, 10).map((a: any) => {
+      const isVencido = a.eventDate ? (new Date(a.eventDate) < new Date() && !a.arquivado) : false;
+      return `
       <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
         <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${a.title}</td>
         <td class="p-3">${a.consultorNome}</td>
         <td class="p-3">${a.dateStr}</td>
         <td class="p-3">
           <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-            vencidos > 0 
+            isVencido 
               ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400' 
               : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30'
           }">
-            ${vencidos > 0 ? 'Estourado' : 'Dentro do Prazo'}
+            ${isVencido ? 'Estourado' : 'Dentro do Prazo'}
           </span>
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">

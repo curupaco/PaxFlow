@@ -116,7 +116,7 @@ describe('Subcutaneous: Relatório de Desistências - Abertura e Gestão de Prop
     // Assert
     expect(result.success).toBe(true);
     expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({
-      status: 'SOLICITADO',
+      status: 'EM_ANDAMENTO',
       sub_status: null,
       contato_realizado: false,
       contato_realizado_em: null,

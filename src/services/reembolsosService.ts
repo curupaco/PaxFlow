@@ -36,6 +36,7 @@ export interface ReembolsoPendenteResumo {
 
 export interface ViagemOrfaReembolso {
   id: string;
+  consultor_id?: string;
   codigo_ref?: string;
   codigo_localizador?: string;
   destino?: string;
@@ -151,6 +152,7 @@ export class ReembolsosService {
         .from('viagens')
         .select(`
           id,
+          consultor_id,
           codigo_ref,
           codigo_localizador,
           destino,
@@ -171,6 +173,7 @@ export class ReembolsosService {
 
       return orfas.map((v: any) => ({
         id: v.id,
+        consultor_id: v.consultor_id,
         codigo_ref: v.codigo_ref,
         codigo_localizador: v.codigo_localizador,
         destino: v.destino,

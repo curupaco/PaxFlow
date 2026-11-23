@@ -366,9 +366,7 @@ export class RelatoriosFinanceiroView {
         
         const isSubtractive = ['DESCONTO', 'PREJUÍZO'].includes(formaNome.trim().toUpperCase());
         
-        if (isSubtractive) {
-          totalPago -= val;
-        } else {
+        if (!isSubtractive) {
           totalPago += val;
         }
         

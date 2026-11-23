@@ -489,7 +489,11 @@ export class MetasService {
         p.formas_recebimento &&
         ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
       );
-      const totalSub = pagsSub.reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
+      const totalSub = pagsSub.reduce((acc, p) => {
+        const vRef = viagensDoConsultor.find(v => v.id === (p.viagem_id || p.viagemId));
+        const fatia = vRef ? ViagensDivisoesService.calcularParticipacaoConsultor(vRef, consultorId) : 1;
+        return acc + ((Number(p.valor) || 0) * fatia);
+      }, 0);
       const somaBruta = viagensDoConsultor.reduce((acc, v) => {
         const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId);
         return acc + ((Number(v.valor_total || v.valorTotal) || 0) * fatia);

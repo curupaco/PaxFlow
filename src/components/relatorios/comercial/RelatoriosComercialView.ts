@@ -70,20 +70,34 @@ export class RelatoriosComercialView {
     });
     const tempoMedio = countDias > 0 ? Math.round(totalDias / countDias) : 0;
 
-    // Build SVG chart: Sales per consultant (apenas usuários ativos)
+    // Build SVG chart: Sales per consultant (apenas usuários ativos, com rateio de divisões)
     const consultantSales: Record<string, number> = {};
     data.viagens.forEach((v: any) => {
-      const cId = v.consultor_id || v.consultorId || 'unknown';
-      const consultorObj = ctx.consultores.find(c => c.id === cId);
-      if (consultorObj && consultorObj.ativo === false) return; // Ignora inativos
-      const cNome = consultorObj?.nome || 'Outros';
       const vPayments = data.locPagamentos.filter((p: any) => 
         (p.viagem_id === v.id || p.viagemId === v.id) &&
         p.formas_recebimento &&
         ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
       );
       const vSub = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
-      consultantSales[cNome] = (consultantSales[cNome] || 0) + Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub);
+      const valorLiquidoViagem = Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub);
+
+      let teveParticipanteAtivo = false;
+      ctx.consultores.forEach(c => {
+        if (c.ativo === false) return;
+        const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, c.id);
+        if (fatia > 0) {
+          teveParticipanteAtivo = true;
+          consultantSales[c.nome] = (consultantSales[c.nome] || 0) + (valorLiquidoViagem * fatia);
+        }
+      });
+
+      if (!teveParticipanteAtivo) {
+        const cId = v.consultor_id || v.consultorId || 'unknown';
+        const consultorObj = ctx.consultores.find(c => c.id === cId);
+        if (!consultorObj) {
+          consultantSales['Outros'] = (consultantSales['Outros'] || 0) + valorLiquidoViagem;
+        }
+      }
     });
 
     const entries = Object.entries(consultantSales);

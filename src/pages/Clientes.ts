@@ -466,6 +466,9 @@ export class ClientesPage {
    * Atualiza a ficha de detalhes do cliente selecionado (ou abre formulário limpo para cadastro)
    */
   private selecionarCliente(cliente: Cliente | null, openMobile: boolean = true): void {
+    if (!cliente || !this.clienteSelecionado || cliente.id !== this.clienteSelecionado.id) {
+      this.fichaTabAtiva = 'cadastro';
+    }
     if (cliente === null) {
       // Cria um objeto de cliente vazio para novo cadastro
       this.clienteSelecionado = {
@@ -1276,10 +1279,6 @@ export class ClientesPage {
               if (this.clienteSelecionado && this.clienteSelecionado.id === clienteId) {
                 if (docId.startsWith('legado-cliente-') || path === this.clienteSelecionado.googleDriveFolderUrl) {
                   this.clienteSelecionado.googleDriveFolderUrl = undefined;
-                  this.clienteSelecionado.passaporteNumero = undefined;
-                  this.clienteSelecionado.passaporteValidade = undefined;
-                  this.clienteSelecionado.passaportes = [];
-                  this.renderFichaDetalhada();
                 }
               }
               await this.carregarEDesenharDocumentosCliente(clienteId);
@@ -1585,9 +1584,32 @@ export class ClientesPage {
       this.fichaTabAtiva = 'cadastro';
       this.renderFichaDetalhada();
       this.setupFormEventListeners();
+      if (this.clienteSelecionado?.id) {
+        this.carregarEDesenharDocumentosCliente(this.clienteSelecionado.id);
+      }
     });
 
     document.getElementById('btn-tab-ficha-timeline')?.addEventListener('click', async () => {
+      if (this.clienteSelecionado) {
+        const nomeEl = document.getElementById('input-nome') as HTMLInputElement | null;
+        const emailEl = document.getElementById('input-email') as HTMLInputElement | null;
+        const telEl = document.getElementById('input-telefone') as HTMLInputElement | null;
+        const docEl = document.getElementById('input-documento') as HTMLInputElement | null;
+        const nascEl = document.getElementById('input-data-nasc') as HTMLInputElement | null;
+        const endEl = document.getElementById('input-endereco') as HTMLInputElement | null;
+        const obsEl = document.getElementById('textarea-observacoes') as HTMLTextAreaElement | null;
+
+        if (nomeEl) this.clienteSelecionado.nome = nomeEl.value;
+        if (emailEl) this.clienteSelecionado.email = emailEl.value;
+        if (telEl) this.clienteSelecionado.telefone = telEl.value;
+        if (docEl) this.clienteSelecionado.documento = docEl.value;
+        if (nascEl) this.clienteSelecionado.dataNascimento = nascEl.value;
+        if (endEl) this.clienteSelecionado.endereco = endEl.value;
+        if (obsEl) this.clienteSelecionado.observacoes = obsEl.value;
+
+        this.syncPassaportesFromInputs();
+        this.clienteSelecionado.passaportes = this.passaportesEdicao.map(p => ({ ...p }));
+      }
       this.fichaTabAtiva = 'timeline';
       this.renderFichaDetalhada();
       await this.carregarTimelineCliente();
@@ -1775,6 +1797,7 @@ export class ClientesPage {
       this.clienteSelecionado = null;
       await this.loadClientes();
       this.render();
+      this.setupGlobalEventListeners();
     } catch (err: any) {
       console.error('Erro ao excluir cliente:', err);
       this.showToast('Erro ao excluir cliente.', 'error', err);
@@ -1857,7 +1880,7 @@ export class ClientesPage {
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <input id="input-busca-cliente" type="text" placeholder="Nome, email ou CPF/RG..." class="h-[42px] w-full pl-10 pr-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+                <input id="input-busca-cliente" type="text" value="${this.buscaTermo || ''}" placeholder="Nome, email ou CPF/RG..." class="h-[42px] w-full pl-10 pr-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
               </div>
             </div>
 

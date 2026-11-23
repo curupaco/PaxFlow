@@ -15,7 +15,7 @@ export class InboxService {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const validade = new Date(validadeStr);
+    const validade = validadeStr.includes('T') ? new Date(validadeStr) : new Date(`${validadeStr}T12:00:00`);
     validade.setHours(0, 0, 0, 0);
 
     const diferencaTempo = validade.getTime() - hoje.getTime();
@@ -1124,9 +1124,9 @@ export class InboxService {
             title: passSla.status === 'expired' ? '🚨 Passaporte EXPIRADO!' : '⚠️ Alerta SLA - Validade de Passaporte',
             sender: 'PaxFlow SLA Control',
             senderAvatar: 'paxflow',
-            dateStr: new Date(validade).toLocaleDateString('pt-BR'),
+            dateStr: new Date(validade.includes('T') ? validade : `${validade}T12:00:00`).toLocaleDateString('pt-BR'),
             subject: `O passaporte do passageiro ${c.nome} está ${passSla.status === 'expired' ? 'expirado' : 'perto de vencer'}.`,
-            body: `O passaporte do passageiro <strong>${c.nome}</strong> está ${passSla.status === 'expired' ? '<strong class="text-rose-500">expirado!</strong>' : `próximo ao vencimento (${passSla.days} dias restantes).`}<br><br><strong>Detalhes do Cliente:</strong><br>• E-mail: ${c.email || 'Não cadastrado'}<br>• Telefone: ${c.telefone || 'Não cadastrado'}<br>• Passaporte: ${c.passaporte_numero || 'S/N'}<br>• Vencimento: ${new Date(validade).toLocaleDateString('pt-BR')}<br><br>Recomenda-se contatar o cliente para providenciar a emissão de um novo passaporte para viagens internacionais.`,
+            body: `O passaporte do passageiro <strong>${c.nome}</strong> está ${passSla.status === 'expired' ? '<strong class="text-rose-500">expirado!</strong>' : `próximo ao vencimento (${passSla.days} dias restantes).`}<br><br><strong>Detalhes do Cliente:</strong><br>• E-mail: ${c.email || 'Não cadastrado'}<br>• Telefone: ${c.telefone || 'Não cadastrado'}<br>• Passaporte: ${c.passaporte_numero || 'S/N'}<br>• Vencimento: ${new Date(validade.includes('T') ? validade : `${validade}T12:00:00`).toLocaleDateString('pt-BR')}<br><br>Recomenda-se contatar o cliente para providenciar a emissão de um novo passaporte para viagens internacionais.`,
             targetId: c.id,
             arquivado: archivedSet.has(uniqueId),
             consultorId: c.consultor_responsavel_id || '',

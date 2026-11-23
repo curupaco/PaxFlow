@@ -164,7 +164,7 @@ export class StudioPropostasService {
 
     const hojeIso = new Date().toISOString().split('T')[0];
     const dataIda = proposta.data_ida || hojeIso;
-    const dataVolta = proposta.data_volta || null;
+    const dataVolta = proposta.data_volta || dataIda;
     const valorTotal = proposta.valor_total || 0;
     const obsTexto = `Convertida do PaxFlow Studio (Proposta ${proposta.id}). Aceite formal registrado por ${proposta.aceite_formal?.cliente_nome || proposta.cliente_nome} (Doc: ${proposta.aceite_formal?.documento || 'N/A'}, IP: ${proposta.aceite_formal?.ip || 'N/A'}) em: ${proposta.aceite_formal?.data_aceite || hojeIso}`;
 
@@ -230,9 +230,8 @@ export class StudioPropostasService {
       data_ida: dataIda,
       data_volta: dataVolta,
       valor_total: valorTotal,
-      status: 'confirmada',
-      observacoes: obsTexto,
-      orcamento_id: proposta.orcamento_origem_id || null
+      status: 'fechado',
+      observacoes: obsTexto
     };
 
     const { data: vCreated, error: vErr } = await supabase
@@ -256,6 +255,7 @@ export class StudioPropostasService {
             status: 'CONCLUIDO',
             sub_status: 'ACEITO',
             valor_viagem: valorTotal,
+            ...(clienteId ? { cliente_id: clienteId } : {}),
             updated_at: new Date().toISOString()
           })
           .eq('id', proposta.orcamento_origem_id);

@@ -102,10 +102,7 @@ export class ReembolsosPage {
       // 4. Iniciar o cronômetro SLA em tempo real
       this.iniciarSlaTimer();
 
-      // 5. Configurar ouvintes de eventos da página
-      this.setupEventListeners();
-
-      // 6. Ouvinte de Busca Global (Header)
+      // 5. Ouvinte de Busca Global (Header) (render() já vincula setupEventListeners)
       if (!this.globalSearchListener) {
         this.globalSearchListener = (e: any) => {
           const termo = e.detail?.termo !== undefined ? e.detail.termo : '';
@@ -207,7 +204,11 @@ export class ReembolsosPage {
       }
 
       // Viagens marcadas como 'reembolso_solicitado' que ainda não possuem registro na tabela 'reembolsos'
-      this.viagensOrfas = viagensOrfas || [];
+      if (this.perfil && this.perfil.role !== 'admin') {
+        this.viagensOrfas = (viagensOrfas || []).filter(v => v.consultor_id === this.user?.id);
+      } else {
+        this.viagensOrfas = viagensOrfas || [];
+      }
     } catch (err: any) {
       console.error('Erro ao carregar reembolsos do servidor:', err.message);
       this.reembolsos = [];

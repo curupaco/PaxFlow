@@ -342,10 +342,12 @@ export class AnexosService {
       try {
         const updateCliente: Record<string, any> = {};
 
-        if (tipo_documento === 'PASSAPORTE') {
+        if (tipo_documento === 'PASSAPORTE' && !passageiro_nome) {
           updateCliente.google_drive_folder_url = storagePathCompleto;
           if (numero_documento?.trim()) updateCliente.passaporte_numero = numero_documento.trim();
           if (data_validade?.trim()) updateCliente.passaporte_validade = data_validade.trim();
+        } else if (tipo_documento === 'PASSAPORTE') {
+          updateCliente.google_drive_folder_url = storagePathCompleto;
         } else if ((tipo_documento === 'RG' || tipo_documento === 'CNH') && numero_documento?.trim()) {
           // Atualiza documento principal se ainda não houver
           const { data: cData } = await supabase.from('clientes').select('documento').eq('id', cliente_id).maybeSingle();
@@ -683,9 +685,7 @@ export class AnexosService {
             if (cliQuery && typeof cliQuery.update === 'function') {
               await cliQuery
                 .update({
-                  google_drive_folder_url: null,
-                  passaporte_numero: null,
-                  passaporte_validade: null
+                  google_drive_folder_url: null
                 })
                 .eq('google_drive_folder_url', storagePath);
             }

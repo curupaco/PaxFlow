@@ -143,8 +143,40 @@ export class OrcamentosPage {
         window.addEventListener('paxflow-global-search-submit', this.globalSearchListener);
       }
 
-      // 7. Deep linking from Inbox / Busca Co-Piloto
-      if (targetId) {
+      // 7. Deep linking from Inbox / Busca Co-Piloto / Next Trip
+      const hashStr = window.location.hash || '';
+      const qIdx = hashStr.indexOf('?');
+      const hashParams = qIdx !== -1 ? new URLSearchParams(hashStr.substring(qIdx + 1)) : null;
+
+      if (hashParams?.get('novo') === 'true') {
+        const cliIdParam = hashParams.get('cliente_id');
+        const destinoParam = hashParams.get('destino');
+        this.openNovoOrcamentoModal();
+        if (destinoParam) {
+          const inpDest = document.getElementById('input-orc-destino') as HTMLInputElement | null;
+          if (inpDest) inpDest.value = destinoParam;
+        }
+        if (cliIdParam) {
+          try {
+            const { data: cli } = await supabase
+              .from('clientes')
+              .select('id, nome, telefone, email')
+              .eq('id', cliIdParam)
+              .maybeSingle();
+            if (cli) {
+              this.selectedClienteId = cli.id;
+              const inpNome = document.getElementById('input-orc-nome') as HTMLInputElement | null;
+              const inpTel = document.getElementById('input-orc-telefone') as HTMLInputElement | null;
+              const inpEmail = document.getElementById('input-orc-email') as HTMLInputElement | null;
+              if (inpNome) inpNome.value = cli.nome || '';
+              if (inpTel && cli.telefone) inpTel.value = cli.telefone;
+              if (inpEmail && cli.email) inpEmail.value = cli.email;
+            }
+          } catch (errCli) {
+            console.warn('Aviso ao pré-carregar cliente do Next Trip:', errCli);
+          }
+        }
+      } else if (targetId) {
         await this.openVerNotasModal(targetId);
       }
     } catch (err: any) {
@@ -633,6 +665,7 @@ export class OrcamentosPage {
           'Excluir Orçamento',
           { isDestructive: true, confirmText: 'Excluir Permanentemente', cancelText: 'Cancelar' }
         );
+        if (!confirmResult) return;
         try {
           const success = await this.deleteOrcamento(id);
           if (success) {
@@ -1011,7 +1044,7 @@ export class OrcamentosPage {
           </div>
 
           <!-- Coluna 3: AGUARDANDO -->
-          <div class="w-full md:w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-rose-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'AGUARDANDO' ? 'flex' : 'hidden md:flex'}">
+          <div class="w-full bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-rose-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'AGUARDANDO' ? 'flex' : 'hidden md:flex'}">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
                 <span class="p-1 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 rounded-lg flex items-center justify-center shrink-0">
@@ -1035,7 +1068,7 @@ export class OrcamentosPage {
           </div>
 
           <!-- Coluna 4: CONCLUÍDO -->
-          <div class="w-full md:w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-emerald-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'CONCLUIDO' ? 'flex' : 'hidden md:flex'}">
+          <div class="w-full bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-emerald-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'CONCLUIDO' ? 'flex' : 'hidden md:flex'}">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
                 <span class="p-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 dark:text-emerald-400 rounded-lg flex items-center justify-center shrink-0">
@@ -3130,6 +3163,10 @@ export class OrcamentosPage {
 
       orc.nomeCliente = nomeVal;
       orc.contato = contatoVal;
+      if (orc.destino !== destinoVal) {
+        orc.destino_id = undefined;
+        orc.destinoId = undefined;
+      }
       orc.destino = destinoVal;
       orc.dataViagem = dataViagemIso;
       orc.valorProposta = valorVal ? parseDoubleBr(valorVal) : undefined;
@@ -3243,6 +3280,9 @@ export class OrcamentosPage {
             nomeCliente: d.nome_cliente || d.nomeCliente || d.cliente?.nome || 'Cliente',
             contato: d.contato || d.cliente?.telefone || d.cliente?.email || '',
             destino: d.destino || '',
+            destino_id: d.destino_id || d.destinoId || undefined,
+            destinoId: d.destino_id || d.destinoId || undefined,
+            origem: d.origem || undefined,
             dataViagem: d.data_viagem || d.dataViagem || '',
             temperatura: d.temperatura || 'Frio',
             tags: d.tags || [],
@@ -3250,6 +3290,11 @@ export class OrcamentosPage {
             subStatus: d.sub_status || d.subStatus || '',
             notasNegociacao: d.notas_negociacao || d.notasNegociacao || '',
             valorProposta: d.valor_proposta !== undefined ? Number(d.valor_proposta) : (d.valorProposta !== undefined ? Number(d.valorProposta) : undefined),
+            valorViagem: d.valor_viagem !== undefined && d.valor_viagem !== null ? Number(d.valor_viagem) : (d.valorViagem !== undefined ? Number(d.valorViagem) : undefined),
+            documentosUrl: d.documentos_url || d.documentosUrl || [],
+            codigoRef: d.codigo_ref || d.codigoRef || undefined,
+            contatoRealizado: d.contato_realizado ?? d.contatoRealizado ?? false,
+            contato_realizado: d.contato_realizado ?? d.contatoRealizado ?? false,
             createdAt: d.created_at || d.createdAt,
             updatedAt: d.updated_at || d.updatedAt
           };
@@ -3277,6 +3322,9 @@ export class OrcamentosPage {
             nomeCliente: d.nome_cliente || d.nomeCliente || d.cliente?.nome || 'Cliente',
             contato: d.contato || d.cliente?.telefone || d.cliente?.email || '',
             destino: d.destino || '',
+            destino_id: d.destino_id || d.destinoId || undefined,
+            destinoId: d.destino_id || d.destinoId || undefined,
+            origem: d.origem || undefined,
             dataViagem: d.data_viagem || d.dataViagem || '',
             temperatura: d.temperatura || 'Frio',
             tags: d.tags || [],
@@ -3284,6 +3332,11 @@ export class OrcamentosPage {
             subStatus: d.sub_status || d.subStatus || '',
             notasNegociacao: d.notas_negociacao || d.notasNegociacao || '',
             valorProposta: d.valor_proposta !== undefined ? Number(d.valor_proposta) : (d.valorProposta !== undefined ? Number(d.valorProposta) : undefined),
+            valorViagem: d.valor_viagem !== undefined && d.valor_viagem !== null ? Number(d.valor_viagem) : (d.valorViagem !== undefined ? Number(d.valorViagem) : undefined),
+            documentosUrl: d.documentos_url || d.documentosUrl || [],
+            codigoRef: d.codigo_ref || d.codigoRef || undefined,
+            contatoRealizado: d.contato_realizado ?? d.contatoRealizado ?? false,
+            contato_realizado: d.contato_realizado ?? d.contatoRealizado ?? false,
             createdAt: d.created_at || d.createdAt,
             updatedAt: d.updated_at || d.updatedAt
           };
@@ -3791,7 +3844,6 @@ export class OrcamentosPage {
           this.showToast('Orçamento reaberto com sucesso e movido para Em Andamento!', 'success');
           this.closeModal();
           orc.status = 'EM_ANDAMENTO';
-          await this.persistOrcamento(orc);
           orc.subStatus = undefined;
           orc.contatoRealizado = false;
           orc.contato_realizado = false;

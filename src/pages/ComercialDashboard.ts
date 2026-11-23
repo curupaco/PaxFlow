@@ -530,52 +530,54 @@ export class ComercialDashboard {
    * Associa os eventos interativos dos seletores
    */
   private setupEventListeners(): void {
-    // Filtro de Período
-    const selectPeriodo = document.getElementById('select-dashboard-periodo') as HTMLSelectElement;
-    selectPeriodo?.addEventListener('change', async () => {
-      this.selectedPeriod = selectPeriodo.value as PeriodType;
-      const metricsContainer = document.getElementById('dashboard-metrics-container');
-      if (metricsContainer) {
-        metricsContainer.style.opacity = '0.5';
-      }
-      try {
-        await this.loadData();
-        this.renderMetricsSection();
-      } catch (err: any) {
-        console.error('Erro ao atualizar período no Dashboard Comercial:', err);
-        if (metricsContainer) {
-          metricsContainer.innerHTML = `
-            <div class="p-8 text-center bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-3xl">
-              <div class="text-3xl mb-2">⚠️</div>
-              <h3 class="text-base font-bold text-rose-800 dark:text-rose-200">Falha ao carregar dados do período</h3>
-              <p class="text-xs text-rose-600 dark:text-rose-400 mt-1">${err.message || 'Erro de comunicação com o banco de dados.'}</p>
-            </div>
-          `;
-        }
-      } finally {
-        if (metricsContainer) {
-          metricsContainer.style.opacity = '1';
-        }
-      }
-    });
-
-    // Filtro de Consultor (apenas Admins)
-    const selectConsultor = document.getElementById('select-dashboard-consultor') as HTMLSelectElement;
-    selectConsultor?.addEventListener('change', () => {
-      this.selectedConsultantId = selectConsultor.value;
-      this.renderMetricsSection();
-    });
-
-    // Event delegation para elementos dinâmicos do metricsContainer (metas, visão e refresh)
-    this.container.addEventListener('change', (e) => {
+    // Event delegation para elementos dinâmicos e cabeçalho (evita perda de eventos ao alternar Visão Mensal <-> Console Comparativo)
+    this.container.addEventListener('change', async (e) => {
       const target = e.target as HTMLElement;
-      if (target && target.id === 'select-dashboard-meta-periodo') {
+      if (!target) return;
+
+      if (target.id === 'select-dashboard-periodo') {
+        const selectPeriodo = target as HTMLSelectElement;
+        this.selectedPeriod = selectPeriodo.value as PeriodType;
+        const metricsContainer = document.getElementById('dashboard-metrics-container');
+        if (metricsContainer) {
+          metricsContainer.style.opacity = '0.5';
+        }
+        try {
+          await this.loadData();
+          this.renderMetricsSection();
+        } catch (err: any) {
+          console.error('Erro ao atualizar período no Dashboard Comercial:', err);
+          if (metricsContainer) {
+            metricsContainer.innerHTML = `
+              <div class="p-8 text-center bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-3xl">
+                <div class="text-3xl mb-2">⚠️</div>
+                <h3 class="text-base font-bold text-rose-800 dark:text-rose-200">Falha ao carregar dados do período</h3>
+                <p class="text-xs text-rose-600 dark:text-rose-400 mt-1">${err.message || 'Erro de comunicação com o banco de dados.'}</p>
+              </div>
+            `;
+          }
+        } finally {
+          if (metricsContainer) {
+            metricsContainer.style.opacity = '1';
+          }
+        }
+        return;
+      }
+
+      if (target.id === 'select-dashboard-consultor') {
+        const selectConsultor = target as HTMLSelectElement;
+        this.selectedConsultantId = selectConsultor.value;
+        this.renderMetricsSection();
+        return;
+      }
+
+      if (target.id === 'select-dashboard-meta-periodo') {
         const select = target as HTMLSelectElement;
         this.selectedMetaId = select.value;
         this.selectedMetaView = 'agency'; // Reseta para visão consolidada da agência ao trocar de campanha
         this.renderMetricsSection();
       }
-      if (target && target.id === 'select-dashboard-meta-view') {
+      if (target.id === 'select-dashboard-meta-view') {
         const select = target as HTMLSelectElement;
         this.selectedMetaView = select.value;
         this.renderMetricsSection();
@@ -1078,7 +1080,7 @@ export class ComercialDashboard {
   private renderFunnel(orcamentos: Orcamento[], ganhosCount: number): string {
     const total = orcamentos.length;
     
-    // Contagem por status
+    // Contagem por status (SOLICITADO legado unificado em EM_ANDAMENTO quando não houver registros em SOLICITADO)
     const solicitado = orcamentos.filter(o => o.status === 'SOLICITADO').length;
     const emAndamento = orcamentos.filter(o => o.status === 'EM_ANDAMENTO').length;
     const aguardando = orcamentos.filter(o => o.status === 'AGUARDANDO').length;
@@ -1087,12 +1089,12 @@ export class ComercialDashboard {
     const valorTotalFunnel = orcamentos.reduce((acc, o) => acc + (o.valorProposta || 0), 0);
 
     // Contadores cumulativos de passagem
-    // 1. Solicitado (Entrada total de Leads no funil)
+    // 1. Entrada / Em Andamento (Entrada total de Leads no funil)
     const t1_leads = total; 
-    // 2. Em Cotação (Passaram de Solicitado para Em Andamento ou adiante)
-    const t2_cotacao = total - solicitado;
+    // 2. Em Cotação (Passaram de Solicitado para Em Andamento ou adiante; se não há legado SOLICITADO, considera todos em andamento/adiante)
+    const t2_cotacao = solicitado > 0 ? (total - solicitado) : total;
     // 3. Negociação (Passaram para Aguardando Proposta ou Ganho)
-    const t3_negociacao = total - solicitado - emAndamento;
+    const t3_negociacao = aguardando + ganhosCount;
     // 4. Ganho (Concluído Aceito)
     const t4_ganho = ganhosCount;
 

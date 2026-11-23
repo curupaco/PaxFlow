@@ -239,7 +239,8 @@ export class CalendarView {
       });
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const nowLocal = new Date();
+    const todayStr = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
 
     let html = `
       <div class="calendar-container p-4">
@@ -336,7 +337,8 @@ export class CalendarView {
     startOfWeek.setDate(diff);
 
     const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const todayStr = new Date().toISOString().split('T')[0];
+    const nowLocal = new Date();
+    const todayStr = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
 
     let html = `
       <div class="calendar-container p-4">
@@ -486,7 +488,8 @@ export class CalendarView {
       `;
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const nowLocal = new Date();
+    const todayStr = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
 
     let html = `
       <div class="calendar-container p-6">

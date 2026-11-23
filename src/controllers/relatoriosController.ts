@@ -271,7 +271,7 @@ export function calcularFaturamentoLucratividade(
     );
     const subViagem = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0) * fatiaVenda;
 
-    const prods = (v.produtos || []).filter((p: any) => p.status !== 'cancelado');
+    const prods = (v.produtos || []).filter((p: any) => p.status !== 'cancelado' && p.status !== 'reembolsado');
 
     prods.forEach((p: any) => {
       const tipoProd = p.tipo || 'Outros';
@@ -334,7 +334,7 @@ export function calcularFaturamentoLucratividade(
     });
 
     if (!isFiltroAtivo) {
-      const prodsNaoCancelados = (v.produtos || []).filter((p: any) => p.status !== 'cancelado');
+      const prodsNaoCancelados = (v.produtos || []).filter((p: any) => p.status !== 'cancelado' && p.status !== 'reembolsado');
       if (prodsNaoCancelados.length > 0) {
         const totalVendaProds = prodsNaoCancelados.reduce((acc: number, p: any) => acc + (Number(p.valor_venda ?? p.valorVenda ?? 0) * fatiaVenda), 0);
         faturamentoBruto += totalVendaProds;

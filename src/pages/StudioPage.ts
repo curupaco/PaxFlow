@@ -11,7 +11,8 @@ import {
   formatIsoDateToBr,
   applyDateMask,
   formatCurrencyValue,
-  parseDoubleBr
+  parseDoubleBr,
+  attachCurrencyMask
 } from '../utils/masks';
 
 export class StudioPage {
@@ -1645,6 +1646,11 @@ export class StudioPage {
     });
 
     // 5. Sincronização em tempo real dos dados gerais (Passageiro, Destino, Branding, Consultor, Datas, Valores)
+    const campoValorTotal = this.container.querySelector('#campo-valor-total') as HTMLInputElement | null;
+    if (campoValorTotal) {
+      attachCurrencyMask(campoValorTotal);
+    }
+
     this.container.querySelectorAll('.input-sync').forEach(el => {
       el.addEventListener('input', () => {
         this.capturarDadosGeraisDoFormulario();

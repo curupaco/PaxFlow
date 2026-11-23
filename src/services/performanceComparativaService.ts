@@ -413,26 +413,23 @@ export class PerformanceComparativaService {
     const orcAtualQtd = orcAtualFiltrados.length;
     const orcAntQtd = orcAntFiltrados.length;
 
-    // Taxa de Conversão por Safra (virou_venda ou ganho)
-    const orcGanhosAtual = orcAtualFiltrados.filter(o => {
+    // Taxa de Conversão por Safra (virou_venda, ganho ou CONCLUIDO + ACEITO)
+    const isOrcGanho = (o: any) => {
       const st = String(o.status || '').toLowerCase();
-      return st === 'virou_venda' || st === 'aprovado' || st === 'ganho';
-    }).length;
+      const sub = String(o.sub_status || o.subStatus || '').toUpperCase();
+      return st === 'virou_venda' || st === 'aprovado' || st === 'ganho' || (st === 'concluido' && sub === 'ACEITO');
+    };
 
-    const orcGanhosAnt = orcAntFiltrados.filter(o => {
-      const st = String(o.status || '').toLowerCase();
-      return st === 'virou_venda' || st === 'aprovado' || st === 'ganho';
-    }).length;
+    const orcGanhosAtual = orcAtualFiltrados.filter(isOrcGanho).length;
+
+    const orcGanhosAnt = orcAntFiltrados.filter(isOrcGanho).length;
 
     const txConvAtual = orcAtualQtd > 0 ? (orcGanhosAtual / orcAtualQtd) * 100 : 0;
     const txConvAnt = orcAntQtd > 0 ? (orcGanhosAnt / orcAntQtd) * 100 : 0;
 
     // Tempo Médio de Fechamento (dias entre criação e fechamento do orçamento)
     const calcularTempoMedio = (lista: any[]) => {
-      const ganhosComDatas = lista.filter(o => {
-        const st = String(o.status || '').toLowerCase();
-        return (st === 'virou_venda' || st === 'aprovado' || st === 'ganho') && (o.data_fechamento || o.updated_at);
-      });
+      const ganhosComDatas = lista.filter(o => isOrcGanho(o) && (o.data_fechamento || o.updated_at));
       if (ganhosComDatas.length === 0) return 0;
 
       const totalDias = ganhosComDatas.reduce((acc, o) => {
@@ -681,7 +678,8 @@ export class PerformanceComparativaService {
         const item = mapa.get(cId)!;
         item.orcQtd += 1;
         const st = String(o.status || '').toLowerCase();
-        if (st === 'virou_venda' || st === 'aprovado' || st === 'ganho') {
+        const sub = String(o.sub_status || o.subStatus || '').toUpperCase();
+        if (st === 'virou_venda' || st === 'aprovado' || st === 'ganho' || (st === 'concluido' && sub === 'ACEITO')) {
           item.orcGanhos += 1;
         }
       }
@@ -744,6 +742,9 @@ export class PerformanceComparativaService {
       dataAnteriorFim: opcoes.dataAnteriorFim
     });
 
+    const isRestritoConsultor = !!(opcoes.userPerfil && opcoes.userPerfil.role !== 'admin' && opcoes.userPerfil.id);
+    const consultorEfetivo = isRestritoConsultor ? opcoes.userPerfil!.id : opcoes.consultorId;
+
     // Consultar dados em paralelo
     const [resViagensAtual, resViagensAnt, resOrcAtual, resOrcAnt, resPerfis] = await Promise.all([
       supabase
@@ -756,7 +757,7 @@ export class PerformanceComparativaService {
           status,
           consultor_id,
           produtos:produtos_viagem(id, tipo, valor_venda, comissao, markup, rav, status),
-          divisoes:viagens_divisoes(consultor_id, percentual)
+          divisoes:viagens_divisoes(consultor_id, percentual, percentual_rav)
         `)
         .not('status', 'eq', 'cancelada')
         .not('data_financeiro', 'is', null)
@@ -773,7 +774,7 @@ export class PerformanceComparativaService {
           status,
           consultor_id,
           produtos:produtos_viagem(id, tipo, valor_venda, comissao, markup, rav, status),
-          divisoes:viagens_divisoes(consultor_id, percentual)
+          divisoes:viagens_divisoes(consultor_id, percentual, percentual_rav)
         `)
         .not('status', 'eq', 'cancelada')
         .not('data_financeiro', 'is', null)
@@ -782,13 +783,13 @@ export class PerformanceComparativaService {
 
       supabase
         .from('orcamentos')
-        .select('id, consultor_id, status, created_at, updated_at, data_fechamento')
+        .select('id, consultor_id, status, sub_status, created_at, updated_at')
         .gte('created_at', `${intervalos.atual.inicio}T00:00:00Z`)
         .lte('created_at', `${intervalos.atual.fim}T23:59:59Z`),
 
       supabase
         .from('orcamentos')
-        .select('id, consultor_id, status, created_at, updated_at, data_fechamento')
+        .select('id, consultor_id, status, sub_status, created_at, updated_at')
         .gte('created_at', `${intervalos.anterior.inicio}T00:00:00Z`)
         .lte('created_at', `${intervalos.anterior.fim}T23:59:59Z`),
 
@@ -806,13 +807,13 @@ export class PerformanceComparativaService {
 
     // Filtrar viagens com base nos parâmetros
     const viagensAtuFiltradas = this.processarViagens(rawViagensAtu, {
-      consultorId: opcoes.consultorId,
+      consultorId: consultorEfetivo,
       tipoProduto: opcoes.tipoProduto,
       destino: opcoes.destino
     });
 
     const viagensAntFiltradas = this.processarViagens(rawViagensAnt, {
-      consultorId: opcoes.consultorId,
+      consultorId: consultorEfetivo,
       tipoProduto: opcoes.tipoProduto,
       destino: opcoes.destino
     });
@@ -825,11 +826,11 @@ export class PerformanceComparativaService {
       rawOrcAnt,
       intervalos.atual.diasCorte,
       intervalos.atual.diasTotais,
-      opcoes.consultorId || 'todos'
+      consultorEfetivo || 'todos'
     );
 
     // Benchmark total do mês anterior (para desenhar linha alvo)
-    const benchmarkAnt = rawViagensAnt.reduce((s, v) => s + (Number(v.valor_total) || 0), 0);
+    const benchmarkAnt = viagensAntFiltradas.reduce((s, v) => s + (Number(v.valor_total) || 0), 0);
 
     // Calcular Curva S
     const curvaS = this.calcularPacingCurvaS(
@@ -840,13 +841,16 @@ export class PerformanceComparativaService {
       benchmarkAnt
     );
 
-    // Tabela do time (com rateio)
-    const tabelaTime = this.calcularTabelaConsultores(
+    // Tabela do time (com rateio e isolamento RBAC para consultor)
+    const tabelaTimeCompleta = this.calcularTabelaConsultores(
       rawViagensAtu,
       rawViagensAnt,
       rawOrcAtu,
       perfis
     );
+    const tabelaTime = isRestritoConsultor
+      ? tabelaTimeCompleta.filter(l => l.consultorId === consultorEfetivo)
+      : tabelaTimeCompleta;
 
     return {
       intervalos,

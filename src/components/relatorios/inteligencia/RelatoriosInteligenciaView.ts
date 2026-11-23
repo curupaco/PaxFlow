@@ -604,7 +604,7 @@ export class RelatoriosInteligenciaView {
       const updatedDate = new Date(o.updated_at || o.created_at || Date.now());
       const diffHours = (agora.getTime() - updatedDate.getTime()) / (1000 * 60 * 60);
       const temp = (o.temperatura || o.lead_temperatura || 'QUENTE').toUpperCase();
-      const valor = Number(o.valor_total || o.valorTotal || 0);
+      const valor = Number(o.valor_proposta || o.valorProposta || o.valor_viagem || o.valorViagem || o.valor_total || o.valorTotal || 0);
 
       let emRisco = false;
       let nivelRisco = 'BAIXO';
@@ -614,10 +614,10 @@ export class RelatoriosInteligenciaView {
         emRisco = true;
         nivelRisco = 'ALTO';
         motivoRisco = `Lead Quente sem contato há ${Math.floor(diffHours / 24)}d (${Math.floor(diffHours)}h)`;
-      } else if (temp === 'MORNO' && diffHours >= 120) {
+      } else if ((temp === 'MORNO' || temp === 'NORMAL') && diffHours >= 120) {
         emRisco = true;
         nivelRisco = 'MÉDIO';
-        motivoRisco = `Lead Morno estagnado há ${Math.floor(diffHours / 24)} dias`;
+        motivoRisco = `Lead Normal estagnado há ${Math.floor(diffHours / 24)} dias`;
       } else if (temp === 'FRIO' && diffHours >= 240) {
         emRisco = true;
         nivelRisco = 'BAIXO';
@@ -649,8 +649,11 @@ export class RelatoriosInteligenciaView {
     const viagensEmRisco: any[] = [];
 
     (data.viagens || []).forEach((v: any) => {
-      if (!v.data_saida && !v.dataSaida) return;
-      const dataSaida = new Date(v.data_saida || v.dataSaida);
+      if (v.status === 'cancelada' || v.status === 'concluida') return;
+      const dataSaidaRaw = v.data_ida || v.dataIda || v.data_saida || v.dataSaida;
+      if (!dataSaidaRaw) return;
+      const dataSaidaStr = String(dataSaidaRaw).includes('T') ? String(dataSaidaRaw) : `${dataSaidaRaw}T12:00:00`;
+      const dataSaida = new Date(dataSaidaStr);
       const diffDiasEmbarque = Math.ceil((dataSaida.getTime() - agora.getTime()) / (1000 * 60 * 60 * 24));
 
       if (diffDiasEmbarque >= 0 && diffDiasEmbarque <= antecedenciaDias) {
@@ -867,11 +870,12 @@ export class RelatoriosInteligenciaView {
           const consultorId = btn.getAttribute('data-consultor') || ctx.user?.id;
           try {
             await supabase.from('lembretes').insert({
-              title: `🚨 RISCO: ${title}`,
-              consultor_id: consultorId,
-              status: 'PENDENTE',
-              prioridade: 'URGENTE',
-              created_at: new Date().toISOString()
+              user_id: consultorId,
+              titulo: `🚨 RISCO: ${title}`,
+              descricao: `Acompanhamento comercial prioritário: ${title}`,
+              data_lembrete: new Date().toISOString().split('T')[0],
+              periodo: 'MANHA',
+              arquivado: false
             });
             ctx.showToast('Lembrete urgente de risco criado no Inbox com sucesso!', 'success');
           } catch (err: any) {

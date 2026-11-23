@@ -373,7 +373,7 @@ export class VerNotasModal {
       try {
         const res = await OrcamentosService.reabrirOrcamento(orc.id, motivo, options.perfil);
         if (res.success) {
-          options.showToast('Orçamento reaberto com sucesso e movido para Solicitado!', 'success');
+          options.showToast('Orçamento reaberto com sucesso e movido para Em Andamento!', 'success');
           if (options.onUpdate && res.orcamentoAtualizado) {
             await options.onUpdate(res.orcamentoAtualizado);
           }

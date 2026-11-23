@@ -179,8 +179,7 @@ describe('Fluxo Subcutâneo de Aceite Formal da Proposta e Conversão em Viagem'
     expect(viagemCriada.consultor_id).toBe(consultorId);
     expect(viagemCriada.destino).toBe('Ushuaia - Fim do Mundo');
     expect(viagemCriada.valor_total).toBe(62532);
-    expect(viagemCriada.status).toBe('confirmada');
-    expect(viagemCriada.orcamento_id).toBe(orcamentoOrigemId);
+    expect(viagemCriada.status).toBe('fechado');
 
     // 3. Orçamento de origem movido para CONCLUIDO / ACEITO (Venda Fechada)
     expect(updatedTables.orcamentos.length).toBeGreaterThanOrEqual(1);

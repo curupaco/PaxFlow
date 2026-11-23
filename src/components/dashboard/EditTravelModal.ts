@@ -1181,8 +1181,8 @@ export class EditTravelModal {
       const initialStatus = v.status || '';
       const currentStatus = statusSelect.value;
       
-      const btnSalvar = document.getElementById('btn-salvar-viagem') as HTMLButtonElement;
-      const btnCancelar = document.getElementById('btn-cancel-edit') as HTMLButtonElement;
+      const btnSalvar = (document.getElementById('btn-save-edit-trip') || document.getElementById('btn-salvar-viagem')) as HTMLButtonElement;
+      const btnCancelar = (document.getElementById('btn-close-edit-modal') || document.getElementById('btn-cancel-edit')) as HTMLButtonElement;
       
       if (viagemProcessoConferido) {
         if (currentStatus !== initialStatus) {
@@ -1647,12 +1647,9 @@ export class EditTravelModal {
       if (!confirm) return;
 
       try {
-        const { error } = await supabase
-          .from('viagens')
-          .delete()
-          .eq('id', v.id);
-
-        if (error) throw error;
+        const { excluirViagemCascata } = await import('../../controllers/viagensController');
+        const res = await excluirViagemCascata(supabase, v.id);
+        if (!res.success) throw new Error(res.error || 'Erro ao excluir viagem');
 
         this.options.showToast('Viagem excluída com sucesso!', 'success');
         this.closeModal();
@@ -2925,7 +2922,10 @@ export class EditTravelModal {
             .from('loc_pagamentos')
             .select('*, formas_recebimento(*)')
             .eq('viagem_id', tripId);
-          if (dataPags) locPagamentos = dataPags;
+          if (dataPags) {
+            locPagamentos = dataPags;
+            this.cachedLocPagamentos = dataPags;
+          }
         }
       } catch (err) {
         console.warn('Erro ao carregar pagamentos/formas do Supabase:', err);
@@ -3987,6 +3987,7 @@ export class EditTravelModal {
               if (error) throw error;
             }
             this.options.showToast(`Pagamentos do LOC "${locKey}" removidos com sucesso!`, 'success');
+            this.cachedLocPagamentos = [];
             fecharModal();
             await this.loadAndRenderProdutosViagem(this.tripId);
           } catch (err: any) {
@@ -4065,6 +4066,7 @@ export class EditTravelModal {
         }
 
         this.options.showToast('Formas de pagamento salvas com sucesso!', 'success');
+        this.cachedLocPagamentos = [];
         fecharModal();
         await this.loadAndRenderProdutosViagem(this.tripId);
       } catch (err: any) {
@@ -4331,7 +4333,7 @@ export class EditTravelModal {
         const nomeExibicaoPax = anexo.passageiro_nome || (anexo.cliente_id && titularNome ? titularNome : '');
         const isDocumentoViagem = !anexo.cliente_id;
         const tamanhoFormatado = AnexosService.formatarTamanho(anexo.tamanho_bytes);
-        const podeExcluir = AnexosService.podeExcluirAnexo(anexo, this.options.user?.id, this.options.user?.role);
+        const podeExcluir = AnexosService.podeExcluirAnexo(anexo, this.options.user?.id, this.options.perfil?.role || this.options.user?.role);
 
         return `
           <div class="flex items-center justify-between p-3 bg-slate-50/80 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800/70 rounded-xl border border-slate-200/60 dark:border-slate-800/80 transition gap-2">
@@ -4496,7 +4498,7 @@ export class EditTravelModal {
       const loc = (btn.getAttribute('data-loc') || '').toUpperCase();
       const isConferido = !!this.locConferenciasMap[loc];
       const subProdutosLoc = (this.currentLoadedViagem?.produtos || []).filter(
-        (p: any) => (p.codigo_reserva || 'SEM_LOC').trim().toUpperCase() === loc
+        (p: any) => (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase() === loc
       );
       const isLocEmEdicao = isLocBloqueadoPorEdicao(this.selectedProductId, this.selectedProductDirty, subProdutosLoc);
 

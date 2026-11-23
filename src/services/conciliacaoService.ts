@@ -570,12 +570,12 @@ export class ConciliacaoService {
     transacoes: ExtratoTransacao[],
     pendentesLocs: LocPagamentoPendente[]
   ): ResumoConciliacao {
-    const totalExtrato = transacoes.reduce((acc, t) => acc + t.valor, 0);
+    const totalExtrato = transacoes.reduce((acc, t) => acc + Math.abs(t.valor), 0);
     const transacoesConciliadas = transacoes.filter(t => t.status === 'conciliado' || t.status === 'justificado');
-    const totalConciliado = transacoesConciliadas.reduce((acc, t) => acc + t.valor, 0);
+    const totalConciliado = transacoesConciliadas.reduce((acc, t) => acc + Math.abs(t.valor), 0);
 
     const transacoesPendentes = transacoes.filter(t => t.status === 'pendente');
-    const totalPendenteExtrato = transacoesPendentes.reduce((acc, t) => acc + t.valor, 0);
+    const totalPendenteExtrato = transacoesPendentes.reduce((acc, t) => acc + Math.abs(t.valor), 0);
 
     const locsSemBanco = pendentesLocs.filter(p => !p.conciliado);
     const totalRecebimentosSemBanco = locsSemBanco.reduce((acc, p) => acc + p.valor, 0);
@@ -748,6 +748,23 @@ export class ConciliacaoService {
    * Reverte conciliação
    */
   public static async reverterConciliacao(transacaoId: string): Promise<void> {
+    // 0. Busca justificativa para detectar se houve baixa de Conta a Pagar
+    let contaPagarId: string | null = null;
+    try {
+      const { data: txData } = await supabase
+        .from('extratos_bancarios_transacoes')
+        .select('observacao_justificativa')
+        .eq('id', transacaoId)
+        .maybeSingle();
+      const obs = txData?.observacao_justificativa || '';
+      const match = obs.match(/\(#([0-9a-fA-F-]{36})\)/);
+      if (match && match[1]) {
+        contaPagarId = match[1];
+      }
+    } catch (e) {
+      console.warn('Aviso ao verificar conta a pagar vinculada na reversão:', e);
+    }
+
     // 1. Busca os IDs vinculados
     const { data: vinculos } = await supabase
       .from('extratos_conciliacoes_vinculos')
@@ -777,6 +794,22 @@ export class ConciliacaoService {
         observacao_justificativa: null
       })
       .eq('id', transacaoId);
+
+    // 4. Reabre Conta a Pagar no Financeiro se vinculada
+    if (contaPagarId) {
+      try {
+        await supabase
+          .from('fin_contas_pagar')
+          .update({
+            status: 'pendente',
+            valor_pago_total: 0,
+            data_pagamento: null
+          })
+          .eq('id', contaPagarId);
+      } catch (e) {
+        console.warn('Aviso ao reabrir conta a pagar na reversão:', e);
+      }
+    }
 
     // 4. Marca os loc_pagamentos como não conciliados
     for (const locId of locIds) {

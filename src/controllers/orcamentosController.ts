@@ -48,7 +48,7 @@ export function calcularMetricasPipeline(orcamentos: Orcamento[]): {
 
     const temp = (o.temperatura || '').toUpperCase();
     if (temp === 'QUENTE') quentes++;
-    else if (temp === 'MORNO') mornos++;
+    else if (temp === 'MORNO' || temp === 'NORMAL') mornos++;
     else if (temp === 'FRIO') frios++;
   });
 

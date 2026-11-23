@@ -359,6 +359,14 @@ export class InboxPage {
       } catch (e) {}
       this.localSyncChannel = null;
     }
+    if ((this as any)._onRealtimeInboxBound) {
+      window.removeEventListener('paxflow:new-message', (this as any)._onRealtimeInboxBound);
+      (this as any)._onRealtimeInboxBound = null;
+    }
+    if ((this as any)._onSwitchInboxTabBound) {
+      window.removeEventListener('paxflow-switch-inbox-tab', (this as any)._onSwitchInboxTabBound);
+      (this as any)._onSwitchInboxTabBound = null;
+    }
   }
 
   /**
@@ -432,18 +440,21 @@ export class InboxPage {
       perfil: this.perfil
     });
 
-    // Combina alertas filtrados com agenda futura de viagens (Visão Dupla) sem duplicar cards na janela
+    // Combina alertas filtrados com agenda futura de viagens (Visão Dupla) apenas na visão principal sem filtros restritivos
     const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
     const q = this.searchQuery.trim().toLowerCase();
-    const calendarExtras = (this.calendarViagemEvents || []).filter(ev => {
-      if (isAdmin && this.selectedConsultantFilter !== 'todos' && ev.consultorId !== this.selectedConsultantFilter) {
-        return false;
-      }
-      if (q && !(ev.title?.toLowerCase() || '').includes(q) && !(ev.subject?.toLowerCase() || '').includes(q)) {
-        return false;
-      }
-      return true;
-    });
+    const exibirAgendaViagens = (this.activeTab === 'ativos' || this.activeTab === 'todos') && this.categoryFilter === 'todos' && !this.onlyUnreadFilter;
+    const calendarExtras = exibirAgendaViagens
+      ? (this.calendarViagemEvents || []).filter(ev => {
+          if (isAdmin && this.selectedConsultantFilter !== 'todos' && ev.consultorId !== this.selectedConsultantFilter) {
+            return false;
+          }
+          if (q && !(ev.title?.toLowerCase() || '').includes(q) && !(ev.subject?.toLowerCase() || '').includes(q)) {
+            return false;
+          }
+          return true;
+        })
+      : [];
 
     const calendarAlertasCombinados = [
       ...this.filteredAlerts.filter(a => a.type !== 'pre-embarque' || calendarExtras.length === 0),

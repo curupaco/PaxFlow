@@ -374,7 +374,7 @@ export class OrcamentosService {
     const novasNotas = notasAnteriores ? `${blocoLog}\n----------------------------------\n${notasAnteriores}` : blocoLog;
 
     const payload: Record<string, any> = {
-      status: 'SOLICITADO',
+      status: 'EM_ANDAMENTO',
       sub_status: null,
       contato_realizado: false,
       contato_realizado_por: null,
@@ -397,7 +397,7 @@ export class OrcamentosService {
         item_id: orcamentoId,
         parent_id: orcamentoId,
         usuario_id: userPerfil?.id || null,
-        conteudo: `🔄 Orçamento reaberto para a etapa SOLICITADO por ${nomeAutor}.${motivo && motivo.trim() ? ' Motivo: ' + motivo.trim() : ''}`
+        conteudo: `🔄 Orçamento reaberto para a etapa EM_ANDAMENTO por ${nomeAutor}.${motivo && motivo.trim() ? ' Motivo: ' + motivo.trim() : ''}`
       });
     } catch (commentErr) {
       console.warn('Aviso: Erro ao registrar comentário de reabertura:', commentErr);
@@ -407,7 +407,7 @@ export class OrcamentosService {
       success: true,
       orcamentoAtualizado: {
         ...orc,
-        status: 'SOLICITADO',
+        status: 'EM_ANDAMENTO',
         sub_status: null,
         subStatus: undefined,
         contato_realizado: false,
@@ -650,7 +650,7 @@ export class OrcamentosService {
           telefone: cTelefone || null,
           documento: cDoc || null,
           data_nascimento: cDataNascimento || null,
-          google_drive_folder_url: folderDriveUrl || null,
+          ...(folderDriveUrl ? { google_drive_folder_url: folderDriveUrl } : {}),
           classificacoes: novasClassificacoes
         })
         .eq('id', clienteId);

@@ -155,7 +155,7 @@ describe('Orçamentos & Funil Kanban - Testes Subcutâneos de Performance', () =
     if (res.success) {
       const orcLocal = listaOrcamentosLocal.find(o => o.id === orcamentoMock.id);
       if (orcLocal) {
-        orcLocal.status = 'SOLICITADO';
+        orcLocal.status = 'EM_ANDAMENTO';
         orcLocal.subStatus = undefined;
         orcLocal.contatoRealizado = false;
         orcLocal.contato_realizado = false;
@@ -168,7 +168,7 @@ describe('Orçamentos & Funil Kanban - Testes Subcutâneos de Performance', () =
     // Assert
     expect(res.success).toBe(true);
     const orcAtualizado = listaOrcamentosLocal[0];
-    expect(orcAtualizado.status).toBe('SOLICITADO');
+    expect(orcAtualizado.status).toBe('EM_ANDAMENTO');
     expect(orcAtualizado.subStatus).toBeUndefined();
     expect(orcAtualizado.contatoRealizado).toBe(false);
   });

@@ -143,7 +143,7 @@ export class CampanhasService {
       }
 
       // Fornecedores da viagem a partir de produtos_viagem se houver
-      const produtos = v.produtos_viagem || v.produtosViagem || [];
+      const produtos = v.produtos || v.produtos_viagem || v.produtosViagem || [];
       const fornecedores = Array.from(
         new Set(
           produtos
