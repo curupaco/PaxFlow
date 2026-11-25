@@ -1,7 +1,0 @@
-# Regras de Redirecionamento e Fallback SPA do Cloudflare Pages / Netlify
-
-# Assets compilados ausentes (versão antiga) devem retornar 404 real e nunca index.html (evita erro de MIME text/html)
-/assets/* 404
-
-# Roteamento Single Page Application (SPA) para rotas limpas
-/* /index.html 200

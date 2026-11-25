@@ -33,10 +33,14 @@ import { podeAcessarFinanceiro } from './utils/permissaoFinanceiro';
 
 (window as any).traduzirErro = traduzirErro;
 
-// Limpa marcadores de auto-recuperação de cache de versão anterior
+// Limpa marcadores de auto-recuperação de cache somente após 15 segundos de estabilidade
 try {
-  sessionStorage.removeItem('paxflow_stale_reload');
-  sessionStorage.removeItem('paxflow_entry_reload');
+  setTimeout(() => {
+    try {
+      sessionStorage.removeItem('paxflow_stale_reload');
+      sessionStorage.removeItem('paxflow_entry_reload');
+    } catch (_) {}
+  }, 15000);
 } catch (_) {}
 
 // Inicializa interceptador global de digitação direta para 100% dos campos de data

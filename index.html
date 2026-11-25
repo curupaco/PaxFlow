@@ -20,39 +20,61 @@
             keys.forEach(function (k) { caches.delete(k); });
           });
         }
-        window.location.reload(true);
+        window.location.reload();
       }
+    }
+
+    function reinjectStylesheetWithCacheBuster(linkEl) {
+      if (!linkEl || !linkEl.href) return;
+      var baseHref = linkEl.href.split('?')[0];
+      var newLink = document.createElement('link');
+      newLink.rel = 'stylesheet';
+      newLink.crossOrigin = linkEl.crossOrigin || 'anonymous';
+      newLink.href = baseHref + '?v=' + Date.now();
+      newLink.setAttribute('data-paxflow-busted', 'true');
+      linkEl.parentNode.insertBefore(newLink, linkEl.nextSibling);
+      linkEl.remove();
     }
 
     // Captura erros de carregamento em elementos SCRIPT e LINK (CSS)
     window.addEventListener('error', function (event) {
       var target = event.target;
-      if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
+      if (!target) return;
+      if (target.tagName === 'LINK' && target.rel === 'stylesheet' && !target.getAttribute('data-paxflow-busted')) {
+        reinjectStylesheetWithCacheBuster(target);
+        return;
+      }
+      if (target.tagName === 'SCRIPT' || target.tagName === 'LINK') {
         forceCleanReload('Asset desatualizado ou inacessível no cache (' + target.tagName + ')');
       }
     }, true);
 
-    // Se o CSS principal não for carregado nos primeiros 3 segundos, dispara auto-cura preventiva
+    // Se o CSS principal não for carregado após o DOMContentLoaded, re-injeta com cache-buster antes de tentar reload
     window.addEventListener('DOMContentLoaded', function () {
       setTimeout(function () {
         var links = document.querySelectorAll('link[rel="stylesheet"]');
         var cssLoaded = false;
+        var failedLinks = [];
         for (var i = 0; i < links.length; i++) {
           try {
             if (links[i].sheet && links[i].sheet.cssRules && links[i].sheet.cssRules.length > 0) {
               cssLoaded = true;
-              break;
+            } else if (links[i].href && links[i].href.indexOf('/assets/') !== -1) {
+              failedLinks.push(links[i]);
             }
           } catch (e) {
-            // Em caso de cross-origin ou bloqueio de stylesheet
             cssLoaded = true;
           }
         }
-        // Se nenhum CSS carregou regras e havia link de stylesheet
-        if (links.length > 0 && !cssLoaded) {
-          forceCleanReload('Falha na aplicação do CSS principal');
+        if (!cssLoaded && failedLinks.length > 0) {
+          var unbusted = failedLinks.filter(function (l) { return !l.getAttribute('data-paxflow-busted'); });
+          if (unbusted.length > 0) {
+            unbusted.forEach(reinjectStylesheetWithCacheBuster);
+          } else {
+            forceCleanReload('Falha na aplicação do CSS principal');
+          }
         }
-      }, 3000);
+      }, 2000);
     });
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">

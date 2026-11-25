@@ -1161,3 +1161,7 @@ html.dark .bg-indigo-100, html.dark .bg-blue-100 {
     -webkit-overflow-scrolling: touch !important;
   }
 }
+
+:root {
+  --paxflow-css-rev: 20261125;
+}
