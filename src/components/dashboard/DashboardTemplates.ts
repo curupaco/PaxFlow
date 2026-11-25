@@ -202,7 +202,7 @@ export function renderNovoProdutoFormHTML(tiposProduto: any[]): string {
     <div class="flex items-center justify-between mb-3">
       <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide flex items-center gap-1">➕ Adicionar Produto / Serviço</h4>
       <button type="button" id="btn-importar-pnr" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg shadow-sm transition flex items-center gap-1">
-        ⚡ Importar PNR / E-mail
+        ⚡ Importar Voucher / PNR
       </button>
     </div>
     

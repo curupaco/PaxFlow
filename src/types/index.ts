@@ -873,6 +873,34 @@ export interface StudioAceiteFormal {
   termos_versao?: string;
 }
 
+export interface StudioCruzeiroEscala {
+  dia: string;
+  porto: string;
+  chegada?: string;
+  partida?: string;
+  ancorado?: boolean;
+}
+
+export interface StudioCruzeiroExtraido {
+  navio: string;
+  reserva?: string;
+  cabine?: string;
+  deck?: string;
+  categoria?: string;
+  experiencia?: string;
+  portoEmbarque: string;
+  dataEmbarque: string;
+  horaCheckIn?: string;
+  portoDesembarque?: string;
+  dataDesembarque?: string;
+  itinerarioEscalas?: StudioCruzeiroEscala[];
+  servicosAdicionais?: string[];
+  contatoEmergencia?: {
+    nome: string;
+    telefone?: string;
+  };
+}
+
 export interface StudioDadosExtraidos {
   arquivosProcessados?: string[];
   voos?: Array<{
@@ -885,6 +913,7 @@ export interface StudioDadosExtraidos {
     dataVolta?: string;
     horaVolta?: string;
     localizador?: string;
+    bilhete?: string;
   }>;
   hospedagens?: Array<{
     hotel: string;
@@ -895,13 +924,17 @@ export interface StudioDadosExtraidos {
     quarto?: string;
     regime?: string;
     voucher?: string;
+    taxas?: string;
   }>;
+  cruzeiros?: StudioCruzeiroExtraido[];
   servicos?: Array<{
     tipo: string;
     descricao: string;
     data?: string;
+    dataFim?: string;
     fornecedor?: string;
     voucher?: string;
+    valor?: number;
   }>;
   cliente?: {
     nome: string;

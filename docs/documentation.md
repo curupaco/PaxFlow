@@ -865,9 +865,16 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
   - **Dúvidas Contextuais por Dia do Itinerário**: Cada dia sequencial da programação possui o botão `💬 Dúvida sobre o Dia X`, que gera um link inteligente de WhatsApp contendo a identificação do dia e da atividade para o viajante tirar dúvidas operacionais ou solicitar personalizações pontuais diretamente com o consultor.
 - **Arquitetura Split Screen (Tela Dividida)**:
   - **Coluna da Esquerda (Editor Estruturado)**:
-    - **1. Ingestão de Documentos com pdfjs-dist**:
-      - Motor avançado de parsing de arquivos PDF de operadoras (ex: Agaxtur, CVC, Trend, BeFly) e bilhetes NDC/GDS (LATAM, Azul, Gol, Delta, Air France) utilizando `pdfjs-dist` nativo.
+    - **1. Ingestão Multimodelo de Documentos com pdfjs-dist**:
+      - Motor avançado de parsing de arquivos PDF de operadoras (ex: Agaxtur, MSC Cruzeiros, Krooze, Infotera, CVC, Trend, BeFly) e bilhetes NDC/GDS (LATAM, Azul, Gol, Delta, Air France) utilizando `pdfjs-dist` nativo.
+      - **Mapeamento & Desmembramento dos Novos 4 Modelos Oficiais de Vouchers**:
+        1. *MSC Cruzeiros (Formulário de Embarque)*: Identificação do Localizador de Reserva (`75942907`), Navio (`MSC Virtuosa`), Cabine (`11225`), Deck (`11`), Categoria (`Balcony`), Experiência (`FANTASTICA`), Horário de Abertura de Check-in (`15:30`), Hóspedes completos e Contato de Emergência.
+        2. *Itinerário Náutico Dia a Dia (Escalas)*: Desdobramento cronológico de todos os portos de escala em cartões dia a dia no roteiro (Santos ➔ Búzios ancorado ➔ Navegando & Lazer ➔ Salvador ➔ Navegando ➔ Copacabana Réveillon ➔ Ilhabela ancorado ➔ Santos desembarque) e serviços adicionais (`EASY PACKAGE`, `HOTEL SERVICE CHARGE`, `Browse Wi-Fi`).
+        3. *Multi-Hospedagem Agaxtur Infotera*: Detecção e separação de múltiplos hotéis agrupados em um mesmo voucher (`Pestana CR7 Lisboa` e `Hotel Acta Atrium Palace`), extraindo localizadores individuais (`9111139149617` e `9111139149762`), datas de check-in/out, quartos, regimes e taxas obrigatórias em euros.
+        4. *Confirmação Multisserviço Agaxtur Krooze*: Identificador (`CR-0E92F2A329`), desmembramento e alocação financeira precisa de 3 produtos distintos em uma única importação: Marítimo (`MSC SEAVIEW Yacht Club` - R$ 34.258,10), Taxa de Serviço de Hotelaria (R$ 1.694,00) e Seguro Viagem (`Europ Assistance 29 Motivos` - R$ 480,00), com soma auditada de R$ 36.432,10.
+        5. *Agaxtur Travellink / GOL*: Localizador PNR (`OABIUA`), bilhete eletrônico IATA (`127-2311356591`), passageira e os 2 trechos de voo (`G3 1634` e `G3 1639`).
       - Extração inteligente de múltiplos trechos aéreos (ida e volta independentes), códigos de voo, horários de decolagem/pouso, passageiros, bilhetes eletrônicos e localizadores de reserva (PNR), integrando-os de forma instantânea na linha do tempo dia a dia da proposta.
+      - **Integração no Modal de Produtos de Viagens (`EditTravelModal`)**: O botão `⚡ Importar Voucher / PNR` permite carregar o PDF oficial ou colar o texto do voucher/e-mail, pré-populando tipo de produto, fornecedor, descrição, datas de serviço e valor de venda com 1 clique.
     - **2. Dados do Passageiro, Capa & Consultor**:
       - **Branding / Tagline da Capa**: Campo editável para personalizar o título de marca (padrão _"PAXFLOW LUXURY TRAVEL"_) para o nome da agência ou slogan da proposta.
       - **Galeria Unsplash™ & Acervo Próprio da Agência [ONDA 3]**:

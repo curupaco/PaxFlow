@@ -9,6 +9,7 @@ import { showCustomConfirm } from '../../services/dialog';
 import { SendTemplateMessageModal } from './SendTemplateMessageModal';
 import { renderHelpIcon } from '../../utils/helpHelper';
 import { parsePnrText } from '../../utils/pnrParser';
+import { StudioExtractionService } from '../../services/studioExtractionService';
 import { confirmUnsavedChanges } from '../common/UnsavedChangesModal';
 import { ClienteDetalhesModal } from '../common/ClienteDetalhesModal';
 import { RemarcacaoModal } from './RemarcacaoModal';
@@ -1760,7 +1761,7 @@ export class EditTravelModal {
       }
     });
 
-    // Importador Rápido de PNR / E-mail de Emissão
+    // Importador Rápido de Voucher / PNR / Bilhete de Emissão (Texto ou PDF)
     document.getElementById('btn-importar-pnr')?.addEventListener('click', () => {
       const pnrModalOverlay = document.createElement('div');
       pnrModalOverlay.className = 'fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeInCard';
@@ -1768,12 +1769,24 @@ export class EditTravelModal {
         <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 text-slate-800 dark:text-slate-100">
           <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
             <h3 class="text-base font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide flex items-center gap-2">
-              <span>⚡</span> Importar PNR / E-mail de Emissão
+              <span>⚡</span> Importar Voucher / PNR / Bilhete
             </h3>
             <button id="btn-close-pnr-modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">✕</button>
           </div>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Cole abaixo o texto completo do e-mail de confirmação ou bilhete (Gol, Azul, LATAM, Amadeus, Sabre) para preencher o formulário automaticamente:</p>
-          <textarea id="pnr-raw-text-input" rows="6" placeholder="Cole aqui o texto do e-mail de emissão ou voucher..." class="w-full p-3 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 mb-4"></textarea>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            Faça upload do PDF oficial ou cole o texto do voucher/e-mail (MSC Cruzeiros, Agaxtur Infotera, Krooze, Gol, LATAM, Azul) para preencher o formulário:
+          </p>
+
+          <div class="mb-3">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-1">Carregar Arquivo Voucher (PDF ou TXT)</label>
+            <input type="file" id="pnr-file-input" accept=".pdf,.txt" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 dark:file:bg-amber-950/40 dark:file:text-amber-400 cursor-pointer" />
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-1">Ou Cole o Texto do Voucher</label>
+            <textarea id="pnr-raw-text-input" rows="5" placeholder="Cole aqui o texto do e-mail de emissão ou voucher..." class="w-full p-3 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500"></textarea>
+          </div>
+
           <div class="flex items-center justify-end gap-3">
             <button id="btn-cancel-pnr" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl">Cancelar</button>
             <button id="btn-process-pnr" class="px-4 py-2 text-xs font-extrabold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-md flex items-center gap-1.5">
@@ -1785,17 +1798,35 @@ export class EditTravelModal {
 
       document.body.appendChild(pnrModalOverlay);
 
+      const fileInput = pnrModalOverlay.querySelector('#pnr-file-input') as HTMLInputElement;
+      const textArea = pnrModalOverlay.querySelector('#pnr-raw-text-input') as HTMLTextAreaElement;
+
+      fileInput?.addEventListener('change', async () => {
+        const file = fileInput.files?.[0];
+        if (file) {
+          try {
+            textArea.value = 'Carregando e extraindo dados do arquivo...';
+            const textoExtraido = await StudioExtractionService.extrairTextoDeArquivo(file);
+            textArea.value = textoExtraido;
+          } catch (err: any) {
+            textArea.value = '';
+            this.options.showToast(`Erro ao ler arquivo: ${err?.message || 'Arquivo ilegível'}`, 'error');
+          }
+        }
+      });
+
       pnrModalOverlay.querySelector('#btn-close-pnr-modal')?.addEventListener('click', () => pnrModalOverlay.remove());
       pnrModalOverlay.querySelector('#btn-cancel-pnr')?.addEventListener('click', () => pnrModalOverlay.remove());
 
       pnrModalOverlay.querySelector('#btn-process-pnr')?.addEventListener('click', () => {
-        const textVal = (pnrModalOverlay.querySelector('#pnr-raw-text-input') as HTMLTextAreaElement)?.value || '';
-        if (!textVal.trim()) {
-          this.options.showToast('Cole o texto da confirmação de reserva.', 'error');
+        const textVal = textArea?.value || '';
+        if (!textVal.trim() || textVal.startsWith('Carregando e extraindo')) {
+          this.options.showToast('Carregue um PDF ou cole o texto da confirmação de reserva.', 'error');
           return;
         }
 
         const parsed = parsePnrText(textVal);
+
         if (parsed.localizador) {
           const locInput = document.getElementById('prod-reserva') as HTMLInputElement;
           if (locInput) locInput.value = parsed.localizador;
@@ -1806,14 +1837,73 @@ export class EditTravelModal {
           if (fornInput) fornInput.value = parsed.fornecedor;
         }
 
-        const tipoSelect = document.getElementById('prod-tipo') as HTMLSelectElement;
-        if (tipoSelect) {
-          tipoSelect.value = 'AÉREO OPERADORA';
-          tipoSelect.dispatchEvent(new Event('change'));
+        // Se houver produtos identificados no voucher
+        if (parsed.produtos && parsed.produtos.length > 0) {
+          const primeiroProd = parsed.produtos[0];
+
+          const tipoSelect = document.getElementById('prod-tipo') as HTMLSelectElement;
+          if (tipoSelect) {
+            // Tenta achar correspondência de tipo no select
+            const tipoNormalizado = primeiroProd.tipo.toUpperCase();
+            let optionFound = Array.from(tipoSelect.options).find(opt => opt.value.toUpperCase() === tipoNormalizado);
+            if (!optionFound) {
+              if (tipoNormalizado === 'MARÍTIMO' || tipoNormalizado === 'MARITIMO') {
+                optionFound = Array.from(tipoSelect.options).find(opt => /mar[ií]timo|cruzeiro/i.test(opt.value));
+              } else if (tipoNormalizado === 'AÉREO OPERADORA') {
+                optionFound = Array.from(tipoSelect.options).find(opt => /a[ée]reo/i.test(opt.value));
+              } else if (tipoNormalizado === 'HOTEL') {
+                optionFound = Array.from(tipoSelect.options).find(opt => /hotel|hospedagem/i.test(opt.value));
+              } else if (tipoNormalizado === 'SEGURO') {
+                optionFound = Array.from(tipoSelect.options).find(opt => /seguro/i.test(opt.value));
+              }
+            }
+
+            if (optionFound) {
+              tipoSelect.value = optionFound.value;
+            } else if (tipoSelect.options.length > 1) {
+              tipoSelect.selectedIndex = 1;
+            }
+            tipoSelect.dispatchEvent(new Event('change'));
+          }
+
+          if (primeiroProd.descricao) {
+            const descInput = document.getElementById('prod-descricao') as HTMLInputElement;
+            if (descInput) descInput.value = primeiroProd.descricao;
+          }
+
+          if (primeiroProd.dataServico) {
+            const dataInput = document.getElementById('prod-data-servico') as HTMLInputElement;
+            if (dataInput) {
+              const [ano, mes, dia] = primeiroProd.dataServico.split('-');
+              if (dia && mes && ano) {
+                dataInput.value = `${dia}/${mes}/${ano}`;
+              } else {
+                dataInput.value = primeiroProd.dataServico;
+              }
+            }
+          }
+
+          if (primeiroProd.valorVenda && primeiroProd.valorVenda > 0) {
+            const valorInput = document.getElementById('prod-valor-venda') as HTMLInputElement;
+            if (valorInput) valorInput.value = formatMoney(primeiroProd.valorVenda);
+          }
+
+          // Se tiver múltiplos produtos no mesmo voucher (ex: Infotera com 2 hotéis ou Krooze com Marítimo + Taxa + Seguro)
+          if (parsed.produtos.length > 1) {
+            this.options.showToast(`Voucher multisserviço detectado! 1º item preenchido (${parsed.produtos.length} produtos encontrados).`, 'success');
+          } else {
+            this.options.showToast('Dados do voucher importados no formulário com sucesso!', 'success');
+          }
+        } else {
+          const tipoSelect = document.getElementById('prod-tipo') as HTMLSelectElement;
+          if (tipoSelect) {
+            tipoSelect.value = 'AÉREO OPERADORA';
+            tipoSelect.dispatchEvent(new Event('change'));
+          }
+          this.options.showToast('Dados do PNR importados no formulário com sucesso!', 'success');
         }
 
         pnrModalOverlay.remove();
-        this.options.showToast('Dados do PNR importados no formulário com sucesso!', 'success');
       });
     });
 

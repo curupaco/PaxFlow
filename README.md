@@ -110,7 +110,17 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
   - **Fechamento Comercial em Dose Dupla**: Convites transparentes para explorar o modo demonstração ou conversar diretamente no WhatsApp.
   - **Rota Oficial Unificada**: Rota oficial exclusiva em `/conheca`, expurgando rotas e arquivos legados.
 
-- **Onda 3 dos Motores Estratégicos PaxFlow (Escala, Fidelização de Base & Blindagem Operacional) [NEW]**:
+- **PaxFlow Studio™ & Gestão de Viagens: Motor Multimodelo de Ingestão de Vouchers (Cruzeiros, Multi-Hospedagem, Multisserviço e Aéreo) [NEW]**:
+  - **Mapeamento & Leitura de Vouchers em Alta Fidelidade (PDF ou Texto)**:
+    - *MSC Cruzeiros (Formulário de Embarque Oficial)*: Extração automática de Reserva (`75942907`), Navio (`MSC Virtuosa`), Cabine (`11225`), Deck (`11`), Categoria (`Balcony`), Experiência (`FANTASTICA`), Horário de Check-in (`15:30`), Hóspedes completos, Contato de Emergência e Serviços Adicionais (`EASY PACKAGE`, `HOTEL SERVICE CHARGE`, `Browse Wi-Fi`).
+    - *Desmembramento Automático de Itinerário Dia a Dia (Escalas)*: Desdobramento cronológico de todos os portos de escala em itens dia a dia no itinerário do Studio (Santos ➔ Búzios ancorado ➔ Navegando & Lazer a Bordo ➔ Salvador ➔ Navegando ➔ Copacabana Réveillon ➔ Ilhabela ancorado ➔ Santos desembarque).
+    - *Agaxtur Infotera (Multi-Hospedagem no Mesmo Voucher)*: Reconhecimento e desmembramento automático de múltiplos hotéis independentes (`Pestana CR7 Lisboa` e `Hotel Acta Atrium Palace`), extraindo localizadores individuais (`9111139149617` e `9111139149762`), períodos de check-in/out, configurações de quarto, regimes e taxas municipais em moeda estrangeira.
+    - *Agaxtur Krooze (Confirmação Multisserviço)*: Identificador Krooze (`CR-0E92F2A329`), desmembramento e alocação financeira precisa de 3 produtos distintos em uma única importação: Marítimo (`MSC SEAVIEW Yacht Club` - R$ 34.258,10), Taxa de Serviço de Hotelaria (R$ 1.694,00) e Seguro Viagem (`Europ Assistance 29 Motivos` - R$ 480,00), com soma total auditada de R$ 36.432,10.
+    - *Agaxtur Travellink / GOL (Aéreo e E-ticket IATA)*: Captura precisa de Localizador PNR (`OABIUA`), bilhete eletrônico (`127-2311356591`), dados de passageira e desdobramento dos trechos de ida e volta (`G3 1634` CGH ➔ SSA e `G3 1639` SSA ➔ CGH).
+  - **Importador Unificado de Vouchers no Modal de Viagens (`EditTravelModal`)**:
+    - O botão `⚡ Importar Voucher / PNR` permite tanto arrastar/carregar o PDF oficial quanto colar o texto do voucher/e-mail, pré-populando tipo de produto, fornecedor, descrição detalhada, datas de serviço e valor de venda instantaneamente.
+
+- **Onda 3 dos Motores Estratégicos PaxFlow (Escala, Fidelização de Base & Blindagem Operacional)**:
   - **PaxFlow Risk Score™ — Guia / Validador Inteligente de Exigências Sanitárias, Vacinas e Vistos por Destino**: Motor heurístico integrado que mapeia requisitos legais de entrada por país e região:
     - *Europa / Espaço Schengen*: Verificação mandatória do Tratado de Schengen com penalidade crítica (25 pts) caso falte apólice de seguro viagem com cobertura mínima de 30.000€, prevenindo recusa de entrada na imigração europeia.
     - *Estados Unidos (EUA)*: Alerta consultivo de Visto Consular B1/B2 ou autorização ESTA e passaporte válido.
