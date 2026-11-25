@@ -3,24 +3,57 @@
 
 <head>
   <script>
-    // Recuperação imediata e auto-cura contra scripts de versão anterior em cache (stale hash / MIME text/html)
+    // Recuperação imediata e auto-cura contra scripts ou estilos CSS de versão anterior em cache (stale hash / MIME text/html)
+    function forceCleanReload(reason) {
+      var lastReload = sessionStorage.getItem('paxflow_stale_reload');
+      var now = Date.now();
+      if (!lastReload || (now - parseInt(lastReload, 10)) > 10000) {
+        sessionStorage.setItem('paxflow_stale_reload', now.toString());
+        console.warn('[PaxFlow] ' + reason + '. Limpando Service Workers e recarregando...');
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+          });
+        }
+        if ('caches' in window) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (k) { caches.delete(k); });
+          });
+        }
+        window.location.reload(true);
+      }
+    }
+
+    // Captura erros de carregamento em elementos SCRIPT e LINK (CSS)
     window.addEventListener('error', function (event) {
       var target = event.target;
       if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
-        var lastReload = sessionStorage.getItem('paxflow_stale_reload');
-        var now = Date.now();
-        if (!lastReload || (now - parseInt(lastReload, 10)) > 15000) {
-          sessionStorage.setItem('paxflow_stale_reload', now.toString());
-          console.warn('[PaxFlow] Script ou asset desatualizado detectado no cache. Forçando sincronização limpa...');
-          if ('caches' in window) {
-            caches.keys().then(function (keys) {
-              keys.forEach(function (k) { caches.delete(k); });
-            });
-          }
-          window.location.reload();
-        }
+        forceCleanReload('Asset desatualizado ou inacessível no cache (' + target.tagName + ')');
       }
     }, true);
+
+    // Se o CSS principal não for carregado nos primeiros 3 segundos, dispara auto-cura preventiva
+    window.addEventListener('DOMContentLoaded', function () {
+      setTimeout(function () {
+        var links = document.querySelectorAll('link[rel="stylesheet"]');
+        var cssLoaded = false;
+        for (var i = 0; i < links.length; i++) {
+          try {
+            if (links[i].sheet && links[i].sheet.cssRules && links[i].sheet.cssRules.length > 0) {
+              cssLoaded = true;
+              break;
+            }
+          } catch (e) {
+            // Em caso de cross-origin ou bloqueio de stylesheet
+            cssLoaded = true;
+          }
+        }
+        // Se nenhum CSS carregou regras e havia link de stylesheet
+        if (links.length > 0 && !cssLoaded) {
+          forceCleanReload('Falha na aplicação do CSS principal');
+        }
+      }, 3000);
+    });
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
