@@ -34,6 +34,7 @@ export class FinanceiroPage {
 
   // Listagens de dados
   private contas: FinContaPagar[] = [];
+  private contasAtrasadasGlobais: FinContaPagar[] = [];
   private remessas: FinRemessa[] = [];
   private fornecedores: FinFornecedor[] = [];
   private tiposCusto: FinTipoCusto[] = [];
@@ -190,13 +191,15 @@ export class FinanceiroPage {
     this.carregando = true;
     try {
       if (this.activeTab === 'contas' || this.activeTab === 'fluxo') {
-        const [listaContas, listaRemessas, metricasAtraso] = await Promise.all([
+        const [listaContas, listaRemessas, metricasAtraso, atrasadasGlobais] = await Promise.all([
           FinContasPagarService.listarContas(this.filtros),
           FinRemessasService.listarRemessas(),
-          FinContasPagarService.obterMetricasAtrasoGlobais()
+          FinContasPagarService.obterMetricasAtrasoGlobais(),
+          FinContasPagarService.listarContasAtrasadasHistoricas()
         ]);
         this.contas = listaContas;
         this.remessas = listaRemessas;
+        this.contasAtrasadasGlobais = atrasadasGlobais || [];
         this.resumo = FinContasPagarService.calcularResumoLiquidez(listaContas);
         // O card KPI de títulos em atraso reflete o passivo global acumulado da agência
         this.resumo.totalAtrasadas = metricasAtraso.totalAtrasadas;
@@ -1387,35 +1390,150 @@ export class FinanceiroPage {
   // ==========================================================================
   // ABA 3: FLUXO DE CAIXA, CALENDÁRIO & DRE SIMPLIFICADO
   // ==========================================================================
+  private obterContasUnificadasFluxo(): FinContaPagar[] {
+    const mapa = new Map<string, FinContaPagar>();
+    for (const c of this.contas) {
+      mapa.set(c.id, c);
+    }
+    for (const atrasada of this.contasAtrasadasGlobais) {
+      if (!mapa.has(atrasada.id)) {
+        mapa.set(atrasada.id, atrasada);
+      }
+    }
+    return Array.from(mapa.values());
+  }
+
   private renderAbaFluxoCaixa(): string {
     const formatarMoeda = (val: number) => 
       new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
+    const formatarDataBr = (iso?: string) => {
+      if (!iso) return '-';
+      const p = iso.split('T')[0].split('-');
+      return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+    };
+
     const mesAtivo = this.filtros.mes || (new Date().getMonth() + 1);
     const anoAtivo = this.filtros.ano || new Date().getFullYear();
 
-    // 1. Apuração da Matriz do Calendário Diário
-    const cal = FinContasPagarService.calcularCalendarioMensal(this.contas, mesAtivo, anoAtivo);
+    const mesesLista = [
+      { num: 1, nome: 'Janeiro' }, { num: 2, nome: 'Fevereiro' }, { num: 3, nome: 'Março' },
+      { num: 4, nome: 'Abril' }, { num: 5, nome: 'Maio' }, { num: 6, nome: 'Junho' },
+      { num: 7, nome: 'Julho' }, { num: 8, nome: 'Agosto' }, { num: 9, nome: 'Setembro' },
+      { num: 10, nome: 'Outubro' }, { num: 11, nome: 'Novembro' }, { num: 12, nome: 'Dezembro' }
+    ];
+    const anoAtual = new Date().getFullYear();
+    const anosLista = [anoAtual - 1, anoAtual, anoAtual + 1];
+
+    // Combina as contas do mês (pagos pela data_pagamento + pendentes pelo vencimento) com TODAS as atrasadas históricas
+    const contasFluxo = this.obterContasUnificadasFluxo();
+    const contasAtrasadas = contasFluxo
+      .filter(c => c.status === 'atrasado')
+      .sort((a, b) => (a.data_vencimento_operacional || a.data_vencimento).localeCompare(b.data_vencimento_operacional || b.data_vencimento));
+    const totalAtrasadasValor = contasAtrasadas.reduce((acc, c) => acc + Number(c.valor_nominal || 0), 0);
+
+    // 1. Apuração da Matriz do Calendário Diário (usando regra unificada de data)
+    const cal = FinContasPagarService.calcularCalendarioMensal(contasFluxo, mesAtivo, anoAtivo);
 
     // Identifica o dia da semana do dia 1 do mês para preencher espaços vazios iniciais
     const primeiroDiaSemana = new Date(anoAtivo, mesAtivo - 1, 1).getDay(); // 0 = Dom, 6 = Sáb
     const diasSemanaCabecalho = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 
-    // 2. Agrupamento por Tipo de Custo (DRE Simplificado)
-    const agrupamentoDRE: Record<string, { nome: string; nominal: number; pago: number }> = {};
+    // 2. Agrupamento por Tipo de Custo (DRE Simplificado com coluna dedicada para Em Atraso)
+    const agrupamentoDRE: Record<string, { nome: string; nominal: number; atrasado: number; pago: number }> = {};
     for (const t of this.tiposCusto) {
-      agrupamentoDRE[t.id] = { nome: t.nome, nominal: 0, pago: 0 };
+      agrupamentoDRE[t.id] = { nome: t.nome, nominal: 0, atrasado: 0, pago: 0 };
     }
 
-    for (const c of this.contas) {
+    for (const c of contasFluxo) {
+      if (c.status === 'cancelado') continue;
       if (c.tipo_custo_id && agrupamentoDRE[c.tipo_custo_id]) {
-        agrupamentoDRE[c.tipo_custo_id].nominal += Number(c.valor_nominal || 0);
-        agrupamentoDRE[c.tipo_custo_id].pago += Number(c.valor_pago || 0);
+        const vNom = Number(c.valor_nominal || 0);
+        agrupamentoDRE[c.tipo_custo_id].nominal += vNom;
+        if (c.status === 'pago') {
+          agrupamentoDRE[c.tipo_custo_id].pago += (Number(c.valor_pago) > 0 ? Number(c.valor_pago) : vNom);
+        } else if (c.status === 'atrasado') {
+          agrupamentoDRE[c.tipo_custo_id].atrasado += vNom;
+        }
       }
     }
 
+    const linhasDRE = Object.values(agrupamentoDRE);
+    const totalDRENominal = linhasDRE.reduce((acc, i) => acc + i.nominal, 0);
+    const totalDREAtrasado = linhasDRE.reduce((acc, i) => acc + i.atrasado, 0);
+    const totalDREPago = linhasDRE.reduce((acc, i) => acc + i.pago, 0);
+    const totalDREDif = totalDRENominal - totalDREPago;
+
+    const hojeMeioDia = new Date();
+    hojeMeioDia.setHours(12, 0, 0, 0);
+
     return `
       <div class="space-y-6">
+        <!-- Barra de Período (Mês/Ano) e Regra de Data -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <span class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">📅 Período de Análise:</span>
+            <select id="fluxo-select-mes" class="h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer">
+              ${mesesLista.map(m => `<option value="${m.num}" ${m.num === mesAtivo ? 'selected' : ''}>${m.nome}</option>`).join('')}
+            </select>
+            <select id="fluxo-select-ano" class="h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer">
+              ${anosLista.map(a => `<option value="${a}" ${a === anoAtivo ? 'selected' : ''}>${a}</option>`).join('')}
+            </select>
+          </div>
+          <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 rounded-xl border border-slate-200/60 dark:border-slate-700">
+            📌 <strong class="text-slate-700 dark:text-slate-200">Regra de Regime:</strong> Pagos entram pela <strong>Data de Pagamento</strong> • Pendentes/Atrasados pela <strong>Data de Vencimento</strong>
+          </div>
+        </div>
+
+        <!-- Painel de Destaque: Títulos em Atraso Pendentes (Histórico Global) -->
+        ${contasAtrasadas.length > 0 ? `
+          <div class="bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 rounded-2xl p-5 shadow-sm space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200/60 dark:border-rose-900/40 pb-3">
+              <div class="flex items-center gap-2.5">
+                <span class="text-lg">🔴</span>
+                <div>
+                  <h3 class="text-sm font-black text-rose-800 dark:text-rose-300 uppercase tracking-wider">Títulos em Atraso Pendentes (${contasAtrasadas.length})</h3>
+                  <p class="text-xs text-rose-700/80 dark:text-rose-400/80 font-medium">Compromissos vencidos ainda não liquidados (incluindo meses anteriores), somados ao Previsto e Em Atraso do DRE.</p>
+                </div>
+              </div>
+              <div class="px-3.5 py-2 bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-800 rounded-xl text-right shrink-0">
+                <span class="text-[9px] font-black uppercase tracking-wider text-rose-500 block">Passivo em Atraso</span>
+                <span class="text-base font-black text-rose-600 dark:text-rose-400">${formatarMoeda(totalAtrasadasValor)}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
+              ${contasAtrasadas.map(c => {
+                const vencStr = (c.data_vencimento_operacional || c.data_vencimento || '').split('T')[0];
+                const dtVenc = new Date(vencStr + 'T12:00:00');
+                const diasAtraso = Math.max(1, Math.round((hojeMeioDia.getTime() - dtVenc.getTime()) / (1000 * 60 * 60 * 24)));
+                return `
+                  <div class="p-3 bg-white dark:bg-slate-900 border border-rose-200/80 dark:border-rose-900/50 rounded-xl flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="font-extrabold text-xs text-slate-900 dark:text-slate-100 truncate">${this.escapeHtml(c.favorecido)}</span>
+                        <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300">${diasAtraso}d atraso</span>
+                      </div>
+                      <span class="text-[10px] text-slate-500 dark:text-slate-400 block truncate mt-0.5">${this.escapeHtml(c.descricao || 'Despesa')} • Venc: ${formatarDataBr(vencStr)}</span>
+                      <span class="text-[10px] text-slate-400 font-semibold block">${this.escapeHtml(c.tipo_custo?.nome || 'Operacional')} › ${this.escapeHtml(c.categoria?.nome || 'Geral')}</span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <span class="text-xs font-black text-rose-600 dark:text-rose-400">${formatarMoeda(c.valor_nominal)}</span>
+                      <button type="button" data-conta-id="${c.id}" class="btn-baixar-do-fluxo px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition cursor-pointer shadow-xs">
+                        ✓ Baixar
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : `
+          <div class="bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/50 rounded-2xl px-4 py-3 flex items-center gap-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+            <span>✅</span>
+            <span>Nenhum título em atraso pendente na agência.</span>
+          </div>
+        `}
         <!-- Painel do Calendário Diário de Desembolsos -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -1570,21 +1688,23 @@ export class FinanceiroPage {
                 <tr class="text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
                   <th class="py-2.5 px-4">Macro Grupo de Custo</th>
                   <th class="py-2.5 px-4 text-right">Previsto / Orçado</th>
+                  <th class="py-2.5 px-4 text-right">Em Atraso</th>
                   <th class="py-2.5 px-4 text-right">Realizado / Pago</th>
                   <th class="py-2.5 px-4 text-right">Variação (R$)</th>
                   <th class="py-2.5 px-4 text-center w-40">% Executado</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                ${Object.values(agrupamentoDRE).map(item => {
+                ${linhasDRE.map(item => {
                   const dif = item.nominal - item.pago;
                   const pct = item.nominal > 0 ? Math.round((item.pago / item.nominal) * 100) : (item.pago > 0 ? 100 : 0);
                   const corBarra = pct > 100 ? 'bg-rose-500' : (pct >= 85 ? 'bg-amber-500' : 'bg-emerald-500');
 
                   return `
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition">
-                      <td class="py-3 px-4 font-bold text-slate-800 dark:text-slate-100">${item.nome}</td>
+                      <td class="py-3 px-4 font-bold text-slate-800 dark:text-slate-100">${this.escapeHtml(item.nome)}</td>
                       <td class="py-3 px-4 text-right font-medium">${formatarMoeda(item.nominal)}</td>
+                      <td class="py-3 px-4 text-right font-black ${item.atrasado > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}">${item.atrasado > 0 ? formatarMoeda(item.atrasado) : '-'}</td>
                       <td class="py-3 px-4 text-right font-black text-emerald-600 dark:text-emerald-400">${formatarMoeda(item.pago)}</td>
                       <td class="py-3 px-4 text-right font-medium ${dif < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500'}">${formatarMoeda(dif)}</td>
                       <td class="py-3 px-4 text-center">
@@ -1599,6 +1719,16 @@ export class FinanceiroPage {
                   `;
                 }).join('')}
               </tbody>
+              <tfoot class="bg-slate-50 dark:bg-slate-950 border-t-2 border-slate-200 dark:border-slate-800 text-xs font-black text-slate-900 dark:text-slate-100">
+                <tr>
+                  <td class="py-3 px-4 uppercase tracking-wider">Total Geral</td>
+                  <td class="py-3 px-4 text-right">${formatarMoeda(totalDRENominal)}</td>
+                  <td class="py-3 px-4 text-right ${totalDREAtrasado > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}">${totalDREAtrasado > 0 ? formatarMoeda(totalDREAtrasado) : '-'}</td>
+                  <td class="py-3 px-4 text-right text-emerald-600 dark:text-emerald-400">${formatarMoeda(totalDREPago)}</td>
+                  <td class="py-3 px-4 text-right">${formatarMoeda(totalDREDif)}</td>
+                  <td class="py-3 px-4 text-center">${totalDRENominal > 0 ? Math.round((totalDREPago / totalDRENominal) * 100) : 0}%</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -2437,6 +2567,34 @@ export class FinanceiroPage {
         this.abrirModalDetalhesDia(Number(diaStr));
       });
     });
+
+    // Seletores de Mês e Ano no Fluxo de Caixa & DRE
+    const fluxoMesEl = this.container.querySelector('#fluxo-select-mes') as HTMLSelectElement | null;
+    const fluxoAnoEl = this.container.querySelector('#fluxo-select-ano') as HTMLSelectElement | null;
+    const atualizarPeriodoFluxo = async () => {
+      const novoMes = fluxoMesEl ? Number(fluxoMesEl.value) : (this.filtros.mes || (new Date().getMonth() + 1));
+      const novoAno = fluxoAnoEl ? Number(fluxoAnoEl.value) : (this.filtros.ano || new Date().getFullYear());
+      this.filtros.mes = novoMes;
+      this.filtros.meses = [novoMes];
+      this.filtros.ano = novoAno;
+      await this.carregarDadosAbaAtiva();
+      this.render();
+      this.setupEventListeners();
+    };
+    fluxoMesEl?.addEventListener('change', atualizarPeriodoFluxo);
+    fluxoAnoEl?.addEventListener('change', atualizarPeriodoFluxo);
+
+    // Botão rápido de baixa no painel de Títulos em Atraso do Fluxo de Caixa
+    this.container.querySelectorAll('.btn-baixar-do-fluxo').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        if (!id) return;
+        const conta = this.obterContasUnificadasFluxo().find(c => c.id === id);
+        if (conta) {
+          this.abrirModalBaixa(conta);
+        }
+      });
+    });
   }
 
   // ==========================================================================
@@ -2445,7 +2603,7 @@ export class FinanceiroPage {
   private abrirModalDetalhesDia(diaNum: number): void {
     const mesAtivo = this.filtros.mes || (new Date().getMonth() + 1);
     const anoAtivo = this.filtros.ano || new Date().getFullYear();
-    const cal = FinContasPagarService.calcularCalendarioMensal(this.contas, mesAtivo, anoAtivo);
+    const cal = FinContasPagarService.calcularCalendarioMensal(this.obterContasUnificadasFluxo(), mesAtivo, anoAtivo);
     const diaObj = cal.dias.find(d => d.dia === diaNum);
 
     if (!diaObj || diaObj.qtdTitulos === 0) {
@@ -2502,7 +2660,7 @@ export class FinanceiroPage {
                       ${t.status}
                     </span>
                   </div>
-                  <span class="text-[11px] text-slate-500 dark:text-slate-400 block truncate">${t.descricao || 'Despesa'} • <strong class="text-slate-600 dark:text-slate-300">${t.categoria?.nome || 'Geral'}</strong></span>
+                  <span class="text-[11px] text-slate-500 dark:text-slate-400 block truncate">${t.descricao || 'Despesa'} • <strong class="text-slate-600 dark:text-slate-300">${t.categoria?.nome || 'Geral'}</strong> • ${ehPago && t.data_pagamento ? `Pago em ${t.data_pagamento.slice(0, 10).split('-').reverse().join('/')}` : `Venc ${(t.data_vencimento_operacional || t.data_vencimento).slice(0, 10).split('-').reverse().join('/')}`}</span>
                 </div>
 
                 <div class="flex items-center gap-3 shrink-0">

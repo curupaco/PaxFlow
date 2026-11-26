@@ -1106,6 +1106,133 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     expect(res.sucesso).toBe(false);
     expect(res.erro).toContain('Não é permitido remover a conta bancária de um título já pago');
   });
+
+  it('obterDataReferenciaConta deve usar data_pagamento para títulos pagos e data de vencimento para não pagos', () => {
+    // Setup
+    const contaPaga = {
+      id: 'c-paga',
+      status: 'pago',
+      data_pagamento: '2026-11-12T10:30:00Z',
+      data_vencimento: '2026-10-28',
+      data_vencimento_operacional: '2026-10-28'
+    } as any;
+    const contaAtrasada = {
+      id: 'c-atrasada',
+      status: 'atrasado',
+      data_pagamento: null,
+      data_vencimento: '2026-10-15',
+      data_vencimento_operacional: '2026-10-16'
+    } as any;
+    const contaPendente = {
+      id: 'c-pendente',
+      status: 'pendente',
+      data_pagamento: null,
+      data_vencimento: '2026-11-25'
+    } as any;
+
+    // Action
+    const refPaga = FinContasPagarService.obterDataReferenciaConta(contaPaga);
+    const refAtrasada = FinContasPagarService.obterDataReferenciaConta(contaAtrasada);
+    const refPendente = FinContasPagarService.obterDataReferenciaConta(contaPendente);
+
+    // Assert
+    expect(refPaga).toBe('2026-11-12');
+    expect(refAtrasada).toBe('2026-10-16');
+    expect(refPendente).toBe('2026-11-25');
+  });
+
+  it('calcularCalendarioMensal deve alocar títulos pagos no dia do pagamento e não pagos no dia do vencimento', () => {
+    // Setup
+    const contas = [
+      {
+        id: 'c-1',
+        status: 'pago',
+        valor_nominal: 800,
+        valor_pago: 800,
+        data_pagamento: '2026-11-05',
+        data_vencimento: '2026-10-30',
+        data_vencimento_operacional: '2026-10-30'
+      },
+      {
+        id: 'c-2',
+        status: 'atrasado',
+        valor_nominal: 300,
+        valor_pago: 0,
+        data_pagamento: null,
+        data_vencimento: '2026-11-10',
+        data_vencimento_operacional: '2026-11-10'
+      },
+      {
+        id: 'c-3',
+        status: 'pendente',
+        valor_nominal: 450,
+        valor_pago: 0,
+        data_pagamento: null,
+        data_vencimento: '2026-11-20',
+        data_vencimento_operacional: '2026-11-20'
+      }
+    ] as any[];
+
+    // Action
+    const cal = FinContasPagarService.calcularCalendarioMensal(contas, 11, 2026);
+    const dia5 = cal.dias.find(d => d.dia === 5);
+    const dia10 = cal.dias.find(d => d.dia === 10);
+    const dia20 = cal.dias.find(d => d.dia === 20);
+    const dia30 = cal.dias.find(d => d.dia === 30);
+
+    // Assert
+    expect(dia5?.titulos.map(t => t.id)).toEqual(['c-1']);
+    expect(dia5?.totalPago).toBe(800);
+    expect(dia10?.titulos.map(t => t.id)).toEqual(['c-2']);
+    expect(dia10?.qtdAtrasadas).toBe(1);
+    expect(dia20?.titulos.map(t => t.id)).toEqual(['c-3']);
+    expect(dia30?.titulos).toHaveLength(0);
+  });
+
+  it('listarContas com filtro mensal deve consultar via .or e manter título pago cuja data_pagamento caiu no mês filtrado', async () => {
+    // Setup
+    const registrosBanco = [
+      {
+        id: 'pago-mes-atual-venc-anterior',
+        status: 'pago',
+        valor_nominal: 1000,
+        data_vencimento: '2026-10-25',
+        data_vencimento_operacional: '2026-10-26',
+        data_pagamento: '2026-11-04',
+        fornecedor_nome: 'Fornecedor X'
+      },
+      {
+        id: 'pago-mes-anterior-venc-atual',
+        status: 'pago',
+        valor_nominal: 500,
+        data_vencimento: '2026-11-02',
+        data_vencimento_operacional: '2026-11-02',
+        data_pagamento: '2026-10-31',
+        fornecedor_nome: 'Fornecedor Y'
+      }
+    ];
+
+    let orExprRecebida = '';
+    const mockChain: any = {
+      select: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      or: vi.fn().mockImplementation((expr: string) => {
+        orExprRecebida = expr;
+        return mockChain;
+      }),
+      then: (resolve: any) => resolve({ data: registrosBanco, error: null })
+    };
+
+    vi.mocked(supabase.from).mockReturnValue(mockChain);
+
+    // Action
+    const resultado = await FinContasPagarService.listarContas({ periodoTipo: 'mes', mes: 11, ano: 2026 });
+
+    // Assert
+    expect(orExprRecebida).toContain('data_pagamento.gte.2026-11-01');
+    expect(orExprRecebida).toContain('data_vencimento.gte.2026-11-01');
+    expect(resultado.map(c => c.id)).toEqual(['pago-mes-atual-venc-anterior']);
+  });
 });
 
 

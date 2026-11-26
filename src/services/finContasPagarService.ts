@@ -99,6 +99,29 @@ export class FinContasPagarService {
   }
 
   /**
+   * Retorna a data de referência oficial da conta:
+   * - Se paga (realizada): data_pagamento (com fallback para vencimento se não houver data_pagamento)
+   * - Se não paga (futura / pendente / atrasada): data_vencimento_operacional ou data_vencimento
+   */
+  public static obterDataReferenciaConta(conta: Partial<FinContaPagar>): string {
+    if (conta.status === 'pago' && conta.data_pagamento) {
+      return conta.data_pagamento.split('T')[0];
+    }
+    return (conta.data_vencimento_operacional || conta.data_vencimento || '').split('T')[0];
+  }
+
+  /**
+   * Lista todas as contas em atraso históricas (independente do mês selecionado)
+   */
+  public static async listarContasAtrasadasHistoricas(): Promise<FinContaPagar[]> {
+    return this.listarContas({
+      periodoTipo: 'mes',
+      status: 'atrasado',
+      ignorarMes: true
+    });
+  }
+
+  /**
    * Lista as contas a pagar com filtros combinados e cálculo em tempo real de status de atraso.
    * Quando o status for 'atrasado', ignora travas de mês/ano trazendo todas as atrasadas históricas.
    */
@@ -116,6 +139,8 @@ export class FinContasPagarService {
         `);
 
       const ehBuscaAtrasadas = filtros.status === 'atrasado';
+      let filtroMesesParaValidarEmMemoria: { ano: number; meses: number[] } | null = null;
+      let aplicouOrDeDatasNoQuery = false;
 
       // Se for busca específica por atrasadas ou ignorar mês ativo, não filtra por período
       if (!ehBuscaAtrasadas && !filtros.ignorarMes) {
@@ -133,22 +158,36 @@ export class FinContasPagarService {
           const ehContinuo = mesesOrdenados.length > 0 && mesesOrdenados.every((m, idx) => idx === 0 || m === mesesOrdenados[idx - 1] + 1);
 
           if (ehContinuo) {
-            // Meses consecutivos (ex: único, trimestre ou ano todo): range simples aproveita índices B-tree nativos
             const minM = mesesOrdenados[0];
             const maxM = mesesOrdenados[mesesOrdenados.length - 1];
             const primeiroDia = `${anoFiltro}-${String(minM).padStart(2, '0')}-01`;
             const ultimoDiaDate = new Date(anoFiltro, maxM, 0);
             const ultimoDia = `${anoFiltro}-${String(maxM).padStart(2, '0')}-${String(ultimoDiaDate.getDate()).padStart(2, '0')}`;
-            query = query.gte('data_vencimento', primeiroDia).lte('data_vencimento', ultimoDia);
+
+            // Busca tanto títulos com vencimento no período quanto títulos pagos cuja data_pagamento caiu no período
+            if (typeof (query as any).or === 'function') {
+              query = query.or(
+                `and(data_vencimento.gte.${primeiroDia},data_vencimento.lte.${ultimoDia}),and(status.eq.pago,data_pagamento.gte.${primeiroDia},data_pagamento.lte.${ultimoDia})`
+              );
+              aplicouOrDeDatasNoQuery = true;
+              filtroMesesParaValidarEmMemoria = { ano: anoFiltro, meses: mesesOrdenados };
+            } else {
+              query = query.gte('data_vencimento', primeiroDia).lte('data_vencimento', ultimoDia);
+            }
           } else if (mesesOrdenados.length > 1) {
-            // Meses esparsos não-consecutivos: suporte via cláusula OR
-            const orConditions = mesesOrdenados.map(m => {
+            // Meses esparsos não-consecutivos: suporte via cláusula OR (vencimento ou pagamento para realizados)
+            const orConditions = mesesOrdenados.flatMap(m => {
               const primeiroDia = `${anoFiltro}-${String(m).padStart(2, '0')}-01`;
               const ultimoDiaDate = new Date(anoFiltro, m, 0);
               const ultimoDia = `${anoFiltro}-${String(m).padStart(2, '0')}-${String(ultimoDiaDate.getDate()).padStart(2, '0')}`;
-              return `and(data_vencimento.gte.${primeiroDia},data_vencimento.lte.${ultimoDia})`;
+              return [
+                `and(data_vencimento.gte.${primeiroDia},data_vencimento.lte.${ultimoDia})`,
+                `and(status.eq.pago,data_pagamento.gte.${primeiroDia},data_pagamento.lte.${ultimoDia})`
+              ];
             }).join(',');
             query = query.or(orConditions);
+            aplicouOrDeDatasNoQuery = true;
+            filtroMesesParaValidarEmMemoria = { ano: anoFiltro, meses: mesesOrdenados };
           }
         }
       }
@@ -218,6 +257,20 @@ export class FinContasPagarService {
       });
 
       let filtradas = ehBuscaAtrasadas ? processadas.filter(c => c.status === 'atrasado') : processadas;
+
+      // Aplica regra estrita de data de referência quando o filtro de período usou OR (Pagamento para realizados / Vencimento para não pagos)
+      if (aplicouOrDeDatasNoQuery && filtroMesesParaValidarEmMemoria) {
+        const { ano, meses } = filtroMesesParaValidarEmMemoria;
+        filtradas = filtradas.filter(c => {
+          const dataRef = (c.status === 'pago' && c.data_pagamento)
+            ? c.data_pagamento.split('T')[0]
+            : (c.data_vencimento || c.data_vencimento_operacional || '').split('T')[0];
+          const [yStr, mStr] = dataRef.split('-');
+          const yNum = Number(yStr);
+          const mNum = Number(mStr);
+          return yNum === ano && meses.includes(mNum);
+        });
+      }
 
       // Filtro por Natureza do Lançamento
       if (filtros.naturezaLancamento && filtros.naturezaLancamento !== 'todos') {
@@ -1135,11 +1188,12 @@ export class FinContasPagarService {
       const ehFimDeSemana = diaSemana === 0 || diaSemana === 6;
       const ehDiaPico = this.DIAS_PICO_FLUXO.includes(d);
 
-      // Filtra títulos com vencimento operacional correspondente ao dia
+      // Filtra títulos pela regra unificada de data de referência:
+      // Realizados (pagos) pela data_pagamento; Futuros/Pendentes/Atrasados pelo vencimento operacional
       const titulosDoDia = contas.filter(c => {
         if (c.status === 'cancelado') return false;
-        const venc = c.data_vencimento_operacional || c.data_vencimento;
-        return venc === dataIso;
+        const dataRef = this.obterDataReferenciaConta(c);
+        return dataRef === dataIso;
       });
 
       let totalNominal = 0;
