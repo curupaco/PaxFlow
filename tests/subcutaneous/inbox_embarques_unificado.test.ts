@@ -21,7 +21,9 @@ describe('Motor Unificado de Embarques, Inbox e SLA Subcutâneo', () => {
   it('deve disparar alerta de SLA de Pré-Embarque no Dashboard para viagens com status pos_venda', () => {
     // Setup
     const hoje = new Date();
-    const dataIdaEm3Dias = new Date(hoje.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    hoje.setHours(12, 0, 0, 0);
+    const dtEm3Dias = new Date(hoje.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const dataIdaEm3Dias = `${dtEm3Dias.getFullYear()}-${String(dtEm3Dias.getMonth() + 1).padStart(2, '0')}-${String(dtEm3Dias.getDate()).padStart(2, '0')}`;
 
     const viagemPosVenda = {
       id: 'via-0316',
@@ -82,7 +84,9 @@ describe('Motor Unificado de Embarques, Inbox e SLA Subcutâneo', () => {
   it('deve gerar alertas no Inbox do consultor parceiro e titular considerando sla_pre_embarque_dias dinâmico', async () => {
     // Setup
     const hoje = new Date();
-    const dataVooEm4Dias = new Date(hoje.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    hoje.setHours(12, 0, 0, 0);
+    const dtEm4Dias = new Date(hoje.getTime() + 4 * 24 * 60 * 60 * 1000);
+    const dataVooEm4Dias = `${dtEm4Dias.getFullYear()}-${String(dtEm4Dias.getMonth() + 1).padStart(2, '0')}-${String(dtEm4Dias.getDate()).padStart(2, '0')}`;
 
     const mockViagens = [
       {

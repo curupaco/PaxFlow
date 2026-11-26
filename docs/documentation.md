@@ -1639,6 +1639,11 @@ O Módulo de Contas a Pagar nasce como o coração financeiro do PaxFlow, operan
    - **Comportamento quando Pendente/Atrasado (`status <> 'pago'`)**: Exibe a data de vencimento operacional em destaque com os badges de alerta de prazo (`Atraso`, `Vence Hoje`, `Vence em X dias`) e nominal se houver ajuste útil.
    - **Exportação CSV Conciliada**: A exportação para planilha CSV incorpora a coluna dedicada `Data Pagamento`, garantindo auditoria completa entre vencimento e liquidação.
 
+10. **Governança Bancária Obrigatória na Baixa e Exibição Transparente do Banco**:
+    - **Obrigatoriedade de Conta Bancária na Baixa (Avulsa e em Lote)**: Tanto no modal de baixa avulsa quanto no modal de baixa de lote consolidado (e na camada de serviço `FinContasPagarService.baixarConta` / `FinRemessasService.baixarRemessaConsolidada`), é estritamente obrigatório informar a **Conta Bancária / Caixa de Saída** (`conta_bancaria_id`). Caso não exista banco cadastrado, um atalho `+ Cadastrar Banco` fica disponível diretamente no modal.
+    - **Proteção de Títulos Pagos na Edição**: No modal de edição (`abrirModalEditarConta`) e em `FinContasPagarService.editarConta`, títulos já liquidados (`status = 'pago'`) impedem a remoção da conta bancária vinculada.
+    - **Exibição Compacta em Lotes e Títulos (Desktop e Mobile)**: A conta bancária escolhida e a forma de pagamento são exibidas em tag compacta (`🏦 Nome do Banco • FORMA`) na linha/card mestre do lote consolidado, nos itens filhos expandidos e nos títulos avulsos pagos, sem adicionar colunas extras à tabela.
+
 ### 3.54 Identificação Visual de Participações & Módulos na Gestão de Equipe
 
 A gestão de colaboradores e consultores em **Configurações -> Equipe de Consultores** adota um padrão de alta densidade informativa e ergonomia sem esticar a altura vertical das linhas da tabela:

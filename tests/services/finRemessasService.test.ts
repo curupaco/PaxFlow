@@ -196,5 +196,76 @@ describe('FinRemessasService - Testes Subcutâneos', () => {
     // Assert
     expect(res.sucesso).toBe(true);
   });
+
+  it('deve bloquear baixa consolidada da remessa quando contaBancariaId não for informado', async () => {
+    // Setup
+    const paramsSemBanco = {
+      remessaId: 'remessa-uuid-123',
+      dataPagamento: '2026-11-25',
+      contaBancariaId: '',
+      formaPagamento: 'pix',
+      usuarioId: 'admin-id'
+    };
+
+    // Action
+    const res = await FinRemessasService.baixarRemessaConsolidada(paramsSemBanco);
+
+    // Assert
+    expect(res.sucesso).toBe(false);
+    expect(res.erro).toContain('Selecione a conta bancária de saída do pagamento');
+  });
+
+  it('deve propagar conta_bancaria_id para a remessa mestre e para todos os títulos filhos na baixa consolidada', async () => {
+    // Setup
+    const itensMock = [
+      { id: 'conta-1', valor_nominal: 1000.00 },
+      { id: 'conta-2', valor_nominal: 2000.00 }
+    ];
+
+    let payloadRemessa: any = null;
+    const payloadsContas: any[] = [];
+
+    (supabase.from as any).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_remessas') {
+        return {
+          update: vi.fn().mockImplementation((payload) => {
+            payloadRemessa = payload;
+            return { eq: vi.fn().mockResolvedValue({ error: null }) };
+          })
+        };
+      }
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: itensMock, error: null })
+          }),
+          update: vi.fn().mockImplementation((payload) => {
+            payloadsContas.push(payload);
+            return { eq: vi.fn().mockResolvedValue({ error: null }) };
+          })
+        };
+      }
+      if (tabela === 'fin_auditoria') {
+        return { insert: vi.fn().mockResolvedValue({ error: null }) };
+      }
+      return {};
+    });
+
+    // Action
+    const res = await FinRemessasService.baixarRemessaConsolidada({
+      remessaId: 'remessa-uuid-999',
+      dataPagamento: '2026-11-25',
+      contaBancariaId: 'banco-nubank-pj',
+      formaPagamento: 'pix',
+      usuarioId: 'admin-id'
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(true);
+    expect(payloadRemessa.conta_bancaria_id).toBe('banco-nubank-pj');
+    expect(payloadsContas).toHaveLength(2);
+    expect(payloadsContas[0].conta_bancaria_id).toBe('banco-nubank-pj');
+    expect(payloadsContas[1].conta_bancaria_id).toBe('banco-nubank-pj');
+  });
 });
 

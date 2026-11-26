@@ -90,6 +90,15 @@ export class FinanceiroPage {
     this.container = container;
   }
 
+  private obterNomeBanco(contaBancariaObj?: FinContaBancaria | null, contaBancariaId?: string | null): string {
+    if (contaBancariaObj && contaBancariaObj.nome_banco) return contaBancariaObj.nome_banco;
+    if (contaBancariaId) {
+      const found = this.contasBancarias.find(b => b.id === contaBancariaId);
+      if (found) return found.nome_banco;
+    }
+    return '';
+  }
+
   public async init(extraId?: string): Promise<void> {
     try {
       const { user, perfil, error } = await getSessaoAtual();
@@ -162,6 +171,9 @@ export class FinanceiroPage {
   }
 
   private async carregarCadastrosBase(): Promise<void> {
+    // Saneamento preventivo não-bloqueante para garantir que pagamentos/lotes antigos sem banco sejam vinculados ao SANTANDER
+    await FinContasPagarService.regularizarPagamentosSemBancoParaSantander().catch(() => null);
+
     const [tipos, categorias, bancos, fornecedores] = await Promise.all([
       FinPlanoContasService.listarTiposCusto(),
       FinPlanoContasService.listarCategorias(),
@@ -488,12 +500,20 @@ export class FinanceiroPage {
           } as FinRemessa;
 
           const itensDoLote = this.contas.filter(it => it.remessa_id === c.remessa_id);
+          const itemPagoComBanco = itensDoLote.find(it => !!it.conta_bancaria_id || !!it.conta_bancaria);
+          const remEnriquecida = {
+            ...rem,
+            conta_bancaria_id: rem.conta_bancaria_id || itemPagoComBanco?.conta_bancaria_id || c.conta_bancaria_id,
+            conta_bancaria: rem.conta_bancaria || itemPagoComBanco?.conta_bancaria || c.conta_bancaria,
+            forma_pagamento: rem.forma_pagamento || itemPagoComBanco?.forma_pagamento || c.forma_pagamento
+          } as FinRemessa;
+
           linhasParaExibir.push({
             tipo: 'lote',
-            id: rem.id,
-            remessa: rem,
+            id: remEnriquecida.id,
+            remessa: remEnriquecida,
             itens: itensDoLote.length > 0 ? itensDoLote : [c],
-            dataRef: rem.data_pagamento || rem.data_prevista || c.data_vencimento
+            dataRef: remEnriquecida.data_pagamento || remEnriquecida.data_prevista || c.data_vencimento
           });
         }
       } else {
@@ -913,6 +933,7 @@ export class FinanceiroPage {
                     const expandida = this.remessasExpandidas.has(rem.id);
                     const totalItens = itens.reduce((acc, it) => acc + Number(it.valor_nominal || 0), 0);
                     const totalPagoItens = itens.reduce((acc, it) => acc + Number(it.valor_pago || 0), 0);
+                    const nomeBancoLote = this.obterNomeBanco(rem.conta_bancaria, rem.conta_bancaria_id);
 
                     return `
                       <!-- LINHA MESTRE DO LOTE CONSOLIDADO -->
@@ -943,7 +964,11 @@ export class FinanceiroPage {
 
                         <td class="py-2.5 px-2.5 whitespace-nowrap">
                           <span class="font-bold text-slate-700 dark:text-slate-300 block">Lote Consolidado</span>
-                          <span class="text-[10px] text-slate-400 block">${rem.forma_pagamento ? rem.forma_pagamento.toUpperCase() : "Pagamento Unificado"}</span>
+                          ${nomeBancoLote ? `
+                            <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 block mt-0.5">🏦 ${this.escapeHtml(nomeBancoLote)}${rem.forma_pagamento ? ` • ${this.escapeHtml(rem.forma_pagamento.toUpperCase())}` : ''}</span>
+                          ` : `
+                            <span class="text-[10px] text-slate-400 block">${rem.forma_pagamento ? this.escapeHtml(rem.forma_pagamento.toUpperCase()) : "Pagamento Unificado"}</span>
+                          `}
                         </td>
 
                         <td class="py-2.5 px-2.5 text-right whitespace-nowrap">
@@ -986,7 +1011,10 @@ export class FinanceiroPage {
                       </tr>
 
                       <!-- LINHAS FILHAS INDENTADAS DO LOTE (SE EXPANDIDO) -->
-                      ${expandida ? itens.map(c => `
+                      ${expandida ? itens.map(c => {
+                        const nomeBancoFilho = this.obterNomeBanco(c.conta_bancaria, c.conta_bancaria_id) || nomeBancoLote;
+                        const formaFilho = c.forma_pagamento || rem.forma_pagamento;
+                        return `
                         <tr class="bg-indigo-50/25 dark:bg-indigo-950/20 border-b border-indigo-100/50 dark:border-indigo-900/30 text-xs hover:bg-indigo-50/40 dark:hover:bg-indigo-950/30 transition-colors">
                           <td class="py-2 px-2.5 text-center">
                             <span class="text-indigo-400 font-black text-xs select-none">↳</span>
@@ -1007,6 +1035,9 @@ export class FinanceiroPage {
                           <td class="py-2 px-2.5 whitespace-nowrap">
                             <span class="font-bold text-slate-600 dark:text-slate-400 block">${c.categoria?.nome || "Geral"}</span>
                             <span class="text-[10px] text-slate-400 block">${c.tipo_custo?.nome || "Operacional"}</span>
+                            ${nomeBancoFilho ? `
+                              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 block mt-0.5">🏦 ${this.escapeHtml(nomeBancoFilho)}${formaFilho ? ` • ${this.escapeHtml(formaFilho.toUpperCase())}` : ''}</span>
+                            ` : ''}
                           </td>
                           <td class="py-2 px-2.5 text-right whitespace-nowrap">
                             <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${formatarMoeda(c.valor_nominal)}</span>
@@ -1025,12 +1056,14 @@ export class FinanceiroPage {
                             Item do Lote
                           </td>
                         </tr>
-                      `).join("") : ""}
+                      `;
+                      }).join("") : ""}
                     `;
                   }
 
                   // ITEM AVULSO NORMAL
                   const c = item.conta;
+                  const nomeBancoAvulso = this.obterNomeBanco(c.conta_bancaria, c.conta_bancaria_id);
                   const ehEstimado = !!c.valor_estimado && c.status !== "pago";
                   const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : "";
                   const podeSelecionar = !c.remessa_id && (c.status === "pendente" || c.status === "atrasado");
@@ -1080,6 +1113,9 @@ export class FinanceiroPage {
                       <td class="py-2.5 px-2.5 whitespace-nowrap">
                         <span class="font-bold text-slate-700 dark:text-slate-300 block text-xs">${c.categoria?.nome || "Geral"}</span>
                         <span class="text-[10px] text-slate-400 block">${c.tipo_custo?.nome || "Operacional"}</span>
+                        ${nomeBancoAvulso ? `
+                          <span class="text-[10px] font-bold ${c.status === "pago" ? "text-emerald-700 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"} block mt-0.5">🏦 ${this.escapeHtml(nomeBancoAvulso)}${c.forma_pagamento ? ` • ${this.escapeHtml(c.forma_pagamento.toUpperCase())}` : ''}</span>
+                        ` : ''}
                       </td>
 
                       <td class="py-2.5 px-2.5 text-right whitespace-nowrap">
@@ -1152,6 +1188,7 @@ export class FinanceiroPage {
               const itens = item.itens;
               const expandida = this.remessasExpandidas.has(rem.id);
               const totalItens = itens.reduce((acc, it) => acc + Number(it.valor_nominal || 0), 0);
+              const nomeBancoLoteMobile = this.obterNomeBanco(rem.conta_bancaria, rem.conta_bancaria_id);
 
               return `
                 <div class="bg-indigo-50/40 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/60 rounded-2xl p-4 shadow-sm space-y-3">
@@ -1159,7 +1196,7 @@ export class FinanceiroPage {
                     <div class="flex items-center gap-2">
                       <span class="text-base">📦</span>
                       <div>
-                        <span class="text-xs font-black text-indigo-700 dark:text-indigo-300">LOTE: ${rem.favorecido}</span>
+                        <span class="text-xs font-black text-indigo-700 dark:text-indigo-300">LOTE: ${this.escapeHtml(rem.favorecido)}</span>
                         <span class="text-[9px] text-slate-400 block">${formatarData(rem.data_pagamento || rem.data_prevista)}</span>
                       </div>
                     </div>
@@ -1173,6 +1210,11 @@ export class FinanceiroPage {
                       <span class="text-[10px] text-slate-400 font-bold uppercase block">Total do Lote</span>
                       <span class="text-base font-black text-slate-900 dark:text-slate-100">${formatarMoeda(rem.valor_total || totalItens)}</span>
                       <span class="text-[10px] text-slate-500 block font-medium mt-0.5">${itens.length} título(s) agrupado(s)</span>
+                      ${nomeBancoLoteMobile ? `
+                        <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                          🏦 ${this.escapeHtml(nomeBancoLoteMobile)}${rem.forma_pagamento ? ` • ${this.escapeHtml(rem.forma_pagamento.toUpperCase())}` : ''}
+                        </span>
+                      ` : ''}
                     </div>
                     <div class="flex items-center gap-1.5">
                       ${rem.status !== "paga" ? `
@@ -1202,15 +1244,22 @@ export class FinanceiroPage {
 
                   ${expandida ? `
                     <div class="space-y-2 pt-2 border-t border-indigo-100/60 dark:border-indigo-900/40 pl-2">
-                      ${itens.map(c => `
+                      ${itens.map(c => {
+                        const nomeBancoFilhoMobile = this.obterNomeBanco(c.conta_bancaria, c.conta_bancaria_id) || nomeBancoLoteMobile;
+                        const formaFilhoMobile = c.forma_pagamento || rem.forma_pagamento;
+                        return `
                         <div class="p-2.5 bg-white dark:bg-slate-900/80 rounded-xl border border-indigo-100/50 dark:border-indigo-900/40 text-xs space-y-1">
                           <div class="flex items-center justify-between">
-                            <span class="font-bold text-slate-800 dark:text-slate-200">${c.favorecido}</span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200">${this.escapeHtml(c.favorecido)}</span>
                             <span class="font-black text-slate-900 dark:text-slate-100">${formatarMoeda(c.valor_nominal)}</span>
                           </div>
-                          <p class="text-[10px] text-slate-400 truncate">${c.descricao || "Despesa"} • Venc: ${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</p>
+                          <p class="text-[10px] text-slate-400 truncate">${this.escapeHtml(c.descricao || "Despesa")} • Venc: ${formatarData(c.data_vencimento_operacional || c.data_vencimento)}</p>
+                          ${nomeBancoFilhoMobile ? `
+                            <span class="inline-block text-[10px] font-bold text-indigo-600 dark:text-indigo-400">🏦 ${this.escapeHtml(nomeBancoFilhoMobile)}${formaFilhoMobile ? ` • ${this.escapeHtml(formaFilhoMobile.toUpperCase())}` : ''}</span>
+                          ` : ''}
                         </div>
-                      `).join("")}
+                      `;
+                      }).join("")}
                     </div>
                   ` : ""}
                 </div>
@@ -1219,6 +1268,7 @@ export class FinanceiroPage {
 
             // ITEM AVULSO NO MOBILE
             const c = item.conta;
+            const nomeBancoAvulsoMobile = this.obterNomeBanco(c.conta_bancaria, c.conta_bancaria_id);
             const ehEstimado = !!c.valor_estimado && c.status !== "pago";
             const parcelaLabel = (c.parcela_total && c.parcela_total > 1) ? `(${c.parcela_numero}/${c.parcela_total})` : "";
             const podeSelecionar = !c.remessa_id && (c.status === "pendente" || c.status === "atrasado");
@@ -1276,6 +1326,11 @@ export class FinanceiroPage {
                       ${c.categoria?.nome || "Geral"}
                     </span>
                     <span class="text-[10px] text-slate-400 font-semibold">• ${c.tipo_custo?.nome || "Operacional"}</span>
+                    ${nomeBancoAvulsoMobile ? `
+                      <span class="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                        🏦 ${this.escapeHtml(nomeBancoAvulsoMobile)}${c.forma_pagamento ? ` • ${this.escapeHtml(c.forma_pagamento.toUpperCase())}` : ''}
+                      </span>
+                    ` : ''}
                   </div>
                 </div>
 
@@ -2877,10 +2932,15 @@ export class FinanceiroPage {
           </div>
 
           <div>
-            <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Conta Bancária / Caixa de Saída</label>
-            <select id="select-baixa-banco" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400">Conta Bancária / Caixa de Saída *</label>
+              <button type="button" id="btn-cadastrar-banco-rapido-baixa" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer flex items-center gap-1">
+                <span>+</span> Cadastrar Banco
+              </button>
+            </div>
+            <select id="select-baixa-banco" required class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
               <option value="">Selecione o banco de liquidação...</option>
-              ${this.contasBancarias.filter(b => b.ativo !== false).map(b => `<option value="${b.id}">${b.nome_banco}</option>`).join('')}
+              ${this.contasBancarias.filter(b => b.ativo !== false).map(b => `<option value="${b.id}" ${b.id === c.conta_bancaria_id ? 'selected' : ''}>${this.escapeHtml(b.nome_banco)}</option>`).join('')}
             </select>
           </div>
 
@@ -2956,16 +3016,27 @@ export class FinanceiroPage {
     jurosInput?.addEventListener('input', recalcularSugerido);
     descInput?.addEventListener('input', recalcularSugerido);
 
+    overlay.querySelector('#btn-cadastrar-banco-rapido-baixa')?.addEventListener('click', () => {
+      fechar();
+      this.abrirModalNovaContaBancaria();
+    });
+
     const form = overlay.querySelector('#form-baixa') as HTMLFormElement;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const dataPagamento = (overlay.querySelector('#input-baixa-data') as HTMLInputElement).value;
+      const formaPagamento = (overlay.querySelector('#select-baixa-forma') as HTMLSelectElement).value as any;
+      const contaBancariaId = (overlay.querySelector('#select-baixa-banco') as HTMLSelectElement).value.trim();
+
+      if (!contaBancariaId) {
+        await showCustomAlert('Por favor, selecione a conta bancária de saída para dar baixa no pagamento.', 'Atenção');
+        return;
+      }
+
       const submitBtn = overlay.querySelector('#btn-confirmar-baixa') as HTMLButtonElement;
       submitBtn.disabled = true;
       submitBtn.textContent = 'Processando...';
 
-      const dataPagamento = (overlay.querySelector('#input-baixa-data') as HTMLInputElement).value;
-      const formaPagamento = (overlay.querySelector('#select-baixa-forma') as HTMLSelectElement).value as any;
-      const contaBancariaId = (overlay.querySelector('#select-baixa-banco') as HTMLSelectElement).value || undefined;
       const jurosMulta = parsePastedCurrency(jurosInput.value);
       const desconto = parsePastedCurrency(descInput.value);
       const valorPago = parsePastedCurrency(pagoInput.value);
@@ -3348,10 +3419,15 @@ export class FinanceiroPage {
             </div>
 
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Conta Bancária de Saída</label>
-              <select id="input-edit-banco" class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
-                <option value="">Não vinculada (definir na baixa)</option>
-                ${this.contasBancarias.filter(b => b.ativo !== false || b.id === c.conta_bancaria_id).map(b => `<option value="${b.id}" ${b.id === c.conta_bancaria_id ? 'selected' : ''}>${b.nome_banco} (${b.tipo})${b.ativo === false ? ' [Inativo]' : ''}</option>`).join('')}
+              <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                Conta Bancária de Saída ${c.status === 'pago' ? '*' : ''}
+              </label>
+              <select id="input-edit-banco" ${c.status === 'pago' ? 'required' : ''} class="w-full h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+                ${c.status === 'pago'
+                  ? `<option value="" disabled ${!c.conta_bancaria_id ? 'selected' : ''}>Selecione a conta bancária...</option>`
+                  : `<option value="">Não vinculada (definir na baixa)</option>`
+                }
+                ${this.contasBancarias.filter(b => b.ativo !== false || b.id === c.conta_bancaria_id).map(b => `<option value="${b.id}" ${b.id === c.conta_bancaria_id ? 'selected' : ''}>${this.escapeHtml(b.nome_banco)} (${this.escapeHtml(b.tipo)})${b.ativo === false ? ' [Inativo]' : ''}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -3471,7 +3547,15 @@ export class FinanceiroPage {
       const valorNominal = parsePastedCurrency(inputValor.value);
       const dataVencimento = (overlay.querySelector('#input-edit-vencimento') as HTMLInputElement).value;
       const formaPagamento = (overlay.querySelector('#input-edit-forma') as HTMLSelectElement).value as any;
-      const contaBancariaId = (overlay.querySelector('#input-edit-banco') as HTMLSelectElement).value || undefined;
+      const contaBancariaIdRaw = (overlay.querySelector('#input-edit-banco') as HTMLSelectElement).value;
+      const contaBancariaId = c.status === 'pago' ? contaBancariaIdRaw : (contaBancariaIdRaw || undefined);
+
+      if (c.status === 'pago' && !contaBancariaIdRaw.trim()) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Salvar Alterações';
+        await showCustomAlert('Títulos já pagos devem possuir uma conta bancária de saída vinculada.', 'Atenção');
+        return;
+      }
       const valorEstimado = c.status === 'pago' ? false : (overlay.querySelector('#input-edit-estimado') as HTMLInputElement).checked;
 
       const modoCascata = (overlay.querySelector('input[name="modo-cascata"]:checked') as HTMLInputElement)?.value as 'apenas_esta' | 'esta_e_futuras' || 'apenas_esta';
@@ -3999,7 +4083,12 @@ export class FinanceiroPage {
           </div>
 
           <div class="space-y-1">
-            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Conta Bancária / Caixa de Origem *</label>
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Conta Bancária / Caixa de Origem *</label>
+              <button type="button" id="btn-cadastrar-banco-rapido-remessa" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer flex items-center gap-1">
+                <span>+</span> Cadastrar Banco
+              </button>
+            </div>
             <select id="baixa-remessa-conta-bancaria" required class="w-full h-[42px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
               <option value="">Selecione o banco de saída...</option>
               ${bancosAtivos.map(b => `<option value="${b.id}">${esc(b.nome_banco)} (${esc(b.tipo)})</option>`).join('')}
@@ -4046,6 +4135,10 @@ export class FinanceiroPage {
     const fechar = () => backdrop.remove();
     backdrop.querySelector('#btn-fechar-modal-baixa-remessa')?.addEventListener('click', fechar);
     backdrop.querySelector('#btn-cancelar-baixa-remessa')?.addEventListener('click', fechar);
+    backdrop.querySelector('#btn-cadastrar-banco-rapido-remessa')?.addEventListener('click', () => {
+      fechar();
+      this.abrirModalNovaContaBancaria();
+    });
 
     const form = backdrop.querySelector('#form-baixa-remessa') as HTMLFormElement;
     form?.addEventListener('submit', async (e) => {

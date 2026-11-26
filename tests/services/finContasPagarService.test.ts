@@ -780,6 +780,7 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     const res = await FinContasPagarService.baixarConta({
       contaId: 'conta-juros-1000',
       dataPagamento: '2026-11-15',
+      contaBancariaId: 'banco-itau-1',
       jurosMulta: 50.00,
       valorPagoTotal: 1050.00,
       usuarioId: 'admin-uuid-1'
@@ -840,6 +841,7 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     const res = await FinContasPagarService.baixarConta({
       contaId: 'conta-desconto-1000',
       dataPagamento: '2026-11-15',
+      contaBancariaId: 'banco-itau-1',
       desconto: 100.00,
       valorPagoTotal: 900.00,
       usuarioId: 'admin-uuid-1'
@@ -899,6 +901,7 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     const res = await FinContasPagarService.baixarConta({
       contaId: 'conta-salario-estimada-9000',
       dataPagamento: '2026-11-04',
+      contaBancariaId: 'banco-itau-1',
       valorPagoTotal: 7356.67,
       usuarioId: 'admin-uuid-1',
       usuarioNome: 'Financeiro'
@@ -1032,6 +1035,76 @@ describe('FinContasPagarService - Testes Subcutâneos', () => {
     expect(payloadUpdate.baixado_por).toBeNull();
     expect(payloadUpdate.observacoes).toContain('[ESTORNO');
     expect(payloadUpdate.observacoes).toContain('Erro no lançamento bancário');
+  });
+
+  it('deve bloquear baixa de pagamento quando nenhuma conta bancária for informada nem existir previamente no título', async () => {
+    // Setup
+    const contaSemBanco = {
+      id: 'conta-sem-banco-1',
+      valor_nominal: 500.00,
+      conta_bancaria_id: null,
+      status: 'pendente'
+    };
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: contaSemBanco, error: null })
+            })
+          })
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // Action
+    const res = await FinContasPagarService.baixarConta({
+      contaId: 'conta-sem-banco-1',
+      dataPagamento: '2026-11-25',
+      valorPagoTotal: 500.00,
+      usuarioId: 'admin-uuid-1'
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(false);
+    expect(res.erro).toContain('Selecione a conta bancária de saída');
+  });
+
+  it('deve impedir a remoção da conta bancária ao editar um título que já está com status pago', async () => {
+    // Setup
+    const contaPaga = {
+      id: 'conta-paga-banco-1',
+      valor_nominal: 1500.00,
+      status: 'pago',
+      conta_bancaria_id: 'banco-itau-1',
+      data_vencimento: '2026-11-20'
+    };
+
+    vi.mocked(supabase.from).mockImplementation((tabela: string) => {
+      if (tabela === 'fin_contas_pagar') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: contaPaga, error: null })
+            })
+          })
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // Action
+    const res = await FinContasPagarService.editarConta({
+      contaId: 'conta-paga-banco-1',
+      contaBancariaId: '',
+      usuarioId: 'admin-uuid-1'
+    });
+
+    // Assert
+    expect(res.sucesso).toBe(false);
+    expect(res.erro).toContain('Não é permitido remover a conta bancária de um título já pago');
   });
 });
 

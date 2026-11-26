@@ -478,7 +478,15 @@ export class FinContasPagarService {
       if (params.tipoCustoId) camposBaseUpdate.tipo_custo_id = params.tipoCustoId;
       if (params.categoriaId) camposBaseUpdate.categoria_id = params.categoriaId;
       if (params.subcategoriaId !== undefined) camposBaseUpdate.subcategoria_id = params.subcategoriaId || null;
-      if (params.contaBancariaId !== undefined) camposBaseUpdate.conta_bancaria_id = params.contaBancariaId || null;
+      if (params.contaBancariaId !== undefined) {
+        if (contaAtual.status === 'pago' && !params.contaBancariaId.trim()) {
+          return {
+            sucesso: false,
+            erro: 'Não é permitido remover a conta bancária de um título já pago.'
+          };
+        }
+        camposBaseUpdate.conta_bancaria_id = params.contaBancariaId || null;
+      }
       if (params.favorecido !== undefined) camposBaseUpdate.favorecido = params.favorecido.trim();
       if (params.valorNominal !== undefined) camposBaseUpdate.valor_nominal = params.valorNominal;
       if (params.valorEstimado !== undefined) camposBaseUpdate.valor_estimado = params.valorEstimado;
@@ -751,6 +759,14 @@ export class FinContasPagarService {
         throw buscaErr;
       }
 
+      const contaBancariaFinal = (params.contaBancariaId || conta.conta_bancaria_id || '').trim();
+      if (!contaBancariaFinal) {
+        return {
+          sucesso: false,
+          erro: 'Selecione a conta bancária de saída para registrar a baixa do pagamento.'
+        };
+      }
+
       const juros = Number(params.jurosMulta) || 0;
       const desc = Number(params.desconto) || 0;
       const valorDevido = Number(conta.valor_nominal) + juros - desc;
@@ -761,7 +777,7 @@ export class FinContasPagarService {
       const updatePayload: Partial<FinContaPagar> = {
         status: 'pago',
         data_pagamento: params.dataPagamento,
-        conta_bancaria_id: params.contaBancariaId || conta.conta_bancaria_id,
+        conta_bancaria_id: contaBancariaFinal,
         forma_pagamento: params.formaPagamento || conta.forma_pagamento,
         juros_multa: juros,
         desconto: desc,
@@ -792,6 +808,7 @@ export class FinContasPagarService {
           desconto: desc,
           valor_pago: valorEfetivamentePago,
           data_pagamento: params.dataPagamento,
+          conta_bancaria_id: contaBancariaFinal,
           baixa_parcial: isBaixaParcial
         }
       });
@@ -1346,6 +1363,76 @@ export class FinContasPagarService {
     } catch (e) {
       console.warn('[FinContasPagarService] Erro ao calcular resumo de badge:', e);
       return { totalAtrasadas: 0, totalVencendoHoje: 0, totalVencendo48h: 0, totalCriticas: 0, nivelAlerta: 'normal' };
+    }
+  }
+
+  /**
+   * Regulariza pagamentos já realizados e lotes sem banco vinculado atribuindo-os ao banco SANTANDER.
+   */
+  public static async regularizarPagamentosSemBancoParaSantander(): Promise<{
+    sucesso: boolean;
+    santanderId?: string;
+    erro?: string;
+  }> {
+    try {
+      // 1. Localiza conta bancária SANTANDER
+      const { data: bancos, error: bankErr } = await supabase
+        .from('fin_contas_bancarias')
+        .select('id, nome_banco, ativo')
+        .ilike('nome_banco', '%SANTANDER%');
+
+      if (bankErr) throw bankErr;
+
+      let santanderId = bancos && bancos.length > 0
+        ? (bancos.find((b: any) => b.ativo !== false)?.id || bancos[0].id)
+        : undefined;
+
+      // Se não existir, cria a conta SANTANDER
+      if (!santanderId) {
+        const { data: novoBanco, error: createErr } = await supabase
+          .from('fin_contas_bancarias')
+          .insert({
+            nome_banco: 'SANTANDER',
+            tipo: 'corrente',
+            saldo_inicial: 0,
+            ativo: true
+          })
+          .select('id')
+          .single();
+
+        if (createErr) throw createErr;
+        santanderId = novoBanco?.id;
+      }
+
+      if (!santanderId) {
+        return { sucesso: false, erro: 'Não foi possível localizar ou criar a conta bancária SANTANDER.' };
+      }
+
+      const nowIso = new Date().toISOString();
+
+      // 2. Atualiza todos os lotes (fin_remessas) sem banco definido
+      await supabase
+        .from('fin_remessas')
+        .update({
+          conta_bancaria_id: santanderId,
+          updated_at: nowIso
+        })
+        .is('conta_bancaria_id', null);
+
+      // 3. Atualiza todos os pagamentos (status = 'pago') ou itens de lote (remessa_id IS NOT NULL) sem banco
+      await supabase
+        .from('fin_contas_pagar')
+        .update({
+          conta_bancaria_id: santanderId,
+          updated_at: nowIso
+        })
+        .is('conta_bancaria_id', null)
+        .or('status.eq.pago,remessa_id.not.is.null');
+
+      return { sucesso: true, santanderId };
+    } catch (err: any) {
+      console.warn('[FinContasPagarService] Aviso ao regularizar pagamentos sem banco para SANTANDER:', err);
+      return { sucesso: false, erro: err?.message || 'Erro ao regularizar pagamentos sem banco' };
     }
   }
 }
